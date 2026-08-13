@@ -22,6 +22,8 @@
  * Note: each run creates one new volunteer + one opportunity in the database.
  */
 
+require('dotenv').config();
+
 const BASE = process.env.SMOKE_BASE_URL || `http://localhost:${process.env.PORT || 3000}`;
 const ADMIN_EMAIL = process.env.SMOKE_ADMIN_EMAIL || 'admin@shelterlink.org';
 const ADMIN_PASSWORD = process.env.SMOKE_ADMIN_PASSWORD || 'Admin123!';

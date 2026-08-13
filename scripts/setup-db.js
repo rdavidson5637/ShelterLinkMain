@@ -73,8 +73,12 @@ async function run() {
   }
 
   try {
+    // Full reset: drop the entire database so leftover tables from older
+    // versions (with foreign keys the current schema doesn't know about)
+    // can never block the rebuild.
+    await connection.query(`DROP DATABASE IF EXISTS \`${DB_NAME}\``);
     await connection.query(
-      `CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\`
+      `CREATE DATABASE \`${DB_NAME}\`
        CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
     );
     await connection.changeUser({ database: DB_NAME });
