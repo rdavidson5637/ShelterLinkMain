@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Shift Calendar | ShelterLink</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6/index.global.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+    <link rel="stylesheet" href="/public/css/opportunity-modal.css" />
+    <style>
+      .calendar-banner {
+        background: linear-gradient(135deg, rgba(46, 125, 50, 0.15), rgba(76, 175, 80, 0.1));
+        border: 1px solid rgba(46, 125, 50, 0.3);
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.25rem;
+        font-size: 1.1rem;
+        font-weight: 500;
+        color: var(--primary-dark, #1b5e20);
+      }
+      .calendar-view-toggles {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+      .calendar-view-toggles button {
+        margin: 0;
+      }
+      .calendar-wrapper {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 12px;
+        padding: 1.25rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+        border: 1px solid rgba(46, 125, 50, 0.1);
+      }
+      /* Fix PicoCSS dark background conflict */
+      .fc-daygrid-day,
+      .fc-daygrid-day-frame,
+      .fc td,
+      .fc th,
+      .fc table {
+        background: transparent !important;
+        color: #1e293b !important;
+      }
+      .fc {
+        font-size: 1rem;
+      }
+      .fc-event {
+        font-size: 0.85rem;
+        padding: 0.2em 0.4em;
+        cursor: pointer;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .fc-event-title {
+        font-weight: 600;
+      }
+      .fc-daygrid-event-dot {
+        display: none;
+      }
+      .calendar-empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        font-size: 1.5rem;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Volunteer navigation">
+        <a class="site-brand" href="/index.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">☰</button>
+        <ul class="nav-menu" id="navMenu">
+          <li><a class="nav-link" href="/pages/volunteer/dashboard.html"><span class="nav-icon" aria-hidden="true">&#8962;</span><span>Dashboard</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/calendar.html" aria-current="page"><span class="nav-icon" aria-hidden="true">&#128197;</span><span>Calendar</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/browse-shifts.html"><span class="nav-icon" aria-hidden="true">&#128269;</span><span>Browse</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/my-applications.html"><span class="nav-icon" aria-hidden="true">&#128221;</span><span>Applications</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/log-hours.html"><span class="nav-icon" aria-hidden="true">&#9201;</span><span>Log Hours</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/my-hours.html"><span class="nav-icon" aria-hidden="true">&#128202;</span><span>My Hours</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/complete-profile.html"><span class="nav-icon" aria-hidden="true">&#128100;</span><span>Profile</span></a></li>
+          <li><button id="logoutButton" class="secondary">Logout</button></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section>
+        <h1>Shift Calendar</h1>
+        <p>View available shifts at a glance. Click any green shift to apply.</p>
+      </section>
+
+      <div id="calendarBanner" class="calendar-banner" role="status">
+        Click any green shift to apply
+      </div>
+
+      <div class="calendar-view-toggles">
+        <button id="viewMonthButton">Month</button>
+        <button id="viewWeekButton" class="secondary">Week</button>
+        <button id="viewListButton" class="secondary">Switch to List View</button>
+      </div>
+
+      <div class="calendar-wrapper">
+        <div id="calendar"></div>
+        <p id="calendarEmptyState" class="calendar-empty-state" style="display: none;">
+          No shifts available right now. Check back soon!
+        </p>
+      </div>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2025 ShelterLink</small>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6/index.global.min.js"></script>
+    <script>
+      (() => {
+        const nav = document.querySelector('.site-nav');
+        const toggle = nav?.querySelector('.nav-toggle');
+        if (!nav || !toggle) return;
+        toggle.addEventListener('click', () => {
+          const open = nav.classList.toggle('nav-open');
+          toggle.setAttribute('aria-expanded', String(open));
+        });
+      })();
+    </script>
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/volunteer/calendar.js"></script>
+  </body>
+</html>

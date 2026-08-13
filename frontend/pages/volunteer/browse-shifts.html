@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Browse Shifts | ShelterLink</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+    <link rel="stylesheet" href="/public/css/opportunity-modal.css" />
+    <style>
+      .browse-filters {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin-bottom: 1.25rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        border: 1px solid rgba(46, 125, 50, 0.1);
+      }
+      .browse-filters .search-input {
+        font-size: 1.125rem;
+        min-height: 48px;
+        padding: 0.75rem 1rem;
+      }
+      .browse-status {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+        color: #555;
+      }
+      .browse-empty-state {
+        text-align: center;
+        padding: 3rem 2rem;
+        font-size: 1.25rem;
+        color: #666;
+      }
+      .browse-empty-state button {
+        margin-top: 1rem;
+      }
+      .clear-filters-wrap {
+        margin-top: 0.75rem;
+      }
+
+      .opportunities-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .opportunity-card {
+        padding: 1rem;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        background: white;
+        transition: all 0.2s;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .opportunity-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+      }
+
+      .opportunity-card h3 {
+        margin: 0 0 0.5rem;
+        font-size: 1.25rem;
+      }
+
+      .opportunity-card p {
+        font-size: 0.9rem;
+        margin: 0.25rem 0;
+      }
+
+      .opportunity-card .description {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .opportunity-card .meta {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        font-size: 0.85rem;
+        color: #666;
+        margin: 0.5rem 0;
+      }
+
+      .opportunity-card .actions {
+        margin-top: auto;
+        padding-top: 1rem;
+        text-align: right;
+      }
+
+      .opportunity-card button {
+        padding: 0.5rem 1.5rem;
+        font-size: 0.9rem;
+        margin-top: 0;
+      }
+
+      @media (max-width: 768px) {
+        .opportunities-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Volunteer navigation">
+        <a class="site-brand" href="/index.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">☰</button>
+        <ul class="nav-menu" id="navMenu">
+          <li><a class="nav-link" href="/pages/volunteer/dashboard.html"><span class="nav-icon" aria-hidden="true">&#8962;</span><span>Dashboard</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/calendar.html"><span class="nav-icon" aria-hidden="true">&#128197;</span><span>Calendar</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/browse-shifts.html" aria-current="page"><span class="nav-icon" aria-hidden="true">&#128269;</span><span>Browse</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/my-applications.html"><span class="nav-icon" aria-hidden="true">&#128221;</span><span>Applications</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/log-hours.html"><span class="nav-icon" aria-hidden="true">&#9201;</span><span>Log Hours</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/my-hours.html"><span class="nav-icon" aria-hidden="true">&#128202;</span><span>My Hours</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/complete-profile.html"><span class="nav-icon" aria-hidden="true">&#128100;</span><span>Profile</span></a></li>
+          <li><button id="logoutButton" class="secondary">Logout</button></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section>
+        <h1>Browse Volunteer Shifts</h1>
+        <p>Filter and explore open opportunities at the shelter.</p>
+      </section>
+
+      <section class="browse-filters" aria-label="Filter shifts">
+        <div class="grid">
+          <label for="filter_search">
+            Search
+            <input
+              type="text"
+              id="filter_search"
+              name="search"
+              class="search-input"
+              placeholder="Search by name or location"
+              autocomplete="off"
+            />
+          </label>
+          <label for="filter_from">
+            From
+            <input type="date" id="filter_from" name="from" />
+          </label>
+          <label for="filter_to">
+            To
+            <input type="date" id="filter_to" name="to" />
+          </label>
+          <label for="filter_hours">
+            Hours
+            <select id="filter_hours" name="hours">
+              <option value="">Any hours</option>
+              <option value="under5">Under 5 hrs per week</option>
+              <option value="5to15">5 to 15 hrs per week</option>
+              <option value="15plus">15 or more hrs per week</option>
+            </select>
+          </label>
+          <label for="filter_tag">
+            Tag
+            <select id="filter_tag" name="tag">
+              <option value="">Any tag</option>
+            </select>
+          </label>
+        </div>
+        <div class="clear-filters-wrap" id="clearFiltersWrap" style="display: none;">
+          <button type="button" id="clearFiltersButton" class="secondary button-secondary">Clear All Filters</button>
+        </div>
+      </section>
+
+      <p id="shiftsStatus" class="browse-status" role="status">Showing 0 of 0 available shifts</p>
+
+      <section id="coverShiftsSection" style="display:none;margin-bottom:1.5rem;">
+        <h2>Cover a shift</h2>
+        <p>These volunteers need someone to take their accepted place.</p>
+        <div id="cover-shifts-container" class="opportunities-grid"></div>
+      </section>
+
+      <section>
+        <div id="shifts-container" class="opportunities-grid"></div>
+        <div id="emptyState" class="browse-empty-state" style="display: none;">
+          <p>No shifts match your search. Try clearing the filters.</p>
+          <button type="button" id="emptyStateClearButton" class="secondary button-secondary">Clear Filters</button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2025 ShelterLink</small>
+    </footer>
+
+    <script>
+      (() => {
+        const nav = document.querySelector('.site-nav');
+        const toggle = nav?.querySelector('.nav-toggle');
+        if (!nav || !toggle) return;
+        toggle.addEventListener('click', () => {
+          const open = nav.classList.toggle('nav-open');
+          toggle.setAttribute('aria-expanded', String(open));
+        });
+      })();
+    </script>
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/volunteer/browse-shifts.js"></script>
+  </body>
+</html>

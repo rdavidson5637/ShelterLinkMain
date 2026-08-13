@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>My Volunteer Hours | ShelterLink</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Volunteer navigation">
+        <a class="site-brand" href="/index.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">☰</button>
+        <ul class="nav-menu" id="navMenu">
+          <li><a class="nav-link" href="/pages/volunteer/dashboard.html"><span class="nav-icon" aria-hidden="true">&#8962;</span><span>Dashboard</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/calendar.html"><span class="nav-icon" aria-hidden="true">&#128197;</span><span>Calendar</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/browse-shifts.html"><span class="nav-icon" aria-hidden="true">&#128269;</span><span>Browse</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/my-applications.html"><span class="nav-icon" aria-hidden="true">&#128221;</span><span>Applications</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/log-hours.html"><span class="nav-icon" aria-hidden="true">&#9201;</span><span>Log Hours</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/my-hours.html" aria-current="page"><span class="nav-icon" aria-hidden="true">&#128202;</span><span>My Hours</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/complete-profile.html"><span class="nav-icon" aria-hidden="true">&#128100;</span><span>Profile</span></a></li>
+          <li><button id="logoutButton" class="secondary">Logout</button></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section>
+        <h1>My Volunteer Hours</h1>
+        <p>View and export your volunteer hours history.</p>
+      </section>
+
+      <section class="grid">
+        <article>
+          <header>
+            <strong>Total Approved Hours</strong>
+          </header>
+          <p id="totalApprovedHours" class="stat-value" style="font-size: 2rem; font-weight: bold;">0</p>
+        </article>
+        <article>
+          <header>
+            <strong>Total Pending Hours</strong>
+          </header>
+          <p id="totalPendingHours" class="stat-value">0</p>
+        </article>
+        <article>
+          <header>
+            <strong>Actions</strong>
+          </header>
+          <button id="exportCsvButton">Export CSV</button>
+        </article>
+      </section>
+
+      <section>
+        <h2>Filters</h2>
+        <form id="filtersForm">
+          <div class="form-grid">
+            <div class="form-section"><label for="filterStartDate">
+              Start Date
+              <input type="date" id="filterStartDate" name="filterStartDate" />
+            </label></div>
+            <div class="form-section"><label for="filterEndDate">
+              End Date
+              <input type="date" id="filterEndDate" name="filterEndDate" />
+            </label></div>
+            <div class="form-section"><label for="filterOpportunity">
+              Opportunity
+              <select id="filterOpportunity" name="filterOpportunity">
+                <option value="">All Opportunities</option>
+              </select>
+            </label></div>
+            <div class="form-section"><label for="filterStatus">
+              Status
+              <select id="filterStatus" name="filterStatus">
+                <option value="">All</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+              </select>
+            </label></div>
+          </div>
+          <div class="form-full-width">
+            <button type="submit">Apply Filters</button>
+            <button type="button" id="clearFiltersButton" class="secondary button-secondary">Clear Filters</button>
+          </div>
+        </form>
+      </section>
+
+      <section>
+        <h2>Hours History</h2>
+        <table id="hours-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Opportunity</th>
+              <th>Hours</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="hoursTableBody">
+            <tr>
+              <td colspan="4">Loading...</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Leave feedback</h2>
+        <p>Rate past shifts you attended. No login is needed on the feedback form once you open the link.</p>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Opportunity</th>
+                <th>Feedback</th>
+              </tr>
+            </thead>
+            <tbody id="feedbackShiftsBody">
+              <tr><td colspan="3">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2025 ShelterLink</small>
+    </footer>
+
+    <script>
+      (() => {
+        const nav = document.querySelector('.site-nav');
+        const toggle = nav?.querySelector('.nav-toggle');
+        if (!nav || !toggle) return;
+        toggle.addEventListener('click', () => {
+          const open = nav.classList.toggle('nav-open');
+          toggle.setAttribute('aria-expanded', String(open));
+        });
+      })();
+    </script>
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/volunteer/my-hours.js"></script>
+  </body>
+</html>
+
+

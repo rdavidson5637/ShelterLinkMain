@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bulk Messages | ShelterLink Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Admin navigation">
+        <a class="site-brand" href="/index.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">☰</button>
+        <ul class="nav-menu" id="navMenu">
+          <li><a class="nav-link" href="/pages/admin/dashboard.html"><span class="nav-icon" aria-hidden="true">&#8962;</span><span>Dashboard</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/opportunities.html"><span class="nav-icon" aria-hidden="true">&#128736;</span><span>Opportunities</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/volunteers.html"><span class="nav-icon" aria-hidden="true">&#128101;</span><span>Volunteers</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/custom-fields.html"><span class="nav-icon" aria-hidden="true">&#128203;</span><span>Custom Fields</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/messages.html" aria-current="page"><span class="nav-icon" aria-hidden="true">&#9993;</span><span>Messages</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/reports.html"><span class="nav-icon" aria-hidden="true">&#128202;</span><span>Reports</span></a></li>
+          <li><button id="logoutButton" class="secondary">Logout</button></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section>
+        <h1>Bulk messaging</h1>
+        <p>Email volunteers using filters. Messages are sent individually (no CC).</p>
+        <div id="message" role="status" aria-live="polite"></div>
+      </section>
+
+      <section>
+        <form id="messageForm">
+          <div class="form-grid">
+            <label>
+              Profile status
+              <select id="profileStatus" name="profileStatus">
+                <option value="">Any</option>
+                <option value="approved">Approved</option>
+                <option value="pending">Pending</option>
+              </select>
+            </label>
+            <label>
+              Skill contains
+              <input type="text" id="skill" name="skill" placeholder="e.g. dogs" />
+            </label>
+            <label>
+              Min approved hours
+              <input type="number" id="minApprovedHours" name="minApprovedHours" min="0" step="0.5" />
+            </label>
+            <label>
+              Applied to opportunity ID
+              <input type="number" id="opportunityId" name="opportunityId" min="1" />
+            </label>
+            <label class="form-full-width">
+              Subject
+              <input type="text" id="subject" name="subject" required />
+            </label>
+            <label class="form-full-width">
+              Message
+              <textarea id="body" name="body" rows="6" required></textarea>
+            </label>
+          </div>
+          <p>Matching recipients: <strong id="recipientCount">0</strong></p>
+          <button type="submit" id="sendButton">Send message</button>
+        </form>
+      </section>
+
+      <section>
+        <h2>Send history</h2>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>Subject</th>
+                <th>Recipients</th>
+                <th>Admin</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody">
+              <tr><td colspan="4">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2025 ShelterLink</small>
+    </footer>
+
+    <script>
+      (() => {
+        const nav = document.querySelector('.site-nav');
+        const toggle = nav?.querySelector('.nav-toggle');
+        if (!nav || !toggle) return;
+        toggle.addEventListener('click', () => {
+          const open = nav.classList.toggle('nav-open');
+          toggle.setAttribute('aria-expanded', String(open));
+        });
+      })();
+    </script>
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/admin/messages.js"></script>
+  </body>
+</html>

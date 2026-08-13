@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Page Not Found | ShelterLink</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <main class="container">
+      <article class="auth-card" style="max-width: 680px; margin-top: 2rem;">
+        <h1>Oops! We could not find that page.</h1>
+        <p>The page you were looking for has moved or does not exist.</p>
+        <button id="goButton" type="button">Go to Dashboard</button>
+      </article>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2025 ShelterLink</small>
+    </footer>
+
+    <script type="module">
+      import { checkAuth } from '/js/auth.js';
+
+      function goToDashboard(user) {
+        if (user?.role === 'admin') {
+          window.location.href = '/pages/admin/dashboard.html';
+        } else {
+          window.location.href = '/pages/volunteer/dashboard.html';
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', async () => {
+        const btn = document.getElementById('goButton');
+        const user = await checkAuth();
+        if (user) {
+          btn.textContent = 'Go to Dashboard';
+          btn.onclick = () => goToDashboard(user);
+        } else {
+          btn.textContent = 'Go to Home Page';
+          btn.onclick = () => {
+            window.location.href = '/index.html';
+          };
+        }
+      });
+    </script>
+  </body>
+</html>
+

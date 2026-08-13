@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sign In | ShelterLink</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Main navigation">
+        <a class="site-brand" href="/index.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">☰</button>
+        <ul class="nav-menu" id="navMenu">
+          <li><a class="nav-link" href="/pages/opportunities.html"><span class="nav-icon" aria-hidden="true">&#128197;</span><span>Open shifts</span></a></li>
+          <li><a class="nav-link" href="/register.html"><span class="nav-icon" aria-hidden="true">&#9998;</span><span>Register</span></a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="container">
+      <article class="auth-card">
+        <h1>Sign In</h1>
+        <p>Access your ShelterLink account to manage volunteer activities.</p>
+
+        <div id="message"></div>
+
+        <form id="loginForm">
+          <div class="form-grid">
+            <div class="form-section form-full-width">
+              <div class="form-grid">
+                <label for="email">
+                  Email Address
+                  <input type="email" id="email" name="email" required autocomplete="email" />
+                </label>
+
+                <label for="password">
+                  Password
+                  <input type="password" id="password" name="password" required autocomplete="current-password" />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit">Sign In</button>
+        </form>
+
+        <p class="auth-links">
+          Don't have an account? <a href="/register.html">Register</a>
+          · <a href="/pages/opportunities.html">Browse open shifts</a>
+        </p>
+        <p class="auth-links">
+          <a href="/forgot-password.html">Forgot your password?</a>
+        </p>
+      </article>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2025 ShelterLink &mdash; Assisi Animal Sanctuary</small>
+    </footer>
+
+    <script>
+      (() => {
+        const nav = document.querySelector('.site-nav');
+        const toggle = nav?.querySelector('.nav-toggle');
+        if (!nav || !toggle) return;
+        toggle.addEventListener('click', () => {
+          const open = nav.classList.toggle('nav-open');
+          toggle.setAttribute('aria-expanded', String(open));
+        });
+      })();
+    </script>
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/login.js"></script>
+  </body>
+</html>

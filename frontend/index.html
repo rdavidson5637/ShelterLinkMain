@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ShelterLink | Assisi Animal Sanctuary Volunteers</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Main navigation">
+        <a class="site-brand" href="/index.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">☰</button>
+        <ul class="nav-menu" id="navMenu">
+          <li><a class="nav-link" href="/register.html"><span class="nav-icon" aria-hidden="true">&#9998;</span><span>Register</span></a></li>
+          <li><a class="nav-link" href="/login.html"><span class="nav-icon" aria-hidden="true">&#128274;</span><span>Login</span></a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section class="hero">
+        <h1>ShelterLink</h1>
+        <p>
+          The volunteer management platform for <strong>Assisi Animal Sanctuary, Belfast</strong>.
+          Browse open shifts, apply to help, log your hours, and track your impact — all in one place.
+        </p>
+        <a href="/register.html" role="button" class="cta">Become a Volunteer</a>
+      </section>
+
+      <section>
+        <div class="grid" style="gap: 1.5rem; margin-top: 1.5rem;">
+          <article style="text-align:center; padding: 1.5rem;">
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🐾</div>
+            <h3>Find Shifts</h3>
+            <p>Browse open volunteer opportunities at Assisi — dog walking, feeding, cleaning, events, and more.</p>
+          </article>
+          <article style="text-align:center; padding: 1.5rem;">
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📅</div>
+            <h3>Manage Your Schedule</h3>
+            <p>Apply for the shifts that fit your availability and track all your applications in one place.</p>
+          </article>
+          <article style="text-align:center; padding: 1.5rem;">
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">⏱️</div>
+            <h3>Log Your Hours</h3>
+            <p>Record your volunteer hours after each shift and earn badges as you reach new milestones.</p>
+          </article>
+        </div>
+      </section>
+
+      <section style="text-align:center; margin-top: 2rem;">
+        <h2>Ready to make a difference?</h2>
+        <p>Registration takes just a minute. Create your account, complete your volunteer profile, and you're ready to start helping animals in need.</p>
+        <div style="display:flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 1rem;">
+          <a href="/register.html" role="button">Create an Account</a>
+          <a href="/login.html" role="button" class="secondary">Sign In</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2025 ShelterLink &mdash; Built for Assisi Animal Sanctuary, Belfast</small>
+    </footer>
+
+    <script>
+      (() => {
+        const nav = document.querySelector('.site-nav');
+        const toggle = nav?.querySelector('.nav-toggle');
+        if (!nav || !toggle) return;
+        toggle.addEventListener('click', () => {
+          const open = nav.classList.toggle('nav-open');
+          toggle.setAttribute('aria-expanded', String(open));
+        });
+      })();
+    </script>
+    <script type="module">
+      import { redirectIfAuthenticated } from '/js/auth.js';
+      redirectIfAuthenticated();
+    </script>
+  </body>
+</html>

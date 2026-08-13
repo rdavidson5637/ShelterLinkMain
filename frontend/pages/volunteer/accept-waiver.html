@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Accept Waiver | ShelterLink</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+    <style>
+      .waiver-scroll {
+        max-height: 320px;
+        overflow-y: auto;
+        border: 1px solid var(--pico-muted-border-color, #ccc);
+        padding: 1rem;
+        white-space: pre-wrap;
+        background: #fafafa;
+        margin-bottom: 1rem;
+      }
+      .waiver-block {
+        max-width: 720px;
+        margin: 0 auto;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Volunteer navigation">
+        <a class="site-brand" href="/index.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <ul class="nav-menu">
+          <li><button id="logoutButton" class="secondary">Logout</button></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section class="waiver-block">
+        <h1>Waiver acceptance required</h1>
+        <p>Please read and accept the following before continuing.</p>
+        <div id="message" role="status" aria-live="polite"></div>
+        <div id="waiverContainer">
+          <p>Loading waiver...</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2025 ShelterLink</small>
+    </footer>
+
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/volunteer/accept-waiver.js"></script>
+  </body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Manage Opportunities | ShelterLink Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+    <style>
+      .opportunity-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .status-badge {
+        display: inline-block;
+        padding: 0.2rem 0.55rem;
+        border-radius: 0.75rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+
+      .status-badge.open {
+        background: rgba(46, 125, 50, 0.14);
+        color: #1b5e20;
+      }
+
+      .status-badge.closed {
+        background: rgba(198, 40, 40, 0.14);
+        color: #8e0000;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Admin navigation">
+        <a class="site-brand" href="/index.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">☰</button>
+        <ul class="nav-menu" id="navMenu">
+          <li><a class="nav-link" href="/pages/admin/dashboard.html"><span class="nav-icon" aria-hidden="true">&#8962;</span><span>Dashboard</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/opportunities.html" aria-current="page"><span class="nav-icon" aria-hidden="true">&#128736;</span><span>Opportunities</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/create-opportunity.html"><span class="nav-icon" aria-hidden="true">&#10010;</span><span>Create</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/review-applications.html"><span class="nav-icon" aria-hidden="true">&#128221;</span><span>Applications</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/approve-hours.html"><span class="nav-icon" aria-hidden="true">&#9201;</span><span>Hours</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/volunteers.html"><span class="nav-icon" aria-hidden="true">&#128101;</span><span>Volunteers</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/custom-fields.html"><span class="nav-icon" aria-hidden="true">&#128203;</span><span>Custom Fields</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/reports.html"><span class="nav-icon" aria-hidden="true">&#128202;</span><span>Reports</span></a></li>
+          <li><button id="logoutButton" class="secondary">Logout</button></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section>
+        <h1>Manage Opportunities</h1>
+        <p>Review active and closed opportunities. Edit details or close openings directly from this page.</p>
+      </section>
+
+      <section>
+        <article>
+          <div class="grid" style="grid-template-columns: 1fr auto;">
+            <label for="statusFilter">
+              Status Filter
+              <select id="statusFilter" name="statusFilter">
+                <option value="">All statuses</option>
+                <option value="open">Open</option>
+                <option value="closed">Closed</option>
+              </select>
+            </label>
+            <div style="display: flex; align-items: end;">
+              <a href="/pages/admin/create-opportunity.html" role="button" class="contrast">Create Opportunity</a>
+            </div>
+          </div>
+          <div id="message" role="status" aria-live="polite"></div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Location</th>
+                  <th>Dates</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="opportunitiesTableBody">
+                <tr><td colspan="5">Loading opportunities...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section>
+        <article style="max-width: 760px; margin-inline: auto;">
+          <h2>Edit Opportunity</h2>
+          <p>Select an opportunity from the list to edit it.</p>
+          <form id="editOpportunityForm">
+            <input type="hidden" id="opportunity_id" name="opportunity_id" />
+            <div class="form-grid">
+              <div class="form-section form-full-width">
+                <label for="title">
+                  Title
+                  <input type="text" id="title" name="title" required />
+                </label>
+              </div>
+              <div class="form-section form-full-width">
+                <label for="description">
+                  Description
+                  <textarea id="description" name="description" rows="4" required></textarea>
+                </label>
+              </div>
+              <div class="form-section">
+                <label for="location">
+                  Location
+                  <input type="text" id="location" name="location" required />
+                </label>
+              </div>
+              <div class="form-section">
+                <label for="start_date">
+                  Start Date
+                  <input type="date" id="start_date" name="start_date" required />
+                </label>
+              </div>
+              <div class="form-section">
+                <label for="end_date">
+                  End Date
+                  <input type="date" id="end_date" name="end_date" required />
+                </label>
+              </div>
+              <div class="form-section">
+                <label for="max_volunteers">
+                  Max Volunteers
+                  <input type="number" id="max_volunteers" name="max_volunteers" min="1" />
+                </label>
+              </div>
+              <div class="form-section">
+                <label for="cancellation_cutoff_hours">
+                  Cancellation cutoff (hours)
+                  <input type="number" id="cancellation_cutoff_hours" name="cancellation_cutoff_hours" min="0" />
+                </label>
+                <small>Self-cancel allowed until this many hours before the shift.</small>
+              </div>
+              <div class="form-section form-full-width">
+                <label for="requirements">
+                  Requirements
+                  <textarea id="requirements" name="requirements" rows="3"></textarea>
+                </label>
+              </div>
+              <div class="form-section form-full-width">
+                <label for="activity_notes">
+                  Activity notes
+                  <textarea id="activity_notes" name="activity_notes" rows="3" readonly></textarea>
+                </label>
+                <small>System activity (e.g. shift swaps). Read-only.</small>
+              </div>
+              <div class="form-section form-full-width">
+                <label for="qualification_ids">
+                  Required qualifications
+                  <select id="qualification_ids" name="qualification_ids" multiple size="5">
+                    <option disabled>Loading qualifications...</option>
+                  </select>
+                </label>
+                <small>Hold Ctrl/Cmd to select multiple.</small>
+              </div>
+              <div class="form-section form-full-width">
+                <span>Tags</span>
+                <div id="opportunityTags" class="tag-chips" aria-label="Opportunity tags"></div>
+              </div>
+            </div>
+            <div class="opportunity-actions">
+              <button type="submit" id="saveButton" disabled>Save Changes</button>
+              <button type="button" id="cancelEditButton" class="secondary button-secondary">Cancel</button>
+            </div>
+          </form>
+        </article>
+      </section>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2025 ShelterLink</small>
+    </footer>
+
+    <script>
+      (() => {
+        const nav = document.querySelector('.site-nav');
+        const toggle = nav?.querySelector('.nav-toggle');
+        if (!nav || !toggle) return;
+        toggle.addEventListener('click', () => {
+          const open = nav.classList.toggle('nav-open');
+          toggle.setAttribute('aria-expanded', String(open));
+        });
+      })();
+    </script>
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/admin/opportunities.js"></script>
+  </body>
+</html>

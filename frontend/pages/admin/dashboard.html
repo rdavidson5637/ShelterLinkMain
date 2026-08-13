@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin Dashboard | ShelterLink</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Admin navigation">
+        <a class="site-brand" href="/index.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">☰</button>
+        <ul class="nav-menu" id="navMenu">
+          <li><a class="nav-link" href="/pages/admin/dashboard.html" aria-current="page"><span class="nav-icon" aria-hidden="true">&#8962;</span><span>Dashboard</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/opportunities.html"><span class="nav-icon" aria-hidden="true">&#128736;</span><span>Opportunities</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/create-opportunity.html"><span class="nav-icon" aria-hidden="true">&#10010;</span><span>Create</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/review-applications.html"><span class="nav-icon" aria-hidden="true">&#128221;</span><span>Applications</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/approve-hours.html"><span class="nav-icon" aria-hidden="true">&#9201;</span><span>Hours</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/volunteers.html"><span class="nav-icon" aria-hidden="true">&#128101;</span><span>Volunteers</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/group-bookings.html"><span class="nav-icon" aria-hidden="true">&#128101;</span><span>Groups</span></a></li>
+          <li data-admin-only><a class="nav-link" href="/pages/admin/qualifications.html"><span class="nav-icon" aria-hidden="true">&#127891;</span><span>Qualifications</span></a></li>
+          <li data-admin-only><a class="nav-link" href="/pages/admin/custom-fields.html"><span class="nav-icon" aria-hidden="true">&#128203;</span><span>Custom Fields</span></a></li>
+          <li data-admin-only><a class="nav-link" href="/pages/admin/waivers.html"><span class="nav-icon" aria-hidden="true">&#128196;</span><span>Waivers</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/feedback.html"><span class="nav-icon" aria-hidden="true">&#9733;</span><span>Feedback</span></a></li>
+          <li data-admin-only><a class="nav-link" href="/pages/admin/messages.html"><span class="nav-icon" aria-hidden="true">&#9993;</span><span>Messages</span></a></li>
+          <li data-admin-only><a class="nav-link" href="/pages/admin/reports.html"><span class="nav-icon" aria-hidden="true">&#128202;</span><span>Reports</span></a></li>
+          <li data-admin-only><a class="nav-link" href="/pages/admin/audit-log.html"><span class="nav-icon" aria-hidden="true">&#128220;</span><span>Audit</span></a></li>
+          <li data-admin-only><a class="nav-link" href="/pages/admin/privacy.html"><span class="nav-icon" aria-hidden="true">&#128274;</span><span>Privacy</span></a></li>
+          <li><button id="logoutButton" class="secondary">Logout</button></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="container dashboard-layout">
+      <aside class="sidebar-nav" aria-label="Admin dashboard links">
+        <h3>Admin</h3>
+        <a href="/pages/admin/dashboard.html" aria-current="page">Dashboard</a>
+        <a href="/pages/admin/opportunities.html">Manage Opportunities</a>
+        <a href="/pages/admin/create-opportunity.html">Create Opportunity</a>
+        <a href="/pages/admin/review-applications.html">Review Applications</a>
+        <a href="/pages/admin/approve-hours.html">Approve Hours</a>
+        <a href="/pages/admin/volunteers.html">Volunteers</a>
+        <a href="/pages/admin/group-bookings.html">Group bookings</a>
+        <a href="/kiosk" target="_blank" rel="noopener">Kiosk mode</a>
+        <a data-admin-only href="/pages/admin/qualifications.html">Qualifications</a>
+        <a data-admin-only href="/pages/admin/custom-fields.html">Custom Fields</a>
+        <a data-admin-only href="/pages/admin/waivers.html">Waivers</a>
+        <a href="/pages/admin/feedback.html">Feedback</a>
+        <a data-admin-only href="/pages/admin/reports.html">Reports</a>
+        <a data-admin-only href="/pages/admin/audit-log.html">Audit log</a>
+        <a data-admin-only href="/pages/admin/privacy.html">Privacy / GDPR</a>
+      </aside>
+
+      <div class="dashboard-main">
+        <section>
+          <h1>Admin Dashboard</h1>
+        </section>
+
+        <section>
+          <div class="stats-grid" id="statsGrid">
+            <article class="stat-card">
+              <h3>Total Volunteers</h3>
+              <p id="totalVolunteers" class="stat-number">-</p>
+            </article>
+            <article class="stat-card">
+              <h3>Approved Volunteers</h3>
+              <p id="approvedVolunteers" class="stat-number">-</p>
+            </article>
+            <article class="stat-card">
+              <h3>Pending Applications</h3>
+              <p>
+                <span id="pendingApplications" class="stat-number">-</span>
+                <span id="pendingBadge" class="badge" style="display: none; margin-left: 0.5rem; background: #f44336; color: white; padding: 0.2rem 0.5rem; border-radius: 1rem; font-size: 0.8rem;"></span>
+              </p>
+            </article>
+            <article class="stat-card">
+              <h3>Active Opportunities</h3>
+              <p id="activeOpportunities" class="stat-number">-</p>
+            </article>
+            <article class="stat-card">
+              <h3>Hours This Month</h3>
+              <p id="hoursThisMonth" class="stat-number">-</p>
+            </article>
+            <article class="stat-card">
+              <h3>Total Hours All Time</h3>
+              <p id="totalHoursAllTime" class="stat-number">-</p>
+            </article>
+          </div>
+        </section>
+
+        <section>
+          <div class="grid" style="grid-template-columns: 1fr 1fr;">
+            <article>
+              <header>
+                <h3>Recent Applications</h3>
+              </header>
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Volunteer</th>
+                      <th>Opportunity</th>
+                      <th>Date</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recentApplicationsTable">
+                    <tr><td colspan="4">Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </article>
+            <article>
+              <header>
+                <h3>Recent Hour Submissions</h3>
+              </header>
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Volunteer</th>
+                      <th>Opportunity</th>
+                      <th>Date</th>
+                      <th>Hours</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recentHoursTable">
+                    <tr><td colspan="4">Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section data-admin-only>
+          <article>
+            <header>
+              <h3>Export Reports</h3>
+            </header>
+            <div class="grid" style="grid-template-columns: 1fr 1fr;">
+              <div>
+                <button id="exportVolunteersButton">Export All Volunteers</button>
+              </div>
+              <div>
+                <button id="exportHoursButton" class="secondary">Export All Hours</button>
+              </div>
+            </div>
+            <div class="grid" style="grid-template-columns: 1fr 1fr; margin-top: 0.75rem;">
+              <label for="hoursExportStartDate">
+                Start Date
+                <input type="date" id="hoursExportStartDate" name="hoursExportStartDate" />
+              </label>
+              <label for="hoursExportEndDate">
+                End Date
+                <input type="date" id="hoursExportEndDate" name="hoursExportEndDate" />
+              </label>
+            </div>
+          </article>
+        </section>
+
+        <section>
+          <header>
+            <h2>Quick Actions</h2>
+          </header>
+          <div id="quickActions" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <a href="/pages/admin/opportunities.html" role="button" class="contrast">Manage Opportunities</a>
+            <a href="/pages/admin/create-opportunity.html" role="button" class="contrast">Create Opportunity</a>
+            <a href="/pages/admin/review-applications.html" role="button" class="contrast">Review Applications</a>
+            <a href="/pages/admin/approve-hours.html" role="button" class="contrast">Approve Hours</a>
+            <a href="/pages/admin/volunteers.html" role="button" class="contrast">Manage Volunteers</a>
+            <a data-admin-only href="/pages/admin/reports.html" role="button" class="contrast">Open Reports</a>
+            <a data-admin-only href="/pages/admin/audit-log.html" role="button" class="contrast">Audit Log</a>
+            <a data-admin-only href="/pages/admin/privacy.html" role="button" class="contrast">Privacy / GDPR</a>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2025 ShelterLink</small>
+    </footer>
+
+    <script>
+      (() => {
+        const nav = document.querySelector('.site-nav');
+        const toggle = nav?.querySelector('.nav-toggle');
+        if (!nav || !toggle) return;
+        toggle.addEventListener('click', () => {
+          const open = nav.classList.toggle('nav-open');
+          toggle.setAttribute('aria-expanded', String(open));
+        });
+      })();
+    </script>
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/admin/dashboard.js"></script>
+  </body>
+</html>
+

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Open Volunteer Shifts | ShelterLink</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Public navigation">
+        <a class="site-brand" href="/index.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <ul class="nav-menu">
+          <li><a class="nav-link" href="/pages/opportunities.html" aria-current="page">Open shifts</a></li>
+          <li><a class="nav-link" href="/login.html">Log in</a></li>
+          <li><a class="nav-link" href="/register.html">Register</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section>
+        <h1>Open volunteer shifts</h1>
+        <p>Browse upcoming opportunities at Assisi Animal Sanctuary. Create an account to apply.</p>
+        <p>
+          <a href="/api/public/opportunities.ics">Subscribe via calendar (.ics)</a>
+          ·
+          <a href="/pages/group-booking.html">Request a group visit</a>
+        </p>
+      </section>
+      <section id="opportunitiesList">
+        <p>Loading open shifts...</p>
+      </section>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2025 ShelterLink</small>
+    </footer>
+
+    <script type="module" src="/js/public/opportunities.js"></script>
+  </body>
+</html>

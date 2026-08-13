@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Audit Log | ShelterLink Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Admin navigation">
+        <a class="site-brand" href="/index.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">☰</button>
+        <ul class="nav-menu" id="navMenu">
+          <li><a class="nav-link" href="/pages/admin/dashboard.html"><span>Dashboard</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/audit-log.html" aria-current="page"><span>Audit</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/privacy.html"><span>Privacy</span></a></li>
+          <li><button id="logoutButton" class="secondary">Logout</button></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section>
+        <h1>Audit log</h1>
+        <p>Mutating staff and admin actions recorded by the server.</p>
+      </section>
+
+      <section>
+        <form id="filterForm" class="grid" style="grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 1rem;">
+          <label>
+            Action
+            <input type="text" name="action" id="filterAction" placeholder="e.g. hours.approve" />
+          </label>
+          <label>
+            Entity type
+            <input type="text" name="entityType" id="filterEntityType" placeholder="e.g. volunteer" />
+          </label>
+          <label>
+            Actor user id
+            <input type="number" name="userId" id="filterUserId" min="1" />
+          </label>
+          <label>
+            From
+            <input type="date" name="from" id="filterFrom" />
+          </label>
+          <label>
+            To
+            <input type="date" name="to" id="filterTo" />
+          </label>
+          <div style="align-self: end;">
+            <button type="submit">Apply filters</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="message"></section>
+
+      <section class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>When</th>
+              <th>Actor</th>
+              <th>Action</th>
+              <th>Entity</th>
+              <th>Detail</th>
+            </tr>
+          </thead>
+          <tbody id="auditTableBody">
+            <tr><td colspan="5">Loading...</td></tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+
+    <script>
+      (() => {
+        const nav = document.querySelector('.site-nav');
+        const toggle = nav?.querySelector('.nav-toggle');
+        if (!nav || !toggle) return;
+        toggle.addEventListener('click', () => {
+          const open = nav.classList.toggle('nav-open');
+          toggle.setAttribute('aria-expanded', String(open));
+        });
+      })();
+    </script>
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/admin/audit-log.js"></script>
+  </body>
+</html>

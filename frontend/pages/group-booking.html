@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Request a Group Visit | ShelterLink</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Public navigation">
+        <a class="site-brand" href="/index.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <ul class="nav-menu">
+          <li><a class="nav-link" href="/pages/opportunities.html">Open shifts</a></li>
+          <li><a class="nav-link" href="/pages/group-booking.html" aria-current="page">Group booking</a></li>
+          <li><a class="nav-link" href="/login.html">Log in</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section>
+        <h1>Request a group visit</h1>
+        <p>
+          Companies and schools can request a group slot on an open opportunity.
+          Your group size is reserved only after an administrator confirms.
+        </p>
+        <div id="message" role="status" aria-live="polite"></div>
+      </section>
+
+      <section>
+        <form id="groupBookingForm">
+          <label for="opportunityId">
+            Opportunity
+            <select id="opportunityId" name="opportunity_id" required>
+              <option value="">Loading opportunities…</option>
+            </select>
+          </label>
+          <label for="groupName">
+            Group / organisation name
+            <input type="text" id="groupName" name="group_name" required maxlength="255" />
+          </label>
+          <label for="contactName">
+            Contact name
+            <input type="text" id="contactName" name="contact_name" required maxlength="255" />
+          </label>
+          <label for="contactEmail">
+            Contact email
+            <input type="email" id="contactEmail" name="contact_email" required maxlength="255" />
+          </label>
+          <label for="groupSize">
+            Group size
+            <input type="number" id="groupSize" name="size" min="1" step="1" required />
+          </label>
+          <label for="notes">
+            Notes (optional)
+            <textarea id="notes" name="notes" rows="3"></textarea>
+          </label>
+          <button type="submit">Submit request</button>
+        </form>
+      </section>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2025 ShelterLink</small>
+    </footer>
+
+    <script type="module" src="/js/public/group-booking.js"></script>
+  </body>
+</html>

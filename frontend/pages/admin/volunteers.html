@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Volunteer Directory | ShelterLink Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Admin navigation">
+        <a class="site-brand" href="/index.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">☰</button>
+        <ul class="nav-menu" id="navMenu">
+          <li><a class="nav-link" href="/pages/admin/dashboard.html"><span class="nav-icon" aria-hidden="true">&#8962;</span><span>Dashboard</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/opportunities.html"><span class="nav-icon" aria-hidden="true">&#128736;</span><span>Opportunities</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/create-opportunity.html"><span class="nav-icon" aria-hidden="true">&#10010;</span><span>Create</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/review-applications.html"><span class="nav-icon" aria-hidden="true">&#128221;</span><span>Applications</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/approve-hours.html"><span class="nav-icon" aria-hidden="true">&#9201;</span><span>Hours</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/volunteers.html" aria-current="page"><span class="nav-icon" aria-hidden="true">&#128101;</span><span>Volunteers</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/qualifications.html"><span class="nav-icon" aria-hidden="true">&#127891;</span><span>Qualifications</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/custom-fields.html"><span class="nav-icon" aria-hidden="true">&#128203;</span><span>Custom Fields</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/waivers.html"><span class="nav-icon" aria-hidden="true">&#128196;</span><span>Waivers</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/reports.html"><span class="nav-icon" aria-hidden="true">&#128202;</span><span>Reports</span></a></li>
+          <li><button id="logoutButton" class="secondary">Logout</button></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section>
+        <h1>Volunteer Directory</h1>
+      </section>
+
+      <!-- Filter Section -->
+      <section>
+        <div class="grid" style="grid-template-columns: 2fr 1fr; gap: 1rem;">
+          <label for="searchInput">
+            Search by name or email
+            <input type="text" id="searchInput" name="search" placeholder="Search volunteers..." />
+          </label>
+          <label for="statusFilter">
+            Filter by approval status
+            <select id="statusFilter" name="status">
+              <option value="all">All</option>
+              <option value="approved">Approved</option>
+              <option value="pending">Pending</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <!-- Volunteers Table -->
+      <section>
+        <div id="message" role="status" aria-live="polite"></div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Status</th>
+                <th>Total Hours</th>
+                <th>No-shows</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="volunteersTableBody">
+              <tr><td colspan="7">Loading volunteers...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <!-- Profile Modal -->
+    <dialog id="profileModal">
+      <article>
+        <header>
+          <strong>Volunteer Profile</strong>
+          <button aria-label="Close" rel="prev" id="closeModalButton" class="close"></button>
+        </header>
+        <div id="profileContent">
+          <p>Loading profile...</p>
+        </div>
+        <footer>
+          <button id="closeModalFooterButton" class="secondary button-secondary">Close</button>
+        </footer>
+      </article>
+    </dialog>
+
+    <!-- Award Qualification Modal -->
+    <dialog id="awardModal">
+      <article>
+        <header>
+          <strong>Award qualification</strong>
+          <button aria-label="Close" rel="prev" id="closeAwardModalButton" class="close"></button>
+        </header>
+        <form id="awardForm">
+          <input type="hidden" id="awardUserId" />
+          <p id="awardVolunteerName"></p>
+          <label for="awardQualificationId">
+            Qualification
+            <select id="awardQualificationId" required>
+              <option value="">Select...</option>
+            </select>
+          </label>
+          <label for="awardDate">
+            Awarded on
+            <input type="date" id="awardDate" required />
+          </label>
+          <p id="awardExpiryHint" class="secondary"></p>
+          <footer style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <button type="submit" id="awardSubmitButton">Award</button>
+            <button type="button" id="closeAwardModalFooterButton" class="secondary">Cancel</button>
+          </footer>
+        </form>
+      </article>
+    </dialog>
+
+    <footer class="container">
+      <small>&copy; 2025 ShelterLink</small>
+    </footer>
+
+    <script>
+      (() => {
+        const nav = document.querySelector('.site-nav');
+        const toggle = nav?.querySelector('.nav-toggle');
+        if (!nav || !toggle) return;
+        toggle.addEventListener('click', () => {
+          const open = nav.classList.toggle('nav-open');
+          toggle.setAttribute('aria-expanded', String(open));
+        });
+      })();
+    </script>
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/admin/volunteers.js"></script>
+  </body>
+</html>
+

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <title>Check-in Kiosk | ShelterLink</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <style>
+      :root {
+        --kiosk-bg: #0f2a1f;
+        --kiosk-panel: #163828;
+        --kiosk-accent: #7cb342;
+        --kiosk-text: #f4f7f5;
+      }
+      html, body {
+        height: 100%;
+        margin: 0;
+        background: radial-gradient(circle at top, #1d4d35, var(--kiosk-bg) 55%);
+        color: var(--kiosk-text);
+      }
+      body.kiosk-body {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      .kiosk-shell {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 1.25rem;
+        max-width: 1100px;
+        margin: 0 auto;
+        width: 100%;
+      }
+      .kiosk-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+      .kiosk-header h1 {
+        margin: 0;
+        font-size: clamp(1.8rem, 4vw, 2.6rem);
+        letter-spacing: 0.02em;
+      }
+      .kiosk-panel {
+        background: color-mix(in srgb, var(--kiosk-panel) 92%, black);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 1rem;
+        padding: 1.25rem;
+      }
+      .shift-list {
+        display: grid;
+        gap: 1rem;
+      }
+      .shift-card h2 {
+        margin: 0 0 0.35rem;
+        font-size: 1.35rem;
+      }
+      .volunteer-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 0.75rem;
+        margin-top: 0.75rem;
+      }
+      .volunteer-btn {
+        min-height: 4.5rem;
+        font-size: 1.1rem;
+        margin: 0;
+        background: #214f36;
+        border: 1px solid rgba(255,255,255,0.12);
+        color: var(--kiosk-text);
+      }
+      .volunteer-btn[data-state="checked_in"] {
+        background: #355f20;
+        border-color: var(--kiosk-accent);
+      }
+      .volunteer-btn[data-state="checked_out"] {
+        opacity: 0.55;
+      }
+      .code-form {
+        display: grid;
+        gap: 0.75rem;
+        max-width: 28rem;
+        margin: 1rem auto 0;
+      }
+      .code-form input {
+        font-size: 1.5rem;
+        letter-spacing: 0.2em;
+        text-align: center;
+        text-transform: uppercase;
+      }
+      .muted { opacity: 0.8; }
+      .hidden { display: none !important; }
+      #message { min-height: 1.5rem; }
+      #message .error { color: #ffb4a8; }
+      #message .success { color: #b9f6ca; }
+    </style>
+  </head>
+  <body class="kiosk-body">
+    <div class="kiosk-shell">
+      <header class="kiosk-header">
+        <div>
+          <h1>ShelterLink Kiosk</h1>
+          <p class="muted" id="clockLabel">Today&rsquo;s shifts</p>
+        </div>
+        <button type="button" id="lockButton" class="secondary hidden">Lock</button>
+      </header>
+
+      <div id="message" role="status" aria-live="polite"></div>
+
+      <section id="unlockPanel" class="kiosk-panel">
+        <h2>Staff unlock</h2>
+        <p class="muted">Sign in once to unlock this tablet for volunteer check-in.</p>
+        <form id="unlockForm" class="code-form">
+          <label>
+            Email
+            <input type="email" id="unlockEmail" required autocomplete="username" />
+          </label>
+          <label>
+            Password
+            <input type="password" id="unlockPassword" required autocomplete="current-password" />
+          </label>
+          <button type="submit">Unlock kiosk</button>
+        </form>
+      </section>
+
+      <section id="shiftsPanel" class="kiosk-panel hidden">
+        <div id="shiftsList" class="shift-list">
+          <p class="muted">Loading today&rsquo;s shifts…</p>
+        </div>
+      </section>
+
+      <section id="checkPanel" class="kiosk-panel hidden">
+        <button type="button" id="backToShifts" class="secondary">Back</button>
+        <h2 id="selectedVolunteerName">Volunteer</h2>
+        <p id="selectedShiftTitle" class="muted"></p>
+        <p id="checkActionHint"></p>
+        <form id="codeForm" class="code-form">
+          <label>
+            Shift check-in code
+            <input type="text" id="checkCode" maxlength="6" required autocomplete="off" inputmode="text" />
+          </label>
+          <button type="submit" id="submitCheck">Confirm</button>
+        </form>
+      </section>
+    </div>
+
+    <script type="module" src="/js/kiosk.js"></script>
+  </body>
+</html>

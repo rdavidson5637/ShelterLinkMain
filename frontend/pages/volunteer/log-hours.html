@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Log Hours | ShelterLink</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Volunteer navigation">
+        <a class="site-brand" href="/index.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">☰</button>
+        <ul class="nav-menu" id="navMenu">
+          <li><a class="nav-link" href="/pages/volunteer/dashboard.html"><span class="nav-icon" aria-hidden="true">&#8962;</span><span>Dashboard</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/calendar.html"><span class="nav-icon" aria-hidden="true">&#128197;</span><span>Calendar</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/browse-shifts.html"><span class="nav-icon" aria-hidden="true">&#128269;</span><span>Browse</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/my-applications.html"><span class="nav-icon" aria-hidden="true">&#128221;</span><span>Applications</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/log-hours.html" aria-current="page"><span class="nav-icon" aria-hidden="true">&#9201;</span><span>Log Hours</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/my-hours.html"><span class="nav-icon" aria-hidden="true">&#128202;</span><span>My Hours</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/complete-profile.html"><span class="nav-icon" aria-hidden="true">&#128100;</span><span>Profile</span></a></li>
+          <li><button id="logoutButton" class="secondary">Logout</button></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section>
+        <h1>Log Volunteer Hours</h1>
+        <p>Record your volunteer hours for approved opportunities.</p>
+      </section>
+
+      <div id="message" role="status" aria-live="polite"></div>
+
+      <section>
+        <form id="logHoursForm">
+          <div class="form-grid">
+            <div class="form-section form-full-width">
+              <label for="opportunityId">
+                Opportunity
+                <select id="opportunityId" name="opportunityId" required>
+                  <option value="" disabled selected>Select an opportunity</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="form-section">
+              <label for="date">
+                Date
+                <input type="date" id="date" name="date" max="" required />
+              </label>
+            </div>
+
+            <div class="form-section">
+              <label for="hours">
+                Hours
+                <input
+                  type="number"
+                  id="hours"
+                  name="hours"
+                  step="0.5"
+                  min="0.5"
+                  max="24"
+                  placeholder="0.5"
+                  required
+                />
+                <small>Enter hours between 0.5 and 24</small>
+              </label>
+            </div>
+          </div>
+
+          <button type="submit" id="submitButton">Log Hours</button>
+        </form>
+      </section>
+
+      <section id="recent-hours">
+        <h2>Recent Hours</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Opportunity</th>
+              <th>Hours</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="hoursTableBody">
+            <tr>
+              <td colspan="4">Loading...</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2025 ShelterLink</small>
+    </footer>
+
+    <script>
+      (() => {
+        const nav = document.querySelector('.site-nav');
+        const toggle = nav?.querySelector('.nav-toggle');
+        if (!nav || !toggle) return;
+        toggle.addEventListener('click', () => {
+          const open = nav.classList.toggle('nav-open');
+          toggle.setAttribute('aria-expanded', String(open));
+        });
+      })();
+    </script>
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/volunteer/log-hours.js"></script>
+  </body>
+</html>
+
+

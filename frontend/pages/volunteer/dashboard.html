@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Volunteer Dashboard | ShelterLink</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Volunteer navigation">
+        <a class="site-brand" href="/index.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">☰</button>
+        <ul class="nav-menu" id="navMenu">
+          <li><a class="nav-link" href="/pages/volunteer/dashboard.html" aria-current="page"><span class="nav-icon" aria-hidden="true">&#8962;</span><span>Dashboard</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/calendar.html"><span class="nav-icon" aria-hidden="true">&#128197;</span><span>Calendar</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/browse-shifts.html"><span class="nav-icon" aria-hidden="true">&#128269;</span><span>Browse</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/my-applications.html"><span class="nav-icon" aria-hidden="true">&#128221;</span><span>Applications</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/log-hours.html"><span class="nav-icon" aria-hidden="true">&#9201;</span><span>Log Hours</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/my-hours.html"><span class="nav-icon" aria-hidden="true">&#128202;</span><span>My Hours</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/complete-profile.html"><span class="nav-icon" aria-hidden="true">&#128100;</span><span>Profile</span></a></li>
+          <li><button id="logoutButton" class="secondary">Logout</button></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="container dashboard-layout">
+      <aside class="sidebar-nav" aria-label="Volunteer dashboard links">
+        <h3>Volunteer</h3>
+        <a href="/pages/volunteer/dashboard.html" aria-current="page">Dashboard</a>
+        <a href="/pages/volunteer/calendar.html">Calendar</a>
+        <a href="/pages/volunteer/browse-shifts.html">Browse Shifts</a>
+        <a href="/pages/volunteer/my-applications.html">My Applications</a>
+        <a href="/pages/volunteer/log-hours.html">Log Hours</a>
+        <a href="/pages/volunteer/my-hours.html">My Hours</a>
+        <a href="/pages/volunteer/complete-profile.html">My Profile</a>
+      </aside>
+
+      <div class="dashboard-main">
+        <section>
+          <h1>Welcome, <span id="userName">Volunteer</span>!</h1>
+          <p>Stay up to date with your volunteer status, upcoming shifts, and recent activity.</p>
+        </section>
+
+        <section class="stats-grid">
+          <article class="stat-card">
+            <strong>Profile Status</strong>
+            <p id="profileStatus">Checking your profile status...</p>
+          </article>
+          <article class="stat-card">
+            <strong>Total Hours</strong>
+            <p id="totalHours" class="stat-value">0</p>
+          </article>
+          <article class="stat-card">
+            <strong>Shifts completed</strong>
+            <p id="shiftsCompleted" class="stat-value">0</p>
+          </article>
+          <article class="stat-card">
+            <strong>Current streak</strong>
+            <p id="currentStreak" class="stat-value">0</p>
+            <small>consecutive months</small>
+          </article>
+        </section>
+
+        <section>
+          <article class="stat-card" id="communityServiceCard" hidden>
+            <strong>Community service progress</strong>
+            <p id="communityServiceDetails">Loading…</p>
+            <progress id="communityServiceProgress" max="100" value="0"></progress>
+          </article>
+        </section>
+
+        <section>
+          <article class="stat-card">
+            <strong>Badges</strong>
+            <div id="badgesList"></div>
+            <p id="nextBadgeProgress">Loading badge progress...</p>
+          </article>
+        </section>
+
+        <section>
+          <article class="stat-card">
+            <strong>Share my impact</strong>
+            <p>Download a branded summary of your volunteering.</p>
+            <canvas id="impactCanvas" width="800" height="420" style="max-width:100%;border:1px solid #ddd;"></canvas>
+            <p style="margin-top:0.75rem;">
+              <button type="button" id="downloadImpactButton" class="secondary">Download image</button>
+            </p>
+          </article>
+        </section>
+
+        <section>
+          <article class="stat-card" id="nextShiftCard">
+            <strong>Next shift</strong>
+            <p id="nextShiftDetails">Loading your next shift...</p>
+          </article>
+          <article class="stat-card">
+            <strong>Recommended for you</strong>
+            <div id="recommendedDetails">Loading recommendations...</div>
+          </article>
+          <article class="stat-card">
+            <strong>My qualifications</strong>
+            <div id="myQualificationsDetails">Loading your qualifications...</div>
+          </article>
+          <article class="stat-card">
+            <strong>My documents</strong>
+            <div id="myDocumentsDetails">Loading your documents...</div>
+            <form id="documentUploadForm" style="margin-top:0.75rem;">
+              <label for="documentFile">
+                Upload PDF, JPG, or PNG (max 5MB)
+                <input type="file" id="documentFile" name="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" required />
+              </label>
+              <label for="documentLabel">
+                Label (optional)
+                <input type="text" id="documentLabel" name="label" maxlength="255" placeholder="e.g. Reference letter" />
+              </label>
+              <button type="submit" id="documentUploadButton" class="secondary button-small">Upload</button>
+            </form>
+            <p id="documentUploadMessage" role="status" aria-live="polite"></p>
+          </article>
+          <article class="stat-card">
+            <strong>Calendar feed</strong>
+            <p id="icalFeedDetails">Loading subscribe URL...</p>
+            <button type="button" id="copyIcalButton" class="secondary button-small">Copy subscribe URL</button>
+          </article>
+        </section>
+
+        <section>
+          <h2>Quick Actions</h2>
+          <div class="grid">
+            <a href="/pages/volunteer/calendar.html" role="button">Calendar</a>
+            <button id="browseShiftsButton">Browse Shifts</button>
+            <button id="logHoursButton" class="secondary">Log Hours</button>
+            <button id="exportHoursCsvButton" class="secondary">Export My Hours CSV</button>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2025 ShelterLink</small>
+    </footer>
+
+    <script>
+      (() => {
+        const nav = document.querySelector('.site-nav');
+        const toggle = nav?.querySelector('.nav-toggle');
+        if (!nav || !toggle) return;
+        toggle.addEventListener('click', () => {
+          const open = nav.classList.toggle('nav-open');
+          toggle.setAttribute('aria-expanded', String(open));
+        });
+      })();
+    </script>
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/volunteer/dashboard.js"></script>
+  </body>
+</html>
+
+
+

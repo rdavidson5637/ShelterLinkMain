@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy / GDPR | ShelterLink Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Admin navigation">
+        <a class="site-brand" href="/index.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">☰</button>
+        <ul class="nav-menu" id="navMenu">
+          <li><a class="nav-link" href="/pages/admin/dashboard.html"><span>Dashboard</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/audit-log.html"><span>Audit</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/privacy.html" aria-current="page"><span>Privacy</span></a></li>
+          <li><button id="logoutButton" class="secondary">Logout</button></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section>
+        <h1>Privacy &amp; GDPR tools</h1>
+        <p>Export or erase volunteer personal data. Erasure anonymises the account and keeps approved hour totals for aggregates.</p>
+      </section>
+
+      <section id="message"></section>
+
+      <section>
+        <article>
+          <header><h2>Per-volunteer tools</h2></header>
+          <p>Open a volunteer from the <a href="/pages/admin/volunteers.html">directory</a> to export JSON or erase, or use a user id here.</p>
+          <div class="grid" style="grid-template-columns: 1fr auto auto; gap: 1rem; align-items: end;">
+            <label>
+              Volunteer user id
+              <input type="number" id="volunteerUserId" min="1" required />
+            </label>
+            <button type="button" id="exportBtn" class="secondary">Export JSON</button>
+            <button type="button" id="eraseBtn" class="contrast">Erase (type DELETE)</button>
+          </div>
+        </article>
+      </section>
+
+      <section>
+        <article>
+          <header><h2>Data retention</h2></header>
+          <p>
+            Anonymise volunteer accounts inactive for <code>DATA_RETENTION_YEARS</code> (default 3).
+            A daily job also runs this automatically.
+          </p>
+          <button type="button" id="retentionBtn">Run retention now</button>
+          <pre id="retentionResult" style="margin-top: 1rem; white-space: pre-wrap;"></pre>
+        </article>
+      </section>
+    </main>
+
+    <script>
+      (() => {
+        const nav = document.querySelector('.site-nav');
+        const toggle = nav?.querySelector('.nav-toggle');
+        if (!nav || !toggle) return;
+        toggle.addEventListener('click', () => {
+          const open = nav.classList.toggle('nav-open');
+          toggle.setAttribute('aria-expanded', String(open));
+        });
+      })();
+    </script>
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/admin/privacy.js"></script>
+  </body>
+</html>

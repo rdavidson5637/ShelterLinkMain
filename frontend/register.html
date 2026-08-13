@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Create Account | ShelterLink</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Main navigation">
+        <a class="site-brand" href="/index.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">☰</button>
+        <ul class="nav-menu" id="navMenu">
+          <li><a class="nav-link" href="/login.html"><span class="nav-icon" aria-hidden="true">&#128274;</span><span>Login</span></a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="container">
+      <article class="auth-card">
+        <h1>Create an Account</h1>
+        <p>Join ShelterLink to connect with shelter opportunities.</p>
+
+        <div id="message"></div>
+
+        <form id="registerForm">
+          <div class="form-grid">
+            <div class="form-section">
+              <div class="form-grid">
+                <label for="first_name">
+                  First Name
+                  <input type="text" id="first_name" name="first_name" required />
+                </label>
+
+                <label for="last_name">
+                  Last Name
+                  <input type="text" id="last_name" name="last_name" required />
+                </label>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <div class="form-grid">
+                <label for="email">
+                  Email Address
+                  <input type="email" id="email" name="email" required />
+                </label>
+
+                <label for="phone">
+                  Phone Number
+                  <input type="tel" id="phone" name="phone" required />
+                </label>
+              </div>
+            </div>
+
+            <div class="form-section form-full-width">
+              <div class="form-grid">
+                <label for="password">
+                  Password
+                  <input type="password" id="password" name="password" required minlength="8" />
+                </label>
+
+                <label for="confirm_password">
+                  Confirm Password
+                  <input type="password" id="confirm_password" name="confirm_password" required minlength="8" />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit">Create Account</button>
+        </form>
+      </article>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2025 ShelterLink</small>
+    </footer>
+
+    <script>
+      (() => {
+        const nav = document.querySelector('.site-nav');
+        const toggle = nav?.querySelector('.nav-toggle');
+        if (!nav || !toggle) return;
+        toggle.addEventListener('click', () => {
+          const open = nav.classList.toggle('nav-open');
+          toggle.setAttribute('aria-expanded', String(open));
+        });
+      })();
+    </script>
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/register.js"></script>
+  </body>
+</html>
+

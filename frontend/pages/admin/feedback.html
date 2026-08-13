@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Shift Feedback | ShelterLink Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+    <style>
+      tr.concern-open {
+        background: rgba(180, 60, 40, 0.08);
+      }
+      tr.concern-open td:first-child {
+        box-shadow: inset 4px 0 0 #b43c28;
+      }
+      .avg-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .avg-list li {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.35rem 0;
+        border-bottom: 1px solid var(--pico-muted-border-color, #ddd);
+      }
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Admin navigation">
+        <a class="site-brand" href="/index.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">☰</button>
+        <ul class="nav-menu" id="navMenu">
+          <li><a class="nav-link" href="/pages/admin/dashboard.html"><span class="nav-icon" aria-hidden="true">&#8962;</span><span>Dashboard</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/opportunities.html"><span class="nav-icon" aria-hidden="true">&#128736;</span><span>Opportunities</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/volunteers.html"><span class="nav-icon" aria-hidden="true">&#128101;</span><span>Volunteers</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/feedback.html" aria-current="page"><span class="nav-icon" aria-hidden="true">&#9733;</span><span>Feedback</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/messages.html"><span class="nav-icon" aria-hidden="true">&#9993;</span><span>Messages</span></a></li>
+          <li><a class="nav-link" href="/pages/admin/reports.html"><span class="nav-icon" aria-hidden="true">&#128202;</span><span>Reports</span></a></li>
+          <li><button id="logoutButton" class="secondary">Logout</button></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section>
+        <h1>Shift feedback</h1>
+        <p>Ratings and concerns from volunteers after their shifts.</p>
+        <div id="message" role="status" aria-live="polite"></div>
+      </section>
+
+      <section class="grid">
+        <article>
+          <header><strong>Overall average</strong></header>
+          <p id="overallAverage" class="stat-value" style="font-size: 2rem; font-weight: bold;">—</p>
+          <p id="overallCount" class="muted">0 ratings</p>
+        </article>
+        <article>
+          <header><strong>By opportunity</strong></header>
+          <ul class="avg-list" id="byOpportunityList">
+            <li>Loading…</li>
+          </ul>
+        </article>
+      </section>
+
+      <section>
+        <h2>Filters</h2>
+        <form id="filtersForm">
+          <div class="form-grid">
+            <label>
+              Opportunity ID
+              <input type="number" id="filterOpportunityId" min="1" />
+            </label>
+            <label>
+              Min rating
+              <select id="filterMinRating">
+                <option value="">Any</option>
+                <option value="1">1+</option>
+                <option value="2">2+</option>
+                <option value="3">3+</option>
+                <option value="4">4+</option>
+                <option value="5">5</option>
+              </select>
+            </label>
+            <label>
+              Concerns
+              <select id="filterFlagConcern">
+                <option value="">Any</option>
+                <option value="true">Flagged only</option>
+                <option value="false">Not flagged</option>
+              </select>
+            </label>
+            <label>
+              Handled
+              <select id="filterHandled">
+                <option value="">Any</option>
+                <option value="false">Open concerns</option>
+                <option value="true">Handled</option>
+              </select>
+            </label>
+          </div>
+          <button type="submit">Apply filters</button>
+          <button type="button" id="clearFiltersButton" class="secondary">Clear</button>
+        </form>
+      </section>
+
+      <section>
+        <h2>Feedback list</h2>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>Volunteer</th>
+                <th>Opportunity</th>
+                <th>Rating</th>
+                <th>Comment</th>
+                <th>Concern</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="feedbackTableBody">
+              <tr><td colspan="7">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2025 ShelterLink</small>
+    </footer>
+
+    <script>
+      (() => {
+        const nav = document.querySelector('.site-nav');
+        const toggle = nav?.querySelector('.nav-toggle');
+        if (!nav || !toggle) return;
+        toggle.addEventListener('click', () => {
+          const open = nav.classList.toggle('nav-open');
+          toggle.setAttribute('aria-expanded', String(open));
+        });
+      })();
+    </script>
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/admin/feedback.js"></script>
+  </body>
+</html>

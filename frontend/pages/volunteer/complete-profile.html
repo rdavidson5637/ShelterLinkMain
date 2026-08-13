@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Complete Volunteer Profile | ShelterLink</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Volunteer navigation">
+        <a class="site-brand" href="/index.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">☰</button>
+        <ul class="nav-menu" id="navMenu">
+          <li><a class="nav-link" href="/pages/volunteer/dashboard.html"><span class="nav-icon" aria-hidden="true">&#8962;</span><span>Dashboard</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/calendar.html"><span class="nav-icon" aria-hidden="true">&#128197;</span><span>Calendar</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/browse-shifts.html"><span class="nav-icon" aria-hidden="true">&#128269;</span><span>Browse</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/my-applications.html"><span class="nav-icon" aria-hidden="true">&#128221;</span><span>Applications</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/log-hours.html"><span class="nav-icon" aria-hidden="true">&#9201;</span><span>Log Hours</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/my-hours.html"><span class="nav-icon" aria-hidden="true">&#128202;</span><span>My Hours</span></a></li>
+          <li><a class="nav-link" href="/pages/volunteer/complete-profile.html" aria-current="page"><span class="nav-icon" aria-hidden="true">&#128100;</span><span>Profile</span></a></li>
+          <li><button id="logoutButton" class="secondary">Logout</button></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="container">
+      <article style="max-width: 720px; margin: 0 auto;">
+        <h1>Complete Your Volunteer Profile</h1>
+        <p>Provide your availability and emergency contact details to get started.</p>
+
+        <div id="message" role="status" aria-live="polite"></div>
+
+        <form id="profileForm">
+          <div class="form-grid">
+            <div class="form-section">
+              <label for="date_of_birth">
+                Date of Birth
+                <input type="date" id="date_of_birth" name="date_of_birth" required />
+              </label>
+            </div>
+
+            <div class="form-section">
+              <label for="emergency_contact">
+                Emergency Contact
+                <input type="text" id="emergency_contact" name="emergency_contact" required placeholder="Name and phone number" />
+              </label>
+            </div>
+
+            <div class="form-section form-full-width">
+              <label for="address">
+                Address
+                <textarea id="address" name="address" rows="3" required></textarea>
+              </label>
+            </div>
+
+            <div class="form-section form-full-width">
+              <label for="skills">
+                Relevant Skills
+                <textarea
+                  id="skills"
+                  name="skills"
+                  rows="3"
+                  placeholder="e.g., Dog walking, cleaning, feeding"
+                ></textarea>
+              </label>
+            </div>
+
+            <div class="form-section form-full-width">
+              <label for="availability">
+                Availability
+                <select id="availability" name="availability" required>
+                  <option value="" disabled selected>Select your availability</option>
+                  <option value="Weekdays">Weekdays</option>
+                  <option value="Weekends">Weekends</option>
+                  <option value="Evenings">Evenings</option>
+                  <option value="Flexible">Flexible</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="form-section form-full-width">
+              <span>Interest tags</span>
+              <div id="interestTags" class="tag-chips" aria-label="Interest tags"></div>
+              <small>Select areas you care about — we will recommend matching shifts.</small>
+              <p style="margin-top:0.5rem;">
+                <button type="button" id="saveInterestsButton" class="secondary" hidden>Save interests</button>
+              </p>
+            </div>
+          </div>
+
+          <div id="customFieldsContainer" class="form-grid" hidden></div>
+
+          <button type="submit" id="submitButton">Complete Profile</button>
+        </form>
+      </article>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2025 ShelterLink &mdash; Assisi Animal Sanctuary</small>
+    </footer>
+
+    <script>
+      (() => {
+        const nav = document.querySelector('.site-nav');
+        const toggle = nav?.querySelector('.nav-toggle');
+        if (!nav || !toggle) return;
+        toggle.addEventListener('click', () => {
+          const open = nav.classList.toggle('nav-open');
+          toggle.setAttribute('aria-expanded', String(open));
+        });
+      })();
+    </script>
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/volunteer/complete-profile.js"></script>
+    <script type="module">
+      import { logout } from '/js/auth.js';
+      const logoutButton = document.getElementById('logoutButton');
+      if (logoutButton) {
+        logoutButton.addEventListener('click', (e) => {
+          e.preventDefault();
+          logout();
+        });
+      }
+    </script>
+  </body>
+</html>
