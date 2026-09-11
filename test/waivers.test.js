@@ -2,9 +2,6 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
-const path = require('path');
-const fs = require('fs');
-const os = require('os');
 
 process.env.NODE_ENV = 'test';
 
@@ -37,8 +34,8 @@ function makeRes() {
   const res = {
     statusCode: 200,
     body: undefined,
-    downloadPath: null,
-    downloadName: null,
+    sent: null,
+    headers: {},
   };
   res.status = (c) => {
     res.statusCode = c;
@@ -48,9 +45,12 @@ function makeRes() {
     res.body = b;
     return res;
   };
-  res.download = (filePath, name) => {
-    res.downloadPath = filePath;
-    res.downloadName = name;
+  res.setHeader = (k, v) => {
+    res.headers[k.toLowerCase()] = v;
+    return res;
+  };
+  res.send = (b) => {
+    res.sent = b;
     return res;
   };
   return res;
@@ -179,23 +179,27 @@ test('isAllowedMime only allows pdf/jpg/png', () => {
   assert.strictEqual(UserDocument.isAllowedMime('application/zip'), false);
 });
 
-test('download route enforces ownership', async () => {
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sl-docs-'));
-  process.env.UPLOAD_DIR = tmpDir;
-  const storedName = 'secretdoc.pdf';
-  const filePath = path.join(tmpDir, storedName);
-  fs.writeFileSync(filePath, 'pdf-bytes');
+test('download route enforces ownership and streams bytes from the database', async () => {
+  const pdfBytes = Buffer.from('%PDF-1.4 pretend pdf bytes');
 
   mock.resetCalls();
   mock.setHandler(async (sql) => {
+    if (/SELECT\s+content/i.test(sql) && /FROM user_documents/i.test(sql)) {
+      return [[{
+        content: pdfBytes,
+        mime_type: 'application/pdf',
+        original_name: 'id.pdf',
+        filename: 'abc123.pdf',
+      }]];
+    }
     if (/FROM user_documents WHERE id/i.test(sql)) {
       return [[{
         id: 9,
         user_id: 2,
-        filename: storedName,
+        filename: 'abc123.pdf',
         original_name: 'id.pdf',
         mime_type: 'application/pdf',
-        size: 9,
+        size: pdfBytes.length,
         uploaded_at: new Date(),
         expires_at: null,
         label: null,
@@ -211,6 +215,7 @@ test('download route enforces ownership', async () => {
     forbiddenRes
   );
   assert.strictEqual(forbiddenRes.statusCode, 403);
+  assert.strictEqual(forbiddenRes.sent, null);
 
   // Owner can download
   const ownerRes = makeRes();
@@ -219,8 +224,10 @@ test('download route enforces ownership', async () => {
     ownerRes
   );
   assert.strictEqual(ownerRes.statusCode, 200);
-  assert.strictEqual(ownerRes.downloadPath, filePath);
-  assert.strictEqual(ownerRes.downloadName, 'id.pdf');
+  assert.ok(Buffer.isBuffer(ownerRes.sent));
+  assert.strictEqual(ownerRes.sent.toString(), pdfBytes.toString());
+  assert.strictEqual(ownerRes.headers['content-type'], 'application/pdf');
+  assert.match(ownerRes.headers['content-disposition'], /filename="id\.pdf"/);
 
   // Admin can download
   const adminRes = makeRes();
@@ -228,10 +235,43 @@ test('download route enforces ownership', async () => {
     makeReq({ session: { userId: 1, role: 'admin' }, params: { id: 9 } }),
     adminRes
   );
-  assert.ok(adminRes.downloadPath);
+  assert.ok(Buffer.isBuffer(adminRes.sent));
+});
 
-  try {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
-  } catch (_) {}
-  delete process.env.UPLOAD_DIR;
+test('upload stores file content in the database', async () => {
+  mock.resetCalls();
+  let insertParams = null;
+  mock.setHandler(async (sql, params) => {
+    if (/INSERT INTO user_documents/i.test(sql)) {
+      insertParams = params;
+      return [{ insertId: 42 }];
+    }
+    if (/FROM user_documents WHERE id/i.test(sql)) {
+      return [[{ id: 42, user_id: 2, filename: 'x', original_name: 'ref.pdf',
+        mime_type: 'application/pdf', size: 4, uploaded_at: new Date(),
+        expires_at: null, label: null }]];
+    }
+    return [[]];
+  });
+
+  const res = makeRes();
+  await docCtrl.uploadDocument(
+    makeReq({
+      session: { userId: 2, role: 'volunteer' },
+      file: {
+        buffer: Buffer.from('%PDF'),
+        originalname: 'ref.pdf',
+        mimetype: 'application/pdf',
+        size: 4,
+      },
+      body: {},
+    }),
+    res
+  );
+
+  assert.strictEqual(res.statusCode, 201);
+  assert.ok(insertParams, 'INSERT INTO user_documents ran');
+  const contentParam = insertParams.find((p) => Buffer.isBuffer(p));
+  assert.ok(contentParam, 'file bytes were passed as a bind parameter');
+  assert.strictEqual(contentParam.toString(), '%PDF');
 });

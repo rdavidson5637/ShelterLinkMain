@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Week sheet - ShelterLink</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+    <style>
+      .week-sheet-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: end;
+        margin-bottom: 1.5rem;
+      }
+      .week-sheet-day {
+        margin-bottom: 2rem;
+      }
+      .week-sheet-day h2 {
+        border-bottom: 1px solid #ccc;
+        padding-bottom: 0.35rem;
+        margin-bottom: 1rem;
+      }
+      .week-sheet-shift {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px dashed #ddd;
+      }
+      .week-sheet-shift:last-child {
+        border-bottom: none;
+      }
+      .week-sheet-meta {
+        color: #444;
+        margin-bottom: 0.5rem;
+      }
+      .week-sheet-animals {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin: 0.5rem 0 0.75rem;
+        list-style: none;
+        padding: 0;
+      }
+      .week-sheet-animals li {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .animal-thumb {
+        width: 2.5rem;
+        height: 2.5rem;
+        object-fit: cover;
+        border-radius: 4px;
+      }
+      @media print {
+        .site-header,
+        .sidebar-nav,
+        .week-sheet-toolbar,
+        .nav-toggle,
+        #logoutButton,
+        footer,
+        .no-print {
+          display: none !important;
+        }
+        body {
+          background: #fff;
+        }
+        main.container,
+        .dashboard-layout,
+        .dashboard-main {
+          display: block;
+          max-width: none;
+          margin: 0;
+          padding: 0;
+        }
+        .week-sheet-day {
+          page-break-after: always;
+        }
+        .week-sheet-day:last-child {
+          page-break-after: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Account">
+        <a class="site-brand" href="/pages/admin/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" aria-label="Toggle navigation">Menu</button>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main class="container dashboard-layout">
+      <aside id="admin-nav" class="sidebar-nav"></aside>
+      <div class="dashboard-main">
+        <section>
+          <h1>Week sheet</h1>
+          <p>Printable week roster — shifts grouped by day with accepted volunteers and contact numbers.</p>
+          <div id="message" role="status" aria-live="polite"></div>
+        </section>
+
+        <section class="week-sheet-toolbar no-print">
+          <label for="weekStart">
+            Week starting (Monday)
+            <input type="date" id="weekStart" />
+          </label>
+          <button type="button" id="loadButton">Load</button>
+          <button type="button" id="printButton" class="secondary">Print</button>
+          <a id="icsDownload" href="#" role="button" class="secondary">Download .ics</a>
+        </section>
+
+        <section id="weekSheetContent" aria-live="polite">
+          <p>Pick a Monday and load the week roster.</p>
+        </section>
+      </div>
+    </main>
+
+    <footer class="container">
+      <small>&copy; <span data-footer-year></span> ShelterLink</small>
+    </footer>
+
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/admin/week-sheet.js"></script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+    <script type="module" src="/js/components/adminNav.js"></script>
+  </body>
+</html>

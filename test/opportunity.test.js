@@ -13,12 +13,13 @@ test('create inserts all columns with created_by and default status', async () =
   const opp = await Opportunity.create({ title: 'Dog Walk', created_by: 1 });
   assert.strictEqual(opp.id, 42, 'maps opportunity_id -> id');
   const insert = mock.calls.find(c => /INSERT INTO/i.test(c.sql));
-  assert.strictEqual(insert.params.length, 14, 'fourteen bound params');
+  assert.strictEqual(insert.params.length, 15, 'fifteen bound params including background check type');
   assert.strictEqual(insert.params[7], 'open', 'defaults status to open');
   assert.strictEqual(insert.params[8], 1, 'created_by preserved');
   assert.strictEqual(insert.params[9], 'none', 'defaults recurrence_rule to none');
   assert.ok(insert.params[12], 'generates check_in_code');
   assert.strictEqual(insert.params[13], 24, 'defaults cancellation_cutoff_hours to 24');
+  assert.strictEqual(insert.params[14], null, 'defaults required_background_check_type to null');
 });
 
 test('update only allows whitelisted fields and builds SET clause', async () => {
@@ -29,8 +30,8 @@ test('update only allows whitelisted fields and builds SET clause', async () => 
   });
   await Opportunity.update(7, { title: 'New', hacker_field: 'DROP', max_volunteers: 5 });
   const upd = mock.calls.find(c => /UPDATE/i.test(c.sql));
-  assert.match(upd.sql, /`title` = \?/);
-  assert.match(upd.sql, /`max_volunteers` = \?/);
+  assert.match(upd.sql, /title = \?/);
+  assert.match(upd.sql, /max_volunteers = \?/);
   assert.doesNotMatch(upd.sql, /hacker_field/, 'unknown field rejected');
   assert.deepStrictEqual(upd.params, ['New', 5, 7]);
 });

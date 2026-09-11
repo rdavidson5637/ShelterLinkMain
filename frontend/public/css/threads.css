@@ -1,0 +1,161 @@
+/* Threaded messaging layout */
+
+.threads-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 320px) 1fr;
+  gap: 1rem;
+  align-items: stretch;
+  min-height: 28rem;
+}
+
+@media (max-width: 720px) {
+  .threads-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.threads-list-panel,
+.threads-detail-panel {
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 8px;
+  padding: 0.75rem;
+  background: var(--card-background-color, #fff);
+}
+
+.threads-panel-heading {
+  font-size: 1rem;
+  margin: 0 0 0.75rem;
+}
+
+.threads-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: 32rem;
+  overflow: auto;
+}
+
+.thread-list-item {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.65rem 0.75rem;
+  margin: 0;
+  width: 100%;
+  border: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+}
+
+.thread-list-item.is-active,
+.thread-list-item:hover {
+  border-color: var(--primary, #0172ad);
+  background: rgba(1, 114, 173, 0.06);
+}
+
+.thread-list-title {
+  font-weight: 600;
+}
+
+.thread-list-meta {
+  font-size: 0.85rem;
+  color: var(--text-muted, #666);
+}
+
+.threads-empty,
+.threads-empty-inline {
+  color: var(--text-muted, #666);
+}
+
+.thread-view-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.thread-view-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.threads-meta {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  color: var(--text-muted, #666);
+}
+
+.thread-participants {
+  font-size: 0.9rem;
+  margin-bottom: 0.75rem;
+  color: var(--text-muted, #555);
+}
+
+.messages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 22rem;
+  overflow: auto;
+  padding: 0.5rem 0;
+  margin-bottom: 0.75rem;
+}
+
+.message-bubble {
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #e2e2e2);
+  background: #fafafa;
+}
+
+.message-bubble.is-deleted {
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.message-bubble header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  margin-bottom: 0.35rem;
+}
+
+.message-bubble p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.message-delete {
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.85rem;
+}
+
+.compose-form textarea {
+  margin-bottom: 0.5rem;
+}
+
+.announcement-form-section {
+  margin-bottom: 1rem;
+}
+
+.announcement-form {
+  margin-top: 0.75rem;
+}
+
+.nav-unread-badge {
+  display: inline-block;
+  min-width: 1.25rem;
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  background: #c62828;
+  color: #fff;
+  vertical-align: middle;
+}

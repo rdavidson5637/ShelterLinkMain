@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Transport - ShelterLink</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Volunteer navigation">
+        <a class="site-brand" href="/pages/volunteer/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">Menu</button>
+        <ul class="nav-menu" id="navMenu" data-volunteer-nav></ul>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section>
+        <h1>Transport</h1>
+        <p>Claim open legs on animal transport relays. Handovers are coordinated through the shelter — never contact other drivers directly.</p>
+        <div id="message" role="status" aria-live="polite"></div>
+        <article class="status-banner">
+          <p><strong>Coordination:</strong> Use the transport message thread or contact the shelter office. Other drivers’ phone numbers and emails are never shared.</p>
+        </article>
+      </section>
+
+      <section>
+        <h2>Open legs</h2>
+        <div id="openLegsList">Loading…</div>
+      </section>
+
+      <section>
+        <h2>My claimed legs</h2>
+        <div id="myLegsList">Loading…</div>
+      </section>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2025 ShelterLink : Assisi Animal Sanctuary</small>
+    </footer>
+
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/volunteer/transport.js"></script>
+    <script type="module">
+      import { logout } from '/js/auth.js';
+      const logoutButton = document.getElementById('logoutButton');
+      if (logoutButton) {
+        logoutButton.addEventListener('click', (e) => {
+          e.preventDefault();
+          logout();
+        });
+      }
+    </script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+    <script type="module" src="/js/components/volunteerNav.js"></script>
+  </body>
+</html>

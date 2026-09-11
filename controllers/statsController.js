@@ -18,7 +18,7 @@ function isAdmin(req) {
 async function getApprovedHourMonths(userId) {
   const [rows] = await pool.execute(
     `
-      SELECT DISTINCT DATE_FORMAT(date, '%Y-%m') AS ym
+      SELECT DISTINCT TO_CHAR(date, 'YYYY-MM') AS ym
       FROM volunteer_hours
       WHERE user_id = ?
         AND approved = 1
@@ -66,8 +66,8 @@ async function getAdminStats(req, res) {
       `SELECT COALESCE(SUM(hours), 0) AS total_hours 
        FROM volunteer_hours 
        WHERE approved = 1
-         AND MONTH(date) = MONTH(CURRENT_DATE) 
-         AND YEAR(date) = YEAR(CURRENT_DATE)`
+         AND EXTRACT(MONTH FROM date)::int = EXTRACT(MONTH FROM CURRENT_DATE)::int
+         AND EXTRACT(YEAR FROM date)::int = EXTRACT(YEAR FROM CURRENT_DATE)::int`
     );
     const totalHoursThisMonth = monthHoursResult[0]?.total_hours || 0;
 
@@ -143,7 +143,7 @@ async function getLeaderboard(req, res) {
         FROM volunteer_hours vh
         INNER JOIN users u ON u.user_id = vh.user_id
         WHERE vh.approved = 1
-          AND YEAR(vh.date) = ?
+          AND EXTRACT(YEAR FROM vh.date)::int = ?
         GROUP BY u.user_id, u.first_name, u.last_name, u.name
         ORDER BY total_hours DESC
         LIMIT 10
@@ -174,11 +174,11 @@ async function getMonthlyHoursChart(req, res) {
     const year = Number(req.query.year) || new Date().getFullYear();
     const [rows] = await pool.execute(
       `
-        SELECT MONTH(date) AS month, COALESCE(SUM(hours), 0) AS total_hours
+        SELECT EXTRACT(MONTH FROM date)::int AS month, COALESCE(SUM(hours), 0) AS total_hours
         FROM volunteer_hours
         WHERE approved = 1
-          AND YEAR(date) = ?
-        GROUP BY MONTH(date)
+          AND EXTRACT(YEAR FROM date)::int = ?
+        GROUP BY EXTRACT(MONTH FROM date)::int
         ORDER BY month ASC
       `,
       [year]

@@ -4,6 +4,7 @@ const { auditMutations } = require('../middleware/auditLog');
 const { messageLimiter } = require('../middleware/rateLimiter');
 const { getAdminStats, getLeaderboard, getMonthlyHoursChart } = require('../controllers/statsController');
 const { getAllVolunteers, updateVolunteerApproval, getVolunteerProfile, updateVolunteerServiceSettings } = require('../controllers/profileController');
+const { updateFosterApproval } = require('../controllers/fosterController');
 const {
   previewRecipients,
   sendBulkMessage,
@@ -24,6 +25,8 @@ const {
   runRetention,
   updateUserRole,
 } = require('../controllers/gdprController');
+const { getDaySheet } = require('../controllers/daySheetController');
+const { getWeekSheet, getWeekSheetIcs } = require('../controllers/weekSheetController');
 
 const router = express.Router();
 
@@ -32,12 +35,16 @@ router.use(auditMutations);
 const adminOnly = requireRole('admin');
 const staffOrAdmin = requireStaff;
 
+router.get('/day-sheet', isAuthenticated, staffOrAdmin, getDaySheet);
+router.get('/week-sheet', isAuthenticated, staffOrAdmin, getWeekSheet);
+router.get('/week-sheet.ics', isAuthenticated, staffOrAdmin, getWeekSheetIcs);
 router.get('/stats', isAuthenticated, staffOrAdmin, getAdminStats);
 router.get('/stats/leaderboard', isAuthenticated, staffOrAdmin, getLeaderboard);
 router.get('/stats/monthly-hours', isAuthenticated, staffOrAdmin, getMonthlyHoursChart);
 router.get('/volunteers', isAuthenticated, staffOrAdmin, getAllVolunteers);
 router.get('/volunteers/:userId', isAuthenticated, staffOrAdmin, getVolunteerProfile);
 router.put('/volunteers/:userId/approval', isAuthenticated, adminOnly, updateVolunteerApproval);
+router.put('/volunteers/:userId/foster-approval', isAuthenticated, staffOrAdmin, updateFosterApproval);
 router.put('/volunteers/:userId/service-settings', isAuthenticated, staffOrAdmin, updateVolunteerServiceSettings);
 router.get('/volunteers/:userId/qualifications', isAuthenticated, staffOrAdmin, getVolunteerQualifications);
 router.post('/volunteers/:userId/qualifications', isAuthenticated, staffOrAdmin, awardQualification);

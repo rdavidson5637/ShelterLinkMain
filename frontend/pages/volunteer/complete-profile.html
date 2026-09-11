@@ -3,28 +3,20 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Complete Volunteer Profile | ShelterLink</title>
+    <title>Complete profile - ShelterLink</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
     <link rel="stylesheet" href="/public/css/custom.css" />
   </head>
   <body>
-    <header class="site-header">
+        <header class="site-header">
       <nav class="site-nav container" aria-label="Volunteer navigation">
-        <a class="site-brand" href="/index.html">
+        <a class="site-brand" href="/pages/volunteer/dashboard.html">
           <span class="brand-mark" aria-hidden="true"></span>
           <strong>ShelterLink</strong>
         </a>
-        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">☰</button>
-        <ul class="nav-menu" id="navMenu">
-          <li><a class="nav-link" href="/pages/volunteer/dashboard.html"><span class="nav-icon" aria-hidden="true">&#8962;</span><span>Dashboard</span></a></li>
-          <li><a class="nav-link" href="/pages/volunteer/calendar.html"><span class="nav-icon" aria-hidden="true">&#128197;</span><span>Calendar</span></a></li>
-          <li><a class="nav-link" href="/pages/volunteer/browse-shifts.html"><span class="nav-icon" aria-hidden="true">&#128269;</span><span>Browse</span></a></li>
-          <li><a class="nav-link" href="/pages/volunteer/my-applications.html"><span class="nav-icon" aria-hidden="true">&#128221;</span><span>Applications</span></a></li>
-          <li><a class="nav-link" href="/pages/volunteer/log-hours.html"><span class="nav-icon" aria-hidden="true">&#9201;</span><span>Log Hours</span></a></li>
-          <li><a class="nav-link" href="/pages/volunteer/my-hours.html"><span class="nav-icon" aria-hidden="true">&#128202;</span><span>My Hours</span></a></li>
-          <li><a class="nav-link" href="/pages/volunteer/complete-profile.html" aria-current="page"><span class="nav-icon" aria-hidden="true">&#128100;</span><span>Profile</span></a></li>
-          <li><button id="logoutButton" class="secondary">Logout</button></li>
-        </ul>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">Menu</button>
+        <ul class="nav-menu" id="navMenu" data-volunteer-nav></ul>
+        <button id="logoutButton" class="secondary">Logout</button>
       </nav>
     </header>
 
@@ -83,13 +75,80 @@
               </label>
             </div>
 
+            <div class="form-section form-full-width" id="awayModeSection">
+              <label for="away_until">
+                Away until
+                <input type="date" id="away_until" name="away_until" />
+              </label>
+              <small>While away, you will not receive shift reminders, match digests, urgent cover emails, or message digests. Clear the date when you are back.</small>
+              <p style="margin-top:0.5rem;">
+                <button type="button" id="saveAwayButton" class="secondary" hidden>Save away mode</button>
+              </p>
+            </div>
+
             <div class="form-section form-full-width">
-              <span>Interest tags</span>
-              <div id="interestTags" class="tag-chips" aria-label="Interest tags"></div>
-              <small>Select areas you care about — we will recommend matching shifts.</small>
+              <fieldset>
+                <legend>Interest tags</legend>
+                <div id="interestTags" class="tag-chips"></div>
+                <small id="interestTagsHint">Select areas you care about. We will recommend matching shifts.</small>
+              </fieldset>
               <p style="margin-top:0.5rem;">
                 <button type="button" id="saveInterestsButton" class="secondary" hidden>Save interests</button>
               </p>
+            </div>
+
+            <div class="form-section form-full-width" id="fosterHomeSection">
+              <fieldset>
+                <legend>Foster home suitability</legend>
+                <p><small>Optional — complete these if you are interested in fostering. Staff must approve you as a foster carer separately.</small></p>
+                <label for="home_type">
+                  Home type
+                  <select id="home_type" name="home_type">
+                    <option value="">Prefer not to say</option>
+                    <option value="house">House</option>
+                    <option value="flat">Flat</option>
+                    <option value="other">Other</option>
+                  </select>
+                </label>
+                <label for="max_foster_size">
+                  Largest animal you can foster
+                  <select id="max_foster_size" name="max_foster_size">
+                    <option value="">Not set</option>
+                    <option value="small">Small</option>
+                    <option value="medium">Medium</option>
+                    <option value="large">Large</option>
+                  </select>
+                </label>
+                <label><input type="checkbox" id="has_garden" name="has_garden" value="1" /> Has garden</label>
+                <label><input type="checkbox" id="garden_secure" name="garden_secure" value="1" /> Garden is secure</label>
+                <label><input type="checkbox" id="has_other_dogs" name="has_other_dogs" value="1" /> Has other dogs</label>
+                <label><input type="checkbox" id="has_other_cats" name="has_other_cats" value="1" /> Has other cats</label>
+                <label><input type="checkbox" id="has_children_under_16" name="has_children_under_16" value="1" /> Has children under 16</label>
+                <label><input type="checkbox" id="can_medicate" name="can_medicate" value="1" /> Can administer medication</label>
+                <label for="foster_notes">
+                  Foster notes
+                  <textarea id="foster_notes" name="foster_notes" rows="2" placeholder="Anything else about your home setup"></textarea>
+                </label>
+              </fieldset>
+              <p style="margin-top:0.5rem;">
+                <button type="button" id="saveFosterButton" class="secondary" hidden>Save foster home details</button>
+              </p>
+            </div>
+
+            <div class="form-section form-full-width" id="notificationPrefsSection">
+              <fieldset>
+                <legend>Notification preferences</legend>
+                <p><small>Choose which alerts you want. Browser push also requires allowing notifications when prompted.</small></p>
+                <label><input type="checkbox" id="prefer_urgent" name="prefer_urgent" value="1" checked /> Urgent cover alerts</label>
+                <label><input type="checkbox" id="prefer_reminders" name="prefer_reminders" value="1" checked /> Shift reminders</label>
+                <label><input type="checkbox" id="prefer_threads" name="prefer_threads" value="1" /> Message thread alerts</label>
+                <label><input type="checkbox" id="prefer_fosters" name="prefer_fosters" value="1" /> Foster match alerts</label>
+                <p style="margin-top:0.5rem;">
+                  <button type="button" id="enablePushButton" class="secondary">Enable browser push</button>
+                  <button type="button" id="savePrefsButton" class="secondary">Save notification prefs</button>
+                </p>
+                <p id="pushStatus" class="secondary" role="status"></p>
+              </fieldset>
             </div>
           </div>
 
@@ -101,20 +160,9 @@
     </main>
 
     <footer class="container">
-      <small>&copy; 2025 ShelterLink &mdash; Assisi Animal Sanctuary</small>
+      <small>&copy; 2025 ShelterLink : Assisi Animal Sanctuary</small>
     </footer>
 
-    <script>
-      (() => {
-        const nav = document.querySelector('.site-nav');
-        const toggle = nav?.querySelector('.nav-toggle');
-        if (!nav || !toggle) return;
-        toggle.addEventListener('click', () => {
-          const open = nav.classList.toggle('nav-open');
-          toggle.setAttribute('aria-expanded', String(open));
-        });
-      })();
-    </script>
     <script type="module" src="/js/utils/errorHandler.js"></script>
     <script type="module" src="/js/utils/sessionManager.js"></script>
     <script type="module" src="/js/volunteer/complete-profile.js"></script>
@@ -128,5 +176,7 @@
         });
       }
     </script>
+      <script type="module" src="/js/utils/footerYear.js"></script>
+      <script type="module" src="/js/components/volunteerNav.js"></script>
   </body>
 </html>

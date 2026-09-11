@@ -20,6 +20,7 @@
  *
  * Exit code 0 = all steps passed, 1 = one or more failed.
  * Note: each run creates one new volunteer + one opportunity in the database.
+ * Remove them afterwards with `npm run db:clean-demo` (does not wipe seed data).
  */
 
 require('dotenv').config();
@@ -93,7 +94,7 @@ async function main() {
   }
 
   const stamp = Date.now();
-  const volEmail = `smoke.vol.${stamp}@example.com`;
+  const volEmail = `smoke+${stamp}@example.com`;
 
   // 1. Register a new volunteer (with phone — verifies phone is accepted/stored)
   const reg = await req('POST', '/api/auth/register', {

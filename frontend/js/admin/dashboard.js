@@ -1,8 +1,19 @@
 import { API_URL, apiRequest } from '../config.js';
 import { requireAuth, checkAuth, logout, isStaffOrAdminRole, applyRoleVisibility} from '../auth.js';
+import { formatDateOnly } from '../utils/dateFormat.js';
+import { createStatusBadge } from '../components/statusBadge.js';
+import { renderStatCards } from '../components/statCard.js';
 
 const logoutButton = document.getElementById('logoutButton');
 const statsGrid = document.getElementById('statsGrid');
+renderStatCards(statsGrid, [
+  { label: 'Total Volunteers', valueId: 'totalVolunteers', value: '-' },
+  { label: 'Approved Volunteers', valueId: 'approvedVolunteers', value: '-' },
+  { label: 'Pending Applications', valueId: 'pendingApplications', value: '-', badgeId: 'pendingBadge' },
+  { label: 'Active Opportunities', valueId: 'activeOpportunities', value: '-' },
+  { label: 'Hours This Month', valueId: 'hoursThisMonth', value: '-' },
+  { label: 'Total Hours All Time', valueId: 'totalHoursAllTime', value: '-' },
+]);
 const totalVolunteersEl = document.getElementById('totalVolunteers');
 const approvedVolunteersEl = document.getElementById('approvedVolunteers');
 const pendingApplicationsEl = document.getElementById('pendingApplications');
@@ -17,16 +28,6 @@ const exportVolunteersButton = document.getElementById('exportVolunteersButton')
 const exportHoursButton = document.getElementById('exportHoursButton');
 const hoursExportStartDate = document.getElementById('hoursExportStartDate');
 const hoursExportEndDate = document.getElementById('hoursExportEndDate');
-
-function formatDate(dateString) {
-  if (!dateString) return 'N/A';
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString();
-  } catch {
-    return dateString;
-  }
-}
 
 function formatNumber(num) {
   if (num === null || num === undefined) return '-';
@@ -56,8 +57,10 @@ async function loadStats() {
     if (pendingBadgeEl) {
       if (stats.pendingApplications > 0) {
         pendingBadgeEl.textContent = stats.pendingApplications;
+        pendingBadgeEl.hidden = false;
         pendingBadgeEl.style.display = 'inline-block';
       } else {
+        pendingBadgeEl.hidden = true;
         pendingBadgeEl.style.display = 'none';
       }
     }
@@ -106,17 +109,10 @@ async function loadRecentApplications() {
       opportunityTd.textContent = app.opportunity_title || 'N/A';
 
       const dateTd = document.createElement('td');
-      dateTd.textContent = formatDate(app.created_at);
+      dateTd.textContent = formatDateOnly(app.created_at) || 'N/A';
 
       const statusTd = document.createElement('td');
-      statusTd.textContent = app.status || 'N/A';
-      if (app.status === 'accepted') {
-        statusTd.style.color = '#4caf50';
-      } else if (app.status === 'pending') {
-        statusTd.style.color = '#ff9800';
-      } else if (app.status === 'rejected') {
-        statusTd.style.color = '#f44336';
-      }
+      statusTd.appendChild(createStatusBadge(app.status));
 
       tr.appendChild(volunteerTd);
       tr.appendChild(opportunityTd);
@@ -163,7 +159,7 @@ async function loadRecentHours() {
       opportunityTd.textContent = entry.opportunity_title || 'N/A';
 
       const dateTd = document.createElement('td');
-      dateTd.textContent = formatDate(entry.date || entry.created_at);
+      dateTd.textContent = formatDateOnly(entry.date || entry.created_at) || 'N/A';
 
       const hoursTd = document.createElement('td');
       hoursTd.textContent = entry.hours || 0;

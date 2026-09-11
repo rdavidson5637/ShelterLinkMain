@@ -1,35 +1,45 @@
 # ShelterLink
 
-ShelterLink is a volunteer management system for an animal shelter. Volunteers
-register, complete a profile, browse and apply for shifts ("opportunities"),
-and log their service hours. Administrators review volunteers and applications,
-create and manage opportunities, approve logged hours, and export reports.
+ShelterLink is a volunteer management system built for animal shelters (Assisi
+first). Volunteers register, complete a profile, browse and apply for shifts,
+foster animals, message about shifts without sharing personal contacts, and log
+hours. Staff run the day from a printable day sheet, animals records, urgent
+cover, and foster placements.
 
-It is a full-stack application: a Node.js/Express REST API backed by MySQL, with
-a static HTML/CSS/JavaScript frontend served by the same server.
+It is a full-stack application: a Node.js/Express REST API backed by Postgres
+(Supabase or local), with a static HTML/CSS/JavaScript frontend served by the
+same server. The app host must be always-on so scheduled jobs (reminders,
+digests, keep-alive ping) can run.
+
+See `DEPLOY.md` for production setup and `ASSISI-DEMO.md` for the shelter demo script.
 
 ## Features
 
 **Volunteers**
 - Register, log in, and reset a forgotten password (email link)
-- Complete a volunteer profile (contact, emergency contact, skills, availability)
-- Browse open opportunities and apply (once the profile is approved)
-- View and cancel their own applications
-- Log volunteer hours and track approval status
-- Earn achievement badges based on approved hours and completed shifts
+- Complete a profile (including foster home suitability and away mode)
+- Browse open shifts (urgent cover highlighted); apply once approved
+- See animals on a shift with handling notes; log walk / feed / socialise
+- Shift chat and announcements (names only — no peer contact details)
+- Foster matching, placements, and check-ins
+- Hours logging, badges, printable service certificate
+- Onboarding checklist (profile, waiver, references, AccessNI)
+- Installable PWA on phones
 
-**Administrators**
-- Review and approve volunteer profiles
-- Create, edit, and close opportunities, with capacity limits
-- Review applications and accept or reject them (opportunities auto-close when full)
-- Approve logged volunteer hours
-- Dashboard statistics and CSV export of reports
+**Administrators / staff**
+- Morning staff guide, printable day sheet, kiosk check-in
+- Animals as first-class records linked to shifts
+- Opportunities: templates, clone, shift notes, urgent cover (email + optional push)
+- Fosters: requests, offers, placements
+- Threaded messaging with oversight
+- AccessNI tracking and reference collection
+- Qualifications, waivers, group bookings, hours approval, GDPR tools
 
 ## Tech stack
 
 - **Express.js** — web framework and REST API
-- **MySQL** (via `mysql2`) — data store
-- **express-session** + `express-mysql-session` — server-side sessions
+- **Postgres** (via `pg`, mysql2-compatible adapter in `config/database.js`)
+- **express-session** + `connect-pg-simple` — server-side sessions
 - **bcrypt** — password hashing
 - **helmet**, **express-rate-limit**, **xss**, **validator** — security hardening
 - **nodemailer** — transactional email (password reset, application updates)
@@ -39,8 +49,9 @@ a static HTML/CSS/JavaScript frontend served by the same server.
 
 ### Prerequisites
 - Node.js 18+
-- A running MySQL server. MAMP is the assumed default (host `localhost`,
-  port `8889`, user `root`, password `root`). Standard MySQL uses port `3306`.
+- A Postgres database. Local (`brew install postgresql@16`) or a free
+  [Supabase](https://supabase.com) project. Use the **session pooler** URI
+  (port 5432), not the transaction pooler (6543).
 
 ### 1. Install dependencies
 ```bash
@@ -52,13 +63,14 @@ npm install
 cp .env.example .env
 ```
 Then edit `.env` and set at least:
-- `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` — your MySQL connection
+- `DATABASE_URL` — Supabase session pooler URI, **or** `DB_HOST` / `DB_PORT` /
+  `DB_USER` / `DB_PASSWORD` / `DB_NAME` for local Postgres
 - `SESSION_SECRET` — a long random string
 - `ADMIN_REGISTRATION_KEY` — required to create admin accounts
 - Email (`EMAIL_*`) values if you want password-reset / notification emails to send
 
 ### 3. Create the database
-With MySQL running, build the schema and load sample data in one step:
+With Postgres reachable, build the schema and load sample data in one step:
 ```bash
 npm run db:reset      # schema + sample data (recommended for a first run)
 ```
@@ -66,12 +78,8 @@ or, for an empty database with no sample data:
 ```bash
 npm run db:setup      # schema only
 ```
-This uses the connection settings from your `.env`. You can also run the SQL
-files directly if you prefer:
-```bash
-mysql -u root -proot -h 127.0.0.1 -P 8889 < database/schema.sql
-mysql -u root -proot -h 127.0.0.1 -P 8889 ShelterLink < database/seed.sql
-```
+This uses `DATABASE_URL` or `DB_*` from your `.env`. MySQL files
+(`database/schema.sql`, `database/seed.sql`) are kept for reference only.
 
 ### 4. Run the app
 ```bash
@@ -83,14 +91,14 @@ Then open **http://localhost:3000**.
 
 ## Sample login accounts
 
-Loaded by `npm run db:reset` (via `database/seed.sql`):
+Loaded by `npm run db:reset` (via `database/seed.pg.sql`):
 
 | Role      | Email                       | Password    |
 |-----------|-----------------------------|-------------|
 | Admin     | `admin@shelterlink.org`     | `Admin123!` |
 | Volunteer | `alex.jenkins@example.com`  | `Password1` |
 
-All seeded volunteer accounts use the password `Password1`. See `database/seed.sql`
+All seeded volunteer accounts use the password `Password1`. See `database/seed.pg.sql`
 for the full list. **Change or remove these before any real deployment.**
 
 To create your own admin account instead, set `ADMIN_REGISTRATION_KEY` in `.env`
@@ -103,7 +111,7 @@ npm run create-admin
 
 The project ships with an automated test suite built on Node's built-in test
 runner (no extra dependencies). The tests mock the database layer, so they run
-without a live MySQL connection and verify query construction, business logic
+without a live database connection and verify query construction, business logic
 (badge calculation, application/cancel guards, field whitelisting, hours
 validation, CSV export) and controller rules (capacity limits, profile-approval
 gating, open-only applications, accepted/approved hour logging):
@@ -124,6 +132,7 @@ npm run dev          # in one terminal
 npm run smoke        # in another terminal
 ```
 Each run adds one volunteer and one opportunity to the database.
+Remove those rows without wiping the demo seed: `npm run db:clean-demo`.
 
 ## Project structure
 ```
@@ -133,7 +142,7 @@ middleware/    Auth guards, input sanitisation, rate limiting, error handling
 models/        Data-access helpers, one per table (+ code-defined Badge)
 routes/        Express route definitions
 utils/         Email service and CSV export helpers
-database/      schema.sql (full schema), seed.sql (sample data), migrations
+database/      schema.pg.sql (Postgres), seed.pg.sql, plus MySQL originals for reference
 scripts/       setup-db.js (build/seed the database from .env)
 test/          Automated tests (node --test) with a mocked DB pool
 frontend/      Static site: pages/, js/, public/ (css, images), served by Express
@@ -143,13 +152,14 @@ server.js      App entry point
 
 ## Database
 
-`database/schema.sql` is the authoritative, from-scratch schema. It creates six
-tables: `users`, `opportunities`, `volunteer_profiles`, `applications`,
-`volunteer_hours`, and `sessions` (session store). Badges are defined in code
-(`models/Badge.js`), not in the database.
+`database/schema.pg.sql` is the authoritative, from-scratch Postgres schema.
+MySQL originals remain in `database/schema.sql` and numbered `NNN_*.sql`
+files for reference. Future incremental changes use `NNN_*.pg.sql` and
+`npm run migrate`.
 
-Incremental changes live in `database/` as numbered migrations
-(e.g. `001_add_password_reset.sql`) and are already folded into `schema.sql`.
+The app host must stay running: a daily keep-alive job (`dbKeepAlive`) pings
+the database so a free-tier Supabase project is less likely to pause. Backups:
+`npm run backup` (requires `pg_dump`; dumps are gitignored under `backups/`).
 
 ## Environment variables
 

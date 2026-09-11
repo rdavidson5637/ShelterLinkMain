@@ -43,7 +43,9 @@ function errorHandler(err, req, res, next) { // eslint-disable-line no-unused-va
     console.error('[ErrorHandler] Full error:', err);
   }
 
-  const message = err?.message || defaultMessageForStatus(status);
+  const message = isProduction && status >= 500
+    ? defaultMessageForStatus(status)
+    : (err?.message || defaultMessageForStatus(status));
   return res.status(status).json({ error: message });
 }
 

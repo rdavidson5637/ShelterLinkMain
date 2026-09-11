@@ -4,6 +4,8 @@
  * Modal text ≥ 16px, buttons ≥ 48px, labelled actions (no icon-only controls).
  */
 
+import { trapTabKey } from '../utils/focusTrap.js';
+
 const PROFILE_URL = '/pages/volunteer/complete-profile.html';
 
 function escapeHtml(text) {
@@ -34,7 +36,7 @@ function formatDateRange(startStr, endStr) {
 
 function getSpotsText(spotsFilled, spotsTotal) {
   if (spotsTotal == null || spotsTotal === '' || !Number.isFinite(Number(spotsTotal))) {
-    return 'Open — no limit';
+    return 'Open - no limit';
   }
   const filled = Number(spotsFilled) || 0;
   const total = Number(spotsTotal);
@@ -43,6 +45,7 @@ function getSpotsText(spotsFilled, spotsTotal) {
 
 function createModalElement() {
   const dialog = document.createElement('dialog');
+  dialog.setAttribute('role', 'dialog');
   dialog.setAttribute('aria-labelledby', 'opportunity-modal-title');
   dialog.setAttribute('aria-describedby', 'opportunity-modal-body');
   dialog.setAttribute('aria-modal', 'true');
@@ -60,16 +63,24 @@ function createModalElement() {
         <p class="opportunity-modal-line opportunity-modal-hours-line" hidden></p>
         <p class="opportunity-modal-line opportunity-modal-spots-line"></p>
         <section class="opportunity-modal-section opportunity-modal-desc-section" aria-label="Description">
-          <h3 class="opportunity-modal-section-heading"><span aria-hidden="true">📋</span> Description</h3>
+          <h3 class="opportunity-modal-section-heading">Description</h3>
           <div class="opportunity-modal-description"></div>
         </section>
         <section class="opportunity-modal-section opportunity-modal-req-section" hidden aria-label="Requirements">
-          <h3 class="opportunity-modal-section-heading"><span aria-hidden="true">✅</span> Requirements</h3>
+          <h3 class="opportunity-modal-section-heading">Requirements</h3>
           <div class="opportunity-modal-requirements"></div>
         </section>
         <section class="opportunity-modal-section opportunity-modal-quals-section" hidden aria-label="Required qualifications">
-          <h3 class="opportunity-modal-section-heading"><span aria-hidden="true">🎓</span> Required qualifications</h3>
+          <h3 class="opportunity-modal-section-heading">Required qualifications</h3>
           <div class="opportunity-modal-qualifications"></div>
+        </section>
+        <section class="opportunity-modal-section opportunity-modal-animals-section" hidden aria-label="Animals on this shift">
+          <h3 class="opportunity-modal-section-heading">Animals on this shift</h3>
+          <div class="opportunity-modal-animals"></div>
+        </section>
+        <section class="opportunity-modal-section opportunity-modal-notes-section" hidden aria-label="Shift notes">
+          <h3 class="opportunity-modal-section-heading">Shift notes</h3>
+          <div class="opportunity-modal-notes"></div>
         </section>
       </div>
       <div class="opportunity-modal-footer">
@@ -84,41 +95,9 @@ function createModalElement() {
 let modalEl = null;
 let previousActiveElement = null;
 
-const FOCUSABLE_SELECTOR =
-  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
-function getFocusableElements(container) {
-  if (!container) return [];
-  return Array.from(container.querySelectorAll(FOCUSABLE_SELECTOR)).filter((el) => {
-    if (el.hasAttribute('disabled')) return false;
-    if (el.getAttribute('aria-hidden') === 'true') return false;
-    return el.offsetWidth > 0 || el.offsetHeight > 0 || el === document.activeElement;
-  });
-}
-
 function handleDocumentKeydown(e) {
   if (!modalEl || !modalEl.open) return;
-
-  /* Escape closes <dialog> natively; focus is restored in the close listener. */
-
-  if (e.key !== 'Tab') return;
-
-  const card = modalEl.querySelector('.opportunity-modal-card');
-  const list = getFocusableElements(card);
-  if (!list.length) return;
-
-  const first = list[0];
-  const last = list[list.length - 1];
-
-  if (e.shiftKey) {
-    if (document.activeElement === first) {
-      e.preventDefault();
-      last.focus();
-    }
-  } else if (document.activeElement === last) {
-    e.preventDefault();
-    first.focus();
-  }
+  trapTabKey(modalEl, e);
 }
 
 function handleBackdropClick(e) {
@@ -183,21 +162,21 @@ export function showOpportunityModal(opportunity, options = {}) {
   modalEl.querySelector('.opportunity-modal-title').textContent = title;
 
   const locLine = modalEl.querySelector('.opportunity-modal-location-line');
-  locLine.innerHTML = `<span aria-hidden="true">📍</span> <strong>Location:</strong> ${escapeHtml(location)}`;
+  locLine.innerHTML = `<strong>Location:</strong> ${escapeHtml(location)}`;
 
   const datesLine = modalEl.querySelector('.opportunity-modal-dates-line');
-  datesLine.innerHTML = `<span aria-hidden="true">📅</span> <strong>Dates:</strong> ${escapeHtml(formatDateRange(startDate, endDate))}`;
+  datesLine.innerHTML = `<strong>Dates:</strong> ${escapeHtml(formatDateRange(startDate, endDate))}`;
 
   const hoursLine = modalEl.querySelector('.opportunity-modal-hours-line');
   if (hoursPerWeek != null && hoursPerWeek !== '') {
-    hoursLine.innerHTML = `<span aria-hidden="true">⏰</span> <strong>Hours per week:</strong> ${escapeHtml(String(hoursPerWeek))}`;
+    hoursLine.innerHTML = `<strong>Hours per week:</strong> ${escapeHtml(String(hoursPerWeek))}`;
     hoursLine.hidden = false;
   } else {
     hoursLine.hidden = true;
   }
 
   const spotsLine = modalEl.querySelector('.opportunity-modal-spots-line');
-  spotsLine.innerHTML = `<span aria-hidden="true">👥</span> <strong>Spots:</strong> ${escapeHtml(getSpotsText(filled, maxVolunteers))}`;
+  spotsLine.innerHTML = `<strong>Spots:</strong> ${escapeHtml(getSpotsText(filled, maxVolunteers))}`;
 
   const safeDesc = escapeHtml(description).replace(/\n/g, '</p><p>');
   modalEl.querySelector('.opportunity-modal-description').innerHTML = `<p>${safeDesc}</p>`;
@@ -229,6 +208,57 @@ export function showOpportunityModal(opportunity, options = {}) {
   } else {
     qualsBody.innerHTML = '';
     qualsSection.hidden = true;
+  }
+
+  const animalsSection = modalEl.querySelector('.opportunity-modal-animals-section');
+  const animalsBody = modalEl.querySelector('.opportunity-modal-animals');
+  const animals = opportunity.animals || [];
+  if (animals.length) {
+    animalsBody.innerHTML = animals
+      .map((a) => {
+        const photo = a.photo_filename
+          ? `<img class="opportunity-modal-animal-thumb" src="/api/animals/${Number(a.id)}/photo" alt="" width="56" height="56" />`
+          : '';
+        const handling = a.handling_notes
+          ? `<p class="opportunity-modal-handling"><strong>Handling:</strong> ${escapeHtml(a.handling_notes)}</p>`
+          : '';
+        const qual = a.requires_qualification_name
+          ? `<p><em>Requires: ${escapeHtml(a.requires_qualification_name)}</em></p>`
+          : '';
+        return `<div class="opportunity-modal-animal">${photo}<div><p><strong>${escapeHtml(a.name)}</strong> (${escapeHtml(a.species)})</p>${qual}${handling}</div></div>`;
+      })
+      .join('');
+    animalsSection.hidden = false;
+  } else {
+    animalsBody.innerHTML = '';
+    animalsSection.hidden = true;
+  }
+
+  const notesSection = modalEl.querySelector('.opportunity-modal-notes-section');
+  const notesBody = modalEl.querySelector('.opportunity-modal-notes');
+  const shiftNotes = opportunity.shift_notes || [];
+  if (shiftNotes.length) {
+    notesBody.innerHTML = shiftNotes
+      .map((n) => {
+        const when = n.created_at
+          ? new Date(n.created_at).toLocaleString('en-GB', {
+              day: 'numeric',
+              month: 'short',
+              hour: '2-digit',
+              minute: '2-digit',
+            })
+          : '';
+        return `<div class="opportunity-modal-note"><p><strong>${escapeHtml(
+          n.author_name || 'Staff'
+        )}</strong>${when ? ` · ${escapeHtml(when)}` : ''}</p><p>${escapeHtml(
+          n.body
+        )}</p></div>`;
+      })
+      .join('');
+    notesSection.hidden = false;
+  } else {
+    notesBody.innerHTML = '';
+    notesSection.hidden = true;
   }
 
   const actionsContainer = modalEl.querySelector('.opportunity-modal-actions');
@@ -274,6 +304,25 @@ export function showOpportunityModal(opportunity, options = {}) {
   }
 
   actionsContainer.appendChild(actionButton);
+
+  // Open shift chat when the volunteer has already applied / is on the shift.
+  if (hasApplied && id != null) {
+    const chatBtn = document.createElement('button');
+    chatBtn.type = 'button';
+    chatBtn.className = 'opportunity-modal-btn opportunity-modal-btn-secondary';
+    chatBtn.textContent = 'Open shift chat';
+    chatBtn.addEventListener('click', async () => {
+      try {
+        const { openShiftChat, messagesPageHref } = await import('./threadsUi.js');
+        const thread = await openShiftChat(id, { subject: title });
+        hideOpportunityModal();
+        window.location.href = messagesPageHref(thread.id, { admin: false });
+      } catch (error) {
+        alert(error.message || 'Could not open shift chat');
+      }
+    });
+    actionsContainer.appendChild(chatBtn);
+  }
 
   const closeBtn = modalEl.querySelector('.opportunity-modal-close');
   closeBtn.onclick = hideOpportunityModal;

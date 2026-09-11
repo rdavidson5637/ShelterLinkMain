@@ -3,33 +3,25 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Review Applications | ShelterLink Admin</title>
+    <title>Review applications - ShelterLink</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
     <link rel="stylesheet" href="/public/css/custom.css" />
   </head>
   <body>
-    <header class="site-header">
-      <nav class="site-nav container" aria-label="Admin navigation">
-        <a class="site-brand" href="/index.html">
+        <header class="site-header">
+      <nav class="site-nav container" aria-label="Account">
+        <a class="site-brand" href="/pages/admin/dashboard.html">
           <span class="brand-mark" aria-hidden="true"></span>
           <strong>ShelterLink</strong>
         </a>
-        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">☰</button>
-        <ul class="nav-menu" id="navMenu">
-          <li><a class="nav-link" href="/pages/admin/dashboard.html"><span class="nav-icon" aria-hidden="true">&#8962;</span><span>Dashboard</span></a></li>
-          <li><a class="nav-link" href="/pages/admin/opportunities.html"><span class="nav-icon" aria-hidden="true">&#128736;</span><span>Opportunities</span></a></li>
-          <li><a class="nav-link" href="/pages/admin/create-opportunity.html"><span class="nav-icon" aria-hidden="true">&#10010;</span><span>Create</span></a></li>
-          <li><a class="nav-link" href="/pages/admin/review-applications.html" aria-current="page"><span class="nav-icon" aria-hidden="true">&#128221;</span><span>Applications</span></a></li>
-          <li><a class="nav-link" href="/pages/admin/approve-hours.html"><span class="nav-icon" aria-hidden="true">&#9201;</span><span>Hours</span></a></li>
-          <li><a class="nav-link" href="/pages/admin/volunteers.html"><span class="nav-icon" aria-hidden="true">&#128101;</span><span>Volunteers</span></a></li>
-          <li><a class="nav-link" href="/pages/admin/custom-fields.html"><span class="nav-icon" aria-hidden="true">&#128203;</span><span>Custom Fields</span></a></li>
-          <li><a class="nav-link" href="/pages/admin/reports.html"><span class="nav-icon" aria-hidden="true">&#128202;</span><span>Reports</span></a></li>
-          <li><button id="logoutButton" class="secondary">Logout</button></li>
-        </ul>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" aria-label="Toggle navigation">Menu</button>
+        <button id="logoutButton" class="secondary">Logout</button>
       </nav>
     </header>
 
-    <main class="container">
+    <main class="container dashboard-layout">
+      <aside id="admin-nav" class="sidebar-nav"></aside>
+      <div class="dashboard-main">
       <section>
         <h1>Review Applications</h1>
         <p>Approve or reject volunteer applications.</p>
@@ -50,29 +42,31 @@
 
       <section>
         <div id="message" role="status" aria-live="polite"></div>
-        <div class="table-wrapper">
+        <div class="table-wrapper directory-table">
           <table>
+            <caption>Volunteer applications</caption>
             <thead>
               <tr>
-                <th>Volunteer Name</th>
-                <th>Email</th>
-                <th>Opportunity Title</th>
-                <th>Application Date</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th scope="col">Volunteer</th>
+                <th scope="col">Opportunity</th>
+                <th scope="col">Applied</th>
+                <th scope="col">Status</th>
+                <th scope="col">Actions</th>
               </tr>
             </thead>
             <tbody id="applicationsTableBody"></tbody>
           </table>
         </div>
+        <div id="applicationsCardList" class="directory-cards"></div>
       </section>
+      </div>
     </main>
 
     <!-- Reject Notes Modal -->
-    <dialog id="notesModal">
+    <dialog id="notesModal" aria-labelledby="reject-modal-title">
       <article>
         <header>
-          <strong>Add Notes for Rejection</strong>
+          <strong id="reject-modal-title">Add Notes for Rejection</strong>
         </header>
         <p>Please provide optional notes for the volunteer.</p>
         <label for="rejectNotes">
@@ -90,20 +84,11 @@
       <small>&copy; 2025 ShelterLink</small>
     </footer>
 
-    <script>
-      (() => {
-        const nav = document.querySelector('.site-nav');
-        const toggle = nav?.querySelector('.nav-toggle');
-        if (!nav || !toggle) return;
-        toggle.addEventListener('click', () => {
-          const open = nav.classList.toggle('nav-open');
-          toggle.setAttribute('aria-expanded', String(open));
-        });
-      })();
-    </script>
     <script type="module" src="/js/utils/errorHandler.js"></script>
     <script type="module" src="/js/utils/sessionManager.js"></script>
     <script type="module" src="/js/admin/review-applications.js"></script>
+      <script type="module" src="/js/utils/footerYear.js"></script>
+      <script type="module" src="/js/components/adminNav.js"></script>
   </body>
 </html>
 

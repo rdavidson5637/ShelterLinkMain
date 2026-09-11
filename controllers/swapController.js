@@ -12,6 +12,11 @@ const {
   sendSwapClaimedToOriginal,
   sendSwapClaimedToClaimer,
 } = require('../utils/emailService');
+const {
+  toVolunteerSafeSwap,
+  toOwnerSafeSwap,
+  toVolunteerSafeApplication,
+} = require('../utils/contactPrivacy');
 
 function ensureAuthenticated(req, res) {
   if (!req.session || !req.session.userId) {
@@ -48,7 +53,10 @@ async function requestSwap(req, res) {
 
     const existing = await SwapRequest.findOpenByApplicationId(applicationId);
     if (existing) {
-      return res.status(409).json({ error: 'A swap request is already open for this application', swap: existing });
+      return res.status(409).json({
+        error: 'A swap request is already open for this application',
+        swap: toOwnerSafeSwap(existing),
+      });
     }
 
     const opportunity = await Opportunity.findById(application.opportunity_id);
@@ -102,7 +110,7 @@ async function requestSwap(req, res) {
       message: waitlistOffered
         ? 'Swap opened. The oldest waitlisted volunteer has 12 hours to claim first.'
         : 'Swap opened. Other qualifying volunteers can cover this shift.',
-      swap,
+      swap: toOwnerSafeSwap(swap),
       waitlist_offered: waitlistOffered,
     });
   } catch (error) {
@@ -124,11 +132,13 @@ async function listAvailableSwaps(req, res) {
       if (Number(swap.original_user_id) === Number(userId)) continue;
 
       const missing = await Qualification.findMissingForUser(userId, swap.opportunity_id);
-      enriched.push({
-        ...swap,
-        missing_qualifications: missing,
-        can_claim: missing.length === 0,
-      });
+      enriched.push(
+        toVolunteerSafeSwap({
+          ...swap,
+          missing_qualifications: missing,
+          can_claim: missing.length === 0,
+        })
+      );
     }
 
     return res.status(200).json(enriched);
@@ -164,6 +174,22 @@ async function assertClaimerEligible(userId, opportunityId) {
       error: `You are missing required qualifications (or they have expired): ${names}`,
       status: 403,
       missing_qualifications: missingQuals,
+    };
+  }
+
+  const Animal = require('../models/Animal');
+  const missingAnimalQuals = await Animal.findMissingQualificationsForUser(
+    userId,
+    opportunityId
+  );
+  if (missingAnimalQuals.length) {
+    const detail = missingAnimalQuals
+      .map((m) => `${m.animal_name} (${m.qualification_name})`)
+      .join(', ');
+    return {
+      error: `You need additional qualifications for animals on this shift: ${detail}`,
+      status: 403,
+      missing_animal_qualifications: missingAnimalQuals,
     };
   }
 
@@ -243,8 +269,8 @@ async function claimSwap(req, res) {
 
     return res.status(200).json({
       message: 'Shift claimed successfully',
-      swap: result.swap,
-      application: result.claimerApplication,
+      swap: toOwnerSafeSwap(result.swap),
+      application: toVolunteerSafeApplication(result.claimerApplication),
     });
   } catch (error) {
     return mapClaimError(error, res);
@@ -282,8 +308,8 @@ async function claimSwapByToken(req, res) {
 
     return res.status(200).json({
       message: 'Shift claimed successfully from waitlist offer',
-      swap: result.swap,
-      application: result.claimerApplication,
+      swap: toOwnerSafeSwap(result.swap),
+      application: toVolunteerSafeApplication(result.claimerApplication),
     });
   } catch (error) {
     return mapClaimError(error, res);
@@ -306,7 +332,7 @@ async function cancelSwap(req, res) {
     if (result.invalidStatus) {
       return res.status(400).json({ error: 'Swap cannot be cancelled in its current status' });
     }
-    return res.status(200).json({ message: 'Swap cancelled', swap: result });
+    return res.status(200).json({ message: 'Swap cancelled', swap: toOwnerSafeSwap(result) });
   } catch (error) {
     console.error('[Swap] cancelSwap error:', error.message);
     return res.status(500).json({ error: 'Internal server error' });

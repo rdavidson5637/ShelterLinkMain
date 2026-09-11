@@ -6,6 +6,9 @@ const VolunteerHours = require('../models/VolunteerHours');
 const Qualification = require('../models/Qualification');
 const Waiver = require('../models/Waiver');
 const SwapRequest = require('../models/SwapRequest');
+const MessageThread = require('../models/MessageThread');
+const Animal = require('../models/Animal');
+const Vetting = require('../models/Vetting');
 const { isWithinCancellationCutoff } = require('../utils/cancellationRules');
 const {
   sendEmail,
@@ -120,6 +123,31 @@ async function applyForOpportunity(req, res) {
         error: `You are missing required qualifications (or they have expired): ${names}`,
         missing_qualifications: missingQuals,
       });
+    }
+
+    const missingAnimalQuals = await Animal.findMissingQualificationsForUser(
+      userId,
+      opportunityId
+    );
+    if (missingAnimalQuals.length) {
+      const detail = missingAnimalQuals
+        .map((m) => `${m.animal_name} (${m.qualification_name})`)
+        .join(', ');
+      return res.status(403).json({
+        error: `You need additional qualifications for animals on this shift: ${detail}`,
+        missing_animal_qualifications: missingAnimalQuals,
+      });
+    }
+
+    const requiredCheck = opportunity.required_background_check_type;
+    if (requiredCheck) {
+      const hasClear = await Vetting.hasClearCheck(userId, requiredCheck);
+      if (!hasClear) {
+        return res.status(403).json({
+          error: `This opportunity requires a clear ${requiredCheck.replace(/_/g, ' ')} background check before you can apply.`,
+          required_background_check_type: requiredCheck,
+        });
+      }
     }
 
     const maxVolunteers = Number(opportunity.max_volunteers);
@@ -284,6 +312,14 @@ async function updateApplicationStatus(req, res) {
 
     if (status === 'rejected' && wasAccepted) {
       await promoteOldestWaitlisted(application.opportunity_id);
+      try {
+        await MessageThread.removeParticipantForOpportunity(
+          application.opportunity_id,
+          application.user_id
+        );
+      } catch (threadError) {
+        console.error('[Application] revoke thread access error:', threadError.message);
+      }
     }
 
     return res.status(200).json(application);
@@ -358,6 +394,11 @@ async function cancelApplication(req, res) {
 
     if (freedSeat) {
       await promoteOldestWaitlisted(result.opportunity_id);
+      try {
+        await MessageThread.removeParticipantForOpportunity(result.opportunity_id, result.user_id);
+      } catch (threadError) {
+        console.error('[Application] revoke thread access error:', threadError.message);
+      }
     }
 
     return res.status(200).json({ message: 'Cancellation confirmed' });

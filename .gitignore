@@ -2,8 +2,13 @@
 storage/uploads/*
 !storage/uploads/.gitkeep
 
+# Database dumps
+backups/
+
+
 # Dependencies
 node_modules/
+.npm-cache/
 
 # Environment files
 .env

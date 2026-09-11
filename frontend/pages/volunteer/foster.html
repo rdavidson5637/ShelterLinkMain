@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Foster - ShelterLink</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Volunteer navigation">
+        <a class="site-brand" href="/pages/volunteer/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">Menu</button>
+        <ul class="nav-menu" id="navMenu" data-volunteer-nav></ul>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section>
+        <h1>Foster</h1>
+        <p>Matched foster requests and your placements. Complete foster home details on your profile if you want to help.</p>
+        <div id="message" role="status" aria-live="polite"></div>
+        <article id="emergencyBanner" class="status-banner" hidden>
+          <p><strong>Shelter emergency phone:</strong> <span id="emergencyPhone"></span></p>
+        </article>
+      </section>
+
+      <section>
+        <h2>Matching requests</h2>
+        <div id="matchingList">Loading…</div>
+      </section>
+
+      <section>
+        <h2>My placements</h2>
+        <div id="placementsList">Loading…</div>
+      </section>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2025 ShelterLink : Assisi Animal Sanctuary</small>
+    </footer>
+
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/volunteer/foster.js"></script>
+    <script type="module">
+      import { logout } from '/js/auth.js';
+      const logoutButton = document.getElementById('logoutButton');
+      if (logoutButton) {
+        logoutButton.addEventListener('click', (e) => {
+          e.preventDefault();
+          logout();
+        });
+      }
+    </script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+    <script type="module" src="/js/components/volunteerNav.js"></script>
+  </body>
+</html>

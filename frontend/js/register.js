@@ -1,5 +1,6 @@
 import { apiRequest } from './config.js';
 import { redirectIfAuthenticated } from './auth.js';
+import { showFormErrors, clearFormErrors } from './utils/formErrors.js';
 
 const form = document.getElementById('registerForm');
 const messageEl = document.getElementById('message');
@@ -109,10 +110,16 @@ function showMessage(text = '', type = 'error') {
 async function handleRegister(event) {
   event.preventDefault();
   if (!form) return;
+  clearFormErrors(form);
 
   const checks = getPasswordChecks(passwordInput?.value || '');
   if (!allPasswordChecksPass(checks)) {
-    showMessage('Password must be at least 8 characters with one uppercase letter and one number', 'error');
+    showFormErrors(form, [
+      {
+        field: 'password',
+        message: 'Password must be at least 8 characters with one uppercase letter and one number.',
+      },
+    ]);
     return;
   }
 
@@ -123,7 +130,9 @@ async function handleRegister(event) {
   const payload = Object.fromEntries(formData.entries());
 
   if (payload.password !== payload.confirm_password) {
-    showMessage('Passwords do not match.', 'error');
+    showFormErrors(form, [
+      { field: 'confirm_password', message: 'Passwords do not match.' },
+    ]);
     if (submitButton) submitButton.removeAttribute('disabled');
     return;
   }
@@ -150,11 +159,17 @@ async function handleRegister(event) {
       }, 2000);
     } else {
       const errorData = await res.json().catch(() => ({}));
-      showMessage(errorData.error || 'Registration failed. Please try again.', 'error');
+      showFormErrors(form, [
+        { field: 'email', message: errorData.error || 'Registration failed. Please try again.' },
+      ]);
     }
   } catch (error) {
     console.error('[Register] Network error:', error);
-    showMessage(`Network error: ${error.message || 'Could not connect to server. Make sure the backend is running on port 3000.'}`, 'error');
+    showFormErrors(form, [
+      {
+        message: `Network error: ${error.message || 'Could not connect to server. Make sure the backend is running on port 3000.'}`,
+      },
+    ]);
   } finally {
     if (submitButton) submitButton.removeAttribute('disabled');
   }

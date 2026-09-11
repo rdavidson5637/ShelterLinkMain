@@ -1,6 +1,7 @@
 import { apiRequest } from '../config.js';
 import { requireAuth } from '../auth.js';
 import { renderTagChips, getSelectedTagIds } from '../components/tagChips.js';
+import { showFormErrors, clearFormErrors } from '../utils/formErrors.js';
 
 const form = document.getElementById('profileForm');
 const messageEl = document.getElementById('message');
@@ -9,6 +10,18 @@ const submitButton = document.getElementById('submitButton');
 const customFieldsContainer = document.getElementById('customFieldsContainer');
 const interestTagsEl = document.getElementById('interestTags');
 const saveInterestsButton = document.getElementById('saveInterestsButton');
+const saveFosterButton = document.getElementById('saveFosterButton');
+const saveAwayButton = document.getElementById('saveAwayButton');
+const awayUntilInput = document.getElementById('away_until');
+
+const FOSTER_BOOL_FIELDS = [
+  'has_garden',
+  'garden_secure',
+  'has_other_dogs',
+  'has_other_cats',
+  'has_children_under_16',
+  'can_medicate',
+];
 
 let activeCustomFields = [];
 let allTags = [];
@@ -32,6 +45,20 @@ function setMessage(type, text) {
   }
   const tone = type === 'error' ? 'error' : 'success';
   messageEl.innerHTML = `<p class="${tone}">${text}</p>`;
+}
+
+function collectFosterFields(formElement) {
+  const data = new FormData(formElement);
+  const payload = {
+    home_type: data.get('home_type') || null,
+    max_foster_size: data.get('max_foster_size') || null,
+    foster_notes: data.get('foster_notes') || null,
+  };
+  FOSTER_BOOL_FIELDS.forEach((key) => {
+    const el = formElement.elements.namedItem(key);
+    payload[key] = el && el.checked ? 1 : 0;
+  });
+  return payload;
 }
 
 function collectCustomFieldValues() {
@@ -155,6 +182,7 @@ function formDataToPayload(formElement) {
     availability: data.get('availability'),
     custom_fields: collectCustomFieldValues(),
     tag_ids: getSelectedTagIds(interestTagsEl),
+    ...collectFosterFields(formElement),
   };
 }
 
@@ -164,9 +192,17 @@ function fillForm(profile = {}) {
       return;
     }
     const field = form.elements.namedItem(key);
-    if (field && value !== undefined && value !== null) {
-      field.value = value;
+    if (!field) return;
+    if (key === 'away_until') {
+      field.value = value ? String(value).slice(0, 10) : '';
+      return;
     }
+    if (value === undefined || value === null) return;
+    if (field.type === 'checkbox') {
+      field.checked = value === 1 || value === true || value === '1';
+      return;
+    }
+    field.value = value;
   });
 }
 
@@ -175,6 +211,13 @@ function setFormViewOnly(isViewOnly) {
   const elements = form.querySelectorAll('input, textarea, select');
   elements.forEach((el) => {
     if (el.type === 'hidden') return;
+    const inFoster = el.closest('#fosterHomeSection');
+    const inAway = el.closest('#awayModeSection');
+    if (inFoster || inAway) {
+      el.readOnly = false;
+      el.disabled = false;
+      return;
+    }
     el.readOnly = isViewOnly && el.tagName !== 'SELECT' && el.type !== 'checkbox';
     el.disabled = isViewOnly && (el.tagName === 'SELECT' || el.type === 'checkbox');
   });
@@ -239,6 +282,164 @@ async function saveInterests() {
   }
 }
 
+async function saveFosterHome() {
+  setMessage();
+  if (!form) return;
+  try {
+    const response = await apiRequest('/volunteer/profile', {
+      method: 'PUT',
+      body: collectFosterFields(form),
+    });
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => ({}));
+      setMessage('error', errorBody?.error || 'Failed to save foster home details');
+      return;
+    }
+    setMessage('success', 'Foster home details updated.');
+  } catch (error) {
+    console.error('[Profile] saveFosterHome error:', error);
+    setMessage('error', 'Network error while saving foster home details');
+  }
+}
+
+async function saveAwayMode() {
+  setMessage();
+  try {
+    const awayUntil = awayUntilInput?.value || null;
+    const response = await apiRequest('/volunteer/profile', {
+      method: 'PUT',
+      body: { away_until: awayUntil || null },
+    });
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => ({}));
+      setMessage('error', errorBody?.error || 'Failed to save away mode');
+      return;
+    }
+    setMessage(
+      'success',
+      awayUntil ? `Away mode set until ${awayUntil}.` : 'Away mode cleared.'
+    );
+  } catch (error) {
+    console.error('[Profile] saveAwayMode error:', error);
+    setMessage('error', 'Network error while saving away mode');
+  }
+}
+
+function collectNotificationPrefs() {
+  return {
+    prefer_urgent: document.getElementById('prefer_urgent')?.checked ? 1 : 0,
+    prefer_reminders: document.getElementById('prefer_reminders')?.checked ? 1 : 0,
+    prefer_threads: document.getElementById('prefer_threads')?.checked ? 1 : 0,
+    prefer_fosters: document.getElementById('prefer_fosters')?.checked ? 1 : 0,
+  };
+}
+
+function fillNotificationPrefs(prefs = {}) {
+  const map = [
+    ['prefer_urgent', 1],
+    ['prefer_reminders', 1],
+    ['prefer_threads', 0],
+    ['prefer_fosters', 0],
+  ];
+  map.forEach(([id, fallback]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const raw = prefs[id];
+    el.checked = raw == null ? Boolean(fallback) : Number(raw) === 1;
+  });
+}
+
+async function loadNotificationPrefs() {
+  try {
+    const res = await apiRequest('/push/prefs', { method: 'GET' });
+    if (!res.ok) return;
+    const prefs = await res.json();
+    fillNotificationPrefs(prefs);
+    const status = document.getElementById('pushStatus');
+    if (status && prefs.configured === false) {
+      status.textContent = 'Browser push is not configured on this server (email alerts still work).';
+    }
+  } catch (error) {
+    console.error('[Profile] loadNotificationPrefs error:', error);
+  }
+}
+
+async function saveNotificationPrefs() {
+  setMessage();
+  try {
+    const res = await apiRequest('/push/prefs', {
+      method: 'PUT',
+      body: collectNotificationPrefs(),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setMessage('error', body.error || 'Failed to save notification preferences');
+      return;
+    }
+    setMessage('success', 'Notification preferences saved.');
+  } catch (error) {
+    console.error('[Profile] saveNotificationPrefs error:', error);
+    setMessage('error', 'Network error saving notification preferences');
+  }
+}
+
+async function enableBrowserPush() {
+  const status = document.getElementById('pushStatus');
+  try {
+    const keyRes = await apiRequest('/push/vapid-public-key', { method: 'GET' });
+    const keyBody = await keyRes.json().catch(() => ({}));
+    if (!keyRes.ok || !keyBody.publicKey) {
+      if (status) status.textContent = keyBody.error || 'Push is not available.';
+      return;
+    }
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      if (status) status.textContent = 'This browser does not support push notifications.';
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      if (status) status.textContent = 'Notification permission was not granted.';
+      return;
+    }
+    // Minimal registration: subscribe without a custom SW file when unsupported.
+    const reg = await navigator.serviceWorker.getRegistration()
+      || await navigator.serviceWorker.register('/sw.js').catch(() => null);
+    if (!reg) {
+      if (status) {
+        status.textContent =
+          'Preferences saved for when a service worker is available. Enable push again after deploy includes /sw.js.';
+      }
+      await saveNotificationPrefs();
+      return;
+    }
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(keyBody.publicKey),
+    });
+    const res = await apiRequest('/push/subscribe', {
+      method: 'POST',
+      body: { subscription: sub.toJSON() },
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      if (status) status.textContent = body.error || 'Failed to save push subscription';
+      return;
+    }
+    await saveNotificationPrefs();
+    if (status) status.textContent = 'Browser push enabled.';
+  } catch (error) {
+    console.error('[Profile] enableBrowserPush error:', error);
+    if (status) status.textContent = 'Could not enable browser push.';
+  }
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
+}
+
 async function checkExistingProfile() {
   try {
     const res = await apiRequest('/volunteer/profile', { method: 'GET' });
@@ -261,6 +462,8 @@ async function checkExistingProfile() {
         submitButton.textContent = 'Profile verified';
       }
       if (saveInterestsButton) saveInterestsButton.hidden = false;
+      if (saveFosterButton) saveFosterButton.hidden = false;
+      if (saveAwayButton) saveAwayButton.hidden = false;
       return profile;
     }
 
@@ -268,6 +471,8 @@ async function checkExistingProfile() {
     if (submitButton) submitButton.disabled = true;
     setFormViewOnly(true);
     if (saveInterestsButton) saveInterestsButton.hidden = false;
+    if (saveFosterButton) saveFosterButton.hidden = false;
+    if (saveAwayButton) saveAwayButton.hidden = false;
     return profile;
   } catch (error) {
     console.error('[Profile] checkExistingProfile error:', error);
@@ -278,10 +483,22 @@ async function checkExistingProfile() {
 async function handleSubmit(event) {
   event.preventDefault();
   setMessage();
+  clearFormErrors(form);
 
   if (!form) return;
 
   const payload = formDataToPayload(form);
+  const errors = [];
+  if (!payload.date_of_birth) errors.push({ field: 'date_of_birth', message: 'Enter your date of birth.' });
+  if (!payload.emergency_contact) {
+    errors.push({ field: 'emergency_contact', message: 'Enter an emergency contact name and phone number.' });
+  }
+  if (!payload.address) errors.push({ field: 'address', message: 'Enter your address.' });
+  if (!payload.availability) errors.push({ field: 'availability', message: 'Select your availability.' });
+  if (errors.length) {
+    showFormErrors(form, errors);
+    return;
+  }
 
   try {
     const response = await apiRequest('/volunteer/profile', {
@@ -292,7 +509,7 @@ async function handleSubmit(event) {
     if (!response.ok) {
       const errorBody = await response.json().catch(() => ({}));
       const errorMessage = errorBody?.error || 'Failed to save profile';
-      setMessage('error', errorMessage);
+      showFormErrors(form, [{ message: errorMessage }]);
       return;
     }
 
@@ -302,7 +519,7 @@ async function handleSubmit(event) {
     }, 1500);
   } catch (error) {
     console.error('[Profile] submit error:', error);
-    setMessage('error', 'Network error while saving profile');
+    showFormErrors(form, [{ message: 'Network error while saving profile' }]);
   }
 }
 
@@ -323,6 +540,30 @@ async function init() {
     event.preventDefault();
     saveInterests();
   });
+
+  saveFosterButton?.addEventListener('click', (event) => {
+    event.preventDefault();
+    saveFosterHome();
+  });
+
+  saveAwayButton?.addEventListener('click', (event) => {
+    event.preventDefault();
+    saveAwayMode();
+  });
+
+  document.getElementById('savePrefsButton')?.addEventListener('click', (event) => {
+    event.preventDefault();
+    saveNotificationPrefs();
+  });
+  document.getElementById('enablePushButton')?.addEventListener('click', (event) => {
+    event.preventDefault();
+    enableBrowserPush();
+  });
+
+  await loadNotificationPrefs();
+  if (existingProfile) {
+    fillNotificationPrefs(existingProfile);
+  }
 }
 
 document.addEventListener('DOMContentLoaded', init);

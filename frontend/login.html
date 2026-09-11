@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Sign In | ShelterLink</title>
+    <title>Sign in - ShelterLink</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
     <link rel="stylesheet" href="/public/css/custom.css" />
   </head>
@@ -52,15 +52,22 @@
         <p class="auth-links">
           Don't have an account? <a href="/register.html">Register</a>
           · <a href="/pages/opportunities.html">Browse open shifts</a>
+          · <a href="/pages/privacy.html">Privacy</a>
         </p>
         <p class="auth-links">
           <a href="/forgot-password.html">Forgot your password?</a>
         </p>
       </article>
+
+      <article id="demoAccountsCard" class="auth-card" hidden>
+        <h2>Demo accounts (dev only)</h2>
+        <p>Seed logins for local development. Not shown in production.</p>
+        <div id="demoAccountsList"></div>
+      </article>
     </main>
 
     <footer class="container">
-      <small>&copy; 2025 ShelterLink &mdash; Assisi Animal Sanctuary</small>
+      <small>&copy; 2025 ShelterLink : Assisi Animal Sanctuary</small>
     </footer>
 
     <script>
@@ -76,5 +83,6 @@
     </script>
     <script type="module" src="/js/utils/errorHandler.js"></script>
     <script type="module" src="/js/login.js"></script>
+      <script type="module" src="/js/utils/footerYear.js"></script>
   </body>
 </html>

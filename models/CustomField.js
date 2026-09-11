@@ -337,7 +337,7 @@ async function upsertValues(userId, valuesByFieldId = {}) {
     await pool.execute(
       `INSERT INTO custom_field_values (field_id, user_id, value)
        VALUES (?, ?, ?)
-       ON DUPLICATE KEY UPDATE value = VALUES(value)`,
+       ON CONFLICT (field_id, user_id) DO UPDATE SET value = EXCLUDED.value`,
       [Number(fieldId), userId, value == null ? '' : String(value)]
     );
   }

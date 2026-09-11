@@ -76,7 +76,7 @@ async function buildVolunteerExport(userId) {
     [id]
   );
   const [tags] = await pool.execute(
-    `SELECT t.id, t.name, t.slug
+    `SELECT t.id, t.name
      FROM volunteer_tags vt
      INNER JOIN tags t ON t.id = vt.tag_id
      WHERE vt.user_id = ?`,

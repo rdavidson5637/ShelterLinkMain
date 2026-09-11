@@ -1,6 +1,8 @@
 import { apiRequest } from '../config.js';
 import { requireAuth, checkAuth, logout, isStaffOrAdminRole, applyRoleVisibility} from '../auth.js';
 import { renderTagChips, getSelectedTagIds, setSelectedTagIds } from '../components/tagChips.js';
+import { formatShiftWhen } from '../utils/dateFormat.js';
+import { createStatusBadge } from '../components/statusBadge.js';
 
 const tableBody = document.getElementById('opportunitiesTableBody');
 const statusFilter = document.getElementById('statusFilter');
@@ -22,11 +24,17 @@ const activityNotesInput = document.getElementById('activity_notes');
 const requirementsInput = document.getElementById('requirements');
 const qualificationSelect = document.getElementById('qualification_ids');
 const opportunityTagsEl = document.getElementById('opportunityTags');
+const shiftNotesSection = document.getElementById('shiftNotesSection');
+const shiftNotesList = document.getElementById('shiftNotesList');
+const shiftNoteBody = document.getElementById('shiftNoteBody');
+const shiftNoteNotify = document.getElementById('shiftNoteNotify');
+const addShiftNoteButton = document.getElementById('addShiftNoteButton');
 
 let opportunities = [];
 let selectedOpportunityId = null;
 let allQualifications = [];
 let allTags = [];
+let currentUserRole = null;
 
 function setMessage(type, text) {
   if (!messageEl) return;
@@ -38,17 +46,8 @@ function setMessage(type, text) {
   messageEl.innerHTML = `<p class="${cssClass}">${text}</p>`;
 }
 
-function formatDate(dateString) {
-  if (!dateString) return 'N/A';
-  const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) return dateString;
-  return date.toLocaleDateString();
-}
-
 function formatDateRange(opportunity) {
-  const start = formatDate(opportunity.start_date);
-  const end = formatDate(opportunity.end_date);
-  return `${start} - ${end}`;
+  return formatShiftWhen(opportunity.start_date, opportunity.end_date);
 }
 
 function clearEditForm() {
@@ -62,6 +61,10 @@ function clearEditForm() {
   }
   setSelectedTagIds(opportunityTagsEl, []);
   if (saveButton) saveButton.disabled = true;
+  if (shiftNotesSection) shiftNotesSection.hidden = true;
+  if (shiftNotesList) shiftNotesList.innerHTML = '';
+  if (shiftNoteBody) shiftNoteBody.value = '';
+  if (shiftNoteNotify) shiftNoteNotify.checked = false;
 }
 
 function setDateConstraint() {
@@ -120,17 +123,128 @@ function populateEditForm(opportunity) {
   setDateConstraint();
   if (saveButton) saveButton.disabled = false;
   editForm?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  loadShiftNotes(opportunity.id, opportunity.shift_notes);
+}
+
+function formatNoteWhen(value) {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value).slice(0, 16);
+  return d.toLocaleString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function renderShiftNotes(notes = []) {
+  if (!shiftNotesList) return;
+  if (!notes.length) {
+    shiftNotesList.innerHTML = '<p><small>No shift notes yet.</small></p>';
+    return;
+  }
+  shiftNotesList.innerHTML = notes
+    .map((n) => {
+      const when = formatNoteWhen(n.created_at);
+      const canDelete = currentUserRole === 'admin';
+      return `<article style="margin:0.5rem 0;padding:0.5rem 0.75rem;border-left:3px solid #1b5e20;background:#f6f7f6;">
+        <p style="margin:0;"><strong>${n.author_name || 'Staff'}</strong>${
+          when ? ` · ${when}` : ''
+        }</p>
+        <p style="margin:0.25rem 0;">${n.body || ''}</p>
+        ${
+          canDelete
+            ? `<button type="button" class="secondary button-small" data-delete-note="${n.id}">Delete</button>`
+            : ''
+        }
+      </article>`;
+    })
+    .join('');
+
+  shiftNotesList.querySelectorAll('[data-delete-note]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const noteId = btn.getAttribute('data-delete-note');
+      deleteShiftNote(noteId);
+    });
+  });
+}
+
+async function loadShiftNotes(opportunityId, preloaded = null) {
+  if (!shiftNotesSection || !opportunityId) return;
+  shiftNotesSection.hidden = false;
+  if (Array.isArray(preloaded)) {
+    renderShiftNotes(preloaded);
+    return;
+  }
+  try {
+    const res = await apiRequest(`/opportunities/${opportunityId}/notes`);
+    if (!res.ok) {
+      renderShiftNotes([]);
+      return;
+    }
+    renderShiftNotes(await res.json());
+  } catch (error) {
+    console.error('[Admin] loadShiftNotes error:', error);
+    renderShiftNotes([]);
+  }
+}
+
+async function addShiftNote() {
+  if (!selectedOpportunityId) return;
+  const body = (shiftNoteBody?.value || '').trim();
+  if (!body) {
+    setMessage('error', 'Enter a note before adding.');
+    return;
+  }
+  try {
+    const res = await apiRequest(`/opportunities/${selectedOpportunityId}/notes`, {
+      method: 'POST',
+      body: {
+        body,
+        notify: Boolean(shiftNoteNotify?.checked),
+      },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      setMessage('error', err.error || 'Failed to add note');
+      return;
+    }
+    if (shiftNoteBody) shiftNoteBody.value = '';
+    if (shiftNoteNotify) shiftNoteNotify.checked = false;
+    setMessage('success', 'Shift note added.');
+    await loadShiftNotes(selectedOpportunityId);
+  } catch (error) {
+    console.error('[Admin] addShiftNote error:', error);
+    setMessage('error', 'Failed to add note');
+  }
+}
+
+async function deleteShiftNote(noteId) {
+  if (!selectedOpportunityId || !noteId) return;
+  if (!window.confirm('Delete this shift note?')) return;
+  try {
+    const res = await apiRequest(
+      `/opportunities/${selectedOpportunityId}/notes/${noteId}`,
+      { method: 'DELETE' }
+    );
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      setMessage('error', err.error || 'Failed to delete note');
+      return;
+    }
+    setMessage('success', 'Note deleted.');
+    await loadShiftNotes(selectedOpportunityId);
+  } catch (error) {
+    console.error('[Admin] deleteShiftNote error:', error);
+    setMessage('error', 'Failed to delete note');
+  }
 }
 
 function getFilteredOpportunities() {
   const selectedStatus = statusFilter?.value || '';
   if (!selectedStatus) return opportunities;
   return opportunities.filter((opportunity) => opportunity.status === selectedStatus);
-}
-
-function createStatusBadge(status) {
-  const tone = status === 'closed' ? 'closed' : 'open';
-  return `<span class="status-badge ${tone}">${status || 'open'}</span>`;
 }
 
 function isSeriesMember(opportunity) {
@@ -146,7 +260,7 @@ function createRepeatIndicator(opportunity) {
     ? opportunity.recurrence_rule
     : 'series';
   const label = rule === 'daily' ? 'Repeats daily' : rule === 'weekly' ? 'Repeats weekly' : 'Part of series';
-  return ` <span class="status-badge open" title="${label}" aria-label="${label}">↻</span>`;
+  return ` <span class="repeat-indicator" title="${label}" aria-label="${label}">↻</span>`;
 }
 
 function createCheckInCodeBadge(opportunity) {
@@ -154,12 +268,22 @@ function createCheckInCodeBadge(opportunity) {
   return ` <code title="Check-in code" style="font-size:0.85em;">${opportunity.check_in_code}</code>`;
 }
 
+function createUrgentBadge(opportunity) {
+  if (!Number(opportunity.is_urgent)) return '';
+  return ' <span class="status-badge" style="background:#fde8e8;color:#7a1f1f;">Urgent</span>';
+}
+
 function renderOpportunitiesTable() {
   if (!tableBody) return;
   const filtered = getFilteredOpportunities();
 
   if (!filtered.length) {
-    tableBody.innerHTML = '<tr><td colspan="5">No opportunities found.</td></tr>';
+    tableBody.innerHTML = `<tr><td colspan="5">
+      <div class="empty-state">
+        <p>No opportunities found.</p>
+        <a href="/pages/admin/create-opportunity.html" role="button" class="outline">Create a shift</a>
+      </div>
+    </td></tr>`;
     return;
   }
 
@@ -169,7 +293,7 @@ function renderOpportunitiesTable() {
     const tr = document.createElement('tr');
 
     const titleTd = document.createElement('td');
-    titleTd.innerHTML = `${opportunity.title || 'Untitled'}${createRepeatIndicator(opportunity)}${createCheckInCodeBadge(opportunity)}`;
+    titleTd.innerHTML = `${opportunity.title || 'Untitled'}${createUrgentBadge(opportunity)}${createRepeatIndicator(opportunity)}${createCheckInCodeBadge(opportunity)}`;
 
     const locationTd = document.createElement('td');
     locationTd.textContent = opportunity.location || 'N/A';
@@ -178,7 +302,7 @@ function renderOpportunitiesTable() {
     datesTd.textContent = formatDateRange(opportunity);
 
     const statusTd = document.createElement('td');
-    statusTd.innerHTML = createStatusBadge(opportunity.status);
+    statusTd.appendChild(createStatusBadge(opportunity.status));
 
     const actionsTd = document.createElement('td');
     const actionsWrap = document.createElement('div');
@@ -194,6 +318,48 @@ function renderOpportunitiesTable() {
     });
 
     actionsWrap.appendChild(editButton);
+
+    const duplicateButton = document.createElement('button');
+    duplicateButton.type = 'button';
+    duplicateButton.className = 'secondary button-secondary button-small';
+    duplicateButton.textContent = 'Duplicate';
+    duplicateButton.addEventListener('click', () => {
+      duplicateOpportunity(opportunity);
+    });
+    actionsWrap.appendChild(duplicateButton);
+
+    if (
+      opportunity.status === 'open' &&
+      !Number(opportunity.is_urgent)
+    ) {
+      const urgentButton = document.createElement('button');
+      urgentButton.type = 'button';
+      urgentButton.className = 'button-small';
+      urgentButton.textContent = 'Urgent cover';
+      urgentButton.addEventListener('click', () => {
+        flagUrgentCover(opportunity);
+      });
+      actionsWrap.appendChild(urgentButton);
+    }
+
+    if (opportunity.status !== 'closed') {
+      const chatButton = document.createElement('button');
+      chatButton.type = 'button';
+      chatButton.className = 'secondary button-secondary button-small';
+      chatButton.textContent = 'Open shift chat';
+      chatButton.addEventListener('click', async () => {
+        try {
+          const { openShiftChat, messagesPageHref } = await import('../components/threadsUi.js');
+          const thread = await openShiftChat(opportunity.id, {
+            subject: opportunity.title || `Shift chat #${opportunity.id}`,
+          });
+          window.location.href = messagesPageHref(thread.id, { admin: true });
+        } catch (error) {
+          setMessage('error', error.message || 'Could not open shift chat');
+        }
+      });
+      actionsWrap.appendChild(chatButton);
+    }
 
     if (opportunity.status !== 'closed') {
       const closeButton = document.createElement('button');
@@ -326,6 +492,58 @@ async function saveOpportunity(event) {
   }
 }
 
+async function duplicateOpportunity(opportunity) {
+  const confirmed = window.confirm(
+    `Duplicate "${opportunity.title}"? A new draft will be created with dates cleared — set the dates and save.`
+  );
+  if (!confirmed) return;
+
+  try {
+    const response = await apiRequest(`/opportunities/${opportunity.id}/clone`, {
+      method: 'POST',
+    });
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => ({}));
+      setMessage('error', errorBody?.error || 'Failed to duplicate opportunity.');
+      return;
+    }
+    const clone = await response.json();
+    setMessage('success', 'Draft created — set the dates below and save.');
+    await fetchOpportunities();
+    const refreshed = opportunities.find((o) => Number(o.id) === Number(clone.id));
+    populateEditForm(refreshed || clone);
+  } catch (error) {
+    console.error('[Admin] duplicate opportunity error:', error);
+    setMessage('error', 'Network error while duplicating opportunity.');
+  }
+}
+
+async function flagUrgentCover(opportunity) {
+  const confirmed = window.confirm(
+    `Broadcast urgent cover for "${opportunity.title}"?\n\nQualified approved volunteers who have not applied will get one email. You can only do this once per 24 hours.`
+  );
+  if (!confirmed) return;
+
+  try {
+    const response = await apiRequest(`/opportunities/${opportunity.id}/urgent`, {
+      method: 'POST',
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setMessage('error', body?.error || 'Failed to flag urgent cover.');
+      return;
+    }
+    setMessage(
+      'success',
+      `Urgent cover sent to ${body.sent ?? 0} volunteer${Number(body.sent) === 1 ? '' : 's'}.`
+    );
+    await fetchOpportunities();
+  } catch (error) {
+    console.error('[Admin] urgent cover error:', error);
+    setMessage('error', 'Network error while flagging urgent cover.');
+  }
+}
+
 async function closeOpportunity(opportunity) {
   const partOfSeries = isSeriesMember(opportunity);
   let deleteSeries = false;
@@ -385,6 +603,7 @@ async function enforceAdminAccess() {
     window.location.href = '/login.html';
     return null;
   }
+  currentUserRole = user?.role || null;
   applyRoleVisibility(user);
   return user;
 }
@@ -410,6 +629,11 @@ function attachEventListeners() {
 
   endDateInput?.addEventListener('change', () => {
     validateFormDates();
+  });
+
+  addShiftNoteButton?.addEventListener('click', (event) => {
+    event.preventDefault();
+    addShiftNote();
   });
 
   logoutButton?.addEventListener('click', (event) => {

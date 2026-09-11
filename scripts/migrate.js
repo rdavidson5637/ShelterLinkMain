@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
- * ShelterLink — Incremental migrations
+ * ShelterLink — Incremental migrations (Postgres)
  * ---------------------------------------------------------------------------
- * Applies numbered migration files from database/ (001_*.sql, 002_*.sql, ...)
- * to an EXISTING database, tracking what has already run in a
- * schema_migrations table. Use this to upgrade a live database without
+ * Applies numbered migration files from database/ (001_*.pg.sql, ...)
+ * to an EXISTING database, tracking what has already run in
+ * schema_migrations. Use this to upgrade a live database without
  * wiping data. For a fresh install use `npm run db:reset` instead
- * (schema.sql already includes every migration).
+ * (schema.pg.sql already includes every change).
  *
  * Usage:
  *   npm run migrate            # apply all pending migrations
@@ -15,16 +15,8 @@
 
 const fs = require('fs');
 const path = require('path');
-const mysql = require('mysql2/promise');
 require('dotenv').config();
-
-const {
-  DB_HOST = 'localhost',
-  DB_PORT = '8889',
-  DB_USER = 'root',
-  DB_PASSWORD = 'root',
-  DB_NAME = 'ShelterLink',
-} = process.env;
+const { pgPool, pool, closePool } = require('../config/database');
 
 const dryRun = process.argv.includes('--dry-run');
 
@@ -32,40 +24,33 @@ async function run() {
   const dir = path.join(__dirname, '..', 'database');
   const files = fs
     .readdirSync(dir)
-    .filter((f) => /^\d{3}_.+\.sql$/.test(f))
+    .filter((f) => /^\d{3}_.+\.pg\.sql$/.test(f))
     .sort();
 
   if (files.length === 0) {
-    console.log('No migration files found in database/.');
+    console.log('No .pg.sql migration files found in database/.');
+    await closePool();
     return;
   }
 
-  let connection;
   try {
-    connection = await mysql.createConnection({
-      host: DB_HOST,
-      port: Number(DB_PORT),
-      user: DB_USER,
-      password: DB_PASSWORD,
-      database: DB_NAME,
-      multipleStatements: true,
-    });
+    await pgPool.query('SELECT 1');
   } catch (err) {
-    console.error('✗ Could not connect to MySQL.');
+    console.error('✗ Could not connect to Postgres.');
     console.error(`  ${err.message}`);
-    console.error('  Check that MySQL/MAMP is running and your .env DB_* values are correct.');
+    console.error('  Check that Postgres/Supabase is reachable and DATABASE_URL or DB_* are set.');
     process.exit(1);
   }
 
   try {
-    await connection.query(`
+    await pgPool.query(`
       CREATE TABLE IF NOT EXISTS schema_migrations (
         filename VARCHAR(255) NOT NULL PRIMARY KEY,
-        applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
     `);
 
-    const [rows] = await connection.query('SELECT filename FROM schema_migrations');
+    const [rows] = await pool.query('SELECT filename FROM schema_migrations');
     const applied = new Set(rows.map((r) => r.filename));
     const pending = files.filter((f) => !applied.has(f));
 
@@ -86,14 +71,19 @@ async function run() {
       const sql = fs.readFileSync(path.join(dir, file), 'utf8').trim();
       process.stdout.write(`→ Applying ${file}... `);
       try {
-        await connection.query(sql);
-        await connection.query('INSERT INTO schema_migrations (filename) VALUES (?)', [file]);
+        await pgPool.query(sql);
+        await pool.execute(
+          'INSERT INTO schema_migrations (filename) VALUES (?) ON CONFLICT (filename) DO NOTHING',
+          [file]
+        );
         console.log('✓');
       } catch (err) {
-        // Column/table already exists: schema.sql was built with this change
-        // folded in, so record it as applied and move on.
-        if (err.code === 'ER_DUP_FIELDNAME' || err.code === 'ER_TABLE_EXISTS_ERROR' || err.code === 'ER_DUP_KEYNAME') {
-          await connection.query('INSERT INTO schema_migrations (filename) VALUES (?)', [file]);
+        // Already present (folded into schema.pg.sql): record and continue.
+        if (err.code === '42701' || err.code === '42P07' || err.code === '42710') {
+          await pool.execute(
+            'INSERT INTO schema_migrations (filename) VALUES (?) ON CONFLICT (filename) DO NOTHING',
+            [file]
+          );
           console.log('already in schema, recorded as applied');
         } else {
           console.log('✗');
@@ -106,7 +96,7 @@ async function run() {
 
     console.log('\n✓ All migrations applied.');
   } finally {
-    await connection.end();
+    await closePool();
   }
 }
 

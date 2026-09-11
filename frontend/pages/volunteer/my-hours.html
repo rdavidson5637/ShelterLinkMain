@@ -3,28 +3,20 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>My Volunteer Hours | ShelterLink</title>
+    <title>My hours - ShelterLink</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
     <link rel="stylesheet" href="/public/css/custom.css" />
   </head>
   <body>
-    <header class="site-header">
+        <header class="site-header">
       <nav class="site-nav container" aria-label="Volunteer navigation">
-        <a class="site-brand" href="/index.html">
+        <a class="site-brand" href="/pages/volunteer/dashboard.html">
           <span class="brand-mark" aria-hidden="true"></span>
           <strong>ShelterLink</strong>
         </a>
-        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">☰</button>
-        <ul class="nav-menu" id="navMenu">
-          <li><a class="nav-link" href="/pages/volunteer/dashboard.html"><span class="nav-icon" aria-hidden="true">&#8962;</span><span>Dashboard</span></a></li>
-          <li><a class="nav-link" href="/pages/volunteer/calendar.html"><span class="nav-icon" aria-hidden="true">&#128197;</span><span>Calendar</span></a></li>
-          <li><a class="nav-link" href="/pages/volunteer/browse-shifts.html"><span class="nav-icon" aria-hidden="true">&#128269;</span><span>Browse</span></a></li>
-          <li><a class="nav-link" href="/pages/volunteer/my-applications.html"><span class="nav-icon" aria-hidden="true">&#128221;</span><span>Applications</span></a></li>
-          <li><a class="nav-link" href="/pages/volunteer/log-hours.html"><span class="nav-icon" aria-hidden="true">&#9201;</span><span>Log Hours</span></a></li>
-          <li><a class="nav-link" href="/pages/volunteer/my-hours.html" aria-current="page"><span class="nav-icon" aria-hidden="true">&#128202;</span><span>My Hours</span></a></li>
-          <li><a class="nav-link" href="/pages/volunteer/complete-profile.html"><span class="nav-icon" aria-hidden="true">&#128100;</span><span>Profile</span></a></li>
-          <li><button id="logoutButton" class="secondary">Logout</button></li>
-        </ul>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">Menu</button>
+        <ul class="nav-menu" id="navMenu" data-volunteer-nav></ul>
+        <button id="logoutButton" class="secondary">Logout</button>
       </nav>
     </header>
 
@@ -52,6 +44,9 @@
             <strong>Actions</strong>
           </header>
           <button id="exportCsvButton">Export CSV</button>
+          <a href="/pages/volunteer/certificate.html" role="button" class="secondary" style="margin-top:0.5rem;display:inline-block;">
+            Download certificate
+          </a>
         </article>
       </section>
 
@@ -92,12 +87,13 @@
       <section>
         <h2>Hours History</h2>
         <table id="hours-table">
+            <caption>Hours history</caption>
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Opportunity</th>
-              <th>Hours</th>
-              <th>Status</th>
+              <th scope="col">Date</th>
+              <th scope="col">Opportunity</th>
+              <th scope="col">Hours</th>
+              <th scope="col">Status</th>
             </tr>
           </thead>
           <tbody id="hoursTableBody">
@@ -113,11 +109,12 @@
         <p>Rate past shifts you attended. No login is needed on the feedback form once you open the link.</p>
         <div class="table-wrapper">
           <table>
+            <caption>Shifts awaiting feedback</caption>
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Opportunity</th>
-                <th>Feedback</th>
+                <th scope="col">Date</th>
+                <th scope="col">Opportunity</th>
+                <th scope="col">Feedback</th>
               </tr>
             </thead>
             <tbody id="feedbackShiftsBody">
@@ -132,20 +129,11 @@
       <small>&copy; 2025 ShelterLink</small>
     </footer>
 
-    <script>
-      (() => {
-        const nav = document.querySelector('.site-nav');
-        const toggle = nav?.querySelector('.nav-toggle');
-        if (!nav || !toggle) return;
-        toggle.addEventListener('click', () => {
-          const open = nav.classList.toggle('nav-open');
-          toggle.setAttribute('aria-expanded', String(open));
-        });
-      })();
-    </script>
     <script type="module" src="/js/utils/errorHandler.js"></script>
     <script type="module" src="/js/utils/sessionManager.js"></script>
     <script type="module" src="/js/volunteer/my-hours.js"></script>
+      <script type="module" src="/js/utils/footerYear.js"></script>
+      <script type="module" src="/js/components/volunteerNav.js"></script>
   </body>
 </html>
 

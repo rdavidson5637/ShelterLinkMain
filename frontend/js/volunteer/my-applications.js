@@ -1,6 +1,8 @@
 import { apiRequest } from '../config.js';
 import { requireAuth, logout } from '../auth.js';
 import { showConfirm } from '../components/confirmDialog.js';
+import { formatShiftWhen, formatDateOnly } from '../utils/dateFormat.js';
+import { createStatusBadge } from '../components/statusBadge.js';
 
 const applicationsContainer = document.getElementById('applications-container');
 const filterTabs = document.getElementById('filterTabs');
@@ -32,35 +34,119 @@ function showToast(message, type = 'success') {
   setTimeout(() => document.body.removeChild(toast), 3000);
 }
 
-function createStatusBadge(status = '', waitlistPosition = null) {
-  const badge = document.createElement('span');
-  const tone = (status || '').toLowerCase();
-  const display = {
-    cancelled: 'Cancelled',
-    pending: 'Pending',
-    approved: 'Approved',
-    accepted: 'Approved',
-    rejected: 'Rejected',
-    waitlisted: waitlistPosition
-      ? `Waitlisted (#${waitlistPosition})`
-      : 'Waitlisted',
-  }[tone] || (status ? status.charAt(0).toUpperCase() + status.slice(1).toLowerCase() : 'Unknown');
-  badge.textContent = display;
-  badge.classList.add('badge');
-  const colors = {
-    pending: '#e3a008',
-    approved: '#0f9d58',
-    accepted: '#0f9d58',
-    rejected: '#d93025',
-    cancelled: '#6c757d',
-    waitlisted: '#1565c0',
-  };
-  badge.style.backgroundColor = colors[tone] || '#6c757d';
-  badge.style.color = '#fff';
-  badge.style.padding = '0.15rem 0.5rem';
-  badge.style.borderRadius = '999px';
-  badge.style.fontSize = '0.85em';
-  return badge;
+function createStatusBadgeForApp(status = '', waitlistPosition = null) {
+  const suffix = waitlistPosition ? ` (#${waitlistPosition})` : '';
+  return createStatusBadge(status, { suffix });
+}
+
+async function loadAnimalsForApplication(app, container) {
+  const oppId = app.opportunity_id;
+  if (!oppId || !container) return;
+  const res = await apiRequest(`/opportunities/${oppId}`);
+  if (!res.ok) {
+    container.innerHTML = '';
+    return;
+  }
+  const opp = await res.json();
+  const animals = opp.animals || [];
+  if (!animals.length) {
+    container.innerHTML = '';
+    return;
+  }
+
+  container.innerHTML = '';
+  const heading = document.createElement('p');
+  heading.style.fontWeight = '600';
+  heading.textContent = 'Animals on this shift';
+  container.appendChild(heading);
+
+  animals.forEach((animal) => {
+    const block = document.createElement('div');
+    block.style.cssText =
+      'margin:0.5rem 0;padding:0.65rem 0.85rem;border:1px solid var(--border-color,#ddd);border-radius:6px;';
+    const title = document.createElement('strong');
+    title.textContent = animal.name;
+    block.appendChild(title);
+    if (animal.handling_notes) {
+      const notes = document.createElement('p');
+      notes.style.cssText = 'margin:0.35rem 0;font-size:0.9rem;';
+      notes.textContent = `Handling: ${animal.handling_notes}`;
+      block.appendChild(notes);
+    }
+    const actions = document.createElement('div');
+    actions.style.cssText = 'display:flex;flex-wrap:wrap;gap:0.35rem;margin-top:0.35rem;';
+    ['walk', 'feed', 'socialise'].forEach((type) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'secondary';
+      btn.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+      btn.addEventListener('click', async () => {
+        try {
+          const logRes = await apiRequest(`/animals/${animal.id}/activity`, {
+            method: 'POST',
+            body: {
+              application_id: app.id || app.application_id,
+              activity_type: type,
+            },
+          });
+          if (!logRes.ok) {
+            const err = await logRes.json().catch(() => ({}));
+            showToast(err?.error || 'Could not log activity', 'error');
+            return;
+          }
+          showToast(`Logged ${type} for ${animal.name}`);
+        } catch {
+          showToast('Could not log activity', 'error');
+        }
+      });
+      actions.appendChild(btn);
+    });
+    block.appendChild(actions);
+    container.appendChild(block);
+  });
+}
+
+async function loadShiftNotesForApplication(app, container) {
+  const oppId = app.opportunity_id;
+  if (!oppId || !container) return;
+  const res = await apiRequest(`/opportunities/${oppId}/notes`);
+  if (!res.ok) {
+    container.innerHTML = '';
+    return;
+  }
+  const notes = await res.json();
+  if (!Array.isArray(notes) || !notes.length) {
+    container.innerHTML = '';
+    return;
+  }
+  container.innerHTML = '';
+  const heading = document.createElement('p');
+  heading.style.fontWeight = '600';
+  heading.textContent = 'Shift notes';
+  container.appendChild(heading);
+  notes.forEach((note) => {
+    const block = document.createElement('div');
+    block.style.cssText =
+      'margin:0.35rem 0;padding:0.5rem 0.75rem;border-left:3px solid #1b5e20;background:#f6f7f6;';
+    const meta = document.createElement('small');
+    meta.style.display = 'block';
+    meta.style.color = 'var(--text-muted)';
+    const when = note.created_at
+      ? new Date(note.created_at).toLocaleString('en-GB', {
+          day: 'numeric',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+      : '';
+    meta.textContent = `${note.author_name || 'Staff'}${when ? ` · ${when}` : ''}`;
+    const body = document.createElement('p');
+    body.style.margin = '0.25rem 0 0';
+    body.textContent = note.body;
+    block.appendChild(meta);
+    block.appendChild(body);
+    container.appendChild(block);
+  });
 }
 
 function renderApplications() {
@@ -95,20 +181,20 @@ function renderApplications() {
     const title = document.createElement('h3');
     title.textContent = app.opportunity_title || 'Volunteer Opportunity';
 
-    const badge = createStatusBadge(app.status, app.waitlist_position);
+    const badge = createStatusBadgeForApp(app.status, app.waitlist_position);
 
     header.appendChild(title);
     header.appendChild(badge);
 
     const meta = document.createElement('p');
     const location = app.opportunity_location || 'Location TBA';
-    const dates = [app.opportunity_start_date, app.opportunity_end_date].filter(Boolean).join(' - ');
+    const dates = formatShiftWhen(app.opportunity_start_date, app.opportunity_end_date);
     meta.textContent = `${location}${dates ? ` • ${dates}` : ''}`;
 
     const appliedAt = document.createElement('p');
     appliedAt.style.fontSize = '0.875rem';
-    appliedAt.style.color = '#666';
-    appliedAt.textContent = `Applied: ${app.created_at || ''}`;
+    appliedAt.style.color = 'var(--text-muted)';
+    appliedAt.textContent = `Applied ${formatDateOnly(app.created_at)}`;
 
     card.appendChild(header);
     card.appendChild(meta);
@@ -196,6 +282,46 @@ function renderApplications() {
       card.appendChild(checkInWrap);
     }
 
+    if (isAccepted) {
+      const animalWrap = document.createElement('div');
+      animalWrap.style.cssText = 'margin-top:0.75rem;';
+      animalWrap.dataset.animalSlot = '1';
+      animalWrap.innerHTML = '<p style="font-size:0.875rem;color:var(--text-muted)">Loading animals…</p>';
+      card.appendChild(animalWrap);
+      loadAnimalsForApplication(app, animalWrap).catch(() => {
+        animalWrap.innerHTML = '';
+      });
+
+      const chatBtn = document.createElement('button');
+      chatBtn.type = 'button';
+      chatBtn.className = 'secondary';
+      chatBtn.textContent = 'Open shift chat';
+      chatBtn.style.marginTop = '0.5rem';
+      chatBtn.addEventListener('click', async () => {
+        try {
+          const { openShiftChat, messagesPageHref } = await import('../components/threadsUi.js');
+          const thread = await openShiftChat(app.opportunity_id, {
+            subject: app.opportunity_title || `Shift chat #${app.opportunity_id}`,
+          });
+          window.location.href = messagesPageHref(thread.id);
+        } catch (error) {
+          showToast(error.message || 'Could not open shift chat', 'error');
+        }
+      });
+      card.appendChild(chatBtn);
+    }
+
+    if (isAccepted) {
+      const notesWrap = document.createElement('div');
+      notesWrap.style.cssText = 'margin-top:0.75rem;';
+      notesWrap.innerHTML =
+        '<p style="font-size:0.875rem;color:var(--text-muted)">Loading shift notes…</p>';
+      card.appendChild(notesWrap);
+      loadShiftNotesForApplication(app, notesWrap).catch(() => {
+        notesWrap.innerHTML = '';
+      });
+    }
+
     // Show rejection reason if present
     if (statusLower === 'rejected' && app.rejection_reason) {
       const reasonBox = document.createElement('div');
@@ -259,8 +385,8 @@ function renderApplications() {
                 return;
               }
               app.status = 'cancelled';
+              badge.className = 'badge badge--cancelled';
               badge.textContent = 'Cancelled';
-              badge.style.backgroundColor = '#6c757d';
               cancelBtn.remove();
               showToast('Application cancelled. You can apply again later.');
             } catch (e) {

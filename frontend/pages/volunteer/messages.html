@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Messages - ShelterLink</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+    <link rel="stylesheet" href="/public/css/threads.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Volunteer navigation">
+        <a class="site-brand" href="/pages/volunteer/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">Menu</button>
+        <ul class="nav-menu" id="navMenu" data-volunteer-nav></ul>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section>
+        <h1>Messages</h1>
+        <p>Shift chats and shelter announcements. Other volunteers see your name only — never your contact details.</p>
+        <div id="message" role="status" aria-live="polite"></div>
+      </section>
+
+      <section class="threads-layout" aria-label="Message threads">
+        <aside class="threads-list-panel">
+          <h2 class="threads-panel-heading">Threads</h2>
+          <div id="threadsList" class="threads-list"></div>
+        </aside>
+        <div class="threads-detail-panel">
+          <div id="threadEmpty" class="threads-empty">
+            <p>Select a thread to read and reply.</p>
+          </div>
+          <div id="threadView" class="thread-view" hidden>
+            <header class="thread-view-header">
+              <div>
+                <h2 id="threadSubject"></h2>
+                <p id="threadMeta" class="threads-meta"></p>
+              </div>
+              <button type="button" id="muteButton" class="secondary">Mute</button>
+            </header>
+            <div id="participants" class="thread-participants" aria-label="Participants"></div>
+            <div id="messagesList" class="messages-list" role="log" aria-live="polite"></div>
+            <form id="composeForm" class="compose-form">
+              <label for="composeBody">
+                Reply
+                <textarea id="composeBody" name="body" rows="3" maxlength="2000" required placeholder="Write a message (max 2000 characters)"></textarea>
+              </label>
+              <button type="submit" id="sendButton">Send</button>
+            </form>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="container">
+      <small>&copy; <span data-year></span> ShelterLink</small>
+    </footer>
+
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/volunteer/messages.js"></script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+    <script type="module" src="/js/components/volunteerNav.js"></script>
+  </body>
+</html>

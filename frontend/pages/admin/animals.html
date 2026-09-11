@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Animals - ShelterLink</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Account">
+        <a class="site-brand" href="/pages/admin/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" aria-label="Toggle navigation">Menu</button>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main class="container dashboard-layout">
+      <aside id="admin-nav" class="sidebar-nav"></aside>
+      <div class="dashboard-main">
+        <section>
+          <h1>Animals</h1>
+          <p>Resident animals linked to shifts. Handling notes are shown to accepted volunteers on those shifts.</p>
+          <div id="message" role="status" aria-live="polite"></div>
+        </section>
+
+        <section class="filter-bar" aria-label="Filters">
+          <label for="filterSpecies">
+            Species
+            <select id="filterSpecies">
+              <option value="">All</option>
+              <option value="dog">Dog</option>
+              <option value="cat">Cat</option>
+              <option value="small_animal">Small animal</option>
+              <option value="other">Other</option>
+            </select>
+          </label>
+          <label for="filterStatus">
+            Status
+            <select id="filterStatus">
+              <option value="">All</option>
+              <option value="available">Available</option>
+              <option value="reserved">Reserved</option>
+              <option value="foster">Foster</option>
+              <option value="medical">Medical</option>
+              <option value="adopted">Adopted</option>
+              <option value="not_for_rehoming">Not for rehoming</option>
+            </select>
+          </label>
+        </section>
+
+        <section>
+          <article style="max-width: 720px;">
+            <h2 id="formTitle">Add animal</h2>
+            <form id="animalForm">
+              <input type="hidden" id="animal_id" />
+              <label for="name">
+                Name
+                <input type="text" id="name" name="name" required maxlength="255" />
+              </label>
+              <div class="form-grid">
+                <label for="species">
+                  Species
+                  <select id="species" name="species" required>
+                    <option value="dog">Dog</option>
+                    <option value="cat">Cat</option>
+                    <option value="small_animal">Small animal</option>
+                    <option value="other">Other</option>
+                  </select>
+                </label>
+                <label for="status">
+                  Status
+                  <select id="status" name="status" required>
+                    <option value="available">Available</option>
+                    <option value="reserved">Reserved</option>
+                    <option value="foster">Foster</option>
+                    <option value="medical">Medical</option>
+                    <option value="adopted">Adopted</option>
+                    <option value="not_for_rehoming">Not for rehoming</option>
+                  </select>
+                </label>
+                <label for="breed">
+                  Breed
+                  <input type="text" id="breed" name="breed" maxlength="255" />
+                </label>
+                <label for="sex">
+                  Sex
+                  <input type="text" id="sex" name="sex" maxlength="32" />
+                </label>
+                <label for="kennel_ref">
+                  Kennel / pen
+                  <input type="text" id="kennel_ref" name="kennel_ref" maxlength="64" />
+                </label>
+                <label for="arrival_date">
+                  Arrival date
+                  <input type="date" id="arrival_date" name="arrival_date" />
+                </label>
+                <label for="requires_qualification_id" class="form-full-width">
+                  Required qualification to handle
+                  <select id="requires_qualification_id" name="requires_qualification_id">
+                    <option value="">None</option>
+                  </select>
+                </label>
+              </div>
+              <label for="handling_notes">
+                Handling notes (safety-critical)
+                <textarea id="handling_notes" name="handling_notes" rows="3" placeholder="e.g. pulls left, muzzle required, no other dogs"></textarea>
+              </label>
+              <label for="notes">
+                Internal notes
+                <textarea id="notes" name="notes" rows="2"></textarea>
+              </label>
+              <div class="opportunity-actions">
+                <button type="submit" id="saveButton">Save</button>
+                <button type="button" id="cancelEditButton" class="secondary" hidden>Cancel edit</button>
+              </div>
+            </form>
+            <form id="photoForm" hidden style="margin-top: 1rem;">
+              <label for="photo">
+                Photo (JPG or PNG, max 5MB)
+                <input type="file" id="photo" name="photo" accept="image/jpeg,image/png" />
+              </label>
+              <button type="submit" class="secondary">Upload photo</button>
+            </form>
+          </article>
+        </section>
+
+        <section>
+          <h2>All animals</h2>
+          <div class="table-wrapper">
+            <table>
+              <caption>Shelter animals</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Name</th>
+                  <th scope="col">Species</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Kennel</th>
+                  <th scope="col">Handling</th>
+                  <th scope="col">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="animalsTableBody">
+                <tr><td colspan="6">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="activitySection" hidden>
+          <h2 id="activityTitle">Activity</h2>
+          <div class="table-wrapper">
+            <table>
+              <caption>Recent activity</caption>
+              <thead>
+                <tr>
+                  <th scope="col">When</th>
+                  <th scope="col">Who</th>
+                  <th scope="col">Type</th>
+                  <th scope="col">Notes</th>
+                </tr>
+              </thead>
+              <tbody id="activityTableBody"></tbody>
+            </table>
+          </div>
+
+          <h3>Welfare / incident notes</h3>
+          <form id="incidentForm" style="max-width: 560px;">
+            <input type="hidden" id="incident_animal_id" />
+            <label for="incident_severity">
+              Severity
+              <select id="incident_severity">
+                <option value="info">Info</option>
+                <option value="concern" selected>Concern</option>
+                <option value="urgent">Urgent</option>
+              </select>
+            </label>
+            <label for="incident_body">
+              Note (staff only)
+              <textarea id="incident_body" rows="3" required></textarea>
+            </label>
+            <button type="submit">Add incident note</button>
+          </form>
+          <div class="table-wrapper">
+            <table>
+              <caption>Staff-only incidents</caption>
+              <thead>
+                <tr>
+                  <th scope="col">When</th>
+                  <th scope="col">Severity</th>
+                  <th scope="col">By</th>
+                  <th scope="col">Note</th>
+                  <th scope="col">Status</th>
+                </tr>
+              </thead>
+              <tbody id="incidentsTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2025 ShelterLink</small>
+    </footer>
+
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/admin/animals.js"></script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+    <script type="module" src="/js/components/adminNav.js"></script>
+  </body>
+</html>

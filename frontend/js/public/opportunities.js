@@ -1,45 +1,67 @@
-const listEl = document.getElementById('opportunitiesList');
+import { formatShiftWhen } from '../utils/dateFormat.js';
 
-function formatDate(value) {
-  if (!value) return 'Date TBA';
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return String(value).slice(0, 10);
-  return d.toLocaleString();
-}
+const listEl = document.getElementById('opportunitiesList');
 
 async function load() {
   if (!listEl) return;
   try {
     const res = await fetch('/api/public/opportunities', { credentials: 'omit' });
     if (!res.ok) {
-      listEl.innerHTML = '<p>Unable to load opportunities right now.</p>';
+      listEl.replaceChildren();
+      const p = document.createElement('p');
+      p.textContent = 'Unable to load opportunities right now.';
+      listEl.appendChild(p);
       return;
     }
     const rows = await res.json();
     if (!Array.isArray(rows) || !rows.length) {
-      listEl.innerHTML = '<p>No open shifts at the moment. Please check back soon.</p>';
+      listEl.replaceChildren();
+      const p = document.createElement('p');
+      p.textContent = 'No open shifts at the moment. Please check back soon.';
+      listEl.appendChild(p);
       return;
     }
-    listEl.innerHTML = '';
+    listEl.replaceChildren();
     rows.forEach((opp) => {
       const article = document.createElement('article');
       const spots =
         opp.spots_remaining == null
           ? 'Unlimited spots'
           : `${opp.spots_remaining} spot${opp.spots_remaining === 1 ? '' : 's'} remaining`;
-      article.innerHTML = `
-        <h2>${opp.title || 'Volunteer shift'}</h2>
-        <p>${opp.description || ''}</p>
-        <p><strong>${formatDate(opp.date || opp.start_date)}</strong> · ${opp.location || 'Location TBA'}</p>
-        <p>${spots}</p>
-        <a href="/register.html" role="button">Sign up to apply</a>
-        <a href="/pages/group-booking.html?opportunity_id=${opp.id}" class="secondary">Book as a group</a>
-      `;
+
+      const h2 = document.createElement('h2');
+      h2.textContent = opp.title || 'Volunteer shift';
+      if (opp.is_urgent) {
+        const badge = document.createElement('span');
+        badge.textContent = ' Urgent cover needed';
+        badge.style.cssText = 'color:#7a1f1f;font-weight:600;font-size:0.85em;';
+        h2.appendChild(badge);
+      }
+      const desc = document.createElement('p');
+      desc.textContent = opp.description || '';
+      const meta = document.createElement('p');
+      const when = document.createElement('strong');
+      when.textContent = formatShiftWhen(opp.date || opp.start_date, opp.end_date);
+      meta.append(when, ` · ${opp.location || 'Location TBA'}`);
+      const spotsP = document.createElement('p');
+      spotsP.textContent = spots;
+      const apply = document.createElement('a');
+      apply.href = '/register.html';
+      apply.setAttribute('role', 'button');
+      apply.textContent = 'Sign up to apply';
+      const group = document.createElement('a');
+      group.href = `/pages/group-booking.html?opportunity_id=${encodeURIComponent(opp.id)}`;
+      group.className = 'secondary';
+      group.textContent = 'Book as a group';
+      article.append(h2, desc, meta, spotsP, apply, group);
       listEl.appendChild(article);
     });
   } catch (error) {
     console.error('[Public] load opportunities error:', error);
-    listEl.innerHTML = '<p>Network error while loading opportunities.</p>';
+    listEl.replaceChildren();
+    const p = document.createElement('p');
+    p.textContent = 'Network error while loading opportunities.';
+    listEl.appendChild(p);
   }
 }
 

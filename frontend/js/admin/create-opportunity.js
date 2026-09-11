@@ -1,6 +1,7 @@
 import { apiRequest } from '../config.js';
 import { requireAuth, checkAuth, logout, isStaffOrAdminRole, applyRoleVisibility} from '../auth.js';
 import { renderTagChips, getSelectedTagIds } from '../components/tagChips.js';
+import { showFormErrors, clearFormErrors } from '../utils/formErrors.js';
 
 const form = document.getElementById('opportunityForm');
 const messageEl = document.getElementById('message');
@@ -10,12 +11,18 @@ const recurrenceRuleInput = document.getElementById('recurrence_rule');
 const recurrenceUntilInput = document.getElementById('recurrence_until');
 const recurrenceUntilField = document.getElementById('recurrenceUntilField');
 const qualificationSelect = document.getElementById('qualification_ids');
+const animalSelect = document.getElementById('animal_ids');
 const opportunityTagsEl = document.getElementById('opportunityTags');
 const logoutButton = document.getElementById('logoutButton');
 const submitButton = document.getElementById('submitButton');
+const templateSelect = document.getElementById('templateSelect');
+const saveTemplateButton = document.getElementById('saveTemplateButton');
+const bgCheckSelect = document.getElementById('required_background_check_type');
 
 let allQualifications = [];
+let allAnimals = [];
 let allTags = [];
+let allTemplates = [];
 
 function setDateConstraints() {
   if (!startDateInput) return;
@@ -58,6 +65,9 @@ function formDataToPayload(formElement) {
   const selectedQuals = qualificationSelect
     ? Array.from(qualificationSelect.selectedOptions).map((o) => Number(o.value)).filter(Boolean)
     : [];
+  const selectedAnimals = animalSelect
+    ? Array.from(animalSelect.selectedOptions).map((o) => Number(o.value)).filter(Boolean)
+    : [];
   const payload = {
     title: data.get('title'),
     description: data.get('description'),
@@ -71,7 +81,9 @@ function formDataToPayload(formElement) {
       : 24,
     recurrence_rule,
     qualification_ids: selectedQuals,
+    animal_ids: selectedAnimals,
     tag_ids: getSelectedTagIds(opportunityTagsEl),
+    required_background_check_type: data.get('required_background_check_type') || null,
   };
   if (recurrence_rule !== 'none') {
     payload.recurrence_until = data.get('recurrence_until') || null;
@@ -85,18 +97,22 @@ function validateDates() {
   const end = endDateInput.value;
   if (!start || !end) return true;
   if (new Date(end) < new Date(start)) {
-    setMessage('error', 'End date must be on or after start date.');
+    showFormErrors(form, [{ field: 'end_date', message: 'End date must be on or after start date.' }]);
     return false;
   }
   const rule = recurrenceRuleInput?.value || 'none';
   if (rule !== 'none') {
     const until = recurrenceUntilInput?.value;
     if (!until) {
-      setMessage('error', 'Please choose an Until date for repeating opportunities.');
+      showFormErrors(form, [
+        { field: 'recurrence_until', message: 'Choose an until date for repeating opportunities.' },
+      ]);
       return false;
     }
     if (new Date(until) <= new Date(start)) {
-      setMessage('error', 'Until date must be after the start date.');
+      showFormErrors(form, [
+        { field: 'recurrence_until', message: 'Until date must be after the start date.' },
+      ]);
       return false;
     }
   }
@@ -106,6 +122,7 @@ function validateDates() {
 async function handleSubmit(event) {
   event.preventDefault();
   setMessage();
+  clearFormErrors(form);
 
   if (!validateDates()) {
     return;
@@ -123,7 +140,7 @@ async function handleSubmit(event) {
     if (!response.ok) {
       const errorBody = await response.json().catch(() => ({}));
       const errorMessage = errorBody?.error || 'Failed to create opportunity';
-      setMessage('error', errorMessage);
+      showFormErrors(form, [{ message: errorMessage }]);
       return;
     }
 
@@ -131,6 +148,11 @@ async function handleSubmit(event) {
     syncRecurrenceFields();
     if (qualificationSelect) {
       Array.from(qualificationSelect.options).forEach((o) => {
+        o.selected = false;
+      });
+    }
+    if (animalSelect) {
+      Array.from(animalSelect.options).forEach((o) => {
         o.selected = false;
       });
     }
@@ -144,7 +166,7 @@ async function handleSubmit(event) {
     }, 1500);
   } catch (error) {
     console.error('[Admin] create opportunity error:', error);
-    setMessage('error', 'Network error while creating opportunity');
+    showFormErrors(form, [{ message: 'Network error while creating opportunity' }]);
   } finally {
     submitButton?.removeAttribute('disabled');
   }
@@ -203,16 +225,126 @@ async function loadTags() {
   }
 }
 
+async function loadAnimals() {
+  if (!animalSelect) return;
+  try {
+    const res = await apiRequest('/animals', { method: 'GET' });
+    if (!res.ok) {
+      animalSelect.innerHTML = '<option disabled>Unable to load animals</option>';
+      return;
+    }
+    allAnimals = await res.json();
+    if (!allAnimals.length) {
+      animalSelect.innerHTML = '<option disabled value="">No animals defined yet</option>';
+      return;
+    }
+    animalSelect.innerHTML = '';
+    allAnimals.forEach((a) => {
+      const opt = document.createElement('option');
+      opt.value = String(a.id);
+      opt.textContent = `${a.name} (${a.species}${a.kennel_ref ? `, ${a.kennel_ref}` : ''})`;
+      animalSelect.appendChild(opt);
+    });
+  } catch (error) {
+    console.error('[Admin] loadAnimals error:', error);
+    animalSelect.innerHTML = '<option disabled>Unable to load animals</option>';
+  }
+}
+
+function applyTemplatePayload(payload = {}) {
+  if (!form) return;
+  if (payload.title != null) form.elements.namedItem('title').value = payload.title || '';
+  if (payload.description != null) form.elements.namedItem('description').value = payload.description || '';
+  if (payload.location != null) form.elements.namedItem('location').value = payload.location || '';
+  if (payload.requirements != null) form.elements.namedItem('requirements').value = payload.requirements || '';
+  if (payload.max_volunteers != null && form.elements.namedItem('max_volunteers')) {
+    form.elements.namedItem('max_volunteers').value = payload.max_volunteers || '';
+  }
+  if (payload.cancellation_cutoff_hours != null && form.elements.namedItem('cancellation_cutoff_hours')) {
+    form.elements.namedItem('cancellation_cutoff_hours').value =
+      payload.cancellation_cutoff_hours ?? 24;
+  }
+  if (bgCheckSelect) {
+    bgCheckSelect.value = payload.required_background_check_type || '';
+  }
+  const qualIds = new Set((payload.qualification_ids || []).map(String));
+  if (qualificationSelect) {
+    Array.from(qualificationSelect.options).forEach((o) => {
+      o.selected = qualIds.has(String(o.value));
+    });
+  }
+  const animalIds = new Set((payload.animal_ids || []).map(String));
+  if (animalSelect) {
+    Array.from(animalSelect.options).forEach((o) => {
+      o.selected = animalIds.has(String(o.value));
+    });
+  }
+  renderTagChips(opportunityTagsEl, allTags, payload.tag_ids || []);
+}
+
+async function loadTemplates() {
+  if (!templateSelect) return;
+  try {
+    const res = await apiRequest('/opportunity-templates', { method: 'GET' });
+    if (!res.ok) return;
+    allTemplates = await res.json();
+    templateSelect.innerHTML = '<option value="">— Blank opportunity —</option>';
+    allTemplates.forEach((t) => {
+      const opt = document.createElement('option');
+      opt.value = String(t.id);
+      opt.textContent = t.name;
+      templateSelect.appendChild(opt);
+    });
+  } catch (error) {
+    console.error('[Admin] loadTemplates error:', error);
+  }
+}
+
 async function init() {
   await requireAuth();
   await enforceAdminAccess();
   setDateConstraints();
   await loadQualifications();
+  await loadAnimals();
   await loadTags();
+  await loadTemplates();
 
   if (form) {
     form.addEventListener('submit', handleSubmit);
   }
+
+  templateSelect?.addEventListener('change', () => {
+    const id = templateSelect.value;
+    if (!id) return;
+    const tpl = allTemplates.find((t) => String(t.id) === String(id));
+    if (tpl) applyTemplatePayload(tpl.payload || {});
+  });
+
+  saveTemplateButton?.addEventListener('click', async () => {
+    const name = window.prompt('Template name');
+    if (!name || !name.trim()) return;
+    const payload = formDataToPayload(form);
+    delete payload.start_date;
+    delete payload.end_date;
+    delete payload.recurrence_rule;
+    delete payload.recurrence_until;
+    try {
+      const res = await apiRequest('/opportunity-templates/from-form', {
+        method: 'POST',
+        body: { name: name.trim(), ...payload },
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessage('error', body.error || 'Failed to save template');
+        return;
+      }
+      setMessage('success', 'Template saved.');
+      await loadTemplates();
+    } catch (error) {
+      console.error('[Admin] save template error:', error);
+      setMessage('error', 'Network error saving template');
+    }
+  });
 
   if (logoutButton) {
     logoutButton.addEventListener('click', (event) => {
@@ -246,5 +378,4 @@ async function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
-
 

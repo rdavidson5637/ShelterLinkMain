@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <title>Check-in Kiosk | ShelterLink</title>
+    <title>Check-in kiosk - ShelterLink</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
     <style>
       :root {
@@ -92,7 +92,33 @@
         text-align: center;
         text-transform: uppercase;
       }
-      .muted { opacity: 0.8; }
+      .skip-link {
+        position: absolute;
+        left: 0.75rem;
+        top: -4rem;
+        z-index: 10000;
+        padding: 0.5rem 1rem;
+        background: var(--kiosk-accent);
+        color: #0f2a1f;
+        border-radius: 6px;
+        font-weight: 600;
+        text-decoration: none;
+      }
+      .skip-link:focus,
+      .skip-link:focus-visible {
+        top: 0.75rem;
+        outline: 2px solid #fff;
+        outline-offset: 2px;
+      }
+      button,
+      .volunteer-btn,
+      input,
+      [type="submit"] {
+        min-height: 44px;
+      }
+      .volunteer-btn {
+        min-height: 4.5rem;
+      }
       .hidden { display: none !important; }
       #message { min-height: 1.5rem; }
       #message .error { color: #ffb4a8; }
@@ -100,7 +126,7 @@
     </style>
   </head>
   <body class="kiosk-body">
-    <div class="kiosk-shell">
+    <main class="kiosk-shell" id="main-content">
       <header class="kiosk-header">
         <div>
           <h1>ShelterLink Kiosk</h1>
@@ -128,6 +154,7 @@
       </section>
 
       <section id="shiftsPanel" class="kiosk-panel hidden">
+        <h2 id="shiftsHeading">Today's shifts</h2>
         <div id="shiftsList" class="shift-list">
           <p class="muted">Loading today&rsquo;s shifts…</p>
         </div>
@@ -146,7 +173,7 @@
           <button type="submit" id="submitCheck">Confirm</button>
         </form>
       </section>
-    </div>
+    </main>
 
     <script type="module" src="/js/kiosk.js"></script>
   </body>

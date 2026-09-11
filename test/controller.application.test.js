@@ -250,6 +250,90 @@ test('cancellation of accepted application promotes oldest waitlisted and emails
   assert.ok(emailCalls.some((c) => c[0] === 'promote' && c[1] === 'wait@x.com'));
 });
 
+test('cancelling an accepted application revokes shift-chat access', async () => {
+  resetEmail();
+  mock.resetCalls();
+  let deletedParticipant = null;
+  mock.setHandler(async (sql, params) => {
+    if (/DELETE FROM applications/i.test(sql)) return [{ affectedRows: 1 }];
+    if (/UPDATE applications SET status = \?/i.test(sql)) return [{ affectedRows: 1 }];
+    if (/status = 'waitlisted'/i.test(sql)) return [[]];
+    if (/AS current_count/i.test(sql)) return [[{ current_count: 0 }]];
+    if (/FROM opportunities/i.test(sql)) {
+      return [[{ opportunity_id: 1, status: 'open', max_volunteers: 1 }]];
+    }
+    if (/WHERE a\.application_id = \?/i.test(sql) || /WHERE application_id = \?/i.test(sql)) {
+      return [[{
+        application_id: 5, user_id: 2, opportunity_id: 1, status: 'accepted',
+        email: 'accepter@x.com', opportunity_title: 'Dog Walk',
+      }]];
+    }
+    if (/FROM message_threads/i.test(sql) && /context_type = \?/i.test(sql)) {
+      return [[{ id: 77, context_type: 'opportunity', context_id: 1 }]];
+    }
+    if (/DELETE FROM thread_participants/i.test(sql)) {
+      deletedParticipant = { threadId: params[0], userId: params[1] };
+      return [{ affectedRows: 1 }];
+    }
+    return [[]];
+  });
+
+  const res = makeRes();
+  await appCtrl.cancelApplication(makeReq({ params: { id: 5 }, body: {} }), res);
+
+  assert.strictEqual(res.statusCode, 200);
+  assert.ok(deletedParticipant, 'thread_participants row was deleted');
+  assert.strictEqual(Number(deletedParticipant.threadId), 77);
+  assert.strictEqual(Number(deletedParticipant.userId), 2);
+});
+
+test('staff rejecting a previously-accepted application revokes shift-chat access', async () => {
+  resetEmail();
+  mock.resetCalls();
+  let deletedParticipant = null;
+  let applicationLookups = 0;
+  mock.setHandler(async (sql, params) => {
+    if (/UPDATE applications SET status = \?/i.test(sql)) {
+      return [{ affectedRows: 1 }];
+    }
+    if (/status = 'waitlisted'/i.test(sql)) return [[]];
+    if (/FROM applications a[\s\S]*WHERE a\.application_id = \?/i.test(sql)) {
+      // First call is the controller's existence/wasAccepted check (still
+      // 'accepted'); the second is updateStatus's post-update re-select
+      // (now 'rejected').
+      applicationLookups += 1;
+      const status = applicationLookups === 1 ? 'accepted' : 'rejected';
+      return [[{
+        application_id: 5, user_id: 2, opportunity_id: 1, status,
+        email: 'accepter@x.com', opportunity_title: 'Dog Walk',
+      }]];
+    }
+    if (/FROM message_threads/i.test(sql) && /context_type = \?/i.test(sql)) {
+      return [[{ id: 77, context_type: 'opportunity', context_id: 1 }]];
+    }
+    if (/DELETE FROM thread_participants/i.test(sql)) {
+      deletedParticipant = { threadId: params[0], userId: params[1] };
+      return [{ affectedRows: 1 }];
+    }
+    return [[]];
+  });
+
+  const res = makeRes();
+  await appCtrl.updateApplicationStatus(
+    makeReq({
+      session: { userId: 1, role: 'admin' },
+      params: { id: 5 },
+      body: { status: 'rejected' },
+    }),
+    res
+  );
+
+  assert.strictEqual(res.statusCode, 200);
+  assert.ok(deletedParticipant, 'thread_participants row was deleted');
+  assert.strictEqual(Number(deletedParticipant.threadId), 77);
+  assert.strictEqual(Number(deletedParticipant.userId), 2);
+});
+
 test('accepting from waitlist respects capacity', async () => {
   resetEmail();
   mock.resetCalls();

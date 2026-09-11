@@ -55,6 +55,7 @@ async function findByUserId(userId) {
         o.start_date AS opportunity_start_date,
         o.end_date AS opportunity_end_date,
         o.cancellation_cutoff_hours,
+        o.check_in_code,
         (
           SELECT s.id
           FROM swap_requests s
@@ -423,11 +424,13 @@ async function findAcceptedNeedingReminder(now = new Date()) {
       FROM ${TABLE} a
       INNER JOIN opportunities o ON o.opportunity_id = a.opportunity_id
       INNER JOIN users u ON u.user_id = a.user_id
+      LEFT JOIN volunteer_profiles vp ON vp.user_id = a.user_id
       WHERE a.status IN ('accepted', 'approved')
         AND a.reminder_sent_at IS NULL
         AND o.start_date IS NOT NULL
         AND o.start_date >= ?
-        AND o.start_date < DATE_ADD(?, INTERVAL 24 HOUR)
+        AND o.start_date < (?::timestamp + interval '24 hours')
+        AND (vp.away_until IS NULL OR vp.away_until < CURRENT_DATE)
       ORDER BY o.start_date ASC
     `;
     const nowSql = now.toISOString().slice(0, 19).replace('T', ' ');

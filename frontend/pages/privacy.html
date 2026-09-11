@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy notice - ShelterLink</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Main navigation">
+        <a class="site-brand" href="/index.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">☰</button>
+        <ul class="nav-menu" id="navMenu">
+          <li><a class="nav-link" href="/pages/opportunities.html">Open shifts</a></li>
+          <li><a class="nav-link" href="/register.html">Register</a></li>
+          <li><a class="nav-link" href="/login.html">Sign in</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="container" style="max-width: 42rem;">
+      <article>
+        <h1>Privacy notice</h1>
+        <p>
+          ShelterLink is the volunteer management system used by
+          <strong>Assisi Animal Sanctuary</strong>. This notice explains what personal
+          data we collect, why we use it, and your rights. It is written for volunteers
+          and staff using the service.
+        </p>
+
+        <h2>What data we hold</h2>
+        <p>Depending on how you use ShelterLink, we may hold:</p>
+        <ul>
+          <li>Account details — name, email, phone number, and password (stored as a secure hash)</li>
+          <li>Volunteer profile — address, date of birth, emergency contact, skills, availability, and any custom fields the sanctuary asks for</li>
+          <li>Activity records — shift applications, check-ins, logged hours, qualifications, waivers, foster offers, and messages related to volunteering</li>
+          <li>Staff audit records — who viewed or changed sensitive records, for accountability</li>
+        </ul>
+
+        <h2>Why we use it</h2>
+        <p>We use this information to:</p>
+        <ul>
+          <li>Run safe, organised volunteering (scheduling, check-in, and communications)</li>
+          <li>Protect animal and people safety (qualifications, handling notes, emergency contacts)</li>
+          <li>Meet legal and safeguarding duties where they apply</li>
+          <li>Improve how the sanctuary supports volunteers</li>
+        </ul>
+
+        <h2>Volunteer contact privacy</h2>
+        <p>
+          Your phone number and emergency contact are shared with authorised Assisi staff
+          when needed for a shift (for example on the day or week roster). We do not sell
+          your details, and we do not publish volunteer contact information on public pages.
+          Other volunteers do not see your phone number through ShelterLink.
+        </p>
+
+        <h2>Your GDPR rights</h2>
+        <p>If UK GDPR applies to you, you can ask Assisi to:</p>
+        <ul>
+          <li>Access a copy of your personal data</li>
+          <li>Correct inaccurate data</li>
+          <li>Erase data where we are not required to keep it</li>
+          <li>Restrict or object to certain processing</li>
+          <li>Receive data you provided in a portable format where applicable</li>
+        </ul>
+        <p>
+          Staff administrators can export or erase volunteer accounts through ShelterLink’s
+          privacy tools when that process applies.
+        </p>
+
+        <h2>Contact</h2>
+        <p>
+          For privacy questions about ShelterLink or Assisi Animal Sanctuary volunteering,
+          contact the sanctuary office using the details published on the Assisi website,
+          or speak to a member of staff at the sanctuary.
+        </p>
+
+        <p><small>This page is a short privacy notice for users of ShelterLink. It is not legal advice.</small></p>
+      </article>
+    </main>
+
+    <footer class="container">
+      <small></small>
+    </footer>
+
+    <script>
+      (() => {
+        const nav = document.querySelector('.site-nav');
+        const toggle = nav?.querySelector('.nav-toggle');
+        if (!nav || !toggle) return;
+        toggle.addEventListener('click', () => {
+          const open = nav.classList.toggle('nav-open');
+          toggle.setAttribute('aria-expanded', String(open));
+        });
+      })();
+    </script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+  </body>
+</html>

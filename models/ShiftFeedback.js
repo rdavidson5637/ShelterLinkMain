@@ -173,7 +173,7 @@ async function findAcceptedNeedingFeedbackRequest(now = new Date()) {
     WHERE a.status IN ('accepted', 'approved')
       AND a.feedback_requested_at IS NULL
       AND o.start_date IS NOT NULL
-      AND DATE(o.start_date) = DATE_SUB(DATE(?), INTERVAL 1 DAY)
+      AND CAST(o.start_date AS date) = (?::date - interval '1 day')
     ORDER BY a.application_id ASC
   `;
   const [rows] = await pool.execute(sql, [nowSql]);

@@ -1,0 +1,29 @@
+{
+  "name": "ShelterLink",
+  "short_name": "ShelterLink",
+  "description": "Volunteer shifts and hours for Assisi Animal Sanctuary",
+  "start_url": "/pages/volunteer/dashboard.html",
+  "display": "standalone",
+  "background_color": "#f6f7f6",
+  "theme_color": "#1b5e20",
+  "icons": [
+    {
+      "src": "/public/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/public/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/public/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

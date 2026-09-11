@@ -55,7 +55,7 @@ test('reminder query selects only unsent accepted apps in next 24h', async () =>
   mock.resetCalls();
   mock.setHandler(async (sql, params) => {
     assert.match(sql, /reminder_sent_at IS NULL/i);
-    assert.match(sql, /INTERVAL 24 HOUR/i);
+    assert.match(sql, /interval '24 hours'/i);
     assert.match(sql, /accepted', 'approved'/);
     assert.strictEqual(params.length, 2);
     return [[{

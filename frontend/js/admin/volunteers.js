@@ -1,10 +1,13 @@
 import { apiRequest, API_URL } from '../config.js';
 import { requireAuth, checkAuth, logout, isStaffOrAdminRole, isAdminRole, applyRoleVisibility} from '../auth.js';
+import { createStatusBadge } from '../components/statusBadge.js';
+import { createOverflowMenu, createIdentityCell } from '../components/overflowMenu.js';
 
 const logoutButton = document.getElementById('logoutButton');
 const searchInput = document.getElementById('searchInput');
 const statusFilter = document.getElementById('statusFilter');
 const volunteersTableBody = document.getElementById('volunteersTableBody');
+const volunteersCardList = document.getElementById('volunteersCardList');
 const messageEl = document.getElementById('message');
 const profileModal = document.getElementById('profileModal');
 const profileContent = document.getElementById('profileContent');
@@ -64,100 +67,248 @@ function filterVolunteers() {
   renderTable();
 }
 
+function exportVolunteerData(userId) {
+  window.location.href = `${API_URL}/admin/gdpr/volunteers/${userId}/export`;
+}
+
+async function eraseVolunteer(userId) {
+  const typed = window.prompt('Type DELETE to permanently anonymise this volunteer account:');
+  if (typed !== 'DELETE') {
+    setMessage('Erasure cancelled: confirmation text did not match.', 'error');
+    return;
+  }
+  try {
+    const eraseRes = await apiRequest(`/admin/gdpr/volunteers/${userId}/erase`, {
+      method: 'POST',
+      body: { confirmation: 'DELETE' },
+    });
+    if (!eraseRes.ok) {
+      const err = await eraseRes.json().catch(() => ({}));
+      setMessage(err.error || 'Erasure failed', 'error');
+      return;
+    }
+    const body = await eraseRes.json();
+    setMessage(
+      `Anonymised. Approved hours preserved: ${body.hours_preserved ?? 'n/a'}`,
+      'success'
+    );
+    profileModal?.close?.();
+    await loadVolunteers();
+  } catch {
+    setMessage('Network error during erasure', 'error');
+  }
+}
+
+function volunteerActions(volunteer, isApproved) {
+  const wrap = document.createElement('div');
+  wrap.className = 'row-actions';
+
+  const viewBtn = document.createElement('button');
+  viewBtn.type = 'button';
+  viewBtn.textContent = 'View';
+  viewBtn.classList.add('secondary', 'button-secondary', 'button-small');
+  viewBtn.addEventListener('click', () => viewProfile(volunteer.id));
+  wrap.appendChild(viewBtn);
+
+  const menuItems = [
+    { label: 'Award qualification', onSelect: () => openAwardModal(volunteer) },
+  ];
+  const isFosterApproved =
+    volunteer.foster_approved === true || volunteer.foster_approved === 1;
+  menuItems.push({
+    label: isFosterApproved ? 'Revoke foster approval' : 'Approve for foster',
+    onSelect: () => toggleFosterApproval(volunteer.id, !isFosterApproved),
+  });
+  if (isAdminRole(currentUser)) {
+    menuItems.push({
+      label: isApproved ? 'Unapprove' : 'Approve',
+      onSelect: () => toggleApproval(volunteer.id, !isApproved),
+    });
+    menuItems.push({ label: 'Export data', onSelect: () => exportVolunteerData(volunteer.id) });
+    menuItems.push({ separator: true });
+    menuItems.push({
+      label: 'Erase',
+      destructive: true,
+      onSelect: () => eraseVolunteer(volunteer.id),
+    });
+  }
+  wrap.appendChild(createOverflowMenu({ items: menuItems }));
+  return wrap;
+}
+
 function renderTable() {
   if (!volunteersTableBody) return;
+  const cardList = volunteersCardList;
 
   if (!filteredVolunteers.length) {
-    volunteersTableBody.innerHTML = '<tr><td colspan="7">No volunteers found</td></tr>';
+    volunteersTableBody.innerHTML = '<tr><td colspan="6">No volunteers found</td></tr>';
+    if (cardList) cardList.innerHTML = '<p>No volunteers found</p>';
     return;
   }
 
   volunteersTableBody.innerHTML = '';
+  if (cardList) cardList.innerHTML = '';
 
   filteredVolunteers.forEach((volunteer) => {
-    const tr = document.createElement('tr');
-
-    // Name
-    const nameTd = document.createElement('td');
     const fullName = `${volunteer.first_name || ''} ${volunteer.last_name || ''}`.trim() || 'N/A';
-    nameTd.textContent = fullName;
+    const isApproved = volunteer.approved === true || volunteer.approved === 1;
+    const hours = formatNumber(volunteer.total_hours || 0);
+    const noShows = String(volunteer.no_show_count || 0);
 
-    // Email
-    const emailTd = document.createElement('td');
-    emailTd.textContent = volunteer.email || 'N/A';
+    const tr = document.createElement('tr');
+    tr.appendChild(createIdentityCell(fullName, volunteer.email || ''));
 
-    // Phone
     const phoneTd = document.createElement('td');
     phoneTd.textContent = volunteer.phone || 'N/A';
 
-    // Status
     const statusTd = document.createElement('td');
-    const isApproved = volunteer.approved === true || volunteer.approved === 1;
-    const statusBadge = document.createElement('span');
-    statusBadge.textContent = isApproved ? 'Approved' : 'Pending';
-    statusBadge.style.cssText = `
-      padding: 0.25rem 0.5rem;
-      border-radius: 0.25rem;
-      font-size: 0.875rem;
-      font-weight: 500;
-      ${isApproved 
-        ? 'background: #4caf50; color: white;' 
-        : 'background: #ff9800; color: white;'}
-    `;
-    statusTd.appendChild(statusBadge);
+    statusTd.appendChild(createStatusBadge(isApproved ? 'approved' : 'pending'));
+    if (volunteer.away_until) {
+      const away = document.createElement('div');
+      away.style.cssText = 'font-size:0.85rem;margin-top:0.25rem;color:var(--pico-muted-color,#55605a);';
+      away.textContent = `Away until ${String(volunteer.away_until).slice(0, 10)}`;
+      statusTd.appendChild(away);
+    }
 
-    // Total Hours
     const hoursTd = document.createElement('td');
-    hoursTd.textContent = formatNumber(volunteer.total_hours || 0);
+    hoursTd.className = 'numeric-cell';
+    hoursTd.textContent = hours;
 
-    // No-shows
     const noShowTd = document.createElement('td');
-    noShowTd.textContent = String(volunteer.no_show_count || 0);
+    noShowTd.className = 'numeric-cell';
+    noShowTd.textContent = noShows;
 
-    // Actions
     const actionsTd = document.createElement('td');
-    actionsTd.style.display = 'flex';
-    actionsTd.style.gap = '0.5rem';
-    actionsTd.style.flexWrap = 'wrap';
+    actionsTd.appendChild(volunteerActions(volunteer, isApproved));
 
-    const viewBtn = document.createElement('button');
-    viewBtn.type = 'button';
-    viewBtn.textContent = 'View Profile';
-    viewBtn.classList.add('secondary', 'button-secondary', 'button-small');
-    viewBtn.addEventListener('click', () => viewProfile(volunteer.id));
-
-    const awardBtn = document.createElement('button');
-    awardBtn.type = 'button';
-    awardBtn.textContent = 'Award qual';
-    awardBtn.classList.add('secondary', 'button-secondary', 'button-small');
-    awardBtn.addEventListener('click', () => openAwardModal(volunteer));
-
-    const toggleBtn = document.createElement('button');
-    toggleBtn.type = 'button';
-    toggleBtn.textContent = isApproved ? 'Unapprove' : 'Approve';
-    if (isApproved) {
-      toggleBtn.classList.add('secondary', 'button-secondary', 'button-small');
-    } else {
-      toggleBtn.classList.add('contrast', 'button-small');
-    }
-    toggleBtn.addEventListener('click', () => toggleApproval(volunteer.id, !isApproved));
-
-    actionsTd.appendChild(viewBtn);
-    actionsTd.appendChild(awardBtn);
-    if (isAdminRole(currentUser)) {
-      actionsTd.appendChild(toggleBtn);
-    }
-
-    tr.appendChild(nameTd);
-    tr.appendChild(emailTd);
-    tr.appendChild(phoneTd);
-    tr.appendChild(statusTd);
-    tr.appendChild(hoursTd);
-    tr.appendChild(noShowTd);
-    tr.appendChild(actionsTd);
-
+    tr.append(phoneTd, statusTd, hoursTd, noShowTd, actionsTd);
     volunteersTableBody.appendChild(tr);
+
+    if (cardList) {
+      const card = document.createElement('article');
+      card.className = 'person-card';
+      const name = document.createElement('strong');
+      name.textContent = fullName;
+      const email = document.createElement('small');
+      email.textContent = volunteer.email || '';
+      const meta = document.createElement('p');
+      meta.className = 'person-card-meta';
+      meta.textContent = `${hours} hours · ${noShows} no-shows`;
+      const status = createStatusBadge(isApproved ? 'approved' : 'pending');
+      card.append(name, email, status, meta, volunteerActions(volunteer, isApproved));
+      cardList.appendChild(card);
+    }
   });
+}
+
+async function loadVettingSection(userId) {
+  const checksEl = document.getElementById('vettingChecksList');
+  const refsEl = document.getElementById('vettingRefsList');
+  try {
+    const checksRes = await apiRequest(`/vetting/volunteers/${userId}/background-checks`, {
+      method: 'GET',
+    });
+    if (checksRes.ok) {
+      const checks = await checksRes.json();
+      checksEl.innerHTML = checks.length
+        ? `<ul>${checks
+            .map(
+              (c) =>
+                `<li><strong>${c.check_type}</strong> — ${c.status}${
+                  c.expires_on ? ` · expires ${String(c.expires_on).slice(0, 10)}` : ''
+                }${c.reference_number ? ` · ref ${c.reference_number}` : ''}${
+                  c.notes ? `<br/><em>${c.notes}</em>` : ''
+                }</li>`
+            )
+            .join('')}</ul>`
+        : '<p>No background checks recorded.</p>';
+    } else {
+      checksEl.innerHTML = '<p>Unable to load background checks.</p>';
+    }
+  } catch {
+    if (checksEl) checksEl.innerHTML = '<p>Unable to load background checks.</p>';
+  }
+
+  try {
+    const refsRes = await apiRequest(`/vetting/volunteers/${userId}/references`, { method: 'GET' });
+    if (refsRes.ok) {
+      const refs = await refsRes.json();
+      refsEl.innerHTML = refs.length
+        ? `<ul>${refs
+            .map(
+              (r) =>
+                `<li><strong>${r.referee_name}</strong> (${r.referee_email}) — ${r.status}${
+                  r.is_suitable != null ? ` · suitable: ${r.is_suitable ? 'yes' : 'no'}` : ''
+                }${r.comments ? `<br/><em>Comments: ${r.comments}</em>` : ''}</li>`
+            )
+            .join('')}</ul>`
+        : '<p>No references requested yet.</p>';
+    } else {
+      refsEl.innerHTML = '<p>Unable to load references.</p>';
+    }
+  } catch {
+    if (refsEl) refsEl.innerHTML = '<p>Unable to load references.</p>';
+  }
+
+  const bgForm = document.getElementById('backgroundCheckForm');
+  if (bgForm) {
+    bgForm.onsubmit = async (event) => {
+      event.preventDefault();
+      const payload = {
+        check_type: document.getElementById('bgCheckType')?.value,
+        status: document.getElementById('bgCheckStatus')?.value,
+        reference_number: document.getElementById('bgRefNumber')?.value || null,
+        issued_on: document.getElementById('bgIssuedOn')?.value || null,
+        expires_on: document.getElementById('bgExpiresOn')?.value || null,
+        notes: document.getElementById('bgNotes')?.value || null,
+      };
+      try {
+        const res = await apiRequest(`/vetting/volunteers/${userId}/background-checks`, {
+          method: 'POST',
+          body: payload,
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setMessage(body.error || 'Failed to save background check', 'error');
+          return;
+        }
+        setMessage('Background check saved.', 'success');
+        await loadVettingSection(userId);
+      } catch (error) {
+        console.error('[Admin] background check error:', error);
+        setMessage('Network error saving background check', 'error');
+      }
+    };
+  }
+
+  const refForm = document.getElementById('referenceRequestForm');
+  if (refForm) {
+    refForm.onsubmit = async (event) => {
+      event.preventDefault();
+      const payload = {
+        referee_name: document.getElementById('refName')?.value,
+        referee_email: document.getElementById('refEmail')?.value,
+        referee_relationship: document.getElementById('refRelationship')?.value || null,
+      };
+      try {
+        const res = await apiRequest(`/vetting/volunteers/${userId}/references`, {
+          method: 'POST',
+          body: payload,
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setMessage(body.error || 'Failed to request reference', 'error');
+          return;
+        }
+        setMessage('Reference request emailed to referee.', 'success');
+        refForm.reset();
+        await loadVettingSection(userId);
+      } catch (error) {
+        console.error('[Admin] reference request error:', error);
+        setMessage('Network error requesting reference', 'error');
+      }
+    };
+  }
 }
 
 async function viewProfile(userId) {
@@ -295,9 +446,30 @@ async function viewProfile(userId) {
         </div>
         <div>
           <strong>Status:</strong> 
-          <span style="padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.875rem; font-weight: 500; ${profile.approved ? 'background: #4caf50; color: white;' : 'background: #ff9800; color: white;'}">
+          <span style="padding: 0.25rem 0.5rem; border-radius: 999px; font-size: 0.875rem; font-weight: 600; ${profile.approved ? 'background: #edf4ee; color: #1b5e20; border: 1px solid #d3e3d5;' : 'background: #fdf6e7; color: #7a5200; border: 1px solid #ecd9a8;'}">
             ${profile.approved ? 'Approved' : 'Pending'}
           </span>
+        </div>
+        <div>
+          <strong>Foster approved:</strong>
+          <span style="padding: 0.25rem 0.5rem; border-radius: 999px; font-size: 0.875rem; font-weight: 600; ${profile.foster_approved ? 'background: #edf4ee; color: #1b5e20; border: 1px solid #d3e3d5;' : 'background: #f5f5f5; color: #555; border: 1px solid #ddd;'}">
+            ${profile.foster_approved ? 'Yes' : 'No'}
+          </span>
+          <button type="button" class="secondary button-small" id="toggleFosterApprovedBtn" style="margin-left:0.5rem;">
+            ${profile.foster_approved ? 'Revoke foster approval' : 'Approve for foster'}
+          </button>
+        </div>
+        <div>
+          <strong>Foster home:</strong>
+          <ul style="margin:0.25rem 0 0; padding-left:1.25rem;">
+            <li>Type: ${profile.home_type || '—'}</li>
+            <li>Max size: ${profile.max_foster_size || '—'}</li>
+            <li>Garden: ${profile.has_garden ? 'Yes' : 'No'}${profile.garden_secure ? ' (secure)' : ''}</li>
+            <li>Other dogs/cats: ${profile.has_other_dogs ? 'dogs' : 'no dogs'} / ${profile.has_other_cats ? 'cats' : 'no cats'}</li>
+            <li>Children under 16: ${profile.has_children_under_16 ? 'Yes' : 'No'}</li>
+            <li>Can medicate: ${profile.can_medicate ? 'Yes' : 'No'}</li>
+            <li>Notes: ${profile.foster_notes || '—'}</li>
+          </ul>
         </div>
         <div>
           <strong>Volunteer type:</strong> ${profile.volunteer_type || 'regular'}
@@ -342,6 +514,47 @@ async function viewProfile(userId) {
           <strong>Documents:</strong>
           ${docsHtml}
         </div>
+        <div style="border-top: 1px solid #ddd; padding-top: 0.75rem;">
+          <strong>AccessNI / background checks</strong>
+          <div id="vettingChecksList"><p>Loading…</p></div>
+          <form id="backgroundCheckForm" style="display:grid; gap:0.5rem; margin-top:0.5rem;">
+            <label>
+              Check type
+              <select id="bgCheckType" required>
+                <option value="accessni_basic">AccessNI Basic</option>
+                <option value="accessni_standard">AccessNI Standard</option>
+                <option value="accessni_enhanced">AccessNI Enhanced</option>
+                <option value="other">Other</option>
+              </select>
+            </label>
+            <label>
+              Status
+              <select id="bgCheckStatus" required>
+                <option value="requested">Requested</option>
+                <option value="pending" selected>Pending</option>
+                <option value="clear">Clear</option>
+                <option value="flagged">Flagged</option>
+                <option value="not_required">Not required</option>
+                <option value="expired">Expired</option>
+              </select>
+            </label>
+            <label>Reference number <input type="text" id="bgRefNumber" /></label>
+            <label>Issued on <input type="date" id="bgIssuedOn" /></label>
+            <label>Expires on <input type="date" id="bgExpiresOn" /></label>
+            <label>Notes <textarea id="bgNotes" rows="2"></textarea></label>
+            <button type="submit" class="button-small">Save background check</button>
+          </form>
+        </div>
+        <div style="border-top: 1px solid #ddd; padding-top: 0.75rem;">
+          <strong>References</strong>
+          <div id="vettingRefsList"><p>Loading…</p></div>
+          <form id="referenceRequestForm" style="display:grid; gap:0.5rem; margin-top:0.5rem;">
+            <label>Referee name <input type="text" id="refName" required /></label>
+            <label>Referee email <input type="email" id="refEmail" required /></label>
+            <label>Relationship <input type="text" id="refRelationship" placeholder="e.g. former manager" /></label>
+            <button type="submit" class="button-small">Request reference</button>
+          </form>
+        </div>
         ${
           isAdminRole(currentUser)
             ? `<div data-admin-only style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
@@ -354,6 +567,8 @@ async function viewProfile(userId) {
     `;
     
     profileContent.innerHTML = profileHtml;
+
+    await loadVettingSection(userId);
 
     const serviceForm = document.getElementById('serviceSettingsForm');
     if (serviceForm) {
@@ -385,41 +600,22 @@ async function viewProfile(userId) {
       });
     }
 
+    const fosterBtn = document.getElementById('toggleFosterApprovedBtn');
+    if (fosterBtn) {
+      fosterBtn.addEventListener('click', async () => {
+        const next = !(profile.foster_approved === true || profile.foster_approved === 1);
+        await toggleFosterApproval(userId, next);
+        await viewProfile(userId);
+      });
+    }
+
     const exportBtn = document.getElementById('gdprExportBtn');
     const eraseBtn = document.getElementById('gdprEraseBtn');
     if (exportBtn) {
-      exportBtn.addEventListener('click', () => {
-        window.location.href = `${API_URL}/admin/gdpr/volunteers/${userId}/export`;
-      });
+      exportBtn.addEventListener('click', () => exportVolunteerData(userId));
     }
     if (eraseBtn) {
-      eraseBtn.addEventListener('click', async () => {
-        const typed = window.prompt('Type DELETE to permanently anonymise this volunteer account:');
-        if (typed !== 'DELETE') {
-          setMessage('Erasure cancelled — confirmation text did not match.', 'error');
-          return;
-        }
-        try {
-          const eraseRes = await apiRequest(`/admin/gdpr/volunteers/${userId}/erase`, {
-            method: 'POST',
-            body: { confirmation: 'DELETE' },
-          });
-          if (!eraseRes.ok) {
-            const err = await eraseRes.json().catch(() => ({}));
-            setMessage(err.error || 'Erasure failed', 'error');
-            return;
-          }
-          const body = await eraseRes.json();
-          setMessage(
-            `Anonymised. Approved hours preserved: ${body.hours_preserved ?? 'n/a'}`,
-            'success'
-          );
-          profileModal?.close?.();
-          await loadVolunteers();
-        } catch {
-          setMessage('Network error during erasure', 'error');
-        }
-      });
+      eraseBtn.addEventListener('click', () => eraseVolunteer(userId));
     }
 
     profileContent.querySelectorAll('.doc-meta-btn').forEach((btn) => {
@@ -487,6 +683,42 @@ async function toggleApproval(userId, approved) {
   } catch (error) {
     console.error('[Volunteers] toggleApproval error:', error);
     setMessage('Network error while updating approval status', 'error');
+  }
+}
+
+async function toggleFosterApproval(userId, fosterApproved) {
+  if (
+    !confirm(
+      `Are you sure you want to ${fosterApproved ? 'approve' : 'revoke'} this volunteer for fostering?`
+    )
+  ) {
+    return;
+  }
+
+  try {
+    const res = await apiRequest(`/admin/volunteers/${userId}/foster-approval`, {
+      method: 'PUT',
+      body: { foster_approved: fosterApproved },
+    });
+
+    if (!res.ok) {
+      const errorBody = await res.json().catch(() => ({}));
+      setMessage(errorBody?.error || 'Failed to update foster approval', 'error');
+      return;
+    }
+
+    setMessage(
+      `Foster ${fosterApproved ? 'approved' : 'unapproved'} successfully`,
+      'success'
+    );
+    const volunteerIndex = allVolunteers.findIndex((v) => v.id === userId);
+    if (volunteerIndex !== -1) {
+      allVolunteers[volunteerIndex].foster_approved = fosterApproved ? 1 : 0;
+      filterVolunteers();
+    }
+  } catch (error) {
+    console.error('[Volunteers] toggleFosterApproval error:', error);
+    setMessage('Network error while updating foster approval', 'error');
   }
 }
 
@@ -671,6 +903,11 @@ async function init() {
   attachEventListeners();
   await loadQualificationsCatalog();
   await loadVolunteers();
+  const params = new URLSearchParams(window.location.search);
+  const userParam = params.get('user') || params.get('userId');
+  if (userParam) {
+    await viewProfile(Number(userParam));
+  }
 }
 
 document.addEventListener('DOMContentLoaded', init);

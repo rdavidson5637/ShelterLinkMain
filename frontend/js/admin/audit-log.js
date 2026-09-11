@@ -1,5 +1,6 @@
 import { apiRequest } from '../config.js';
 import { requireAuth, checkAuth, logout, isAdminRole } from '../auth.js';
+import { formatShiftWhen } from '../utils/dateFormat.js';
 
 const logoutButton = document.getElementById('logoutButton');
 const filterForm = document.getElementById('filterForm');
@@ -18,11 +19,7 @@ function setMessage(text, tone = 'neutral') {
 
 function formatWhen(value) {
   if (!value) return '—';
-  try {
-    return new Date(value).toLocaleString();
-  } catch {
-    return String(value);
-  }
+  return formatShiftWhen(value);
 }
 
 function actorLabel(row) {

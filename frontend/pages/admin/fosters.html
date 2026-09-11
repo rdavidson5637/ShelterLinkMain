@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fosters - ShelterLink</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Account">
+        <a class="site-brand" href="/pages/admin/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" aria-label="Toggle navigation">Menu</button>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main class="container dashboard-layout">
+      <aside id="admin-nav" class="sidebar-nav"></aside>
+      <div class="dashboard-main">
+        <section>
+          <h1>Fosters</h1>
+          <p>Post foster requests, review offers, and manage active placements.</p>
+          <div id="message" role="status" aria-live="polite"></div>
+        </section>
+
+        <section>
+          <article style="max-width: 720px;">
+            <h2>New foster request</h2>
+            <form id="requestForm">
+              <label for="animal_id">
+                Animal
+                <select id="animal_id" name="animal_id" required>
+                  <option value="">Select animal…</option>
+                </select>
+              </label>
+              <div class="form-grid">
+                <label for="urgency">
+                  Urgency
+                  <select id="urgency" name="urgency">
+                    <option value="planned">Planned</option>
+                    <option value="urgent">Urgent</option>
+                  </select>
+                </label>
+                <label for="needed_from">
+                  Needed from
+                  <input type="date" id="needed_from" name="needed_from" required />
+                </label>
+                <label for="expected_duration_days">
+                  Expected days
+                  <input type="number" id="expected_duration_days" name="expected_duration_days" min="0" step="1" />
+                </label>
+              </div>
+              <fieldset>
+                <legend>Home requirements</legend>
+                <label for="req_home_type">
+                  Home type
+                  <select id="req_home_type">
+                    <option value="">Any</option>
+                    <option value="house">House</option>
+                    <option value="flat">Flat</option>
+                    <option value="other">Other</option>
+                  </select>
+                </label>
+                <label for="req_max_foster_size">
+                  Minimum foster size capacity
+                  <select id="req_max_foster_size">
+                    <option value="">Any</option>
+                    <option value="small">Small</option>
+                    <option value="medium">Medium</option>
+                    <option value="large">Large</option>
+                  </select>
+                </label>
+                <label><input type="checkbox" id="req_has_garden" /> Must have garden</label>
+                <label><input type="checkbox" id="req_garden_secure" /> Garden must be secure</label>
+                <label><input type="checkbox" id="req_can_medicate" /> Must be able to medicate</label>
+                <label><input type="checkbox" id="req_no_other_cats" /> No other cats in home</label>
+                <label><input type="checkbox" id="req_no_other_dogs" /> No other dogs in home</label>
+                <label><input type="checkbox" id="req_no_children" /> No children under 16</label>
+              </fieldset>
+              <label for="description">
+                Description
+                <textarea id="description" name="description" rows="3"></textarea>
+              </label>
+              <button type="submit">Create request</button>
+            </form>
+          </article>
+        </section>
+
+        <section>
+          <h2>Open requests</h2>
+          <div id="requestsList">Loading…</div>
+        </section>
+
+        <section>
+          <h2>Active placements</h2>
+          <div id="placementsList">Loading…</div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2025 ShelterLink : Assisi Animal Sanctuary</small>
+    </footer>
+
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/admin/fosters.js"></script>
+    <script type="module">
+      import { logout } from '/js/auth.js';
+      const logoutButton = document.getElementById('logoutButton');
+      if (logoutButton) {
+        logoutButton.addEventListener('click', (e) => {
+          e.preventDefault();
+          logout();
+        });
+      }
+    </script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+    <script type="module" src="/js/components/adminNav.js"></script>
+  </body>
+</html>

@@ -1,5 +1,6 @@
 import { apiRequest } from './config.js';
 import { redirectIfAuthenticated, hasPendingWaivers } from './auth.js';
+import { showFormErrors, clearFormErrors } from './utils/formErrors.js';
 
 const form = document.getElementById('loginForm');
 const messageEl = document.getElementById('message');
@@ -27,12 +28,24 @@ async function handleLogin(event) {
   event.preventDefault();
   if (!form) return;
 
-  const submitButton = form.querySelector('[type=\"submit\"]');
-  if (submitButton) submitButton.setAttribute('disabled', 'true');
-  showMessage('');
-
+  clearFormErrors(form);
+  const submitButton = form.querySelector('[type="submit"]');
   const formData = new FormData(form);
   const payload = Object.fromEntries(formData.entries());
+  const errors = [];
+  if (!String(payload.email || '').trim()) {
+    errors.push({ field: 'email', message: 'Enter your email address.' });
+  }
+  if (!String(payload.password || '')) {
+    errors.push({ field: 'password', message: 'Enter your password.' });
+  }
+  if (errors.length) {
+    showFormErrors(form, errors);
+    return;
+  }
+
+  if (submitButton) submitButton.setAttribute('disabled', 'true');
+  showMessage('');
 
   try {
     const res = await apiRequest('/auth/login', {
@@ -49,12 +62,51 @@ async function handleLogin(event) {
       setTimeout(() => redirectToDashboard(user.role), 1000);
     } else {
       const errorData = await res.json().catch(() => ({}));
-      showMessage(errorData.error || 'Invalid credentials.', 'error');
+      showFormErrors(form, [
+        { field: 'email', message: errorData.error || 'Invalid email or password.' },
+      ]);
     }
   } catch (error) {
-    showMessage('Network error. Please try again later.', 'error');
+    showFormErrors(form, [{ message: 'Network error. Please try again later.' }]);
   } finally {
     if (submitButton) submitButton.removeAttribute('disabled');
+  }
+}
+
+async function loadDemoHints() {
+  const card = document.getElementById('demoAccountsCard');
+  const list = document.getElementById('demoAccountsList');
+  if (!card || !list) return;
+  try {
+    const res = await apiRequest('/public/demo-info');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.showDemoHints || !Array.isArray(data.accounts) || !data.accounts.length) {
+      return;
+    }
+    list.innerHTML = '';
+    data.accounts.forEach((account) => {
+      const row = document.createElement('p');
+      const meta = document.createElement('span');
+      meta.textContent = `${account.label || account.role}: ${account.email}`;
+      row.appendChild(meta);
+      row.appendChild(document.createTextNode(' '));
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'secondary outline';
+      btn.textContent = 'Fill';
+      btn.addEventListener('click', () => {
+        const email = document.getElementById('email');
+        const password = document.getElementById('password');
+        if (email) email.value = account.email || '';
+        if (password) password.value = account.password || '';
+      });
+      row.appendChild(btn);
+      list.appendChild(row);
+    });
+    card.hidden = false;
+  } catch (error) {
+    console.warn('[Login] demo hints unavailable:', error.message);
   }
 }
 
@@ -75,5 +127,5 @@ document.addEventListener('DOMContentLoaded', () => {
   if (form) {
     form.addEventListener('submit', handleLogin);
   }
+  loadDemoHints().catch(() => {});
 });
-

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Accept Waiver | ShelterLink</title>
+    <title>Accept waiver - ShelterLink</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
     <link rel="stylesheet" href="/public/css/custom.css" />
     <style>
@@ -23,15 +23,15 @@
     </style>
   </head>
   <body>
-    <header class="site-header">
+        <header class="site-header">
       <nav class="site-nav container" aria-label="Volunteer navigation">
-        <a class="site-brand" href="/index.html">
+        <a class="site-brand" href="/pages/volunteer/dashboard.html">
           <span class="brand-mark" aria-hidden="true"></span>
           <strong>ShelterLink</strong>
         </a>
-        <ul class="nav-menu">
-          <li><button id="logoutButton" class="secondary">Logout</button></li>
-        </ul>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">Menu</button>
+        <ul class="nav-menu" id="navMenu" data-volunteer-nav></ul>
+        <button id="logoutButton" class="secondary">Logout</button>
       </nav>
     </header>
 
@@ -53,5 +53,7 @@
     <script type="module" src="/js/utils/errorHandler.js"></script>
     <script type="module" src="/js/utils/sessionManager.js"></script>
     <script type="module" src="/js/volunteer/accept-waiver.js"></script>
+      <script type="module" src="/js/utils/footerYear.js"></script>
+      <script type="module" src="/js/components/volunteerNav.js"></script>
   </body>
 </html>

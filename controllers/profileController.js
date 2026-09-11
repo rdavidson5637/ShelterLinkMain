@@ -210,10 +210,12 @@ async function getAllVolunteers(req, res) {
         u.email,
         u.phone,
         COALESCE(vp.approved, 0) AS approved,
+        COALESCE(vp.foster_approved, 0) AS foster_approved,
         vp.skills,
         vp.availability,
         vp.volunteer_type,
         vp.required_hours,
+        vp.away_until,
         COALESCE(SUM(CASE WHEN vh.approved = 1 THEN vh.hours ELSE 0 END), 0) AS total_hours,
         (
           SELECT COUNT(*)
@@ -225,7 +227,7 @@ async function getAllVolunteers(req, res) {
       LEFT JOIN volunteer_profiles vp ON vp.user_id = u.user_id
       LEFT JOIN volunteer_hours vh ON vh.user_id = u.user_id
       WHERE u.role = 'volunteer'
-      GROUP BY u.user_id, u.first_name, u.last_name, u.email, u.phone, vp.approved, vp.skills, vp.availability, vp.volunteer_type, vp.required_hours
+      GROUP BY u.user_id, u.first_name, u.last_name, u.email, u.phone, vp.approved, vp.foster_approved, vp.skills, vp.availability, vp.volunteer_type, vp.required_hours, vp.away_until
       ORDER BY u.first_name, u.last_name
     `;
 

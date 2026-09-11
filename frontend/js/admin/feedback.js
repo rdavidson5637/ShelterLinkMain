@@ -1,5 +1,6 @@
 import { apiRequest } from '../config.js';
 import { requireAuth, checkAuth, logout, isStaffOrAdminRole, applyRoleVisibility} from '../auth.js';
+import { formatDateOnly } from '../utils/dateFormat.js';
 
 const messageEl = document.getElementById('message');
 const overallAverageEl = document.getElementById('overallAverage');
@@ -25,10 +26,7 @@ function setMessage(text, tone = 'neutral') {
 }
 
 function formatDate(value) {
-  if (!value) return '—';
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return String(value).slice(0, 16);
-  return d.toLocaleString();
+  return formatDateOnly(value) || '—';
 }
 
 function buildQuery() {

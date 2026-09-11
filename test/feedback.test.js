@@ -316,7 +316,7 @@ test('duplicate feedback is rejected', async () => {
 test('findAcceptedNeedingFeedbackRequest uses yesterday date filter', async () => {
   mock.resetCalls();
   mock.setHandler(async (sql, params) => {
-    assert.match(sql, /DATE_SUB\(DATE\(\?\), INTERVAL 1 DAY\)/i);
+    assert.match(sql, /\?::date - interval '1 day'/i);
     assert.match(sql, /feedback_requested_at IS NULL/i);
     assert.match(sql, /accepted', 'approved'/);
     assert.strictEqual(params.length, 1);

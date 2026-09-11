@@ -16,19 +16,34 @@ function escapeIcalText(value) {
     .replace(/\r?\n/g, '\\n');
 }
 
+/**
+ * Convert a DB timestamp ('YYYY-MM-DD' or 'YYYY-MM-DD HH:MM:SS' — see
+ * config/database.js, which preserves these as plain strings) into an
+ * iCalendar date/time. That string already IS the shelter's local wall-clock
+ * time, so this parses it directly with a regex — never `new Date(value)`,
+ * which interprets the space-separated form as SERVER-local time and
+ * silently shifts it (and can roll the date near midnight) whenever the app
+ * host's timezone differs from the shelter's.
+ *
+ * Emits a floating local time (no trailing 'Z'): calendar apps then show the
+ * shift at the time it was actually entered, regardless of server timezone.
+ */
 function toIcalDate(value) {
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return null;
-  const y = d.getUTCFullYear();
-  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(d.getUTCDate()).padStart(2, '0');
-  // All-day style date if no meaningful time, else UTC timestamp
-  const hasTime = String(value).includes(':') || String(value).includes('T');
-  if (!hasTime) return `${y}${m}${day}`;
-  const hh = String(d.getUTCHours()).padStart(2, '0');
-  const mm = String(d.getUTCMinutes()).padStart(2, '0');
-  const ss = String(d.getUTCSeconds()).padStart(2, '0');
-  return `${y}${m}${day}T${hh}${mm}${ss}Z`;
+  const str = String(value || '');
+  const m = str.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?/);
+  if (!m) return null;
+  const [, y, mo, d, hh, mi, ss] = m;
+  if (hh == null) return `${y}${mo}${d}`;
+  return `${y}${mo}${d}T${hh}${mi}${ss || '00'}`;
+}
+
+/**
+ * DTSTAMP must be a real UTC instant (RFC5545) — when the feed was
+ * generated — unlike the shift start/end values above, which are floating
+ * local times. Takes an actual Date object, so no server-timezone ambiguity.
+ */
+function toIcalUtcStamp(date = new Date()) {
+  return `${date.toISOString().replace(/[-:]/g, '').split('.')[0]}Z`;
 }
 
 function buildVCalendar(events, calName = 'ShelterLink') {
@@ -43,7 +58,7 @@ function buildVCalendar(events, calName = 'ShelterLink') {
   for (const event of events) {
     lines.push('BEGIN:VEVENT');
     lines.push(`UID:${event.uid}`);
-    lines.push(`DTSTAMP:${toIcalDate(new Date().toISOString())}`);
+    lines.push(`DTSTAMP:${toIcalUtcStamp()}`);
     if (event.allDay) {
       lines.push(`DTSTART;VALUE=DATE:${event.start}`);
       if (event.end) lines.push(`DTEND;VALUE=DATE:${event.end}`);
@@ -105,6 +120,7 @@ function toPublicOpportunity(opp) {
     time: null,
     location: opp.location,
     spots_remaining: spotsRemaining,
+    is_urgent: Boolean(Number(opp.is_urgent)),
   };
 }
 
@@ -119,6 +135,12 @@ async function listPublicOpportunities(req, res) {
     const future = all.filter((opp) => {
       const start = new Date(opp.start_date);
       return !Number.isNaN(start.getTime()) && start.getTime() >= Date.now() - 12 * 60 * 60 * 1000;
+    });
+    future.sort((a, b) => {
+      const aUrgent = Number(a.is_urgent) ? 1 : 0;
+      const bUrgent = Number(b.is_urgent) ? 1 : 0;
+      if (aUrgent !== bUrgent) return bUrgent - aUrgent;
+      return new Date(a.start_date) - new Date(b.start_date);
     });
     const payload = future.map(toPublicOpportunity);
     cache = { at: now, data: payload };
@@ -247,6 +269,7 @@ module.exports = {
   applicationIcs,
   escapeIcalText,
   buildVCalendar,
+  toIcalDate,
   toPublicOpportunity,
   _resetCacheForTests: () => { cache = { at: 0, data: null }; },
 };

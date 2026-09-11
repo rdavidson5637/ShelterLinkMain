@@ -192,11 +192,11 @@ async function findRecommendedForUser(userId, limit = 5) {
       CASE
         WHEN LOWER(TRIM(vp.availability)) = 'flexible' THEN 1
         WHEN LOWER(TRIM(vp.availability)) = 'weekdays'
-          AND DAYOFWEEK(o.start_date) BETWEEN 2 AND 6 THEN 1
+          AND EXTRACT(DOW FROM o.start_date) BETWEEN 1 AND 5 THEN 1
         WHEN LOWER(TRIM(vp.availability)) = 'weekends'
-          AND DAYOFWEEK(o.start_date) IN (1, 7) THEN 1
+          AND EXTRACT(DOW FROM o.start_date) IN (0, 6) THEN 1
         WHEN LOWER(TRIM(vp.availability)) = 'evenings'
-          AND HOUR(o.start_date) >= 17 THEN 1
+          AND EXTRACT(HOUR FROM o.start_date) >= 17 THEN 1
         ELSE 0
       END AS availability_match,
       (
@@ -205,11 +205,11 @@ async function findRecommendedForUser(userId, limit = 5) {
           CASE
             WHEN LOWER(TRIM(vp.availability)) = 'flexible' THEN 1
             WHEN LOWER(TRIM(vp.availability)) = 'weekdays'
-              AND DAYOFWEEK(o.start_date) BETWEEN 2 AND 6 THEN 1
+              AND EXTRACT(DOW FROM o.start_date) BETWEEN 1 AND 5 THEN 1
             WHEN LOWER(TRIM(vp.availability)) = 'weekends'
-              AND DAYOFWEEK(o.start_date) IN (1, 7) THEN 1
+              AND EXTRACT(DOW FROM o.start_date) IN (0, 6) THEN 1
             WHEN LOWER(TRIM(vp.availability)) = 'evenings'
-              AND HOUR(o.start_date) >= 17 THEN 1
+              AND EXTRACT(HOUR FROM o.start_date) >= 17 THEN 1
             ELSE 0
           END
         ) * ${AVAILABILITY_MATCH_WEIGHT}
@@ -230,15 +230,15 @@ async function findRecommendedForUser(userId, limit = 5) {
         OR LOWER(TRIM(vp.availability)) = 'flexible'
         OR (
           LOWER(TRIM(vp.availability)) = 'weekdays'
-          AND DAYOFWEEK(o.start_date) BETWEEN 2 AND 6
+          AND EXTRACT(DOW FROM o.start_date) BETWEEN 1 AND 5
         )
         OR (
           LOWER(TRIM(vp.availability)) = 'weekends'
-          AND DAYOFWEEK(o.start_date) IN (1, 7)
+          AND EXTRACT(DOW FROM o.start_date) IN (0, 6)
         )
         OR (
           LOWER(TRIM(vp.availability)) = 'evenings'
-          AND HOUR(o.start_date) >= 17
+          AND EXTRACT(HOUR FROM o.start_date) >= 17
         )
       )
     ORDER BY score DESC, o.start_date ASC
@@ -271,13 +271,14 @@ async function queueMatchNotifications(opportunityIds = []) {
   let inserted = 0;
   for (const opportunityId of ids) {
     const sql = `
-      INSERT IGNORE INTO opportunity_match_queue (opportunity_id, user_id)
+      INSERT INTO opportunity_match_queue (opportunity_id, user_id)
       SELECT DISTINCT ot.opportunity_id, vt.user_id
       FROM opportunity_tags ot
       INNER JOIN volunteer_tags vt ON vt.tag_id = ot.tag_id
       INNER JOIN volunteer_profiles vp ON vp.user_id = vt.user_id AND vp.approved = 1
       INNER JOIN users u ON u.user_id = vt.user_id AND u.role = 'volunteer'
       WHERE ot.opportunity_id = ?
+      ON CONFLICT (opportunity_id, user_id) DO NOTHING
     `;
     const [result] = await pool.execute(sql, [opportunityId]);
     inserted += Number(result.affectedRows) || 0;
@@ -305,7 +306,7 @@ async function hasDigestBeenSent(userId, digestDate = new Date()) {
 async function markDigestSent(userId, digestDate = new Date()) {
   const day = toDateOnly(digestDate);
   await pool.execute(
-    `INSERT IGNORE INTO tag_digest_log (user_id, digest_date) VALUES (?, ?)`,
+    `INSERT INTO tag_digest_log (user_id, digest_date) VALUES (?, ?) ON CONFLICT (user_id, digest_date) DO NOTHING`,
     [userId, day]
   );
 }
@@ -328,9 +329,11 @@ async function findPendingDigests(digestDate = new Date(), { maxUsers = null } =
     FROM opportunity_match_queue q
     INNER JOIN users u ON u.user_id = q.user_id
     INNER JOIN opportunities o ON o.opportunity_id = q.opportunity_id
+    LEFT JOIN volunteer_profiles vp ON vp.user_id = q.user_id
     LEFT JOIN tag_digest_log d
       ON d.user_id = q.user_id AND d.digest_date = ?
     WHERE d.user_id IS NULL
+      AND (vp.away_until IS NULL OR vp.away_until < CURRENT_DATE)
     ORDER BY q.user_id ASC, o.start_date ASC
   `;
   const params = [day];

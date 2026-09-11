@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * ShelterLink — Database setup
+ * ShelterLink — Database setup (Postgres)
  * ---------------------------------------------------------------------------
- * Creates the database, builds all tables from database/schema.sql, and
- * (by default) loads sample data from database/seed.sql — using the same
- * connection settings as the app (.env).
+ * Rebuilds all tables from database/schema.pg.sql and (by default) loads
+ * sample data from database/seed.pg.sql using the same connection as the app
+ * (.env DATABASE_URL or DB_*).
  *
  * Usage:
  *   node scripts/setup-db.js            # schema + sample data (default)
@@ -15,81 +15,78 @@
  *   npm run db:setup      # schema only
  *   npm run db:reset      # schema + sample data (fresh start)
  *
- * Safe to re-run: schema.sql drops and recreates tables, so this resets the
- * database to a known-good state each time.
+ * schema.pg.sql DROPs and recreates every table — this destroys all data.
+ * When NODE_ENV=production the script refuses to run without --force, and
+ * refuses to seed demo accounts at all. Use `npm run migrate` to upgrade a
+ * live database without data loss.
  */
 
 const fs = require('fs');
 const path = require('path');
-const mysql = require('mysql2/promise');
 require('dotenv').config();
-
-const {
-  DB_HOST = 'localhost',
-  DB_PORT = '8889',
-  DB_USER = 'root',
-  DB_PASSWORD = 'root',
-  DB_NAME = 'ShelterLink',
-} = process.env;
+const { pgPool, closePool } = require('../config/database');
 
 const args = process.argv.slice(2);
-const withSeed = args.includes('--seed') || !args.includes('--no-seed');
+const isProduction = process.env.NODE_ENV === 'production';
+const forced = args.includes('--force');
+const withSeed =
+  !isProduction && (args.includes('--seed') || !args.includes('--no-seed'));
 
-/**
- * Read a .sql file and strip the leading CREATE DATABASE / USE statements so
- * the target database name always comes from .env (DB_NAME), not a hard-coded
- * value in the file.
- */
+if (isProduction && !forced) {
+  console.error('\n✗ Refusing to run in production: this DROPs every table.');
+  console.error('  For a first-time production build this is expected — re-run with --force.');
+  console.error('  To upgrade an existing production database without data loss: npm run migrate');
+  process.exit(1);
+}
+if (isProduction && (args.includes('--seed'))) {
+  console.error('\n✗ Refusing to load demo/sample data in production (--seed ignored in prod).');
+  process.exit(1);
+}
+
+function describeTarget() {
+  if (process.env.DATABASE_URL) {
+    try {
+      const u = new URL(process.env.DATABASE_URL);
+      const db = u.pathname.replace(/^\//, '') || 'postgres';
+      return `${u.hostname}:${u.port || 5432}  database "${db}"`;
+    } catch {
+      return '(DATABASE_URL)';
+    }
+  }
+  const host = process.env.DB_HOST || 'localhost';
+  const port = process.env.DB_PORT || '5432';
+  const user = process.env.DB_USER || 'postgres';
+  const name = process.env.DB_NAME || 'shelterlink';
+  return `${user}@${host}:${port}  database "${name}"`;
+}
+
 function loadSql(file) {
   const full = path.join(__dirname, '..', 'database', file);
-  const raw = fs.readFileSync(full, 'utf8');
-  return raw
-    // Remove the (possibly multi-line) CREATE DATABASE statement.
-    .replace(/CREATE\s+DATABASE[\s\S]*?;/i, '')
-    // Remove any USE <db>; statements.
-    .replace(/^\s*USE\s+`?[A-Za-z0-9_]+`?\s*;/gim, '')
-    .trim();
+  return fs.readFileSync(full, 'utf8');
 }
 
 async function run() {
   console.log('ShelterLink database setup');
-  console.log(`  Target: ${DB_USER}@${DB_HOST}:${DB_PORT}  database "${DB_NAME}"`);
+  console.log(`  Target: ${describeTarget()}`);
   console.log(`  Mode:   ${withSeed ? 'schema + sample data' : 'schema only'}`);
 
-  let connection;
   try {
-    connection = await mysql.createConnection({
-      host: DB_HOST,
-      port: Number(DB_PORT),
-      user: DB_USER,
-      password: DB_PASSWORD,
-      multipleStatements: true,
-    });
+    await pgPool.query('SELECT 1');
   } catch (err) {
-    console.error('\n✗ Could not connect to MySQL.');
+    console.error('\n✗ Could not connect to Postgres.');
     console.error(`  ${err.message}`);
-    console.error('  Check that MySQL/MAMP is running and your .env DB_* values are correct.');
+    console.error('  Check that Postgres/Supabase is reachable and DATABASE_URL or DB_* are set.');
     process.exit(1);
   }
 
   try {
-    // Full reset: drop the entire database so leftover tables from older
-    // versions (with foreign keys the current schema doesn't know about)
-    // can never block the rebuild.
-    await connection.query(`DROP DATABASE IF EXISTS \`${DB_NAME}\``);
-    await connection.query(
-      `CREATE DATABASE \`${DB_NAME}\`
-       CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
-    );
-    await connection.changeUser({ database: DB_NAME });
-
     console.log('\n→ Building schema...');
-    await connection.query(loadSql('schema.sql'));
+    await pgPool.query(loadSql('schema.pg.sql'));
     console.log('  ✓ Tables created.');
 
     if (withSeed) {
       console.log('→ Loading sample data...');
-      await connection.query(loadSql('seed.sql'));
+      await pgPool.query(loadSql('seed.pg.sql'));
       console.log('  ✓ Sample data loaded.');
       console.log('\n  Login credentials:');
       console.log('    Admin      admin@shelterlink.org   /  Admin123!');
@@ -101,7 +98,7 @@ async function run() {
     console.error('\n✗ Setup failed:', err.message);
     process.exit(1);
   } finally {
-    await connection.end();
+    await closePool();
   }
 }
 

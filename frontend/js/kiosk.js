@@ -1,3 +1,6 @@
+import './utils/skipLink.js';
+import { formatTimeLabel, parseShiftDate } from './utils/dateFormat.js';
+
 const unlockPanel = document.getElementById('unlockPanel');
 const shiftsPanel = document.getElementById('shiftsPanel');
 const checkPanel = document.getElementById('checkPanel');
@@ -42,6 +45,13 @@ function clearResetTimer() {
   }
 }
 
+function focusShiftsPanel() {
+  const heading = document.getElementById('shiftsHeading');
+  if (!heading) return;
+  heading.setAttribute('tabindex', '-1');
+  heading.focus();
+}
+
 function scheduleReset() {
   clearResetTimer();
   resetTimer = setTimeout(() => {
@@ -49,15 +59,15 @@ function scheduleReset() {
     setMessage('');
     if (checkCode) checkCode.value = '';
     show('shifts');
-    loadShifts();
+    Promise.resolve(loadShifts()).finally(() => {
+      focusShiftsPanel();
+    });
   }, AUTO_RESET_MS);
 }
 
 function formatTime(value) {
-  if (!value) return '';
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return String(value);
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const date = parseShiftDate(value);
+  return date ? formatTimeLabel(date) : '';
 }
 
 async function api(path, options = {}) {
@@ -109,7 +119,11 @@ async function loadShifts() {
       setMessage('Kiosk locked. Staff must unlock again.', 'error');
       return;
     }
-    shiftsList.innerHTML = `<p class="error">${body.error || 'Unable to load shifts'}</p>`;
+    shiftsList.replaceChildren();
+    const err = document.createElement('p');
+    err.className = 'error';
+    err.textContent = body.error || 'Unable to load shifts';
+    shiftsList.appendChild(err);
     return;
   }
 
@@ -119,16 +133,18 @@ async function loadShifts() {
     return;
   }
 
-  shiftsList.innerHTML = '';
+  shiftsList.replaceChildren();
   shifts.forEach((shift) => {
     const article = document.createElement('article');
     article.className = 'shift-card';
-    article.innerHTML = `
-      <h2>${shift.title || 'Shift'}</h2>
-      <p class="muted">${formatTime(shift.start_date)}${shift.location ? ` · ${shift.location}` : ''}</p>
-      <div class="volunteer-grid"></div>
-    `;
-    const grid = article.querySelector('.volunteer-grid');
+    const h2 = document.createElement('h2');
+    h2.textContent = shift.title || 'Shift';
+    const meta = document.createElement('p');
+    meta.className = 'muted';
+    meta.textContent = `${formatTime(shift.start_date)}${shift.location ? ` · ${shift.location}` : ''}`;
+    const grid = document.createElement('div');
+    grid.className = 'volunteer-grid';
+    article.append(h2, meta, grid);
     if (!shift.volunteers?.length) {
       grid.innerHTML = '<p class="muted">No accepted volunteers</p>';
     } else {

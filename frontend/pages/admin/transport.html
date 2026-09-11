@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Transport - ShelterLink</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Account">
+        <a class="site-brand" href="/pages/admin/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" aria-label="Toggle navigation">Menu</button>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main class="container dashboard-layout">
+      <aside id="admin-nav" class="sidebar-nav"></aside>
+      <div class="dashboard-main">
+        <section>
+          <h1>Transport</h1>
+          <p>Create relay runs with ordered legs. Drivers claim individual legs; coordinate via the shelter and message threads.</p>
+          <div id="message" role="status" aria-live="polite"></div>
+        </section>
+
+        <section>
+          <article style="max-width: 720px;">
+            <h2>New transport run</h2>
+            <form id="runForm">
+              <label for="title">
+                Title
+                <input type="text" id="title" name="title" required />
+              </label>
+              <div class="form-grid">
+                <label for="animal_id">
+                  Animal (optional)
+                  <select id="animal_id" name="animal_id">
+                    <option value="">None</option>
+                  </select>
+                </label>
+                <label for="run_date">
+                  Run date
+                  <input type="date" id="run_date" name="run_date" required />
+                </label>
+              </div>
+              <label for="notes">
+                Notes
+                <textarea id="notes" name="notes" rows="2"></textarea>
+              </label>
+              <fieldset>
+                <legend>Legs (ordered)</legend>
+                <div id="legsEditor"></div>
+                <button type="button" class="secondary" id="addLegBtn">Add leg</button>
+              </fieldset>
+              <button type="submit">Create run</button>
+            </form>
+          </article>
+        </section>
+
+        <section>
+          <h2>Runs</h2>
+          <label for="filterStatus">
+            Status
+            <select id="filterStatus">
+              <option value="">All</option>
+              <option value="open">Open</option>
+              <option value="part_covered">Part covered</option>
+              <option value="covered">Covered</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </label>
+          <div id="runsList">Loading…</div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2025 ShelterLink : Assisi Animal Sanctuary</small>
+    </footer>
+
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/admin/transport.js"></script>
+    <script type="module">
+      import { logout } from '/js/auth.js';
+      const logoutButton = document.getElementById('logoutButton');
+      if (logoutButton) {
+        logoutButton.addEventListener('click', (e) => {
+          e.preventDefault();
+          logout();
+        });
+      }
+    </script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+    <script type="module" src="/js/components/adminNav.js"></script>
+  </body>
+</html>

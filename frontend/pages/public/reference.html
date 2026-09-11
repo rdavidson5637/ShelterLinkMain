@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Provide a reference - ShelterLink</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Public">
+        <a class="site-brand" href="/">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+      </nav>
+    </header>
+
+    <main class="container" style="max-width: 36rem; margin: 2rem auto;">
+      <h1>Volunteer reference</h1>
+      <p id="intro">Loading reference request…</p>
+      <div id="message" role="status" aria-live="polite"></div>
+
+      <form id="referenceForm" hidden>
+        <fieldset>
+          <legend>Is this person suitable to volunteer with animals and the public?</legend>
+          <label>
+            <input type="radio" name="is_suitable" value="1" required />
+            Yes — suitable
+          </label>
+          <label>
+            <input type="radio" name="is_suitable" value="0" />
+            No — not suitable
+          </label>
+        </fieldset>
+        <label for="comments">
+          Comments (confidential — not shared with the volunteer)
+          <textarea id="comments" name="comments" rows="5" maxlength="5000"></textarea>
+        </label>
+        <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+          <button type="submit">Submit reference</button>
+          <button type="button" id="declineButton" class="secondary">Decline to provide a reference</button>
+        </div>
+      </form>
+    </main>
+
+    <footer class="container">
+      <small>&copy; ShelterLink — Assisi Animal Sanctuary</small>
+    </footer>
+
+    <script type="module" src="/js/public/reference.js"></script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+  </body>
+</html>

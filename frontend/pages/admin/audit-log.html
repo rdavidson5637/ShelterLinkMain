@@ -3,28 +3,25 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Audit Log | ShelterLink Admin</title>
+    <title>Audit log - ShelterLink</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
     <link rel="stylesheet" href="/public/css/custom.css" />
   </head>
   <body>
-    <header class="site-header">
-      <nav class="site-nav container" aria-label="Admin navigation">
-        <a class="site-brand" href="/index.html">
+        <header class="site-header">
+      <nav class="site-nav container" aria-label="Account">
+        <a class="site-brand" href="/pages/admin/dashboard.html">
           <span class="brand-mark" aria-hidden="true"></span>
           <strong>ShelterLink</strong>
         </a>
-        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">☰</button>
-        <ul class="nav-menu" id="navMenu">
-          <li><a class="nav-link" href="/pages/admin/dashboard.html"><span>Dashboard</span></a></li>
-          <li><a class="nav-link" href="/pages/admin/audit-log.html" aria-current="page"><span>Audit</span></a></li>
-          <li><a class="nav-link" href="/pages/admin/privacy.html"><span>Privacy</span></a></li>
-          <li><button id="logoutButton" class="secondary">Logout</button></li>
-        </ul>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" aria-label="Toggle navigation">Menu</button>
+        <button id="logoutButton" class="secondary">Logout</button>
       </nav>
     </header>
 
-    <main class="container">
+    <main class="container dashboard-layout">
+      <aside id="admin-nav" class="sidebar-nav"></aside>
+      <div class="dashboard-main">
       <section>
         <h1>Audit log</h1>
         <p>Mutating staff and admin actions recorded by the server.</p>
@@ -62,13 +59,14 @@
 
       <section class="table-wrapper">
         <table>
+            <caption>Audit log</caption>
           <thead>
             <tr>
-              <th>When</th>
-              <th>Actor</th>
-              <th>Action</th>
-              <th>Entity</th>
-              <th>Detail</th>
+              <th scope="col">When</th>
+              <th scope="col">Actor</th>
+              <th scope="col">Action</th>
+              <th scope="col">Entity</th>
+              <th scope="col">Detail</th>
             </tr>
           </thead>
           <tbody id="auditTableBody">
@@ -76,21 +74,14 @@
           </tbody>
         </table>
       </section>
+      </div>
     </main>
 
-    <script>
-      (() => {
-        const nav = document.querySelector('.site-nav');
-        const toggle = nav?.querySelector('.nav-toggle');
-        if (!nav || !toggle) return;
-        toggle.addEventListener('click', () => {
-          const open = nav.classList.toggle('nav-open');
-          toggle.setAttribute('aria-expanded', String(open));
-        });
-      })();
-    </script>
-    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <footer class="container" data-site-footer></footer>
+<script type="module" src="/js/utils/errorHandler.js"></script>
     <script type="module" src="/js/utils/sessionManager.js"></script>
     <script type="module" src="/js/admin/audit-log.js"></script>
+      <script type="module" src="/js/utils/footerYear.js"></script>
+      <script type="module" src="/js/components/adminNav.js"></script>
   </body>
 </html>

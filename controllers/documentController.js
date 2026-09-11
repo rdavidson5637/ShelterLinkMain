@@ -27,24 +27,10 @@ function ensureAuthenticated(req, res) {
   return true;
 }
 
-const storage = multer.diskStorage({
-  destination(_req, _file, cb) {
-    try {
-      cb(null, UserDocument.getUploadDir());
-    } catch (err) {
-      cb(err);
-    }
-  },
-  filename(_req, file, cb) {
-    const ext = path.extname(file.originalname || '').toLowerCase();
-    const safeExt = ['.pdf', '.jpg', '.jpeg', '.png'].includes(ext) ? ext : '';
-    const name = `${crypto.randomBytes(16).toString('hex')}${safeExt}`;
-    cb(null, name);
-  },
-});
-
+// Files are held in memory then written to Postgres — hosts with an ephemeral
+// filesystem (Railway/Render/Fly) would otherwise lose them on every redeploy.
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: UserDocument.MAX_FILE_SIZE },
   fileFilter(_req, file, cb) {
     if (!UserDocument.isAllowedMime(file.mimetype)) {
@@ -83,11 +69,18 @@ async function uploadDocument(req, res) {
       return res.status(400).json({ error: 'Only PDF, JPG, and PNG files are allowed' });
     }
 
+    if (!req.file.buffer || !req.file.buffer.length) {
+      return res.status(400).json({ error: 'File is required' });
+    }
+
     const label = req.body?.label != null ? String(req.body.label).trim() : null;
+    const ext = path.extname(req.file.originalname || '').toLowerCase();
+    const safeExt = ['.pdf', '.jpg', '.jpeg', '.png'].includes(ext) ? ext : '';
     const doc = await UserDocument.create({
       userId: req.session.userId,
-      filename: req.file.filename,
-      originalName: req.file.originalname || req.file.filename,
+      content: req.file.buffer,
+      filename: `${crypto.randomBytes(16).toString('hex')}${safeExt}`,
+      originalName: req.file.originalname || 'document',
       mimeType: req.file.mimetype,
       size: req.file.size,
       label: label || null,
@@ -166,12 +159,21 @@ async function downloadDocument(req, res) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
-    const filePath = UserDocument.absolutePathFor(doc);
-    if (!filePath) {
+    const file = await UserDocument.getContent(req.params.id);
+    if (!file) {
       return res.status(404).json({ error: 'File not found' });
     }
 
-    return res.download(filePath, doc.original_name || doc.filename);
+    const downloadName = (doc.original_name || doc.filename || 'document').replace(
+      /["\r\n]/g,
+      ''
+    );
+    res.setHeader('Content-Type', file.mimeType || 'application/octet-stream');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${downloadName}"`
+    );
+    return res.send(file.buffer);
   } catch (error) {
     console.error('[Document] downloadDocument error:', error.message);
     return res.status(500).json({ error: 'Internal server error' });

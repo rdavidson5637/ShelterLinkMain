@@ -6,7 +6,7 @@
  */
 
 const bcrypt = require('bcrypt');
-const { pool } = require('./config/database');
+const { pool, closePool } = require('./config/database');
 
 async function createAdmin() {
   const args = process.argv.slice(2);
@@ -28,7 +28,8 @@ async function createAdmin() {
 
     if (existing.length > 0) {
       console.error(`User with email ${email} already exists!`);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
 
     // Hash password
@@ -46,11 +47,11 @@ async function createAdmin() {
     console.log(`  Role: admin`);
     console.log(`  User ID: ${result.insertId}`);
     console.log('\nYou can now login with these credentials.');
-
-    process.exit(0);
   } catch (error) {
     console.error('Error creating admin user:', error.message);
-    process.exit(1);
+    process.exitCode = 1;
+  } finally {
+    await closePool();
   }
 }
 

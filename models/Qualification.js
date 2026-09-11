@@ -270,10 +270,10 @@ async function awardToUser({
     INSERT INTO volunteer_qualifications
       (user_id, qualification_id, awarded_at, expires_at, awarded_by, last_expiry_notified_at)
     VALUES (?, ?, ?, ?, ?, NULL)
-    ON DUPLICATE KEY UPDATE
-      awarded_at = VALUES(awarded_at),
-      expires_at = VALUES(expires_at),
-      awarded_by = VALUES(awarded_by),
+    ON CONFLICT (user_id, qualification_id) DO UPDATE SET
+      awarded_at = EXCLUDED.awarded_at,
+      expires_at = EXCLUDED.expires_at,
+      awarded_by = EXCLUDED.awarded_by,
       last_expiry_notified_at = NULL
   `;
   await pool.execute(sql, [
@@ -327,10 +327,10 @@ async function findNeedingExpiryWarning(now = new Date()) {
     FROM volunteer_qualifications vq
     INNER JOIN qualifications q ON q.id = vq.qualification_id
     INNER JOIN users u ON u.user_id = vq.user_id
-    WHERE vq.expires_at = DATE_ADD(?, INTERVAL 30 DAY)
+    WHERE vq.expires_at = (?::date + interval '30 days')
       AND (
         vq.last_expiry_notified_at IS NULL
-        OR vq.last_expiry_notified_at < DATE_SUB(vq.expires_at, INTERVAL 30 DAY)
+        OR vq.last_expiry_notified_at < (vq.expires_at - interval '30 days')
       )
   `;
   const [rows] = await pool.execute(sql, [today]);

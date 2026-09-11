@@ -1,6 +1,8 @@
 import { apiRequest } from '../config.js';
 import { requireAuth, logout } from '../auth.js';
 import { showOpportunityModal, hideOpportunityModal } from '../components/opportunityModal.js';
+import { formatShiftWhen, upcomingFirst } from '../utils/dateFormat.js';
+import { groupShiftsByPeriod } from '../utils/groupShifts.js';
 
 const shiftsContainer = document.getElementById('shifts-container');
 const coverShiftsSection = document.getElementById('coverShiftsSection');
@@ -29,6 +31,7 @@ function toDateOnly(value) {
   if (!value) return null;
   return String(value).slice(0, 10);
 }
+
 
 function isQualificationValid(award, asOf = new Date()) {
   if (!award) return false;
@@ -244,6 +247,14 @@ function renderOpportunityCard(opportunity) {
 
   const title = document.createElement('h3');
   title.textContent = opportunity.title || 'Volunteer Opportunity';
+  if (Number(opportunity.is_urgent)) {
+    const badge = document.createElement('span');
+    badge.className = 'status-badge';
+    badge.style.cssText = 'margin-left:0.5rem;background:#fde8e8;color:#7a1f1f;';
+    badge.textContent = 'Urgent cover needed';
+    title.appendChild(document.createTextNode(' '));
+    title.appendChild(badge);
+  }
 
   const meta = document.createElement('div');
   meta.className = 'meta';
@@ -252,10 +263,10 @@ function renderOpportunityCard(opportunity) {
   const end = opportunity.end_date || '';
 
   const locationMeta = document.createElement('span');
-  locationMeta.textContent = `📍 ${location}`;
+  locationMeta.textContent = location;
 
   const dateMeta = document.createElement('span');
-  dateMeta.textContent = start ? `📅 ${start}${end ? ` - ${end}` : ''}` : '📅 Flexible';
+  dateMeta.textContent = formatShiftWhen(start, end);
 
   const maxVolunteers = opportunity.max_volunteers ?? opportunity.maxVolunteers;
   const spotsFilled = opportunity.spots_filled ?? opportunity.spotsFilled;
@@ -263,9 +274,9 @@ function renderOpportunityCard(opportunity) {
   if (maxVolunteers) {
     const filled = Number(spotsFilled || 0);
     const total = Number(maxVolunteers);
-    capacityMeta.textContent = `👥 ${filled}/${total}${filled >= total ? ' (Full)' : ''}`;
+    capacityMeta.textContent = `${filled}/${total} spaces filled${filled >= total ? ' (Full)' : ''}`;
   } else {
-    capacityMeta.textContent = '👥 Open';
+    capacityMeta.textContent = 'Open spaces';
   }
 
   meta.appendChild(locationMeta);
@@ -340,8 +351,20 @@ function applyFiltersAndRender() {
     if (filtered.length > 0) {
       shiftsContainer.style.display = '';
       emptyState.style.display = 'none';
-      filtered.forEach((opp) => {
-        shiftsContainer.appendChild(renderOpportunityCard(opp));
+      groupShiftsByPeriod(filtered).forEach((group) => {
+        const section = document.createElement('section');
+        section.className = 'shift-group';
+        const heading = document.createElement('h2');
+        heading.textContent = group.heading;
+        const count = document.createElement('p');
+        count.className = 'shift-group-count';
+        const n = group.shifts.length;
+        count.textContent = `${n} shift${n === 1 ? '' : 's'}`;
+        section.append(heading, count);
+        group.shifts.forEach((opp) => {
+          section.appendChild(renderOpportunityCard(opp));
+        });
+        shiftsContainer.appendChild(section);
       });
     } else {
       shiftsContainer.style.display = 'none';
@@ -434,11 +457,11 @@ function renderCoverSwapCard(swap) {
   const meta = document.createElement('div');
   meta.className = 'meta';
   const locationMeta = document.createElement('span');
-  locationMeta.textContent = `📍 ${swap.opportunity_location || 'Location TBA'}`;
+  locationMeta.textContent = swap.opportunity_location || 'Location TBA';
   const dateMeta = document.createElement('span');
   const start = swap.opportunity_start_date || '';
   const end = swap.opportunity_end_date || '';
-  dateMeta.textContent = start ? `📅 ${start}${end ? ` - ${end}` : ''}` : '📅 Flexible';
+  dateMeta.textContent = formatShiftWhen(start, end);
   meta.appendChild(locationMeta);
   meta.appendChild(dateMeta);
 
@@ -567,7 +590,7 @@ async function init() {
     shiftsContainer.innerHTML = '<p>Loading shifts...</p>';
   }
 
-  allOpportunities = await fetchAllOpportunities();
+  allOpportunities = upcomingFirst(await fetchAllOpportunities());
   coverSwaps = await fetchCoverSwaps();
   renderCoverSwaps();
 

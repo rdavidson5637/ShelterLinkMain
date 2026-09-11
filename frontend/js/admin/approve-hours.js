@@ -1,5 +1,6 @@
 import { apiRequest } from '../config.js';
 import { requireAuth, checkAuth, logout, isStaffOrAdminRole, applyRoleVisibility} from '../auth.js';
+import { formatDateOnly } from '../utils/dateFormat.js';
 
 const messageEl = document.getElementById('message');
 const selectAllCheckbox = document.getElementById('selectAllCheckbox');
@@ -18,16 +19,6 @@ function setMessage(text, tone = 'neutral') {
   }
   const cls = tone === 'error' ? 'error' : tone === 'success' ? 'success' : '';
   messageEl.innerHTML = `<p class="${cls}">${text}</p>`;
-}
-
-function formatDate(dateString) {
-  if (!dateString) return 'N/A';
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString();
-  } catch {
-    return dateString;
-  }
 }
 
 function getSelectedIds() {
@@ -126,7 +117,7 @@ function renderTable() {
     opportunityTd.textContent = entry.opportunity_title || 'N/A';
 
     const dateTd = document.createElement('td');
-    dateTd.textContent = formatDate(entry.date || entry.created_at);
+    dateTd.textContent = formatDateOnly(entry.date || entry.created_at) || 'N/A';
 
     const hoursTd = document.createElement('td');
     hoursTd.textContent = entry.hours || 0;

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Request a Group Visit | ShelterLink</title>
+    <title>Request a group visit - ShelterLink</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
     <link rel="stylesheet" href="/public/css/custom.css" />
   </head>
@@ -14,7 +14,8 @@
           <span class="brand-mark" aria-hidden="true"></span>
           <strong>ShelterLink</strong>
         </a>
-        <ul class="nav-menu">
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">Menu</button>
+        <ul class="nav-menu" id="navMenu">
           <li><a class="nav-link" href="/pages/opportunities.html">Open shifts</a></li>
           <li><a class="nav-link" href="/pages/group-booking.html" aria-current="page">Group booking</a></li>
           <li><a class="nav-link" href="/login.html">Log in</a></li>
@@ -69,6 +70,18 @@
       <small>&copy; 2025 ShelterLink</small>
     </footer>
 
+    <script>
+      (() => {
+        const nav = document.querySelector('.site-nav');
+        const toggle = nav?.querySelector('.nav-toggle');
+        if (!nav || !toggle) return;
+        toggle.addEventListener('click', () => {
+          const open = nav.classList.toggle('nav-open');
+          toggle.setAttribute('aria-expanded', String(open));
+        });
+      })();
+    </script>
     <script type="module" src="/js/public/group-booking.js"></script>
+      <script type="module" src="/js/utils/footerYear.js"></script>
   </body>
 </html>

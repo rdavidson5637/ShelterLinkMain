@@ -1,5 +1,7 @@
 import { API_URL, apiRequest } from '../config.js';
 import { requireAuth, logout } from '../auth.js';
+import { formatDateOnly } from '../utils/dateFormat.js';
+import { createStatusBadge } from '../components/statusBadge.js';
 
 const totalApprovedHoursEl = document.getElementById('totalApprovedHours');
 const totalPendingHoursEl = document.getElementById('totalPendingHours');
@@ -17,13 +19,7 @@ const logoutButton = document.getElementById('logoutButton');
 let allHours = [];
 
 function formatDate(dateString) {
-  if (!dateString) return 'N/A';
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString();
-  } catch {
-    return dateString;
-  }
+  return formatDateOnly(dateString) || 'N/A';
 }
 
 function calculateSummary(hours) {
@@ -137,17 +133,10 @@ function renderHoursTable(hours) {
     hoursTd.textContent = entry.hours || 0;
 
     const statusTd = document.createElement('td');
-    const statusText = entry.approved ? 'Approved' : 'Pending';
-    const verified = entry.verified_by_checkin ? ' · Verified' : '';
-    statusTd.textContent = `${statusText}${verified}`;
-    if (entry.approved) {
-      statusTd.style.color = 'green';
-      statusTd.style.fontWeight = 'bold';
-    } else {
-      statusTd.style.color = 'orange';
-    }
+    statusTd.appendChild(createStatusBadge(entry.approved ? 'approved' : 'pending'));
     if (entry.verified_by_checkin) {
-      statusTd.style.color = entry.approved ? 'green' : '#1565c0';
+      statusTd.append(' ');
+      statusTd.appendChild(createStatusBadge('confirmed', { suffix: ' (verified)' }));
     }
 
     tr.appendChild(dateTd);
@@ -260,7 +249,7 @@ async function loadFeedbackShifts() {
         link.textContent = 'Leave feedback';
         actionTd.appendChild(link);
       } else {
-        actionTd.textContent = '—';
+        actionTd.textContent = 'Not submitted';
       }
       tr.appendChild(dateTd);
       tr.appendChild(titleTd);

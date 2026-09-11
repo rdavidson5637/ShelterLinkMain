@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Volunteer certificate - ShelterLink</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+    <style>
+      .cert-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin: 1rem 0 1.5rem;
+      }
+      .certificate-sheet {
+        background: #fff;
+        border: 2px solid #1b5e20;
+        padding: 2rem 2.5rem;
+        max-width: 297mm;
+        margin: 0 auto;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+      }
+      .certificate-sheet .brand {
+        font-size: 1.75rem;
+        color: #1b5e20;
+        letter-spacing: 0.02em;
+        margin: 0;
+      }
+      .certificate-sheet .subtitle {
+        color: #55605a;
+        margin: 0.25rem 0 1.5rem;
+      }
+      .certificate-sheet h1 {
+        font-size: 1.5rem;
+        margin: 0 0 0.5rem;
+      }
+      .certificate-sheet .volunteer-name {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0.75rem 0;
+      }
+      .certificate-sheet .stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2rem;
+        margin: 1.25rem 0;
+      }
+      .certificate-sheet .stat strong {
+        display: block;
+        font-size: 1.75rem;
+        color: #1b5e20;
+      }
+      .certificate-sheet .verify {
+        margin-top: 1.5rem;
+        font-size: 0.9rem;
+        color: #55605a;
+      }
+      .certificate-sheet .badges {
+        margin-top: 1rem;
+      }
+      @media print {
+        @page {
+          size: A4 landscape;
+          margin: 12mm;
+        }
+        body {
+          background: #fff !important;
+        }
+        .site-header,
+        .cert-actions,
+        footer,
+        .no-print {
+          display: none !important;
+        }
+        main.container {
+          max-width: none;
+          padding: 0;
+          margin: 0;
+        }
+        .certificate-sheet {
+          box-shadow: none;
+          border-width: 3px;
+          width: 100%;
+          max-width: none;
+          min-height: 170mm;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="site-header no-print">
+      <nav class="site-nav container" aria-label="Volunteer navigation">
+        <a class="site-brand" href="/pages/volunteer/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">Menu</button>
+        <ul class="nav-menu" id="navMenu" data-volunteer-nav></ul>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section class="no-print">
+        <h1>Hours certificate</h1>
+        <p>Download a printable certificate of your approved volunteer hours.</p>
+        <div class="cert-actions">
+          <button type="button" id="issueButton">Issue / refresh certificate</button>
+          <button type="button" id="printButton" class="secondary" hidden>Print / save PDF</button>
+          <a href="/pages/volunteer/my-hours.html" role="button" class="secondary outline">Back to my hours</a>
+        </div>
+        <div id="message" role="status" aria-live="polite"></div>
+      </section>
+
+      <article id="certificateSheet" class="certificate-sheet" hidden>
+        <p class="brand">ShelterLink</p>
+        <p class="subtitle">Assisi Animal Sanctuary</p>
+        <h1>Certificate of Volunteer Service</h1>
+        <p>This certifies that</p>
+        <p class="volunteer-name" id="certName">—</p>
+        <p>has completed approved volunteer service with Assisi Animal Sanctuary.</p>
+        <div class="stats">
+          <div class="stat">
+            <strong id="certHours">0</strong>
+            <span>Approved hours</span>
+          </div>
+          <div class="stat">
+            <strong id="certShifts">0</strong>
+            <span>Shifts completed</span>
+          </div>
+        </div>
+        <div class="badges" id="certBadges"></div>
+        <p class="verify">
+          Issued on <span id="certIssued">—</span><br />
+          Verification code: <code id="certCode">—</code><br />
+          Verify at <span id="certVerifyUrl"></span>
+        </p>
+      </article>
+    </main>
+
+    <footer class="container no-print">
+      <small>&copy; 2025 ShelterLink</small>
+    </footer>
+
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/volunteer/certificate.js"></script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+    <script type="module" src="/js/components/volunteerNav.js"></script>
+  </body>
+</html>

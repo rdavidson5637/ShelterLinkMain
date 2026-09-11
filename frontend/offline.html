@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1b5e20" />
+    <title>Offline - ShelterLink</title>
+    <link rel="stylesheet" href="/public/css/custom.css" />
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        background: #f6f7f6;
+        color: #1c211e;
+        display: flex;
+        min-height: 100vh;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+        padding: 1.5rem;
+        text-align: center;
+      }
+      h1 {
+        color: #1b5e20;
+        margin-bottom: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>You're offline</h1>
+      <p>Your shifts will load when you reconnect.</p>
+      <p><button type="button" onclick="location.reload()">Try again</button></p>
+    </main>
+  </body>
+</html>

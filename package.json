@@ -11,25 +11,28 @@
     "dev": "nodemon server.js",
     "db:setup": "node scripts/setup-db.js --no-seed",
     "db:reset": "node scripts/setup-db.js --seed",
+    "db:clean-demo": "node scripts/clean-demo.js",
     "create-admin": "node create-admin.js",
     "test": "node --test --test-concurrency=1 \"test/*.test.js\"",
     "migrate": "node scripts/migrate.js",
-    "smoke": "node scripts/smoke-test.js"
+    "smoke": "node scripts/smoke-test.js",
+    "backup": "node scripts/backup.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "connect-pg-simple": "^10.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
-    "express-mysql-session": "^3.0.3",
     "express-rate-limit": "^8.3.2",
     "express-session": "^1.18.2",
     "helmet": "^8.1.0",
     "json2csv": "^6.0.0-alpha.2",
     "multer": "^2.2.0",
-    "mysql2": "^3.15.3",
     "nodemailer": "^9.0.5",
+    "pg": "^8.23.0",
     "validator": "^13.15.26",
+    "web-push": "^3.6.7",
     "xss": "^1.0.15"
   },
   "devDependencies": {

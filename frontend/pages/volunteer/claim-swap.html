@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Claim Shift Cover | ShelterLink</title>
+    <title>Claim shift cover - ShelterLink</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
     <link rel="stylesheet" href="/public/css/custom.css" />
   </head>
@@ -14,7 +14,9 @@
       <button type="button" id="claimButton" hidden>Claim this shift</button>
       <p><a href="/pages/volunteer/browse-shifts.html">Back to browse shifts</a></p>
     </main>
-    <script type="module">
+    
+    <footer class="container" data-site-footer></footer>
+<script type="module">
       import { apiRequest } from '/js/config.js';
       import { requireAuth } from '/js/auth.js';
 
@@ -56,5 +58,7 @@
 
       document.addEventListener('DOMContentLoaded', init);
     </script>
+      <script type="module" src="/js/utils/footerYear.js"></script>
+      <script type="module" src="/js/components/volunteerNav.js"></script>
   </body>
 </html>

@@ -1,5 +1,8 @@
 import { apiRequest } from '../config.js';
 import { requireAuth, checkAuth, logout, isStaffOrAdminRole, applyRoleVisibility} from '../auth.js';
+import { formatDateOnly } from '../utils/dateFormat.js';
+import { createStatusBadge } from '../components/statusBadge.js';
+import { createOverflowMenu, createIdentityCell } from '../components/overflowMenu.js';
 
 const statusFilter = document.getElementById('statusFilter');
 const messageEl = document.getElementById('message');
@@ -58,48 +61,34 @@ function waitlistPositionWithinOpportunity(app, peers) {
   return idx >= 0 ? idx + 1 : null;
 }
 
-function appendApplicationRow(app, options = {}) {
-  const tr = document.createElement('tr');
-  if (options.groupClass) tr.className = options.groupClass;
-
-  const nameTd = document.createElement('td');
-  nameTd.textContent = volunteerName(app);
-
-  const emailTd = document.createElement('td');
-  emailTd.textContent = app.email || 'N/A';
-
-  const titleTd = document.createElement('td');
-  titleTd.textContent = app.opportunity_title || 'Opportunity';
-
-  const dateTd = document.createElement('td');
-  dateTd.textContent = app.created_at || app.applied_at || '';
-
-  const statusTd = document.createElement('td');
-  if (app.status === 'waitlisted' && options.position) {
-    statusTd.textContent = `waitlisted (#${options.position})`;
-  } else {
-    statusTd.textContent = app.status || '';
-  }
-
-  const actionsTd = document.createElement('td');
-  actionsTd.style.display = 'flex';
-  actionsTd.style.gap = '0.4rem';
+function buildApplicationActions(app, isAccepted, isPast) {
+  const actions = document.createElement('div');
+  actions.className = 'row-actions';
 
   const approveBtn = document.createElement('button');
   approveBtn.type = 'button';
   approveBtn.textContent = app.status === 'waitlisted' ? 'Accept from waitlist' : 'Approve';
   approveBtn.classList.add('contrast', 'button-small');
   approveBtn.addEventListener('click', () => handleStatusChange(app.id, 'accepted'));
+  actions.appendChild(approveBtn);
 
-  const rejectBtn = document.createElement('button');
-  rejectBtn.type = 'button';
-  rejectBtn.textContent = 'Reject';
-  rejectBtn.classList.add('secondary', 'button-secondary', 'button-small');
-  rejectBtn.addEventListener('click', () => openModal(app.id));
+  const menuItems = [{ label: 'Reject', destructive: true, onSelect: () => openModal(app.id) }];
+  if (isAccepted && isPast && !Number(app.no_show)) {
+    menuItems.unshift({ label: 'Mark no-show', onSelect: () => markNoShow(app.id) });
+  }
+  actions.appendChild(createOverflowMenu({ items: menuItems }));
+  if (Number(app.no_show)) {
+    actions.appendChild(createStatusBadge('no-show'));
+  }
+  return actions;
+}
 
-  actionsTd.appendChild(approveBtn);
-  actionsTd.appendChild(rejectBtn);
+function appendApplicationRow(app, options = {}) {
+  const tr = document.createElement('tr');
+  if (options.groupClass) tr.className = options.groupClass;
 
+  const suffix =
+    app.status === 'waitlisted' && options.position ? ` (#${options.position})` : '';
   const isAccepted = app.status === 'accepted' || app.status === 'approved';
   const startRaw = app.opportunity_start_date || app.opportunity_end_date;
   const startDate = startRaw ? new Date(startRaw) : null;
@@ -107,33 +96,56 @@ function appendApplicationRow(app, options = {}) {
     startDate &&
     !Number.isNaN(startDate.getTime()) &&
     startDate.getTime() < Date.now() - 24 * 60 * 60 * 1000;
-  if (isAccepted && isPast && !Number(app.no_show)) {
-    const noShowBtn = document.createElement('button');
-    noShowBtn.type = 'button';
-    noShowBtn.textContent = 'Mark no-show';
-    noShowBtn.classList.add('secondary', 'button-secondary', 'button-small');
-    noShowBtn.addEventListener('click', () => markNoShow(app.id));
-    actionsTd.appendChild(noShowBtn);
-  } else if (Number(app.no_show)) {
-    const flagged = document.createElement('span');
-    flagged.textContent = 'No-show';
-    flagged.style.cssText = 'color:#c62828;font-size:0.85rem;align-self:center;';
-    actionsTd.appendChild(flagged);
-  }
 
-  tr.appendChild(nameTd);
-  tr.appendChild(emailTd);
-  tr.appendChild(titleTd);
-  tr.appendChild(dateTd);
-  tr.appendChild(statusTd);
-  tr.appendChild(actionsTd);
+  const titleTd = document.createElement('td');
+  titleTd.textContent = app.opportunity_title || 'Opportunity';
 
+  const dateTd = document.createElement('td');
+  dateTd.textContent = formatDateOnly(app.created_at || app.applied_at) || 'N/A';
+
+  const statusTd = document.createElement('td');
+  statusTd.appendChild(createStatusBadge(app.status, { suffix }));
+
+  const actionsTd = document.createElement('td');
+  actionsTd.appendChild(buildApplicationActions(app, isAccepted, isPast));
+
+  tr.append(
+    createIdentityCell(volunteerName(app), app.email || ''),
+    titleTd,
+    dateTd,
+    statusTd,
+    actionsTd
+  );
   tableBody.appendChild(tr);
+
+  const cardList = document.getElementById('applicationsCardList');
+  if (cardList) {
+    const card = document.createElement('article');
+    card.className = 'person-card';
+    if (options.groupClass) card.classList.add(options.groupClass);
+    const name = document.createElement('strong');
+    name.textContent = volunteerName(app);
+    const email = document.createElement('small');
+    email.textContent = app.email || '';
+    const meta = document.createElement('p');
+    meta.className = 'person-card-meta';
+    meta.textContent = `${app.opportunity_title || 'Opportunity'} · ${formatDateOnly(app.created_at || app.applied_at) || ''}`;
+    card.append(
+      name,
+      email,
+      createStatusBadge(app.status, { suffix }),
+      meta,
+      buildApplicationActions(app, isAccepted, isPast)
+    );
+    cardList.appendChild(card);
+  }
 }
 
 function renderRows() {
   if (!tableBody) return;
   tableBody.innerHTML = '';
+  const cardList = document.getElementById('applicationsCardList');
+  if (cardList) cardList.innerHTML = '';
 
   if (!applications.length) {
     setMessage('No applications found for this filter.');
@@ -157,9 +169,9 @@ function renderRows() {
   if (waitlisted.length) {
     const header = document.createElement('tr');
     const th = document.createElement('td');
-    th.colSpan = 6;
+    th.colSpan = 5;
+    th.className = 'waitlist-group-heading';
     th.innerHTML = '<strong>Waitlisted applicants</strong> (oldest first)';
-    th.style.background = '#e3f2fd';
     header.appendChild(th);
     tableBody.appendChild(header);
 
@@ -184,6 +196,8 @@ async function fetchApplications() {
       setMessage('Failed to load applications.', 'error');
       applications = [];
       if (tableBody) tableBody.innerHTML = '';
+      const cardList = document.getElementById('applicationsCardList');
+      if (cardList) cardList.innerHTML = '';
       return;
     }
     applications = await res.json();

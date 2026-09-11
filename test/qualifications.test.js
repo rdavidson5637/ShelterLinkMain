@@ -157,7 +157,7 @@ test('expiry job selects warning and expired rows and notifies only once', async
   const now = new Date('2026-08-11T10:00:00Z');
 
   mock.setHandler(async (sql, params) => {
-    if (/DATE_ADD\(\?, INTERVAL 30 DAY\)/i.test(sql)) {
+    if (/\?::date \+ interval '30 days'/i.test(sql)) {
       if (notified.has('warn')) return [[]];
       return [[
         {
@@ -173,7 +173,7 @@ test('expiry job selects warning and expired rows and notifies only once', async
         },
       ]];
     }
-    if (/WHERE vq\.expires_at = \?/i.test(sql) || (/vq\.expires_at = \?/i.test(sql) && !/DATE_ADD/i.test(sql))) {
+    if (/WHERE vq\.expires_at = \?/i.test(sql) || (/vq\.expires_at = \?/i.test(sql) && !/interval '30 days'/i.test(sql))) {
       if (notified.has('expired')) return [[]];
       // Only return expiry-day row when selecting for today
       if (params && params[0] === '2026-08-11') {
@@ -216,7 +216,7 @@ test('expiry job selects warning and expired rows and notifies only once', async
 test('findNeedingExpiryWarning SQL is idempotent via last_expiry_notified_at', async () => {
   mock.resetCalls();
   mock.setHandler(async (sql, params) => {
-    assert.match(sql, /INTERVAL 30 DAY/i);
+    assert.match(sql, /interval '30 days'/i);
     assert.match(sql, /last_expiry_notified_at/i);
     assert.strictEqual(params[0], '2026-08-11');
     return [[]];

@@ -1,5 +1,7 @@
 import { apiRequest } from '../config.js';
 import { requireAuth, checkAuth, logout, isStaffOrAdminRole } from '../auth.js';
+import { formatShiftWhen } from '../utils/dateFormat.js';
+import { createStatusBadge } from '../components/statusBadge.js';
 
 const logoutButton = document.getElementById('logoutButton');
 const statusFilter = document.getElementById('statusFilter');
@@ -18,9 +20,7 @@ function setMessage(text, tone = 'neutral') {
 
 function formatDate(value) {
   if (!value) return '';
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return String(value).slice(0, 16);
-  return d.toLocaleString();
+  return formatShiftWhen(value);
 }
 
 async function loadBookings() {
@@ -56,9 +56,11 @@ async function loadBookings() {
           <small>${row.contact_email || ''}</small>
         </td>
         <td>${row.size}</td>
-        <td>${row.status}</td>
+        <td class="status-cell"></td>
         <td class="actions-cell"></td>
       `;
+      const statusCell = tr.querySelector('.status-cell');
+      statusCell.appendChild(createStatusBadge(row.status));
       const actions = tr.querySelector('.actions-cell');
       if (row.status === 'pending') {
         const confirmBtn = document.createElement('button');

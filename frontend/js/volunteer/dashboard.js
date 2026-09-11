@@ -1,13 +1,24 @@
 import { API_URL, apiRequest } from '../config.js';
 import { requireAuth, logout } from '../auth.js';
+import { formatShiftWhen, parseShiftDate } from '../utils/dateFormat.js';
+import { renderStatCards } from '../components/statCard.js';
+import { showConfirm } from '../components/confirmDialog.js';
 
 const userNameEl = document.getElementById('userName');
+const profileStatusBannerEl = document.getElementById('profileStatusBanner');
 const profileStatusEl = document.getElementById('profileStatus');
+const statsGridEl = document.getElementById('statsGrid');
+renderStatCards(statsGridEl, [
+  { label: 'Total hours', valueId: 'totalHours', value: '0' },
+  { label: 'Shifts completed', valueId: 'shiftsCompleted', value: '0' },
+  { label: 'Current streak', valueId: 'currentStreak', value: '0' },
+]);
 const totalHoursEl = document.getElementById('totalHours');
 const shiftsCompletedEl = document.getElementById('shiftsCompleted');
 const currentStreakEl = document.getElementById('currentStreak');
 const badgesListEl = document.getElementById('badgesList');
 const nextBadgeProgressEl = document.getElementById('nextBadgeProgress');
+const helpedAnimalsDetailsEl = document.getElementById('helpedAnimalsDetails');
 const impactCanvas = document.getElementById('impactCanvas');
 const downloadImpactButton = document.getElementById('downloadImpactButton');
 const nextShiftDetailsEl = document.getElementById('nextShiftDetails');
@@ -28,19 +39,55 @@ let displayName = 'Volunteer';
 
 function setProfileStatus(content, tone = 'neutral') {
   if (!profileStatusEl) return;
+  if (tone === 'success' || tone === 'hidden') {
+    if (profileStatusBannerEl) profileStatusBannerEl.hidden = true;
+    profileStatusEl.innerHTML = '';
+    return;
+  }
+  if (profileStatusBannerEl) profileStatusBannerEl.hidden = false;
   if (typeof content === 'string') {
     profileStatusEl.innerHTML = content;
   } else {
     profileStatusEl.innerHTML = '';
     profileStatusEl.appendChild(content);
   }
-  profileStatusEl.dataset.tone = tone;
+  profileStatusBannerEl.dataset.tone = tone;
 }
 
 function setImpactStats(stats = {}) {
   if (totalHoursEl) totalHoursEl.textContent = stats.totalHours ?? 0;
   if (shiftsCompletedEl) shiftsCompletedEl.textContent = stats.shiftsCompleted ?? 0;
   if (currentStreakEl) currentStreakEl.textContent = stats.currentStreak ?? 0;
+}
+
+async function loadOnboardingChecklist() {
+  const el = document.getElementById('onboardingChecklist');
+  if (!el) return;
+  try {
+    const res = await apiRequest('/vetting/me/onboarding', { method: 'GET' });
+    if (!res.ok) {
+      el.textContent = 'Unable to load onboarding checklist.';
+      return;
+    }
+    const data = await res.json();
+    // Never display referee comments (API already strips them).
+    const items = [
+      ['Profile completed', data.profile_complete],
+      ['Profile approved', data.profile_approved],
+      [`References received (${data.references_received || 0})`, (data.references_received || 0) > 0],
+      ['Clear background check', data.has_clear_background_check],
+      ['Waivers accepted', data.waivers_complete],
+    ];
+    el.innerHTML = `<ul>${items
+      .map(
+        ([label, ok]) =>
+          `<li>${ok ? '✓' : '○'} ${label}</li>`
+      )
+      .join('')}</ul>`;
+  } catch (error) {
+    console.error('[Dashboard] onboarding checklist error:', error);
+    el.textContent = 'Unable to load onboarding checklist.';
+  }
 }
 
 function renderBadges(badges = {}) {
@@ -61,6 +108,33 @@ function renderBadges(badges = {}) {
     } else {
       nextBadgeProgressEl.textContent = `Next: ${next.label} — ${next.current} / ${next.target} (${next.percent}%)`;
     }
+  }
+}
+
+async function fetchAndDisplayHelpedAnimals() {
+  if (!helpedAnimalsDetailsEl) return;
+  try {
+    const res = await apiRequest('/animals/me/helped');
+    if (!res.ok) {
+      helpedAnimalsDetailsEl.textContent = 'Unable to load animals right now.';
+      return;
+    }
+    const rows = await res.json();
+    if (!rows.length) {
+      helpedAnimalsDetailsEl.innerHTML =
+        '<p>No animal activity yet. After an accepted shift, log a walk, feed, or socialise from My applications.</p>';
+      return;
+    }
+    helpedAnimalsDetailsEl.innerHTML = `<ul>${rows
+      .map(
+        (r) =>
+          `<li><strong>${r.name}</strong> (${r.species}) — ${r.activity_count} log${
+            Number(r.activity_count) === 1 ? '' : 's'
+          }</li>`
+      )
+      .join('')}</ul>`;
+  } catch {
+    helpedAnimalsDetailsEl.textContent = 'Unable to load animals right now.';
   }
 }
 
@@ -192,19 +266,99 @@ function renderProfilePending() {
 }
 
 function renderProfileApproved() {
-  setProfileStatus('Profile approved! You are ready to browse shifts and log hours.', 'success');
+  setProfileStatus('', 'success');
 }
 
-function formatCountdown(targetDate) {
-  const ms = targetDate.getTime() - Date.now();
-  if (ms <= 0) return 'Starting soon';
-  const totalHours = Math.floor(ms / (1000 * 60 * 60));
-  const days = Math.floor(totalHours / 24);
-  const hours = totalHours % 24;
-  if (days > 0) return `in ${days} day${days === 1 ? '' : 's'}, ${hours}h`;
-  const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
-  if (totalHours > 0) return `in ${totalHours}h ${minutes}m`;
-  return `in ${minutes} minute${minutes === 1 ? '' : 's'}`;
+function isSameCalendarDay(date, now = new Date()) {
+  return (
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate()
+  );
+}
+
+function isWithinCutoff(appRow, now = new Date()) {
+  const start = parseShiftDate(appRow.opportunity_start_date);
+  if (!start) return false;
+  const cutoff = Number(appRow.cancellation_cutoff_hours ?? 24);
+  const safeCutoff = Number.isFinite(cutoff) && cutoff >= 0 ? cutoff : 24;
+  return start.getTime() - now.getTime() <= safeCutoff * 60 * 60 * 1000;
+}
+
+function renderNextShiftEmpty() {
+  if (!nextShiftDetailsEl) return;
+  nextShiftDetailsEl.innerHTML = '';
+  const p = document.createElement('p');
+  p.textContent = 'You have no upcoming shifts.';
+  const browse = document.createElement('a');
+  browse.href = '/pages/volunteer/browse-shifts.html';
+  browse.setAttribute('role', 'button');
+  browse.className = 'secondary';
+  browse.textContent = 'Browse open shifts';
+  nextShiftDetailsEl.append(p, browse);
+}
+
+function renderNextShiftActions(next) {
+  const actions = document.createElement('p');
+  actions.className = 'next-shift-actions';
+
+  const view = document.createElement('a');
+  view.href = '/pages/volunteer/browse-shifts.html';
+  view.textContent = 'View shift';
+  actions.appendChild(view);
+
+  const withinCutoff = isWithinCutoff(next);
+  if (!withinCutoff) {
+    const cancel = document.createElement('button');
+    cancel.type = 'button';
+    cancel.className = 'secondary button-secondary button-small';
+    cancel.textContent = 'Cancel';
+    cancel.addEventListener('click', () => {
+      showConfirm({
+        heading: 'Cancel this shift?',
+        body: 'You can apply again later if the shift is still open.',
+        confirmText: 'Yes, cancel',
+        cancelText: 'Keep shift',
+        onConfirm: async () => {
+          const res = await apiRequest(`/applications/${next.id}`, { method: 'DELETE' });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err?.error || 'Failed to cancel');
+          }
+          await fetchAndDisplayNextShift();
+        },
+      });
+    });
+    actions.appendChild(cancel);
+  } else if (!next.open_swap_id) {
+    const swap = document.createElement('button');
+    swap.type = 'button';
+    swap.className = 'secondary button-secondary button-small';
+    swap.textContent = 'Request a swap';
+    swap.addEventListener('click', () => {
+      showConfirm({
+        heading: 'Request a shift swap?',
+        body: 'Other volunteers will be offered the chance to cover this shift. Inside the cancellation window you cannot cancel directly.',
+        confirmText: 'Request swap',
+        cancelText: 'Keep shift',
+        onConfirm: async () => {
+          const res = await apiRequest(`/applications/${next.id}/swap`, { method: 'POST' });
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            throw new Error(body?.error || 'Failed to open swap');
+          }
+          await fetchAndDisplayNextShift();
+        },
+      });
+    });
+    actions.appendChild(swap);
+  } else {
+    const note = document.createElement('span');
+    note.textContent = 'Swap request open.';
+    actions.appendChild(note);
+  }
+
+  return actions;
 }
 
 async function fetchAndDisplayNextShift() {
@@ -221,28 +375,45 @@ async function fetchAndDisplayNextShift() {
       .filter((app) => {
         const status = (app.status || '').toLowerCase();
         if (status !== 'accepted' && status !== 'approved') return false;
-        const start = new Date(app.opportunity_start_date || app.opportunity_end_date);
-        return !Number.isNaN(start.getTime()) && start.getTime() >= now - 60 * 60 * 1000;
+        const start = parseShiftDate(app.opportunity_start_date || app.opportunity_end_date);
+        return start && start.getTime() >= now - 60 * 60 * 1000;
       })
       .sort((a, b) => {
-        return (
-          new Date(a.opportunity_start_date).getTime() -
-          new Date(b.opportunity_start_date).getTime()
-        );
+        const aDate = parseShiftDate(a.opportunity_start_date);
+        const bDate = parseShiftDate(b.opportunity_start_date);
+        return (aDate?.getTime() || 0) - (bDate?.getTime() || 0);
       });
 
     if (!upcoming.length) {
-      nextShiftDetailsEl.textContent = 'No upcoming accepted shifts.';
+      renderNextShiftEmpty();
       return;
     }
 
     const next = upcoming[0];
-    const start = new Date(next.opportunity_start_date);
-    nextShiftDetailsEl.innerHTML = `
-      <strong>${next.opportunity_title || 'Volunteer shift'}</strong><br/>
-      ${start.toLocaleString()} · ${next.opportunity_location || 'Location TBA'}<br/>
-      <span>${formatCountdown(start)}</span>
-    `;
+    const start = parseShiftDate(next.opportunity_start_date);
+    nextShiftDetailsEl.innerHTML = '';
+
+    const title = document.createElement('p');
+    const strong = document.createElement('strong');
+    strong.textContent = next.opportunity_title || 'Volunteer shift';
+    title.appendChild(strong);
+
+    const when = document.createElement('p');
+    when.textContent = formatShiftWhen(next.opportunity_start_date, next.opportunity_end_date);
+
+    const location = document.createElement('p');
+    location.textContent = next.opportunity_location || 'Location TBA';
+
+    nextShiftDetailsEl.append(title, when, location);
+
+    if (start && isSameCalendarDay(start) && next.check_in_code) {
+      const code = document.createElement('p');
+      code.className = 'next-shift-code';
+      code.innerHTML = `Check-in code: <code>${next.check_in_code}</code>`;
+      nextShiftDetailsEl.appendChild(code);
+    }
+
+    nextShiftDetailsEl.appendChild(renderNextShiftActions(next));
   } catch (error) {
     console.error('[Dashboard] fetchAndDisplayNextShift error:', error);
     nextShiftDetailsEl.textContent = 'Unable to load your next shift.';
@@ -476,10 +647,13 @@ async function init() {
     userNameEl.textContent = displayName;
   }
 
+  await loadOnboardingChecklist();
+
   const profile = await fetchProfile();
   if (profile === null) {
     renderProfileIncomplete();
     setImpactStats();
+    renderNextShiftEmpty();
   } else if (profile && profile.approved) {
     renderProfileApproved();
     const stats = await fetchAndDisplayStats();
@@ -489,10 +663,11 @@ async function init() {
     await fetchAndDisplayQualifications();
     await fetchAndDisplayDocuments();
     await fetchAndDisplayIcalFeed();
+    await fetchAndDisplayHelpedAnimals();
   } else if (profile) {
     renderProfilePending();
     setImpactStats();
-    if (nextShiftDetailsEl) nextShiftDetailsEl.textContent = 'Available once your profile is approved.';
+    if (nextShiftDetailsEl) renderNextShiftEmpty();
     if (recommendedDetailsEl) {
       recommendedDetailsEl.textContent = 'Recommendations appear once your profile is approved.';
     }

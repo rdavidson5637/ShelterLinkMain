@@ -1,5 +1,8 @@
 import { apiRequest } from '../config.js';
 import { requireAuth, logout } from '../auth.js';
+import { showFormErrors, clearFormErrors } from '../utils/formErrors.js';
+import { formatDateOnly } from '../utils/dateFormat.js';
+import { createStatusBadge } from '../components/statusBadge.js';
 
 const logHoursForm = document.getElementById('logHoursForm');
 const opportunitySelect = document.getElementById('opportunityId');
@@ -38,7 +41,9 @@ async function loadApprovedApplications() {
     }
 
     const applications = await res.json();
-    const approved = applications.filter((app) => app.status === 'accepted');
+    const approved = applications.filter(
+      (app) => app.status === 'accepted' || app.status === 'approved'
+    );
 
     opportunitySelect.innerHTML = '<option value="" disabled selected>Select an opportunity</option>';
 
@@ -91,7 +96,7 @@ async function loadRecentHours() {
       const tr = document.createElement('tr');
 
       const dateTd = document.createElement('td');
-      dateTd.textContent = entry.date || entry.created_at || 'N/A';
+      dateTd.textContent = formatDateOnly(entry.date || entry.created_at) || 'N/A';
 
       const opportunityTd = document.createElement('td');
       opportunityTd.textContent = entry.opportunity_title || 'N/A';
@@ -100,13 +105,7 @@ async function loadRecentHours() {
       hoursTd.textContent = entry.hours || 0;
 
       const statusTd = document.createElement('td');
-      const statusText = entry.approved ? 'Approved' : 'Pending';
-      statusTd.textContent = statusText;
-      if (entry.approved) {
-        statusTd.style.color = 'green';
-      } else {
-        statusTd.style.color = 'orange';
-      }
+      statusTd.appendChild(createStatusBadge(entry.approved ? 'approved' : 'pending'));
 
       tr.appendChild(dateTd);
       tr.appendChild(opportunityTd);
@@ -124,6 +123,7 @@ async function loadRecentHours() {
 async function handleSubmit(event) {
   event.preventDefault();
   setMessage('');
+  clearFormErrors(logHoursForm);
 
   if (!logHoursForm || !opportunitySelect || !dateInput || !hoursInput) return;
 
@@ -132,12 +132,18 @@ async function handleSubmit(event) {
   const hours = parseFloat(hoursInput.value);
 
   if (!opportunityId || !date || isNaN(hours)) {
-    setMessage('Please fill in all required fields', 'error');
+    const errors = [];
+    if (!opportunityId) errors.push({ field: 'opportunityId', message: 'Select an opportunity.' });
+    if (!date) errors.push({ field: 'date', message: 'Choose the date you volunteered.' });
+    if (isNaN(hours)) errors.push({ field: 'hours', message: 'Enter the number of hours.' });
+    showFormErrors(logHoursForm, errors);
     return;
   }
 
   if (hours < 0.5 || hours > 24) {
-    setMessage('Hours must be between 0.5 and 24', 'error');
+    showFormErrors(logHoursForm, [
+      { field: 'hours', message: 'Hours must be between 0.5 and 24.' },
+    ]);
     return;
   }
 
@@ -159,7 +165,7 @@ async function handleSubmit(event) {
         errorMessage = "You don't have an approved application for this opportunity";
       }
 
-      setMessage(errorMessage, 'error');
+      showFormErrors(logHoursForm, [{ message: errorMessage }]);
       submitButton.disabled = false;
       submitButton.textContent = 'Log Hours';
       return;
@@ -170,7 +176,7 @@ async function handleSubmit(event) {
     await loadRecentHours();
   } catch (error) {
     console.error('[LogHours] handleSubmit error:', error);
-    setMessage('Network error while logging hours', 'error');
+    showFormErrors(logHoursForm, [{ message: 'Network error while logging hours' }]);
   } finally {
     submitButton.disabled = false;
     submitButton.textContent = 'Log Hours';

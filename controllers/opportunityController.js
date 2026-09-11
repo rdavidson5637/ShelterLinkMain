@@ -1,8 +1,13 @@
 const Opportunity = require('../models/Opportunity');
 const Qualification = require('../models/Qualification');
 const Tag = require('../models/Tag');
+const Animal = require('../models/Animal');
+const AdminMessage = require('../models/AdminMessage');
 const { notifyOnOpportunityCreate } = require('../jobs/opportunityMatchDigest');
 const { isStaffOrAdmin } = require('../middleware/auth');
+const { sendUrgentCover } = require('../utils/emailService');
+const pushService = require('../utils/pushService');
+const Vetting = require('../models/Vetting');
 
 const REQUIRED_FIELDS = ['title', 'description', 'location', 'start_date', 'end_date'];
 const VALID_RECURRENCE_RULES = new Set(['none', 'daily', 'weekly']);
@@ -23,6 +28,11 @@ function normalizeTagIds(body = {}) {
   return Tag.normalizeTagIds(raw);
 }
 
+function normalizeAnimalIds(body = {}) {
+  const raw = body.animal_ids ?? body.animalIds ?? body.animals;
+  return Animal.normalizeAnimalIds(raw);
+}
+
 async function applyQualificationIds(opportunityIds, qualificationIds) {
   if (qualificationIds == null) return;
   const ids = Array.isArray(opportunityIds) ? opportunityIds : [opportunityIds];
@@ -41,12 +51,30 @@ async function applyTagIds(opportunityIds, tagIds) {
   }
 }
 
+async function applyAnimalIds(opportunityIds, animalIds) {
+  if (animalIds == null) return;
+  const ids = Array.isArray(opportunityIds) ? opportunityIds : [opportunityIds];
+  for (const opportunityId of ids) {
+    if (!opportunityId) continue;
+    await Animal.setOpportunityAnimals(opportunityId, animalIds);
+  }
+}
+
 async function withExtras(opportunityOrList) {
   if (!opportunityOrList) return opportunityOrList;
   const list = Array.isArray(opportunityOrList) ? opportunityOrList : [opportunityOrList];
   const withQuals = await Qualification.attachRequiredQualifications(list);
   const withTags = await Tag.attachTags(withQuals);
-  return Array.isArray(opportunityOrList) ? withTags : withTags[0];
+  const withAnimals = await Animal.attachAnimals(withTags);
+  const ShiftNote = require('../models/ShiftNote');
+  const notesByOpp = await ShiftNote.findByOpportunityIds(
+    withAnimals.map((o) => o.opportunity_id || o.id)
+  );
+  const withNotes = withAnimals.map((o) => ({
+    ...o,
+    shift_notes: notesByOpp.get(Number(o.opportunity_id || o.id)) || [],
+  }));
+  return Array.isArray(opportunityOrList) ? withNotes : withNotes[0];
 }
 
 async function withRequiredQualifications(opportunityOrList) {
@@ -110,11 +138,16 @@ async function createOpportunity(req, res) {
     const created_by = req.session.userId;
     const qualificationIds = normalizeQualificationIds(req.body);
     const tagIds = normalizeTagIds(req.body);
+    const animalIds = normalizeAnimalIds(req.body);
+    const bgType = Vetting.normalizeCheckType(
+      req.body.required_background_check_type ?? req.body.requiredBackgroundCheckType
+    );
 
     // Non-recurring path stays identical to the original single-create behaviour.
     if (recurrence_rule === 'none') {
       const opportunityData = {
         ...req.body,
+        required_background_check_type: bgType,
         status: 'open',
         created_by,
         recurrence_rule: 'none',
@@ -124,6 +157,7 @@ async function createOpportunity(req, res) {
       const opportunity = await Opportunity.create(opportunityData);
       await applyQualificationIds(opportunity.opportunity_id, qualificationIds);
       await applyTagIds(opportunity.opportunity_id, tagIds);
+      await applyAnimalIds(opportunity.opportunity_id, animalIds);
       try {
         await notifyOnOpportunityCreate([opportunity.opportunity_id]);
       } catch (notifyError) {
@@ -134,6 +168,7 @@ async function createOpportunity(req, res) {
 
     const { parent, children, total } = await Opportunity.createWithRecurrence({
       ...req.body,
+      required_background_check_type: bgType,
       status: 'open',
       created_by,
       recurrence_rule,
@@ -143,6 +178,7 @@ async function createOpportunity(req, res) {
     const allIds = [parent.opportunity_id, ...children.map((c) => c.opportunity_id)];
     await applyQualificationIds(allIds, qualificationIds);
     await applyTagIds(allIds, tagIds);
+    await applyAnimalIds(allIds, animalIds);
     try {
       await notifyOnOpportunityCreate(allIds);
     } catch (notifyError) {
@@ -165,6 +201,21 @@ function stripAdminFields(opportunity, isAdminUser) {
   const copy = { ...opportunity };
   delete copy.check_in_code;
   delete copy.activity_notes;
+  // Volunteers browsing open shifts see animals without internal notes;
+  // handling_notes stay visible — they are safety-critical for the shift.
+  if (Array.isArray(copy.animals)) {
+    copy.animals = copy.animals.map((a) => ({
+      id: a.id,
+      name: a.name,
+      species: a.species,
+      breed: a.breed,
+      status: a.status,
+      photo_filename: a.photo_filename,
+      handling_notes: a.handling_notes,
+      requires_qualification_id: a.requires_qualification_id,
+      requires_qualification_name: a.requires_qualification_name,
+    }));
+  }
   return copy;
 }
 
@@ -237,7 +288,18 @@ async function updateOpportunity(req, res) {
     }
 
     const previousMax = Number(existing.max_volunteers);
-    const opportunity = await Opportunity.update(id, req.body);
+    const updateBody = { ...(req.body || {}) };
+    if (
+      Object.prototype.hasOwnProperty.call(updateBody, 'required_background_check_type') ||
+      Object.prototype.hasOwnProperty.call(updateBody, 'requiredBackgroundCheckType')
+    ) {
+      const raw =
+        updateBody.required_background_check_type ?? updateBody.requiredBackgroundCheckType;
+      updateBody.required_background_check_type =
+        raw == null || raw === '' ? null : Vetting.normalizeCheckType(raw);
+      delete updateBody.requiredBackgroundCheckType;
+    }
+    const opportunity = await Opportunity.update(id, updateBody);
     if (!opportunity) {
       return res.status(404).json({ error: 'Opportunity not found' });
     }
@@ -250,6 +312,11 @@ async function updateOpportunity(req, res) {
     const tagIds = normalizeTagIds(req.body);
     if (tagIds != null) {
       await applyTagIds(opportunity.opportunity_id, tagIds);
+    }
+
+    const animalIds = normalizeAnimalIds(req.body);
+    if (animalIds != null) {
+      await applyAnimalIds(opportunity.opportunity_id, animalIds);
     }
 
     const newMax = Number(opportunity.max_volunteers);
@@ -312,10 +379,136 @@ async function deleteOpportunity(req, res) {
   }
 }
 
+async function cloneOpportunity(req, res) {
+  try {
+    if (!isAdmin(req)) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const { id } = req.params;
+    const source = await Opportunity.findById(id);
+    if (!source) {
+      return res.status(404).json({ error: 'Opportunity not found' });
+    }
+
+    const enrichedSource = await withExtras(source);
+    const clone = await Opportunity.cloneFrom(id, req.session.userId);
+    if (!clone) {
+      return res.status(404).json({ error: 'Opportunity not found' });
+    }
+
+    const qualificationIds = (enrichedSource.required_qualifications || [])
+      .map((q) => Number(q.id || q.qualification_id))
+      .filter((n) => Number.isFinite(n) && n > 0);
+    const tagIds = (enrichedSource.tags || []).map((t) => Number(t.id)).filter(Boolean);
+    const animalIds = (enrichedSource.animals || []).map((a) => Number(a.id)).filter(Boolean);
+
+    await applyQualificationIds(clone.opportunity_id, qualificationIds);
+    await applyTagIds(clone.opportunity_id, tagIds);
+    await applyAnimalIds(clone.opportunity_id, animalIds);
+
+    return res.status(201).json(await withExtras(clone));
+  } catch (error) {
+    console.error('[Opportunity] cloneOpportunity error:', error.message);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+async function flagOpportunityUrgent(req, res) {
+  try {
+    if (!isAdmin(req)) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const { id } = req.params;
+    const opportunity = await Opportunity.findById(id);
+    if (!opportunity) {
+      return res.status(404).json({ error: 'Opportunity not found' });
+    }
+
+    if (opportunity.status !== 'open') {
+      return res.status(400).json({ error: 'Only open opportunities can be flagged urgent' });
+    }
+    if (!Opportunity.isUpcoming(opportunity)) {
+      return res.status(400).json({ error: 'Only upcoming opportunities can be flagged urgent' });
+    }
+    if (!Opportunity.isUnderstaffed(opportunity)) {
+      return res.status(400).json({ error: 'Opportunity is already fully staffed' });
+    }
+    if (!Opportunity.canReflagUrgent(opportunity)) {
+      return res.status(429).json({
+        error: 'Urgent cover was already broadcast in the last 24 hours',
+      });
+    }
+
+    const recipients = await Opportunity.resolveUrgentCoverRecipients(id, { limit: 200 });
+    const whenLabel = String(opportunity.start_date || '').slice(0, 10);
+    const subject = `Cover needed: ${opportunity.title || 'shift'}${whenLabel ? ` ${whenLabel}` : ''}`;
+
+    let sent = 0;
+    let failed = 0;
+    for (const recipient of recipients) {
+      try {
+        await sendUrgentCover(recipient.email, {
+          firstName: recipient.first_name,
+          opportunityTitle: opportunity.title,
+          whenLabel,
+          location: opportunity.location,
+        });
+        sent += 1;
+      } catch (emailError) {
+        failed += 1;
+        console.error('[Opportunity] urgent email failed:', emailError.message);
+      }
+    }
+
+    let pushResult = { sent: 0, skipped: 0, failed: 0, configured: false };
+    try {
+      pushResult = await pushService.sendToUsers(
+        recipients.map((r) => r.user_id),
+        {
+          title: subject,
+          body: `Urgent cover needed for ${opportunity.title || 'a shift'}${
+            whenLabel ? ` on ${whenLabel}` : ''
+          }.`,
+          url: '/pages/volunteer/browse-shifts.html',
+          type: 'urgent_cover',
+          opportunityId: Number(id),
+        },
+        { category: 'urgent' }
+      );
+    } catch (pushError) {
+      console.error('[Opportunity] urgent push failed:', pushError.message);
+    }
+
+    const flagged = await Opportunity.flagUrgent(id);
+    await AdminMessage.createMessageLog({
+      adminId: req.session.userId,
+      subject,
+      body: `Urgent cover broadcast for opportunity ${id}`,
+      filter: { type: 'urgent_cover', opportunityId: Number(id) },
+      recipientCount: sent,
+    });
+
+    return res.status(200).json({
+      opportunity: await withExtras(flagged),
+      recipients: recipients.length,
+      sent,
+      failed,
+      push: pushResult,
+    });
+  } catch (error) {
+    console.error('[Opportunity] flagOpportunityUrgent error:', error.message);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
 module.exports = {
   createOpportunity,
   getAllOpportunities,
   getOpportunity,
   updateOpportunity,
   deleteOpportunity,
+  cloneOpportunity,
+  flagOpportunityUrgent,
 };

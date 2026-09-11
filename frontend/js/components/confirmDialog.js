@@ -2,11 +2,14 @@
  * Reusable accessible confirm dialog.
  * Replaces native confirm() with custom modal - clear labels, consistent UX.
  */
+import { trapTabKey } from '../utils/focusTrap.js';
 
 let dialogEl = null;
+let previousActiveElement = null;
 
 function createDialog() {
   const dialog = document.createElement('dialog');
+  dialog.setAttribute('role', 'dialog');
   dialog.setAttribute('aria-labelledby', 'confirm-dialog-title');
   dialog.setAttribute('aria-describedby', 'confirm-dialog-body');
   dialog.setAttribute('aria-modal', 'true');
@@ -52,6 +55,7 @@ export function showConfirm(options = {}) {
     document.body.appendChild(dialogEl);
   }
 
+  previousActiveElement = document.activeElement;
   dialogEl.querySelector('.confirm-dialog-title').textContent = heading;
   dialogEl.querySelector('#confirm-dialog-body').textContent = body;
   const cancelBtn = dialogEl.querySelector('#confirmDialogCancel');
@@ -59,10 +63,22 @@ export function showConfirm(options = {}) {
   cancelBtn.textContent = cancelText;
   confirmBtn.textContent = confirmText;
 
+  const restoreFocus = () => {
+    if (previousActiveElement && typeof previousActiveElement.focus === 'function') {
+      try {
+        previousActiveElement.focus();
+      } catch (_) {
+        /* ignore */
+      }
+    }
+    previousActiveElement = null;
+  };
+
   const cleanup = () => {
     dialogEl.close();
     dialogEl.removeEventListener('keydown', handleKeydown);
     dialogEl.removeEventListener('click', backdropHandler);
+    restoreFocus();
   };
 
   const backdropHandler = (e) => {
@@ -73,6 +89,7 @@ export function showConfirm(options = {}) {
   };
 
   const handleKeydown = (e) => {
+    trapTabKey(dialogEl, e);
     if (e.key === 'Escape') {
       e.preventDefault();
       cleanup();

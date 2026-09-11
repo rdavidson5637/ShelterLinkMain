@@ -367,6 +367,160 @@ async function sendGroupBookingDeclined(contactEmail, details = {}) {
   );
 }
 
+async function sendUrgentCover(volunteerEmail, details = {}) {
+  const title = details.opportunityTitle || 'a volunteer shift';
+  const when = details.whenLabel || details.date || '';
+  const location = details.location || '';
+  const subject = `Cover needed: ${title}${when ? ` ${when}` : ''}`;
+  return sendEmail(
+    volunteerEmail,
+    subject,
+    `
+    <p>Hello${details.firstName ? ` ${details.firstName}` : ''},</p>
+    <p>We urgently need cover for <strong>${title}</strong>${when ? ` on <strong>${when}</strong>` : ''}.</p>
+    ${location ? `<p>Location: ${location}</p>` : ''}
+    <p>If you can help, please log in to ShelterLink and apply for the shift.</p>
+    <p>Thank you,<br/>ShelterLink &mdash; Assisi Animal Sanctuary</p>
+    `
+  );
+}
+
+async function sendFosterPlacementConfirmation(volunteerEmail, details = {}) {
+  const name = details.volunteerName || 'there';
+  const animalName = details.animalName || 'your foster animal';
+  const startedOn = details.startedOn || 'soon';
+  const expectedEnd = details.expectedEndOn
+    ? `<p><strong>Expected end:</strong> ${details.expectedEndOn}</p>`
+    : '';
+  const handling = details.handlingNotes
+    ? `<p><strong>Handling notes:</strong></p><p>${details.handlingNotes}</p>`
+    : '<p>Please check ShelterLink for any handling notes for this animal.</p>';
+  const emergency = details.emergencyPhone
+    ? `<p><strong>Shelter emergency phone:</strong> ${details.emergencyPhone}</p>`
+    : '';
+
+  return sendEmail(
+    volunteerEmail,
+    `Foster placement confirmed: ${animalName} - ShelterLink`,
+    `
+    <p>Hi ${name},</p>
+    <p>Thank you — your foster placement for <strong>${animalName}</strong> is confirmed.</p>
+    <p><strong>Start date:</strong> ${startedOn}</p>
+    ${expectedEnd}
+    ${handling}
+    ${emergency}
+    <p>Please log check-ins from your Foster page in ShelterLink.</p>
+    <p>Thank you,<br/>ShelterLink &mdash; Assisi Animal Sanctuary</p>
+    `
+  );
+}
+
+async function sendWeeklyDigest(volunteerEmail, details = {}) {
+  const name = details.name || 'there';
+  const myShifts = Array.isArray(details.myShifts) ? details.myShifts : [];
+  const openShifts = Array.isArray(details.openShifts) ? details.openShifts : [];
+  const fosterMatches = Array.isArray(details.fosterMatches) ? details.fosterMatches : [];
+  const unreadCount = Number(details.unreadCount) || 0;
+
+  const myHtml = myShifts.length
+    ? `<ul>${myShifts
+        .map(
+          (s) =>
+            `<li><strong>${s.title || 'Shift'}</strong><br/>${s.when || 'TBA'} · ${
+              s.location || 'TBA'
+            }</li>`
+        )
+        .join('')}</ul>`
+    : '<p>No accepted shifts scheduled this week.</p>';
+
+  const openHtml = openShifts.length
+    ? `<ul>${openShifts
+        .map(
+          (s) =>
+            `<li><strong>${s.title || 'Opportunity'}</strong><br/>${s.when || 'TBA'} · ${
+              s.location || 'TBA'
+            }</li>`
+        )
+        .join('')}</ul>`
+    : '<p>No open shifts listed for this week.</p>';
+
+  const fosterHtml = fosterMatches.length
+    ? `<ul>${fosterMatches
+        .map(
+          (f) =>
+            `<li><strong>${f.animalName || 'Foster'}</strong> (${f.urgency || 'planned'}) — needed from ${
+              f.neededFrom || 'TBA'
+            }</li>`
+        )
+        .join('')}</ul>`
+    : '';
+
+  const unreadHtml =
+    unreadCount > 0
+      ? `<p>You have <strong>${unreadCount}</strong> unread message${unreadCount === 1 ? '' : 's'}.</p>`
+      : '';
+
+  return sendEmail(
+    volunteerEmail,
+    'Your weekly ShelterLink digest',
+    `
+    <p>Hi ${name},</p>
+    <p>Here is your week ahead at Assisi Animal Sanctuary.</p>
+    <h3>Your shifts this week</h3>
+    ${myHtml}
+    <h3>Open shifts you could help with</h3>
+    ${openHtml}
+    ${fosterHtml ? `<h3>Foster matches</h3>${fosterHtml}` : ''}
+    ${unreadHtml}
+    <p>Log in to ShelterLink for full details.</p>
+    <p>Thank you,<br/>ShelterLink &mdash; Assisi Animal Sanctuary</p>
+    `
+  );
+}
+
+async function sendThreadDigest(volunteerEmail, details = {}) {
+  const name = details.name || 'there';
+  const unreadCount = Number(details.unreadCount) || 1;
+  const base = process.env.APP_URL || '';
+  const link =
+    details.link ||
+    (base
+      ? `${base.replace(/\/$/, '')}/pages/volunteer/messages.html`
+      : '/pages/volunteer/messages.html');
+  return sendEmail(
+    volunteerEmail,
+    'Unread messages in ShelterLink',
+    `
+    <p>Hi ${name},</p>
+    <p>You have <strong>${unreadCount}</strong> unread message${unreadCount === 1 ? '' : 's'} in ShelterLink.</p>
+    <p><a href="${link}">Open your messages</a></p>
+    <p>You can mute a thread from the messages page if you prefer not to get these reminders.</p>
+    <p>Thank you,<br/>ShelterLink &mdash; Assisi Animal Sanctuary</p>
+    `
+  );
+}
+
+async function sendShiftNoteUpdate(volunteerEmail, details = {}) {
+  const title = details.title || 'your shift';
+  const date = details.date || '';
+  const body = details.body || '';
+  const subjectDate = date ? ` ${date}` : '';
+  return sendEmail(
+    volunteerEmail,
+    `Update for your shift: ${title}${subjectDate}`,
+    `
+    <p>Hello,</p>
+    <p>There is an update for your upcoming shift <strong>${title}</strong>${
+      date ? ` on <strong>${date}</strong>` : ''
+    }:</p>
+    <blockquote style="border-left:3px solid #1b5e20;padding-left:0.75rem;margin:1rem 0;">
+      ${String(body).replace(/\n/g, '<br/>')}
+    </blockquote>
+    <p>Thank you,<br/>ShelterLink &mdash; Assisi Animal Sanctuary</p>
+    `
+  );
+}
+
 module.exports = {
   sendEmail,
   sendApplicationConfirmation,
@@ -388,4 +542,9 @@ module.exports = {
   sendGroupBookingReceived,
   sendGroupBookingConfirmed,
   sendGroupBookingDeclined,
+  sendUrgentCover,
+  sendFosterPlacementConfirmation,
+  sendWeeklyDigest,
+  sendThreadDigest,
+  sendShiftNoteUpdate,
 };

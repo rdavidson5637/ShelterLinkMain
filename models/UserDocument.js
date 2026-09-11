@@ -1,7 +1,5 @@
 'use strict';
 
-const path = require('path');
-const fs = require('fs');
 const { pool } = require('../config/database');
 
 const ALLOWED_MIME_TYPES = new Set([
@@ -12,22 +10,19 @@ const ALLOWED_MIME_TYPES = new Set([
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
-function getUploadDir() {
-  const dir =
-    process.env.UPLOAD_DIR ||
-    path.join(__dirname, '..', 'storage', 'uploads');
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-  return dir;
-}
-
 function isAllowedMime(mime) {
   return ALLOWED_MIME_TYPES.has(String(mime || '').toLowerCase());
 }
 
+/**
+ * Store an uploaded document. `content` is the file bytes (Buffer) — files live
+ * in Postgres, not on disk, so they survive redeploys on ephemeral hosts and
+ * are captured by `npm run backup`. `filename` stays as an opaque id purely for
+ * backwards compatibility with existing rows and the NOT NULL column.
+ */
 async function create({
   userId,
+  content,
   filename,
   originalName,
   mimeType,
@@ -35,10 +30,14 @@ async function create({
   label = null,
   expiresAt = null,
 }) {
+  if (!Buffer.isBuffer(content) || content.length === 0) {
+    throw new Error('Document content is required');
+  }
   const sql = `
     INSERT INTO user_documents
-      (user_id, filename, original_name, mime_type, size, label, expires_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+      (user_id, filename, original_name, mime_type, size, label, expires_at, content)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    RETURNING id
   `;
   const [result] = await pool.execute(sql, [
     userId,
@@ -48,6 +47,7 @@ async function create({
     size,
     label || null,
     expiresAt || null,
+    content,
   ]);
   return findById(result.insertId);
 }
@@ -72,6 +72,25 @@ async function findByUserId(userId) {
     [userId]
   );
   return rows;
+}
+
+/**
+ * Fetch the raw bytes for download. Kept separate from findById so listing
+ * documents never pulls file content into memory.
+ */
+async function getContent(id) {
+  const [rows] = await pool.execute(
+    `SELECT content, mime_type, original_name, filename
+     FROM user_documents WHERE id = ? LIMIT 1`,
+    [id]
+  );
+  const row = rows[0];
+  if (!row || !row.content) return null;
+  return {
+    buffer: Buffer.isBuffer(row.content) ? row.content : Buffer.from(row.content),
+    mimeType: row.mime_type,
+    originalName: row.original_name || row.filename,
+  };
 }
 
 async function updateMeta(id, { label, expires_at } = {}) {
@@ -103,34 +122,18 @@ async function updateMeta(id, { label, expires_at } = {}) {
 async function remove(id) {
   const doc = await findById(id);
   if (!doc) return null;
-
-  const filePath = path.join(getUploadDir(), doc.filename);
-  try {
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
-  } catch (_) {
-    // continue deleting DB row even if file is missing
-  }
-
   await pool.execute(`DELETE FROM user_documents WHERE id = ?`, [id]);
   return doc;
-}
-
-function absolutePathFor(doc) {
-  if (!doc || !doc.filename) return null;
-  return path.join(getUploadDir(), doc.filename);
 }
 
 module.exports = {
   ALLOWED_MIME_TYPES,
   MAX_FILE_SIZE,
-  getUploadDir,
   isAllowedMime,
   create,
   findById,
   findByUserId,
+  getContent,
   updateMeta,
   remove,
-  absolutePathFor,
 };

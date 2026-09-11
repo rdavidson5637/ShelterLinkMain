@@ -1,3 +1,5 @@
+import { showFormErrors, clearFormErrors } from '../utils/formErrors.js';
+
 const form = document.getElementById('groupBookingForm');
 const opportunitySelect = document.getElementById('opportunityId');
 const messageEl = document.getElementById('message');
@@ -35,7 +37,7 @@ async function loadOpportunities() {
       opt.value = opp.id;
       const spots =
         opp.spots_remaining == null ? 'unlimited' : `${opp.spots_remaining} spots left`;
-      opt.textContent = `${opp.title || 'Shift'} — ${formatDate(opp.date || opp.start_date)} (${spots})`;
+      opt.textContent = `${opp.title || 'Shift'} - ${formatDate(opp.date || opp.start_date)} (${spots})`;
       opportunitySelect.appendChild(opt);
     });
 
@@ -51,12 +53,31 @@ async function loadOpportunities() {
 async function submitForm(event) {
   event.preventDefault();
   setMessage('');
+  clearFormErrors(form);
+  const errors = [];
+  if (!opportunitySelect.value) {
+    errors.push({ field: 'opportunityId', message: 'Select an opportunity.' });
+  }
+  const groupName = document.getElementById('groupName').value.trim();
+  const contactName = document.getElementById('contactName').value.trim();
+  const contactEmail = document.getElementById('contactEmail').value.trim();
+  const size = Number(document.getElementById('groupSize').value);
+  if (!groupName) errors.push({ field: 'groupName', message: 'Enter the group or organisation name.' });
+  if (!contactName) errors.push({ field: 'contactName', message: 'Enter a contact name.' });
+  if (!contactEmail) errors.push({ field: 'contactEmail', message: 'Enter a contact email.' });
+  if (!Number.isFinite(size) || size < 1) {
+    errors.push({ field: 'groupSize', message: 'Enter a group size of at least 1.' });
+  }
+  if (errors.length) {
+    showFormErrors(form, errors);
+    return;
+  }
   const payload = {
     opportunity_id: Number(opportunitySelect.value),
-    group_name: document.getElementById('groupName').value.trim(),
-    contact_name: document.getElementById('contactName').value.trim(),
-    contact_email: document.getElementById('contactEmail').value.trim(),
-    size: Number(document.getElementById('groupSize').value),
+    group_name: groupName,
+    contact_name: contactName,
+    contact_email: contactEmail,
+    size,
     notes: document.getElementById('notes').value.trim() || null,
   };
 
@@ -69,7 +90,7 @@ async function submitForm(event) {
     });
     const body = await res.json().catch(() => ({}));
     if (!res.ok) {
-      setMessage(body.error || 'Unable to submit group booking', 'error');
+      showFormErrors(form, [{ message: body.error || 'Unable to submit group booking' }]);
       return;
     }
     form.reset();
@@ -77,7 +98,7 @@ async function submitForm(event) {
     setMessage('Request submitted. We will email you when it is reviewed.', 'success');
   } catch (error) {
     console.error('[GroupBooking] submit error:', error);
-    setMessage('Network error while submitting.', 'error');
+    showFormErrors(form, [{ message: 'Network error while submitting.' }]);
   }
 }
 

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Morning staff guide - ShelterLink</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Account">
+        <a class="site-brand" href="/pages/admin/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" aria-label="Toggle navigation">Menu</button>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main class="container dashboard-layout">
+      <aside id="admin-nav" class="sidebar-nav"></aside>
+      <div class="dashboard-main">
+        <section>
+          <h1>Morning ops guide</h1>
+          <p>A short checklist for opening the volunteer day at Assisi.</p>
+        </section>
+
+        <section>
+          <ol style="display:grid; gap:1.25rem; padding-left:1.25rem;">
+            <li>
+              <strong>Day sheet</strong> — Open today’s roster, note gaps, and print or share with reception.
+              <p><a href="/pages/admin/day-sheet.html">Open day sheet</a>
+                · <a href="/pages/admin/week-sheet.html">Open week sheet</a></p>
+            </li>
+            <li>
+              <strong>Check-ins</strong> — Confirm expected arrivals and kiosk / code check-in for first shifts.
+              <p>Use the day sheet check-in status, or the tablet kiosk at reception.</p>
+            </li>
+            <li>
+              <strong>Urgent cover</strong> — If a shift is understaffed, flag urgent cover from Opportunities so matching volunteers get email (and push when enabled).
+              <p><a href="/pages/admin/opportunities.html">Manage opportunities</a></p>
+            </li>
+            <li>
+              <strong>Animals</strong> — Review residents on today’s shifts and any handling notes before volunteers arrive.
+              <p><a href="/pages/admin/animals.html">Animals</a></p>
+            </li>
+            <li>
+              <strong>Fosters</strong> — Check open foster requests and active placements needing follow-up.
+              <p><a href="/pages/admin/fosters.html">Fosters</a></p>
+            </li>
+            <li>
+              <strong>Messages</strong> — Scan unread threads for foster or shift questions (replaces WhatsApp for ops).
+              <p><a href="/pages/admin/threads.html">Message threads</a></p>
+            </li>
+            <li>
+              <strong>Applications &amp; hours</strong> — Clear pending applications; approve yesterday’s hours so badges and certificates stay accurate.
+              <p>
+                <a href="/pages/admin/review-applications.html">Applications</a>
+                ·
+                <a href="/pages/admin/approve-hours.html">Approve hours</a>
+              </p>
+            </li>
+          </ol>
+        </section>
+
+        <section>
+          <h2>If something goes wrong</h2>
+          <ul>
+            <li>Volunteer cannot apply — check profile approved, waiver, qualifications, and AccessNI if the shift requires it.</li>
+            <li>Nobody got urgent email — confirm SMTP in <code>.env</code>; away-mode volunteers are skipped on purpose.</li>
+            <li>Need a repeat shift fast — use Duplicate on Opportunities, or start from a template on Create opportunity.</li>
+          </ul>
+        </section>
+      </div>
+    </main>
+
+    <footer class="container">
+      <small>&copy; ShelterLink</small>
+    </footer>
+
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module">
+      import { requireAuth, logout, isStaffOrAdminRole, checkAuth, applyRoleVisibility } from '/js/auth.js';
+      document.getElementById('logoutButton')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        logout();
+      });
+      document.addEventListener('DOMContentLoaded', async () => {
+        await requireAuth();
+        const user = await checkAuth();
+        if (!isStaffOrAdminRole(user)) {
+          window.location.href = '/login.html';
+          return;
+        }
+        applyRoleVisibility(user);
+      });
+    </script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+    <script type="module" src="/js/components/adminNav.js"></script>
+  </body>
+</html>

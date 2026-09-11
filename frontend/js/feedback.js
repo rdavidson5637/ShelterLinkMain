@@ -1,4 +1,5 @@
 import { API_URL } from './config.js';
+import { showFormErrors, clearFormErrors } from './utils/formErrors.js';
 
 const params = new URLSearchParams(window.location.search);
 const token = (params.get('token') || '').trim();
@@ -6,11 +7,10 @@ const token = (params.get('token') || '').trim();
 const shiftSummary = document.getElementById('shiftSummary');
 const messageEl = document.getElementById('message');
 const form = document.getElementById('feedbackForm');
-const ratingInput = document.getElementById('rating');
 const commentInput = document.getElementById('comment');
 const flagInput = document.getElementById('flag_concern');
 const submitButton = document.getElementById('submitButton');
-const starButtons = Array.from(document.querySelectorAll('#starRating button'));
+const starInputs = Array.from(document.querySelectorAll('#starRating input[type="radio"]'));
 
 function setMessage(text, tone = 'neutral') {
   if (!messageEl) return;
@@ -29,19 +29,22 @@ function formatDate(value) {
   return d.toLocaleDateString();
 }
 
-function setRating(value) {
-  const n = Number(value);
-  if (ratingInput) ratingInput.value = String(n);
-  starButtons.forEach((btn) => {
-    const v = Number(btn.dataset.value);
-    const on = v <= n;
-    btn.classList.toggle('active', on);
-    btn.setAttribute('aria-checked', v === n ? 'true' : 'false');
+function selectedRating() {
+  const checked = document.querySelector('#starRating input[type="radio"]:checked');
+  return checked ? Number(checked.value) : 0;
+}
+
+function paintStars() {
+  const n = selectedRating();
+  starInputs.forEach((input) => {
+    const on = Number(input.value) <= n;
+    input.parentElement.classList.toggle('is-active', on);
   });
 }
 
-starButtons.forEach((btn) => {
-  btn.addEventListener('click', () => setRating(btn.dataset.value));
+starInputs.forEach((input) => {
+  input.addEventListener('change', paintStars);
+  input.addEventListener('focus', paintStars);
 });
 
 async function loadForm() {
@@ -72,7 +75,7 @@ async function loadForm() {
 
     if (body.already_submitted) {
       setMessage(
-        `Thanks — you already rated this shift ${body.existing?.rating || ''}/5.`.trim(),
+        `Thanks. You already rated this shift ${body.existing?.rating || ''}/5.`.trim(),
         'success'
       );
       return;
@@ -88,9 +91,10 @@ async function loadForm() {
 
 form?.addEventListener('submit', async (event) => {
   event.preventDefault();
-  const rating = Number(ratingInput?.value);
+  clearFormErrors(form);
+  const rating = selectedRating();
   if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-    setMessage('Please choose a star rating from 1 to 5.', 'error');
+    showFormErrors(form, [{ field: starInputs[0], message: 'Please choose a star rating from 1 to 5.' }]);
     return;
   }
 
@@ -113,7 +117,7 @@ form?.addEventListener('submit', async (event) => {
     });
     const body = await res.json().catch(() => ({}));
     if (!res.ok) {
-      setMessage(body.error || 'Unable to submit feedback.', 'error');
+      showFormErrors(form, [{ message: body.error || 'Unable to submit feedback.' }]);
       if (submitButton) {
         submitButton.disabled = false;
         submitButton.setAttribute('aria-busy', 'false');
@@ -125,7 +129,7 @@ form?.addEventListener('submit', async (event) => {
     setMessage(body.message || 'Thank you for your feedback.', 'success');
   } catch (error) {
     console.error('[Feedback] submit error:', error);
-    setMessage('Network error while submitting.', 'error');
+    showFormErrors(form, [{ message: 'Network error while submitting.' }]);
     if (submitButton) {
       submitButton.disabled = false;
       submitButton.setAttribute('aria-busy', 'false');

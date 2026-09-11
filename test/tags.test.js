@@ -131,7 +131,7 @@ test('digest job skips volunteers already logged today', async () => {
       if (Number(userId) === 11) return [[{ ok: 1 }]];
       return [[]];
     }
-    if (/INSERT IGNORE INTO tag_digest_log/i.test(sql)) {
+    if (/INSERT INTO tag_digest_log/i.test(sql) && /ON CONFLICT/i.test(sql)) {
       digestMarked = true;
       return [{ affectedRows: 1 }];
     }
@@ -187,7 +187,7 @@ test('digest job does not send twice for same user in one run', async () => {
     if (/FROM tag_digest_log WHERE user_id/i.test(sql)) {
       return [sentUsers.has(Number(params[0])) ? [{ ok: 1 }] : []];
     }
-    if (/INSERT IGNORE INTO tag_digest_log/i.test(sql)) {
+    if (/INSERT INTO tag_digest_log/i.test(sql) && /ON CONFLICT/i.test(sql)) {
       sentUsers.add(Number(params[0]));
       return [{ affectedRows: 1 }];
     }
