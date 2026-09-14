@@ -1,4 +1,5 @@
 const Opportunity = require('../models/Opportunity');
+const { excludeTestOpportunities, isTestOrE2EOpportunity } = require('../utils/testOpportunityGuard');
 const Qualification = require('../models/Qualification');
 const Tag = require('../models/Tag');
 const Animal = require('../models/Animal');
@@ -232,6 +233,9 @@ async function getAllOpportunities(req, res) {
 
     let opportunities = await Opportunity.findAll(filters);
     const admin = isStaffOrAdmin(req);
+    if (!admin) {
+      opportunities = excludeTestOpportunities(opportunities);
+    }
     let enriched = await withExtras(opportunities);
 
     const tagFilter = req.query?.tag || req.query?.tag_id || req.query?.tagId;
@@ -258,6 +262,9 @@ async function getOpportunity(req, res) {
     const { id } = req.params;
     const opportunity = await Opportunity.findById(id);
     if (!opportunity) {
+      return res.status(404).json({ error: 'Opportunity not found' });
+    }
+    if (!isStaffOrAdmin(req) && process.env.NODE_ENV === 'production' && isTestOrE2EOpportunity(opportunity)) {
       return res.status(404).json({ error: 'Opportunity not found' });
     }
     if (!isStaffOrAdmin(req) && opportunity.status !== 'open') {

@@ -3,11 +3,11 @@
 const crypto = require('crypto');
 
 function getSecret() {
-  return (
-    process.env.FEEDBACK_TOKEN_SECRET ||
-    process.env.SESSION_SECRET ||
-    'change_me_in_env'
-  );
+  const secret = process.env.FEEDBACK_TOKEN_SECRET || process.env.SESSION_SECRET;
+  if (!secret) {
+    throw new Error('FEEDBACK_TOKEN_SECRET or SESSION_SECRET is required');
+  }
+  return secret;
 }
 
 /**

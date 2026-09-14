@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const Opportunity = require('../models/Opportunity');
 const Application = require('../models/Application');
 const { pool } = require('../config/database');
+const { excludeTestOpportunities } = require('../utils/testOpportunityGuard');
 
 let cache = { at: 0, data: null };
 const CACHE_MS = 60 * 1000;
@@ -131,7 +132,7 @@ async function listPublicOpportunities(req, res) {
       return res.status(200).json(cache.data);
     }
 
-    const all = await Opportunity.findAll({ status: 'open' });
+    const all = excludeTestOpportunities(await Opportunity.findAll({ status: 'open' }));
     const future = all.filter((opp) => {
       const start = new Date(opp.start_date);
       return !Number.isNaN(start.getTime()) && start.getTime() >= Date.now() - 12 * 60 * 60 * 1000;
@@ -153,7 +154,7 @@ async function listPublicOpportunities(req, res) {
 
 async function publicOpportunitiesIcs(req, res) {
   try {
-    const all = await Opportunity.findAll({ status: 'open' });
+    const all = excludeTestOpportunities(await Opportunity.findAll({ status: 'open' }));
     const future = all.filter((opp) => {
       const start = new Date(opp.start_date);
       return !Number.isNaN(start.getTime()) && start.getTime() >= Date.now() - 12 * 60 * 60 * 1000;

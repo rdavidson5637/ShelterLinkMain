@@ -2,6 +2,7 @@
 
 const bcrypt = require('bcrypt');
 const { pool } = require('../config/database');
+const { clearSessionCookie } = require('../utils/sessionCookie');
 const Application = require('../models/Application');
 const VolunteerHours = require('../models/VolunteerHours');
 const { hasRole } = require('../middleware/auth');
@@ -281,7 +282,7 @@ async function lockKiosk(req, res) {
       if (err) {
         return res.status(500).json({ error: 'Failed to lock kiosk' });
       }
-      res.clearCookie('connect.sid');
+      clearSessionCookie(res);
       return res.status(200).json({ message: 'Kiosk locked', kiosk: false });
     });
   } catch (error) {

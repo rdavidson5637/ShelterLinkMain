@@ -19,6 +19,7 @@ const {
   sendWaitlistPromotion,
 } = require('../utils/emailService');
 const { isStaffOrAdmin } = require('../middleware/auth');
+const { isTestOrE2EOpportunity } = require('../utils/testOpportunityGuard');
 
 function ensureAuthenticated(req, res) {
   if (!req.session || !req.session.userId) {
@@ -113,6 +114,9 @@ async function applyForOpportunity(req, res) {
 
     const opportunity = await Opportunity.findById(opportunityId);
     if (!opportunity) {
+      return res.status(404).json({ error: 'Opportunity not found' });
+    }
+    if (process.env.NODE_ENV === 'production' && isTestOrE2EOpportunity(opportunity)) {
       return res.status(404).json({ error: 'Opportunity not found' });
     }
 

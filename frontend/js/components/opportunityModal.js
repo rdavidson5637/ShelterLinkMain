@@ -277,7 +277,7 @@ export function showOpportunityModal(opportunity, options = {}) {
     actionButton = document.createElement('a');
     actionButton.href = PROFILE_URL;
     actionButton.className = 'opportunity-modal-btn opportunity-modal-btn-profile';
-    actionButton.textContent = 'Complete Your Profile First';
+    actionButton.textContent = 'Profile pending approval';
     actionButton.addEventListener('click', () => hideOpportunityModal());
   } else if (unqualified) {
     actionButton = document.createElement('button');

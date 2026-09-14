@@ -1,8 +1,15 @@
 const bcrypt = require('bcrypt');
-const crypto = require('crypto');
 const { pool } = require('../config/database');
 const User = require('../models/User');
 const { sendEmail } = require('../utils/emailService');
+const { clearSessionCookie } = require('../utils/sessionCookie');
+const {
+  hashResetToken,
+  createResetToken,
+  productionResetBaseUrl,
+} = require('../utils/resetToken');
+
+const GENERIC_RESET_MESSAGE = 'If that email is registered, a reset link has been sent.';
 
 function respondSafeUser(row) {
   if (!row) return null;
@@ -98,7 +105,7 @@ async function logout(req, res) {
       if (err) {
         return res.status(500).json({ error: 'Failed to logout' });
       }
-      res.clearCookie('connect.sid');
+      clearSessionCookie(res);
       return res.status(200).json({ message: 'Logged out' });
     });
   } catch (error) {
@@ -109,6 +116,10 @@ async function logout(req, res) {
 
 async function registerAdmin(req, res) {
   try {
+    if (process.env.NODE_ENV === 'production' || process.env.ALLOW_ADMIN_REGISTRATION !== 'true') {
+      return res.status(404).json({ error: 'API endpoint not found' });
+    }
+
     const { first_name, last_name, email, password, admin_key, phone } = req.body || {};
 
     const ADMIN_REGISTRATION_KEY = process.env.ADMIN_REGISTRATION_KEY;
@@ -177,29 +188,30 @@ async function forgotPassword(req, res) {
       return res.status(400).json({ error: 'email is required' });
     }
 
-    // Always return success to prevent email enumeration attacks
-    const genericResponse = res.status(200).json({
-      message: 'If that email is registered, a reset link has been sent.',
-    });
+    const generic = () => res.status(200).json({ message: GENERIC_RESET_MESSAGE });
+
+    const appUrl = productionResetBaseUrl();
+    if (!appUrl) {
+      console.error('[Auth] forgotPassword refused: APP_URL missing or localhost in production');
+      return generic();
+    }
 
     const [rows] = await pool.execute(
       'SELECT user_id, email, first_name FROM users WHERE email = ? LIMIT 1',
       [email]
     );
     const user = rows[0];
-    if (!user) return genericResponse;
+    if (!user) return generic();
 
-    // Generate a secure random token
-    const token = crypto.randomBytes(32).toString('hex');
-    const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+    const { raw, hash } = createResetToken();
+    const expires = new Date(Date.now() + 60 * 60 * 1000);
 
     await pool.execute(
       'UPDATE users SET reset_token = ?, reset_token_expires = ? WHERE user_id = ?',
-      [token, expires, user.user_id]
+      [hash, expires, user.user_id]
     );
 
-    const appUrl = process.env.APP_URL || `http://localhost:${process.env.PORT || 3000}`;
-    const resetLink = `${appUrl}/reset-password.html?token=${token}`;
+    const resetLink = `${appUrl}/reset-password.html?token=${raw}`;
 
     try {
       await sendEmail(
@@ -220,12 +232,42 @@ async function forgotPassword(req, res) {
       );
     } catch (emailError) {
       console.error('[Auth] forgotPassword email error:', emailError.message);
+      await pool.execute(
+        'UPDATE users SET reset_token = NULL, reset_token_expires = NULL WHERE user_id = ? AND reset_token = ?',
+        [user.user_id, hash]
+      );
+      return generic();
     }
 
-    return genericResponse;
+    return generic();
   } catch (error) {
     console.error('[Auth] forgotPassword error:', error.message);
     return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+async function validateResetToken(req, res) {
+  try {
+    const token = String(req.params.token || '').trim();
+    if (!token) {
+      return res.status(200).json({ valid: false });
+    }
+
+    const [rows] = await pool.execute(
+      `SELECT reset_token_expires
+       FROM users
+       WHERE reset_token = ?
+       LIMIT 1`,
+      [hashResetToken(token)]
+    );
+    const user = rows[0];
+    if (!user || new Date(user.reset_token_expires) < new Date()) {
+      return res.status(200).json({ valid: false });
+    }
+    return res.status(200).json({ valid: true });
+  } catch (error) {
+    console.error('[Auth] validateResetToken error:', error.message);
+    return res.status(200).json({ valid: false });
   }
 }
 
@@ -243,11 +285,11 @@ async function resetPassword(req, res) {
     }
 
     const [rows] = await pool.execute(
-      `SELECT user_id, reset_token_expires 
-       FROM users 
-       WHERE reset_token = ? 
+      `SELECT user_id, reset_token_expires
+       FROM users
+       WHERE reset_token = ?
        LIMIT 1`,
-      [token]
+      [hashResetToken(token)]
     );
     const user = rows[0];
 
@@ -280,5 +322,6 @@ module.exports = {
   logout,
   getCurrentUser,
   forgotPassword,
+  validateResetToken,
   resetPassword,
 };
