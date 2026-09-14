@@ -148,11 +148,11 @@ async function loadSheet() {
 async function init() {
   await requireAuth();
   const user = await checkAuth();
-  if (!isStaffOrAdminRole(user?.role)) {
+  if (!isStaffOrAdminRole(user)) {
     window.location.href = '/pages/volunteer/dashboard.html';
     return;
   }
-  applyRoleVisibility(user?.role);
+  applyRoleVisibility(user);
   if (sheetDateInput) sheetDateInput.value = todayIso();
   loadButton?.addEventListener('click', () => loadSheet().catch(() => {}));
   printButton?.addEventListener('click', () => window.print());

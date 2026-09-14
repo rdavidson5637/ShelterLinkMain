@@ -7,6 +7,7 @@ const issueButton = document.getElementById('issueButton');
 const printButton = document.getElementById('printButton');
 const logoutButton = document.getElementById('logoutButton');
 const sheet = document.getElementById('certificateSheet');
+const emptyEl = document.getElementById('certificateEmpty');
 
 function setMessage(type, text) {
   if (!messageEl) return;
@@ -43,6 +44,7 @@ function renderCertificate(cert) {
   }
 
   sheet.hidden = false;
+  if (emptyEl) emptyEl.hidden = true;
   if (printButton) printButton.hidden = false;
 }
 
@@ -52,6 +54,7 @@ async function loadLatest() {
     if (res.status === 404) {
       sheet.hidden = true;
       if (printButton) printButton.hidden = true;
+      if (emptyEl) emptyEl.hidden = false;
       return;
     }
     if (!res.ok) {

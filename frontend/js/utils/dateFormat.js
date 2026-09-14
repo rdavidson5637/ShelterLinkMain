@@ -20,6 +20,31 @@ export function toIsoDateLocal(date = new Date()) {
 }
 
 /**
+ * Split a DB shift timestamp into separate `<input type="date">` and
+ * `<input type="time">` values, for populating an edit form. Returns
+ * `{ date: '', time: '' }` when the value can't be parsed.
+ */
+export function splitDateTime(value) {
+  const date = parseShiftDate(value);
+  if (!date) return { date: '', time: '' };
+  const hh = String(date.getHours()).padStart(2, '0');
+  const mm = String(date.getMinutes()).padStart(2, '0');
+  return { date: toIsoDateLocal(date), time: `${hh}:${mm}` };
+}
+
+/**
+ * Combine an `<input type="date">` value and an `<input type="time">` value
+ * into the 'YYYY-MM-DD HH:MM:SS' shape the API expects. A missing time
+ * defaults to midnight rather than being silently dropped — callers that
+ * require a time should validate it themselves first.
+ */
+export function combineDateTime(dateValue, timeValue) {
+  if (!dateValue) return null;
+  const time = timeValue ? `${timeValue}${timeValue.length === 5 ? ':00' : ''}` : '00:00:00';
+  return `${dateValue} ${time}`;
+}
+
+/**
  * Parse 'YYYY-MM-DD HH:MM:SS' (or ISO) into a local Date, without relying on
  * browser-specific handling of the space separator.
  * @returns {Date|null}
@@ -105,11 +130,22 @@ export function formatShiftWhen(startValue, endValue) {
  * The opportunities endpoint returns newest-created first and includes past
  * dates, which is wrong for anything a volunteer is choosing from.
  */
+function shiftEndValue(opp) {
+  if (!opp) return null;
+  return opp.end_date || opp.end || opp.start_date || opp.start;
+}
+
+function shiftStartValue(opp) {
+  if (!opp) return null;
+  return opp.start_date || opp.start || opp.end_date || opp.end;
+}
+
 export function upcomingFirst(opportunities, now = new Date()) {
   const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   return (opportunities || [])
     .filter((opp) => {
-      const end = parseShiftDate(opp.end_date) || parseShiftDate(opp.start_date);
+      if (!opp) return false;
+      const end = parseShiftDate(shiftEndValue(opp));
       if (!end) return true; // undated shifts stay visible
       return end >= cutoff;
     })
@@ -117,8 +153,8 @@ export function upcomingFirst(opportunities, now = new Date()) {
       const aUrgent = Number(a.is_urgent) ? 1 : 0;
       const bUrgent = Number(b.is_urgent) ? 1 : 0;
       if (aUrgent !== bUrgent) return bUrgent - aUrgent;
-      const aDate = parseShiftDate(a.start_date);
-      const bDate = parseShiftDate(b.start_date);
+      const aDate = parseShiftDate(shiftStartValue(a));
+      const bDate = parseShiftDate(shiftStartValue(b));
       if (!aDate && !bDate) return 0;
       if (!aDate) return 1;
       if (!bDate) return -1;

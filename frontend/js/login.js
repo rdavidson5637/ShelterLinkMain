@@ -95,6 +95,8 @@ async function loadDemoHints() {
       btn.type = 'button';
       btn.className = 'secondary outline';
       btn.textContent = 'Fill';
+      const who = account.label || account.role || 'demo';
+      btn.setAttribute('aria-label', `Fill ${who} demo login`);
       btn.addEventListener('click', () => {
         const email = document.getElementById('email');
         const password = document.getElementById('password');

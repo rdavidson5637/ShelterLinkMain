@@ -27,6 +27,13 @@ let profileApproved = true;
 let searchDebounceTimer = null;
 const DEBOUNCE_MS = 400;
 
+function asOpportunityList(data) {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.opportunities)) return data.opportunities;
+  if (Array.isArray(data?.data)) return data.data;
+  return [];
+}
+
 function toDateOnly(value) {
   if (!value) return null;
   return String(value).slice(0, 10);
@@ -350,7 +357,7 @@ function applyFiltersAndRender() {
     shiftsContainer.innerHTML = '';
     if (filtered.length > 0) {
       shiftsContainer.style.display = '';
-      emptyState.style.display = 'none';
+      if (emptyState) emptyState.style.display = 'none';
       groupShiftsByPeriod(filtered).forEach((group) => {
         const section = document.createElement('section');
         section.className = 'shift-group';
@@ -368,11 +375,16 @@ function applyFiltersAndRender() {
       });
     } else {
       shiftsContainer.style.display = 'none';
-      emptyState.style.display = 'block';
-      emptyState.querySelector('p').textContent =
-        total > 0
-          ? 'No shifts match your search. Try clearing the filters.'
-          : 'No shifts available right now. Check back soon!';
+      if (emptyState) {
+        emptyState.style.display = 'block';
+        const emptyCopy = emptyState.querySelector('p');
+        if (emptyCopy) {
+          emptyCopy.textContent =
+            total > 0
+              ? 'No shifts match your search. Try clearing the filters.'
+              : 'No shifts available right now. Check back soon!';
+        }
+      }
     }
   }
 }
@@ -427,8 +439,8 @@ async function fetchAllOpportunities() {
   try {
     const res = await apiRequest('/opportunities', { method: 'GET' });
     if (!res.ok) return [];
-    const data = await res.json();
-    return Array.isArray(data) ? data : [];
+    const data = await res.json().catch(() => []);
+    return asOpportunityList(data);
   } catch (error) {
     console.error('[Volunteer] fetchOpportunities error:', error);
     return [];
@@ -439,7 +451,7 @@ async function fetchCoverSwaps() {
   try {
     const res = await apiRequest('/applications/swaps/available', { method: 'GET' });
     if (!res.ok) return [];
-    const data = await res.json();
+    const data = await res.json().catch(() => []);
     return Array.isArray(data) ? data : [];
   } catch (error) {
     console.error('[Volunteer] fetchCoverSwaps error:', error);
@@ -553,62 +565,58 @@ async function loadTagFilterOptions() {
 async function init() {
   await requireAuth();
 
+  if (shiftsStatus) shiftsStatus.textContent = 'Loading shifts…';
+  if (shiftsContainer) {
+    shiftsContainer.innerHTML = '<p>Loading shifts...</p>';
+    shiftsContainer.style.display = '';
+  }
+  if (emptyState) emptyState.style.display = 'none';
+
+  attachEventListeners();
+
   try {
-    const profileRes = await apiRequest('/volunteer/profile', { method: 'GET' });
+    const [profileRes, appRes, qualsRes, opportunities, swaps] = await Promise.all([
+      apiRequest('/volunteer/profile', { method: 'GET' }).catch(() => null),
+      apiRequest('/applications/my-applications', { method: 'GET' }).catch(() => null),
+      apiRequest('/qualifications/mine', { method: 'GET' }).catch(() => null),
+      fetchAllOpportunities(),
+      fetchCoverSwaps(),
+      loadTagFilterOptions(),
+    ]);
+
     if (profileRes?.ok) {
       const profile = await profileRes.json().catch(() => ({}));
       profileApproved = Boolean(profile?.approved);
+    } else {
+      profileApproved = false;
     }
-  } catch {
-    profileApproved = false;
-  }
 
-  try {
-    const appRes = await apiRequest('/applications/my-applications', { method: 'GET' });
     if (appRes?.ok) {
-      const data = await appRes.json();
+      const data = await appRes.json().catch(() => []);
       myApplications = Array.isArray(data) ? data : [];
+    } else {
+      myApplications = [];
     }
-  } catch {
-    myApplications = [];
-  }
 
-  try {
-    const qualsRes = await apiRequest('/qualifications/mine', { method: 'GET' });
     if (qualsRes?.ok) {
-      const data = await qualsRes.json();
+      const data = await qualsRes.json().catch(() => []);
       myQualifications = Array.isArray(data) ? data : [];
+    } else {
+      myQualifications = [];
     }
-  } catch {
-    myQualifications = [];
+
+    allOpportunities = upcomingFirst(opportunities);
+    coverSwaps = swaps;
+    renderCoverSwaps();
+  } catch (error) {
+    console.error('[Volunteer] browse-shifts init error:', error);
+    allOpportunities = [];
+    coverSwaps = [];
   }
-
-  await loadTagFilterOptions();
-  attachEventListeners();
-
-  if (shiftsContainer) {
-    shiftsContainer.innerHTML = '<p>Loading shifts...</p>';
-  }
-
-  allOpportunities = upcomingFirst(await fetchAllOpportunities());
-  coverSwaps = await fetchCoverSwaps();
-  renderCoverSwaps();
 
   const urlFilters = getFiltersFromUrl();
   setFormFromFilters(urlFilters);
-
-  if (allOpportunities.length === 0) {
-    if (shiftsStatus) shiftsStatus.textContent = 'Showing 0 of 0 available shifts';
-    if (shiftsContainer) {
-      shiftsContainer.innerHTML = '';
-      shiftsContainer.style.display = 'none';
-    }
-    emptyState.querySelector('p').textContent = 'No shifts available right now. Check back soon!';
-    emptyState.style.display = 'block';
-    clearFiltersWrap.style.display = 'none';
-  } else {
-    applyFiltersAndRender();
-  }
+  applyFiltersAndRender();
 }
 
 window.addEventListener('popstate', () => {
@@ -617,4 +625,26 @@ window.addEventListener('popstate', () => {
   applyFiltersAndRender();
 });
 
-document.addEventListener('DOMContentLoaded', init);
+function start() {
+  init().catch((err) => {
+    console.error('[Volunteer] browse-shifts start error:', err);
+    if (shiftsStatus) shiftsStatus.textContent = 'Unable to load shifts.';
+    if (shiftsContainer) {
+      shiftsContainer.innerHTML = '';
+      shiftsContainer.style.display = 'none';
+    }
+    if (emptyState) {
+      emptyState.style.display = 'block';
+      const emptyCopy = emptyState.querySelector('p');
+      if (emptyCopy) {
+        emptyCopy.textContent = 'Unable to load shifts. Please refresh and try again.';
+      }
+    }
+  });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', start);
+} else {
+  start();
+}

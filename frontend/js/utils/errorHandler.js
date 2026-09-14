@@ -1,6 +1,7 @@
 /**
  * Global fetch error interceptor for API calls.
- * - Redirects to calm error pages on unrecoverable API failures (403/404/500).
+ * - Redirects to calm error pages on unrecoverable API failures (403/500).
+ * - Leaves 404/503 to the calling page (empty states, optional resources).
  * - Shows toast notifications for recoverable API failures (e.g. 400/409/429).
  */
 
@@ -8,7 +9,7 @@ import { API_URL } from '../config.js';
 
 let installed = false;
 
-function showToast(message = 'Something went wrong.', type = 'error') {
+export function showToast(message = 'Something went wrong.', type = 'error') {
   const toast = document.createElement('div');
   toast.setAttribute('role', 'status');
   toast.setAttribute('aria-live', 'polite');
@@ -73,22 +74,12 @@ async function readErrorMessageFromResponse(res) {
   }
 }
 
-// Endpoints that are allowed to return 404 as a normal (non-error) response.
-// The calling code handles these 404s gracefully itself.
-const SOFT_404_PATTERNS = [
-  '/volunteer/profile',
-  '/volunteer/stats',
-  '/hours/stats',
-];
-
-function isSoft404(url) {
-  return SOFT_404_PATTERNS.some((pattern) => url.includes(pattern));
-}
-
-function shouldRedirectStatus(status, url) {
-  // A 404 on certain endpoints is a normal application state, not a hard error.
-  if (status === 404 && isSoft404(url)) return false;
-  return status === 403 || status === 404 || status === 500 || (status >= 500 && status < 600);
+// API 404/503 are often a valid empty or "not configured" state (no certificate
+// yet, optional profile, push not set up). Calling pages handle those themselves.
+function shouldRedirectStatus(status) {
+  if (status === 403) return true;
+  if (status === 500) return true;
+  return false;
 }
 
 function shouldToastStatus(status) {
@@ -108,7 +99,7 @@ if (!installed) {
     if (!api) return res;
 
     const status = res.status;
-    if (shouldRedirectStatus(status, url)) {
+    if (shouldRedirectStatus(status)) {
       redirectToErrorPage(status);
       return res;
     }

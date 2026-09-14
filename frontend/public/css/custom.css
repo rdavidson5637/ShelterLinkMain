@@ -1165,6 +1165,11 @@ p {
   font-weight: 600;
 }
 
+.dashboard-main {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .dashboard-main > section {
   margin-bottom: 1rem;
 }
