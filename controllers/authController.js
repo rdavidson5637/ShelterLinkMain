@@ -109,6 +109,10 @@ async function logout(req, res) {
 
 async function registerAdmin(req, res) {
   try {
+    if (process.env.NODE_ENV === 'production' || process.env.ALLOW_ADMIN_REGISTRATION !== 'true') {
+      return res.status(404).json({ error: 'API endpoint not found' });
+    }
+
     const { first_name, last_name, email, password, admin_key, phone } = req.body || {};
 
     const ADMIN_REGISTRATION_KEY = process.env.ADMIN_REGISTRATION_KEY;
@@ -170,6 +174,8 @@ async function getCurrentUser(req, res) {
 
 // ─── Password Reset ────────────────────────────────────────────────────────────
 
+const GENERIC_RESET_MESSAGE = 'If that email is registered, a reset link has been sent.';
+
 async function forgotPassword(req, res) {
   try {
     const { email } = req.body || {};
@@ -177,17 +183,15 @@ async function forgotPassword(req, res) {
       return res.status(400).json({ error: 'email is required' });
     }
 
-    // Always return success to prevent email enumeration attacks
-    const genericResponse = res.status(200).json({
-      message: 'If that email is registered, a reset link has been sent.',
-    });
+    // Always the same 200 body — never 401 "Invalid credentials".
+    const generic = () => res.status(200).json({ message: GENERIC_RESET_MESSAGE });
 
     const [rows] = await pool.execute(
       'SELECT user_id, email, first_name FROM users WHERE email = ? LIMIT 1',
       [email]
     );
     const user = rows[0];
-    if (!user) return genericResponse;
+    if (!user) return generic();
 
     // Generate a secure random token
     const token = crypto.randomBytes(32).toString('hex');
@@ -222,7 +226,7 @@ async function forgotPassword(req, res) {
       console.error('[Auth] forgotPassword email error:', emailError.message);
     }
 
-    return genericResponse;
+    return generic();
   } catch (error) {
     console.error('[Auth] forgotPassword error:', error.message);
     return res.status(500).json({ error: 'Internal server error' });

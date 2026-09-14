@@ -66,6 +66,11 @@ app.use(cors({
 }));
 
 // Serve static files from frontend directory (must be before other middleware)
+// Never serve the stale localhost API config, even if the file is restored.
+app.get('/public/js/config.js', (req, res) => {
+  res.status(404).type('text/plain').send('Not found');
+});
+
 app.use(express.static(path.join(__dirname, 'frontend')));
 
 // Body parsers

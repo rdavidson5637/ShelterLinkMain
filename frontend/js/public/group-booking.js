@@ -1,4 +1,5 @@
 import { showFormErrors, clearFormErrors } from '../utils/formErrors.js';
+import { filterPublicBoard, isAcceptingSignups } from './publicBoard.js';
 
 const form = document.getElementById('groupBookingForm');
 const opportunitySelect = document.getElementById('opportunityId');
@@ -26,7 +27,7 @@ async function loadOpportunities() {
   try {
     const res = await fetch('/api/public/opportunities', { credentials: 'omit' });
     if (!res.ok) throw new Error('Failed to load');
-    const rows = await res.json();
+    const rows = filterPublicBoard(await res.json()).filter(isAcceptingSignups);
     opportunitySelect.innerHTML = '<option value="">Select an opportunity</option>';
     if (!Array.isArray(rows) || !rows.length) {
       opportunitySelect.innerHTML = '<option value="">No open opportunities</option>';

@@ -12,6 +12,14 @@ const loginLimiter = rateLimit({
   skipSuccessfulRequests: true, // Only count failed attempts
 });
 
+const forgotPasswordLimiter = rateLimit({
+  windowMs: WINDOW_MS,
+  max: 5,
+  message: 'Too many password reset requests. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // General API limit — generous enough for real use, tight enough to block abuse
 const apiLimiter = rateLimit({
   windowMs: WINDOW_MS,
@@ -33,5 +41,6 @@ const messageLimiter = rateLimit({
 module.exports = {
   loginLimiter,
   apiLimiter,
+  forgotPasswordLimiter,
   messageLimiter,
 };
