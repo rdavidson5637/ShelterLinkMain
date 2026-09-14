@@ -3,6 +3,7 @@ import { requireAuth, checkAuth, logout, isStaffOrAdminRole, applyRoleVisibility
 import { renderTagChips, getSelectedTagIds, setSelectedTagIds } from '../components/tagChips.js';
 import { formatShiftWhen } from '../utils/dateFormat.js';
 import { createStatusBadge } from '../components/statusBadge.js';
+import { escapeHtml } from '../utils/escapeHtml.js';
 
 const tableBody = document.getElementById('opportunitiesTableBody');
 const statusFilter = document.getElementById('statusFilter');
@@ -265,7 +266,7 @@ function createRepeatIndicator(opportunity) {
 
 function createCheckInCodeBadge(opportunity) {
   if (!opportunity.check_in_code) return '';
-  return ` <code title="Check-in code" style="font-size:0.85em;">${opportunity.check_in_code}</code>`;
+  return ` <code title="Check-in code" style="font-size:0.85em;">${escapeHtml(opportunity.check_in_code)}</code>`;
 }
 
 function createUrgentBadge(opportunity) {
@@ -293,7 +294,11 @@ function renderOpportunitiesTable() {
     const tr = document.createElement('tr');
 
     const titleTd = document.createElement('td');
-    titleTd.innerHTML = `${opportunity.title || 'Untitled'}${createUrgentBadge(opportunity)}${createRepeatIndicator(opportunity)}${createCheckInCodeBadge(opportunity)}`;
+    titleTd.textContent = opportunity.title || 'Untitled';
+    titleTd.insertAdjacentHTML(
+      'beforeend',
+      `${createUrgentBadge(opportunity)}${createRepeatIndicator(opportunity)}${createCheckInCodeBadge(opportunity)}`
+    );
 
     const locationTd = document.createElement('td');
     locationTd.textContent = opportunity.location || 'N/A';

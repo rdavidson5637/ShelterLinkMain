@@ -285,6 +285,12 @@ export function showOpportunityModal(opportunity, options = {}) {
     actionButton.className = 'opportunity-modal-btn opportunity-modal-btn-disabled';
     actionButton.textContent = 'Missing required qualifications';
     actionButton.disabled = true;
+  } else if (String(opportunity.status || '').toLowerCase() === 'closed' && !fullByCapacity) {
+    actionButton = document.createElement('button');
+    actionButton.type = 'button';
+    actionButton.className = 'opportunity-modal-btn opportunity-modal-btn-disabled';
+    actionButton.textContent = 'This shift is closed';
+    actionButton.disabled = true;
   } else if (shiftFull) {
     actionButton = document.createElement('button');
     actionButton.type = 'button';

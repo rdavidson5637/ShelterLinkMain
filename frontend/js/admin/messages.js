@@ -1,5 +1,6 @@
 import { apiRequest } from '../config.js';
 import { requireAuth, checkAuth, logout, isAdminRole} from '../auth.js';
+import { escapeHtml } from '../utils/escapeHtml.js';
 
 const form = document.getElementById('messageForm');
 const messageEl = document.getElementById('message');
@@ -69,10 +70,10 @@ async function loadHistory() {
       const when = row.created_at ? new Date(row.created_at).toLocaleString() : '';
       const admin = `${row.first_name || ''} ${row.last_name || ''}`.trim() || row.admin_email || 'Admin';
       tr.innerHTML = `
-        <td>${when}</td>
-        <td>${row.subject || ''}</td>
-        <td>${row.recipient_count || 0}</td>
-        <td>${admin}</td>
+        <td>${escapeHtml(when)}</td>
+        <td>${escapeHtml(row.subject || '')}</td>
+        <td>${escapeHtml(row.recipient_count || 0)}</td>
+        <td>${escapeHtml(admin)}</td>
       `;
       historyTableBody.appendChild(tr);
     });

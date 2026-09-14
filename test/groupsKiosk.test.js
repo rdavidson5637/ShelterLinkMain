@@ -176,6 +176,59 @@ test('kiosk session cannot access admin APIs', async () => {
   assert.match(res.body.error, /Kiosk session cannot access/i);
 });
 
+test('public group booking is rejected when the shift is full', async () => {
+  mock.resetCalls();
+  mock.setHandler(async (sql) => {
+    if (/FROM opportunities/i.test(sql) && /WHERE opportunity_id/i.test(sql)) {
+      return [[{
+        opportunity_id: 3,
+        id: 3,
+        title: 'Dog walk',
+        max_volunteers: 4,
+        status: 'open',
+      }]];
+    }
+    if (/current_count/i.test(sql) || (/SELECT \(/i.test(sql) && /group_bookings/i.test(sql))) {
+      return [[{ current_count: 4 }]];
+    }
+    return [[]];
+  });
+
+  const res = makeRes();
+  await groupCtrl.createGroupBooking(
+    {
+      body: {
+        opportunity_id: 3,
+        group_name: 'Acme',
+        contact_name: 'Pat',
+        contact_email: 'pat@example.com',
+        size: 2,
+      },
+    },
+    res
+  );
+  assert.strictEqual(res.statusCode, 400);
+  assert.match(res.body.error, /Not enough spots/i);
+});
+
+test('public group booking rejects oversized groups', async () => {
+  const res = makeRes();
+  await groupCtrl.createGroupBooking(
+    {
+      body: {
+        opportunity_id: 3,
+        group_name: 'Acme',
+        contact_name: 'Pat',
+        contact_email: 'pat@example.com',
+        size: 99,
+      },
+    },
+    res
+  );
+  assert.strictEqual(res.statusCode, 400);
+  assert.match(res.body.error, /cannot exceed/i);
+});
+
 test('kiosk session can access kiosk endpoints', async () => {
   const req = {
     session: { userId: 1, role: 'admin', kioskMode: true },

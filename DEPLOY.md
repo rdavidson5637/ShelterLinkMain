@@ -58,7 +58,7 @@ Uploaded volunteer documents (AccessNI, references) and animal photos are
 stored as `bytea` in Postgres, so they survive redeploys on hosts with an
 ephemeral filesystem and are captured by `npm run backup` (`pg_dump`).
 
-Create the first real admin after deploy:
+Create the first real admin after deploy (`POST /api/auth/register-admin` stays 404 in production):
 
 ```bash
 npm run create-admin -- "Name" admin@your-shelter.org 'a-strong-password'

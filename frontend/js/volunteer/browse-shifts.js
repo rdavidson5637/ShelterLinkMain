@@ -293,9 +293,12 @@ function renderOpportunityCard(opportunity) {
   const oppTags = opportunity.tags || [];
   if (oppTags.length) {
     const tagsMeta = document.createElement('div');
-    tagsMeta.innerHTML = oppTags
-      .map((t) => `<span class="tag-chip-display">${t.name}</span>`)
-      .join('');
+    oppTags.forEach((t) => {
+      const chip = document.createElement('span');
+      chip.className = 'tag-chip-display';
+      chip.textContent = t.name;
+      tagsMeta.appendChild(chip);
+    });
     meta.appendChild(tagsMeta);
   }
 

@@ -4,6 +4,10 @@ const crypto = require('crypto');
 const Opportunity = require('../models/Opportunity');
 const Application = require('../models/Application');
 const { pool } = require('../config/database');
+const {
+  filterPublicBoardOpportunities,
+  isAcceptingApplications,
+} = require('../utils/publicOpportunityFilter');
 
 let cache = { at: 0, data: null };
 const CACHE_MS = 60 * 1000;
@@ -121,7 +125,23 @@ function toPublicOpportunity(opp) {
     location: opp.location,
     spots_remaining: spotsRemaining,
     is_urgent: Boolean(Number(opp.is_urgent)),
+    accepting_applications: isAcceptingApplications({ ...opp, spots_remaining: spotsRemaining }),
   };
+}
+
+async function loadUpcomingPublicOpportunities() {
+  const all = filterPublicBoardOpportunities(await Opportunity.findAll({ status: 'open' }));
+  const future = all.filter((opp) => {
+    const start = new Date(opp.start_date);
+    return !Number.isNaN(start.getTime()) && start.getTime() >= Date.now() - 12 * 60 * 60 * 1000;
+  });
+  future.sort((a, b) => {
+    const aUrgent = Number(a.is_urgent) ? 1 : 0;
+    const bUrgent = Number(b.is_urgent) ? 1 : 0;
+    if (aUrgent !== bUrgent) return bUrgent - aUrgent;
+    return new Date(a.start_date) - new Date(b.start_date);
+  });
+  return future;
 }
 
 async function listPublicOpportunities(req, res) {
@@ -131,17 +151,7 @@ async function listPublicOpportunities(req, res) {
       return res.status(200).json(cache.data);
     }
 
-    const all = await Opportunity.findAll({ status: 'open' });
-    const future = all.filter((opp) => {
-      const start = new Date(opp.start_date);
-      return !Number.isNaN(start.getTime()) && start.getTime() >= Date.now() - 12 * 60 * 60 * 1000;
-    });
-    future.sort((a, b) => {
-      const aUrgent = Number(a.is_urgent) ? 1 : 0;
-      const bUrgent = Number(b.is_urgent) ? 1 : 0;
-      if (aUrgent !== bUrgent) return bUrgent - aUrgent;
-      return new Date(a.start_date) - new Date(b.start_date);
-    });
+    const future = await loadUpcomingPublicOpportunities();
     const payload = future.map(toPublicOpportunity);
     cache = { at: now, data: payload };
     return res.status(200).json(payload);
@@ -153,11 +163,7 @@ async function listPublicOpportunities(req, res) {
 
 async function publicOpportunitiesIcs(req, res) {
   try {
-    const all = await Opportunity.findAll({ status: 'open' });
-    const future = all.filter((opp) => {
-      const start = new Date(opp.start_date);
-      return !Number.isNaN(start.getTime()) && start.getTime() >= Date.now() - 12 * 60 * 60 * 1000;
-    });
+    const future = await loadUpcomingPublicOpportunities();
     const events = future.map(opportunityToEvent).filter((e) => e.start);
     const body = buildVCalendar(events, 'ShelterLink Open Shifts');
     res.setHeader('Content-Type', 'text/calendar; charset=utf-8');

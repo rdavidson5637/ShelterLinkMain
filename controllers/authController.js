@@ -3,6 +3,11 @@ const crypto = require('crypto');
 const { pool } = require('../config/database');
 const User = require('../models/User');
 const { sendEmail } = require('../utils/emailService');
+const {
+  clearSessionCookie,
+  regenerateSession,
+  destroyUserSessions,
+} = require('../utils/sessionCookie');
 
 function respondSafeUser(row) {
   if (!row) return null;
@@ -76,10 +81,11 @@ async function login(req, res) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    req.session.userId = user.user_id;
-    req.session.role = user.role;
+    await regenerateSession(req, {
+      userId: user.user_id,
+      role: user.role,
+    });
 
-    // Update last login
     await pool.execute('UPDATE users SET last_login = NOW() WHERE user_id = ?', [user.user_id]);
 
     return res.status(200).json(respondSafeUser(user));
@@ -98,7 +104,7 @@ async function logout(req, res) {
       if (err) {
         return res.status(500).json({ error: 'Failed to logout' });
       }
-      res.clearCookie('connect.sid');
+      clearSessionCookie(res);
       return res.status(200).json({ message: 'Logged out' });
     });
   } catch (error) {
@@ -109,6 +115,10 @@ async function logout(req, res) {
 
 async function registerAdmin(req, res) {
   try {
+    if (process.env.NODE_ENV === 'production' || process.env.ALLOW_ADMIN_REGISTRATION !== 'true') {
+      return res.status(404).json({ error: 'API endpoint not found' });
+    }
+
     const { first_name, last_name, email, password, admin_key, phone } = req.body || {};
 
     const ADMIN_REGISTRATION_KEY = process.env.ADMIN_REGISTRATION_KEY;
@@ -122,6 +132,12 @@ async function registerAdmin(req, res) {
 
     if (!first_name || !last_name || !email || !password) {
       return res.status(400).json({ error: 'first_name, last_name, email, and password are required' });
+    }
+
+    if (!isStrongPassword(password)) {
+      return res.status(400).json({
+        error: 'Password must be at least 8 characters with one uppercase letter and one number',
+      });
     }
 
     const existing = await User.findByEmail(email);
@@ -170,6 +186,8 @@ async function getCurrentUser(req, res) {
 
 // ─── Password Reset ────────────────────────────────────────────────────────────
 
+const GENERIC_RESET_MESSAGE = 'If that email is registered, a reset link has been sent.';
+
 async function forgotPassword(req, res) {
   try {
     const { email } = req.body || {};
@@ -177,17 +195,15 @@ async function forgotPassword(req, res) {
       return res.status(400).json({ error: 'email is required' });
     }
 
-    // Always return success to prevent email enumeration attacks
-    const genericResponse = res.status(200).json({
-      message: 'If that email is registered, a reset link has been sent.',
-    });
+    // Always the same 200 body — never 401 "Invalid credentials".
+    const generic = () => res.status(200).json({ message: GENERIC_RESET_MESSAGE });
 
     const [rows] = await pool.execute(
       'SELECT user_id, email, first_name FROM users WHERE email = ? LIMIT 1',
       [email]
     );
     const user = rows[0];
-    if (!user) return genericResponse;
+    if (!user) return generic();
 
     // Generate a secure random token
     const token = crypto.randomBytes(32).toString('hex');
@@ -222,7 +238,7 @@ async function forgotPassword(req, res) {
       console.error('[Auth] forgotPassword email error:', emailError.message);
     }
 
-    return genericResponse;
+    return generic();
   } catch (error) {
     console.error('[Auth] forgotPassword error:', error.message);
     return res.status(500).json({ error: 'Internal server error' });
@@ -265,6 +281,7 @@ async function resetPassword(req, res) {
       'UPDATE users SET password = ?, reset_token = NULL, reset_token_expires = NULL WHERE user_id = ?',
       [passwordHash, user.user_id]
     );
+    await destroyUserSessions(pool, user.user_id);
 
     return res.status(200).json({ message: 'Password reset successfully. You can now log in.' });
   } catch (error) {

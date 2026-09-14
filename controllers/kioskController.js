@@ -5,6 +5,7 @@ const { pool } = require('../config/database');
 const Application = require('../models/Application');
 const VolunteerHours = require('../models/VolunteerHours');
 const { hasRole } = require('../middleware/auth');
+const { clearSessionCookie, regenerateSession } = require('../utils/sessionCookie');
 
 function respondSafeUser(row) {
   if (!row) return null;
@@ -70,9 +71,11 @@ async function unlockKiosk(req, res) {
       return res.status(403).json({ error: 'Only staff or admin can unlock kiosk mode' });
     }
 
-    req.session.userId = user.user_id;
-    req.session.role = user.role;
-    req.session.kioskMode = true;
+    await regenerateSession(req, {
+      userId: user.user_id,
+      role: user.role,
+      kioskMode: true,
+    });
 
     return res.status(200).json({
       kiosk: true,
@@ -281,7 +284,7 @@ async function lockKiosk(req, res) {
       if (err) {
         return res.status(500).json({ error: 'Failed to lock kiosk' });
       }
-      res.clearCookie('connect.sid');
+      clearSessionCookie(res);
       return res.status(200).json({ message: 'Kiosk locked', kiosk: false });
     });
   } catch (error) {

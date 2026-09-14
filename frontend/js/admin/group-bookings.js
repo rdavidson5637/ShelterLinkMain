@@ -2,6 +2,7 @@ import { apiRequest } from '../config.js';
 import { requireAuth, checkAuth, logout, isStaffOrAdminRole } from '../auth.js';
 import { formatShiftWhen } from '../utils/dateFormat.js';
 import { createStatusBadge } from '../components/statusBadge.js';
+import { escapeHtml } from '../utils/escapeHtml.js';
 
 const logoutButton = document.getElementById('logoutButton');
 const statusFilter = document.getElementById('statusFilter');
@@ -44,18 +45,18 @@ async function loadBookings() {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>
-          <strong>${row.group_name || ''}</strong>
-          ${row.notes ? `<br/><small>${row.notes}</small>` : ''}
+          <strong>${escapeHtml(row.group_name || '')}</strong>
+          ${row.notes ? `<br/><small>${escapeHtml(row.notes)}</small>` : ''}
         </td>
         <td>
-          ${row.opportunity_title || 'Opportunity'}<br/>
-          <small>${formatDate(row.opportunity_start_date)}</small>
+          ${escapeHtml(row.opportunity_title || 'Opportunity')}<br/>
+          <small>${escapeHtml(formatDate(row.opportunity_start_date))}</small>
         </td>
         <td>
-          ${row.contact_name || ''}<br/>
-          <small>${row.contact_email || ''}</small>
+          ${escapeHtml(row.contact_name || '')}<br/>
+          <small>${escapeHtml(row.contact_email || '')}</small>
         </td>
-        <td>${row.size}</td>
+        <td>${escapeHtml(row.size)}</td>
         <td class="status-cell"></td>
         <td class="actions-cell"></td>
       `;

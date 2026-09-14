@@ -1,4 +1,9 @@
 import { formatShiftWhen } from '../utils/dateFormat.js';
+import {
+  closedShiftLabel,
+  filterPublicBoard,
+  isAcceptingSignups,
+} from './publicBoard.js';
 
 const listEl = document.getElementById('opportunitiesList');
 
@@ -13,7 +18,7 @@ async function load() {
       listEl.appendChild(p);
       return;
     }
-    const rows = await res.json();
+    const rows = filterPublicBoard(await res.json());
     if (!Array.isArray(rows) || !rows.length) {
       listEl.replaceChildren();
       const p = document.createElement('p');
@@ -45,15 +50,23 @@ async function load() {
       meta.append(when, ` · ${opp.location || 'Location TBA'}`);
       const spotsP = document.createElement('p');
       spotsP.textContent = spots;
-      const apply = document.createElement('a');
-      apply.href = '/register.html';
-      apply.setAttribute('role', 'button');
-      apply.textContent = 'Sign up to apply';
-      const group = document.createElement('a');
-      group.href = `/pages/group-booking.html?opportunity_id=${encodeURIComponent(opp.id)}`;
-      group.className = 'secondary';
-      group.textContent = 'Book as a group';
-      article.append(h2, desc, meta, spotsP, apply, group);
+      if (isAcceptingSignups(opp)) {
+        const apply = document.createElement('a');
+        apply.href = '/register.html';
+        apply.setAttribute('role', 'button');
+        apply.textContent = 'Sign up to apply';
+        const group = document.createElement('a');
+        group.href = `/pages/group-booking.html?opportunity_id=${encodeURIComponent(opp.id)}`;
+        group.className = 'secondary';
+        group.textContent = 'Book as a group';
+        article.append(h2, desc, meta, spotsP, apply, group);
+      } else {
+        const closed = document.createElement('button');
+        closed.type = 'button';
+        closed.disabled = true;
+        closed.textContent = closedShiftLabel(opp);
+        article.append(h2, desc, meta, spotsP, closed);
+      }
       listEl.appendChild(article);
     });
   } catch (error) {

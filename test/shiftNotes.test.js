@@ -164,11 +164,32 @@ test('createNote without notify does not email', async () => {
   assert.strictEqual(emailCalls.length, 0);
 });
 
-test('listNotes returns notes for authenticated users', async () => {
+test('listNotes forbids volunteers who have not applied', async () => {
   mock.resetCalls();
   mock.setHandler(async (sql) => {
     if (/FROM opportunities/i.test(sql)) {
       return [[{ opportunity_id: 5, id: 5, title: 'Walk', status: 'open' }]];
+    }
+    if (/FROM applications/i.test(sql)) return [[]];
+    return [[]];
+  });
+
+  const res = makeRes();
+  await listNotes(
+    { session: { userId: 9, role: 'volunteer' }, params: { id: '5' } },
+    res
+  );
+  assert.strictEqual(res.statusCode, 403);
+});
+
+test('listNotes hides internal notes from volunteers on the shift', async () => {
+  mock.resetCalls();
+  mock.setHandler(async (sql) => {
+    if (/FROM opportunities/i.test(sql)) {
+      return [[{ opportunity_id: 5, id: 5, title: 'Walk', status: 'open' }]];
+    }
+    if (/FROM applications/i.test(sql)) {
+      return [[{ application_id: 3, status: 'accepted' }]];
     }
     if (/FROM shift_notes/i.test(sql)) {
       return [[
@@ -176,8 +197,17 @@ test('listNotes returns notes for authenticated users', async () => {
           id: 1,
           opportunity_id: 5,
           author_id: 1,
-          body: 'Note',
+          body: 'Internal',
           notify: 0,
+          created_at: '2026-08-26',
+          author_name: 'Ada',
+        },
+        {
+          id: 2,
+          opportunity_id: 5,
+          author_id: 1,
+          body: 'Bring wellies',
+          notify: 1,
           created_at: '2026-08-26',
           author_name: 'Ada',
         },
@@ -193,7 +223,39 @@ test('listNotes returns notes for authenticated users', async () => {
   );
   assert.strictEqual(res.statusCode, 200);
   assert.strictEqual(res.body.length, 1);
-  assert.strictEqual(res.body[0].body, 'Note');
+  assert.strictEqual(res.body[0].body, 'Bring wellies');
+});
+
+test('listNotes returns all notes for staff', async () => {
+  mock.resetCalls();
+  mock.setHandler(async (sql) => {
+    if (/FROM opportunities/i.test(sql)) {
+      return [[{ opportunity_id: 5, id: 5, title: 'Walk', status: 'open' }]];
+    }
+    if (/FROM shift_notes/i.test(sql)) {
+      return [[
+        {
+          id: 1,
+          opportunity_id: 5,
+          author_id: 1,
+          body: 'Internal',
+          notify: 0,
+          created_at: '2026-08-26',
+          author_name: 'Ada',
+        },
+      ]];
+    }
+    return [[]];
+  });
+
+  const res = makeRes();
+  await listNotes(
+    { session: { userId: 1, role: 'admin' }, params: { id: '5' } },
+    res
+  );
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.length, 1);
+  assert.strictEqual(res.body[0].body, 'Internal');
 });
 
 test('deleteNote rejects non-admin', async () => {

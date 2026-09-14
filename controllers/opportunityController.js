@@ -216,6 +216,9 @@ function stripAdminFields(opportunity, isAdminUser) {
       requires_qualification_name: a.requires_qualification_name,
     }));
   }
+  if (Array.isArray(copy.shift_notes)) {
+    copy.shift_notes = copy.shift_notes.filter((note) => Number(note.notify) === 1);
+  }
   return copy;
 }
 
@@ -224,11 +227,11 @@ async function getAllOpportunities(req, res) {
     const requestedStatus = req.query?.status;
     const filters = {};
 
-    if (requestedStatus) {
-      filters.status = requestedStatus;
-    } else if (!isStaffOrAdmin(req)) {
-      filters.status = 'open';
-    }
+  if (!isStaffOrAdmin(req)) {
+    filters.status = 'open';
+  } else if (requestedStatus) {
+    filters.status = requestedStatus;
+  }
 
     let opportunities = await Opportunity.findAll(filters);
     const admin = isStaffOrAdmin(req);
@@ -511,4 +514,5 @@ module.exports = {
   deleteOpportunity,
   cloneOpportunity,
   flagOpportunityUrgent,
+  stripAdminFields,
 };
