@@ -1,8 +1,20 @@
 const validator = require('validator');
 const xss = require('xss');
 
+const SKIP_SANITIZE_KEYS = new Set([
+  'password',
+  'confirm_password',
+  'current_password',
+  'new_password',
+  'admin_key',
+  'token',
+]);
+
 function sanitizeValue(value, key, invalidEmails, pathLabel) {
   if (typeof value === 'string') {
+    if (SKIP_SANITIZE_KEYS.has(String(key || '').toLowerCase())) {
+      return value;
+    }
     const cleaned = xss(value.trim());
     if (key && key.toLowerCase() === 'email' && cleaned && !validator.isEmail(cleaned)) {
       invalidEmails.push(pathLabel || key);
@@ -52,5 +64,5 @@ function sanitizeInput(req, res, next) {
   return next();
 }
 
-module.exports = { sanitizeInput };
+module.exports = { sanitizeInput, SKIP_SANITIZE_KEYS };
 

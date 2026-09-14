@@ -3,7 +3,7 @@
 const express = require('express');
 const { isAuthenticated, requireStaff } = require('../middleware/auth');
 const { auditMutations } = require('../middleware/auditLog');
-const { apiLimiter } = require('../middleware/rateLimiter');
+const { groupBookingLimiter } = require('../middleware/rateLimiter');
 const {
   createGroupBooking,
   listGroupBookings,
@@ -14,7 +14,7 @@ const {
 const router = express.Router();
 
 // Public request form
-router.post('/', apiLimiter, createGroupBooking);
+router.post('/', groupBookingLimiter, createGroupBooking);
 
 // Admin/staff management
 router.get('/', isAuthenticated, requireStaff, listGroupBookings);

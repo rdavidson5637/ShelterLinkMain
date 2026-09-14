@@ -3,6 +3,7 @@ import { requireAuth, logout } from '../auth.js';
 import { formatShiftWhen, parseShiftDate } from '../utils/dateFormat.js';
 import { renderStatCards } from '../components/statCard.js';
 import { showConfirm } from '../components/confirmDialog.js';
+import { escapeHtml } from '../utils/escapeHtml.js';
 
 const userNameEl = document.getElementById('userName');
 const profileStatusBannerEl = document.getElementById('profileStatusBanner');
@@ -441,12 +442,12 @@ async function fetchAndDisplayRecommended() {
       const item = document.createElement('div');
       item.className = 'recommended-item';
       const tags = (opp.tags || [])
-        .map((t) => `<span class="tag-chip-display">${t.name}</span>`)
+        .map((t) => `<span class="tag-chip-display">${escapeHtml(t.name)}</span>`)
         .join('');
       const start = opp.start_date ? new Date(opp.start_date).toLocaleString() : 'Flexible';
       item.innerHTML = `
-        <a href="/pages/volunteer/browse-shifts.html">${opp.title || 'Opportunity'}</a><br/>
-        <small>${start} · ${opp.location || 'Location TBA'}</small>
+        <a href="/pages/volunteer/browse-shifts.html">${escapeHtml(opp.title || 'Opportunity')}</a><br/>
+        <small>${escapeHtml(start)} · ${escapeHtml(opp.location || 'Location TBA')}</small>
         ${tags ? `<div>${tags}</div>` : ''}
       `;
       list.appendChild(item);

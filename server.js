@@ -9,6 +9,7 @@ const { testConnection, pgPool, closePool, pool } = require('./config/database')
 const { sanitizeInput } = require('./middleware/sanitize');
 const { apiLimiter } = require('./middleware/rateLimiter');
 const { errorHandler } = require('./middleware/errorHandler');
+const { sessionCookieOptions } = require('./utils/sessionCookie');
 
 dotenv.config();
 
@@ -70,6 +71,9 @@ app.use(cors({
 app.get('/public/js/config.js', (req, res) => {
   res.status(404).type('text/plain').send('Not found');
 });
+app.get('/public/js/auth.js', (req, res) => {
+  res.status(404).type('text/plain').send('Not found');
+});
 
 app.use(express.static(path.join(__dirname, 'frontend')));
 
@@ -96,12 +100,11 @@ app.use(session({
   secret: SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
+  rolling: true,
   store: sessionStore,
   cookie: {
-    httpOnly: true,
-    maxAge: 3600000, // 1 hour
-    secure: isProduction,
-    sameSite: isProduction ? 'strict' : 'lax',
+    ...sessionCookieOptions(),
+    maxAge: 3600000, // 1 hour of inactivity
   },
 }));
 

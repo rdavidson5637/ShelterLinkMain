@@ -3,6 +3,11 @@ const crypto = require('crypto');
 const { pool } = require('../config/database');
 const User = require('../models/User');
 const { sendEmail } = require('../utils/emailService');
+const {
+  clearSessionCookie,
+  regenerateSession,
+  destroyUserSessions,
+} = require('../utils/sessionCookie');
 
 function respondSafeUser(row) {
   if (!row) return null;
@@ -76,10 +81,11 @@ async function login(req, res) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    req.session.userId = user.user_id;
-    req.session.role = user.role;
+    await regenerateSession(req, {
+      userId: user.user_id,
+      role: user.role,
+    });
 
-    // Update last login
     await pool.execute('UPDATE users SET last_login = NOW() WHERE user_id = ?', [user.user_id]);
 
     return res.status(200).json(respondSafeUser(user));
@@ -98,7 +104,7 @@ async function logout(req, res) {
       if (err) {
         return res.status(500).json({ error: 'Failed to logout' });
       }
-      res.clearCookie('connect.sid');
+      clearSessionCookie(res);
       return res.status(200).json({ message: 'Logged out' });
     });
   } catch (error) {
@@ -126,6 +132,12 @@ async function registerAdmin(req, res) {
 
     if (!first_name || !last_name || !email || !password) {
       return res.status(400).json({ error: 'first_name, last_name, email, and password are required' });
+    }
+
+    if (!isStrongPassword(password)) {
+      return res.status(400).json({
+        error: 'Password must be at least 8 characters with one uppercase letter and one number',
+      });
     }
 
     const existing = await User.findByEmail(email);
@@ -269,6 +281,7 @@ async function resetPassword(req, res) {
       'UPDATE users SET password = ?, reset_token = NULL, reset_token_expires = NULL WHERE user_id = ?',
       [passwordHash, user.user_id]
     );
+    await destroyUserSessions(pool, user.user_id);
 
     return res.status(200).json({ message: 'Password reset successfully. You can now log in.' });
   } catch (error) {

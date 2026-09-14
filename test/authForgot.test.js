@@ -76,3 +76,52 @@ test('register-admin is 404 in production', async () => {
   if (prevAllow === undefined) delete process.env.ALLOW_ADMIN_REGISTRATION;
   else process.env.ALLOW_ADMIN_REGISTRATION = prevAllow;
 });
+
+test('login regenerates the session id', async () => {
+  mock.resetCalls();
+  mock.setHandler(async (sql) => {
+    if (/SELECT user_id, first_name/i.test(sql)) {
+      return [[{
+        user_id: 3,
+        first_name: 'Ann',
+        last_name: 'Lee',
+        name: 'Ann Lee',
+        email: 'a@b.c',
+        password: await require('bcrypt').hash('Password1', 4),
+        role: 'volunteer',
+        created_at: '2026-01-01',
+      }]];
+    }
+    return [{ affectedRows: 1 }];
+  });
+  let regenerated = false;
+  const res = makeRes();
+  await auth.login(
+    {
+      body: { email: 'a@b.c', password: 'Password1' },
+      session: {
+        regenerate(cb) {
+          regenerated = true;
+          cb(null);
+        },
+      },
+    },
+    res
+  );
+  assert.equal(res.statusCode, 200);
+  assert.equal(regenerated, true);
+});
+
+test('reset-password destroys other sessions for that user', async () => {
+  mock.resetCalls();
+  mock.setHandler(async (sql) => {
+    if (/SELECT user_id, reset_token_expires/i.test(sql)) {
+      return [[{ user_id: 3, reset_token_expires: new Date(Date.now() + 60_000) }]];
+    }
+    return [{ affectedRows: 1 }];
+  });
+  const res = makeRes();
+  await auth.resetPassword({ body: { token: 'abc', password: 'Password1' } }, res);
+  assert.equal(res.statusCode, 200);
+  assert.ok(mock.calls.some((c) => /DELETE FROM session/i.test(c.sql)));
+});

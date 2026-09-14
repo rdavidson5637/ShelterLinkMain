@@ -9,6 +9,8 @@ const {
 } = require('../utils/emailService');
 const { isStaffOrAdmin } = require('../middleware/auth');
 
+const MAX_GROUP_SIZE = 40;
+
 function ensureStaff(req, res) {
   if (!req.session || !req.session.userId) {
     res.status(401).json({ error: 'Unauthorized' });
@@ -46,6 +48,9 @@ async function createGroupBooking(req, res) {
     if (!Number.isInteger(groupSize) || groupSize < 1) {
       return res.status(400).json({ error: 'size must be a positive integer' });
     }
+    if (groupSize > MAX_GROUP_SIZE) {
+      return res.status(400).json({ error: `size cannot exceed ${MAX_GROUP_SIZE}` });
+    }
 
     if (!isValidEmail(contactEmail)) {
       return res.status(400).json({ error: 'contact_email is invalid' });
@@ -54,6 +59,19 @@ async function createGroupBooking(req, res) {
     const opportunity = await Opportunity.findById(opportunityId);
     if (!opportunity || opportunity.status !== 'open') {
       return res.status(404).json({ error: 'Opportunity not found or not open' });
+    }
+
+    const maxVolunteers = Number(opportunity.max_volunteers);
+    if (Number.isFinite(maxVolunteers) && maxVolunteers > 0) {
+      const current = await Opportunity.getCurrentCapacity(opportunityId);
+      if (current + groupSize > maxVolunteers) {
+        return res.status(400).json({
+          error: 'Not enough spots remaining for this group size',
+          capacity: current,
+          remaining: Math.max(maxVolunteers - current, 0),
+          group_size: groupSize,
+        });
+      }
     }
 
     const booking = await GroupBooking.create({

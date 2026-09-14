@@ -2,7 +2,12 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
 const { isAuthenticated } = require('../middleware/auth');
-const { loginLimiter, forgotPasswordLimiter } = require('../middleware/rateLimiter');
+const {
+  loginLimiter,
+  forgotPasswordLimiter,
+  registerLimiter,
+  resetPasswordLimiter,
+} = require('../middleware/rateLimiter');
 
 function adminRegistrationEnabled(req, res, next) {
   if (process.env.NODE_ENV === 'production' || process.env.ALLOW_ADMIN_REGISTRATION !== 'true') {
@@ -11,7 +16,7 @@ function adminRegistrationEnabled(req, res, next) {
   return next();
 }
 
-router.post('/register', authController.register);
+router.post('/register', registerLimiter, authController.register);
 router.post('/register-admin', adminRegistrationEnabled, authController.registerAdmin);
 router.post('/login', loginLimiter, authController.login);
 router.post('/logout', authController.logout);
@@ -19,6 +24,6 @@ router.get('/me', isAuthenticated, authController.getCurrentUser);
 
 // Separate limiter so failed logins cannot masquerade as reset-path errors.
 router.post('/forgot-password', forgotPasswordLimiter, authController.forgotPassword);
-router.post('/reset-password', authController.resetPassword);
+router.post('/reset-password', resetPasswordLimiter, authController.resetPassword);
 
 module.exports = router;

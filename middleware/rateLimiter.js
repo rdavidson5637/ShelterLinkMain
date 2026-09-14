@@ -20,6 +20,30 @@ const forgotPasswordLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+const registerLimiter = rateLimit({
+  windowMs: WINDOW_MS,
+  max: 8,
+  message: 'Too many registration attempts. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const resetPasswordLimiter = rateLimit({
+  windowMs: WINDOW_MS,
+  max: 8,
+  message: 'Too many password reset attempts. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const groupBookingLimiter = rateLimit({
+  windowMs: WINDOW_MS,
+  max: 8,
+  message: 'Too many group booking requests. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // General API limit — generous enough for real use, tight enough to block abuse
 const apiLimiter = rateLimit({
   windowMs: WINDOW_MS,
@@ -42,5 +66,8 @@ module.exports = {
   loginLimiter,
   apiLimiter,
   forgotPasswordLimiter,
+  registerLimiter,
+  resetPasswordLimiter,
+  groupBookingLimiter,
   messageLimiter,
 };

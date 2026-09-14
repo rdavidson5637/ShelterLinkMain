@@ -38,7 +38,19 @@ async function listNotes(req, res) {
       return res.status(404).json({ error: 'Opportunity not found' });
     }
 
-    const notes = await ShiftNote.findByOpportunityId(opportunityId);
+    const staff = isStaffOrAdmin(req);
+    if (!staff) {
+      const existing = await Application.checkExisting(req.session.userId, opportunityId);
+      const status = String(existing?.status || '').toLowerCase();
+      if (!['accepted', 'approved', 'pending', 'waitlisted'].includes(status)) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+    }
+
+    let notes = await ShiftNote.findByOpportunityId(opportunityId);
+    if (!staff) {
+      notes = notes.filter((note) => Number(note.notify) === 1);
+    }
     return res.status(200).json(notes);
   } catch (error) {
     console.error('[ShiftNotes] listNotes error:', error.message);
