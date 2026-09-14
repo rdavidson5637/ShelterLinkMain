@@ -9,7 +9,7 @@ const statsGrid = document.getElementById('statsGrid');
 renderStatCards(statsGrid, [
   { label: 'Total Volunteers', valueId: 'totalVolunteers', value: '-' },
   { label: 'Approved Volunteers', valueId: 'approvedVolunteers', value: '-' },
-  { label: 'Pending Applications', valueId: 'pendingApplications', value: '-', badgeId: 'pendingBadge' },
+  { label: 'Pending Applications', valueId: 'pendingApplications', value: '-' },
   { label: 'Active Opportunities', valueId: 'activeOpportunities', value: '-' },
   { label: 'Hours This Month', valueId: 'hoursThisMonth', value: '-' },
   { label: 'Total Hours All Time', valueId: 'totalHoursAllTime', value: '-' },
@@ -17,7 +17,6 @@ renderStatCards(statsGrid, [
 const totalVolunteersEl = document.getElementById('totalVolunteers');
 const approvedVolunteersEl = document.getElementById('approvedVolunteers');
 const pendingApplicationsEl = document.getElementById('pendingApplications');
-const pendingBadgeEl = document.getElementById('pendingBadge');
 const activeOpportunitiesEl = document.getElementById('activeOpportunities');
 const hoursThisMonthEl = document.getElementById('hoursThisMonth');
 const totalHoursAllTimeEl = document.getElementById('totalHoursAllTime');
@@ -53,16 +52,6 @@ async function loadStats() {
     }
     if (pendingApplicationsEl) {
       pendingApplicationsEl.textContent = formatNumber(stats.pendingApplications);
-    }
-    if (pendingBadgeEl) {
-      if (stats.pendingApplications > 0) {
-        pendingBadgeEl.textContent = stats.pendingApplications;
-        pendingBadgeEl.hidden = false;
-        pendingBadgeEl.style.display = 'inline-block';
-      } else {
-        pendingBadgeEl.hidden = true;
-        pendingBadgeEl.style.display = 'none';
-      }
     }
     if (activeOpportunitiesEl) {
       activeOpportunitiesEl.textContent = formatNumber(stats.activeOpportunities);

@@ -1,4 +1,7 @@
 import { apiRequest } from './config.js';
+import { isAdminRole, isStaffOrAdminRole } from './utils/roles.js';
+
+export { isAdminRole, isStaffOrAdminRole };
 
 export async function checkAuth() {
   try {
@@ -69,14 +72,6 @@ export async function requireAuth() {
     await redirectIfPendingWaivers();
   }
   return user;
-}
-
-export function isAdminRole(user) {
-  return Boolean(user && user.role === 'admin');
-}
-
-export function isStaffOrAdminRole(user) {
-  return Boolean(user && (user.role === 'admin' || user.role === 'staff'));
 }
 
 /**
