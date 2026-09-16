@@ -9,21 +9,19 @@ export function createStatCard({ label, valueId, value = '—', badgeId } = {}) 
   const heading = document.createElement('h3');
   heading.textContent = label || '';
 
-  const valueEl = document.createElement(badgeId ? 'span' : 'p');
+  const valueEl = document.createElement('p');
   if (valueId) valueEl.id = valueId;
   valueEl.className = 'stat-number';
   valueEl.textContent = value;
+  article.append(heading, valueEl);
 
   if (badgeId) {
-    const row = document.createElement('p');
     const badge = document.createElement('span');
     badge.id = badgeId;
     badge.className = 'badge';
     badge.hidden = true;
-    row.append(valueEl, ' ', badge);
-    article.append(heading, row);
-  } else {
-    article.append(heading, valueEl);
+    badge.setAttribute('aria-hidden', 'true');
+    article.appendChild(badge);
   }
 
   return article;

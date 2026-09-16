@@ -4,6 +4,7 @@ import { renderTagChips, getSelectedTagIds, setSelectedTagIds } from '../compone
 import { formatShiftWhen } from '../utils/dateFormat.js';
 import { createStatusBadge } from '../components/statusBadge.js';
 import { escapeHtml } from '../utils/escapeHtml.js';
+import { showToast } from '../utils/errorHandler.js';
 
 const tableBody = document.getElementById('opportunitiesTableBody');
 const statusFilter = document.getElementById('statusFilter');
@@ -45,6 +46,7 @@ function setMessage(type, text) {
   }
   const cssClass = type === 'error' ? 'error-message' : 'success-message';
   messageEl.innerHTML = `<p class="${cssClass}">${text}</p>`;
+  messageEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function formatDateRange(opportunity) {
@@ -538,14 +540,15 @@ async function flagUrgentCover(opportunity) {
       setMessage('error', body?.error || 'Failed to flag urgent cover.');
       return;
     }
-    setMessage(
-      'success',
-      `Urgent cover sent to ${body.sent ?? 0} volunteer${Number(body.sent) === 1 ? '' : 's'}.`
-    );
+    const sent = Number(body.sent) || 0;
+    const summary = `Urgent cover sent to ${sent} volunteer${sent === 1 ? '' : 's'}.`;
+    setMessage('success', summary);
+    showToast(summary, 'success');
     await fetchOpportunities();
   } catch (error) {
     console.error('[Admin] urgent cover error:', error);
     setMessage('error', 'Network error while flagging urgent cover.');
+    showToast('Network error while flagging urgent cover.', 'error');
   }
 }
 
