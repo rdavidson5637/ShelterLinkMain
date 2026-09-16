@@ -2,11 +2,10 @@
 
 const bcrypt = require('bcrypt');
 const { pool } = require('../config/database');
-const { clearSessionCookie } = require('../utils/sessionCookie');
+const { clearSessionCookie, regenerateSession } = require('../utils/sessionCookie');
 const Application = require('../models/Application');
 const VolunteerHours = require('../models/VolunteerHours');
 const { hasRole } = require('../middleware/auth');
-const { clearSessionCookie, regenerateSession } = require('../utils/sessionCookie');
 
 function respondSafeUser(row) {
   if (!row) return null;
