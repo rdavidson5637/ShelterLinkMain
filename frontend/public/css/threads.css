@@ -2,10 +2,12 @@
 
 .threads-layout {
   display: grid;
-  grid-template-columns: minmax(220px, 320px) 1fr;
+  grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
   gap: 1rem;
   align-items: stretch;
   min-height: 28rem;
+  min-width: 0;
+  max-width: 100%;
 }
 
 @media (max-width: 720px) {
@@ -20,6 +22,8 @@
   border-radius: 8px;
   padding: 0.75rem;
   background: var(--card-background-color, #fff);
+  min-width: 0;
+  overflow-x: auto;
 }
 
 .threads-panel-heading {
@@ -74,6 +78,7 @@
   gap: 1rem;
   align-items: flex-start;
   margin-bottom: 0.75rem;
+  min-width: 0;
 }
 
 .thread-view-header h2 {
@@ -126,6 +131,8 @@
 .message-bubble p {
   margin: 0;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .message-delete {

@@ -356,7 +356,10 @@ async function loadNotificationPrefs() {
     const prefs = await res.json();
     fillNotificationPrefs(prefs);
     const status = document.getElementById('pushStatus');
-    if (status && prefs.configured === false) {
+    const enableBtn = document.getElementById('enablePushButton');
+    const pushConfigured = prefs.configured === true;
+    if (enableBtn) enableBtn.hidden = !pushConfigured;
+    if (status && !pushConfigured) {
       status.textContent = 'Browser push is not configured on this server (email alerts still work).';
     }
   } catch (error) {

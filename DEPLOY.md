@@ -33,9 +33,14 @@ without data loss.
 ## 3. Deploy the app
 
 Set these environment variables on the host. The app **refuses to start** in
-production if `SESSION_SECRET`, `ADMIN_REGISTRATION_KEY` or `APP_URL` is missing
-or still set to a `change_me...` placeholder, so a misconfigured deploy fails
-loudly at boot instead of running insecurely.
+production if `SESSION_SECRET`, `ADMIN_REGISTRATION_KEY` or `APP_URL` is missing,
+weak (`change_me`, `replace_me`, `shelterlink-admin`, `demo`, localhost APP_URL),
+or too short, so a misconfigured deploy fails loudly at boot instead of running
+insecurely.
+
+`POST /api/auth/register-admin` is always 404 in production. Create the first
+admin with `npm run create-admin`. Password reset tokens are stored hashed;
+reset emails need working `EMAIL_*` SMTP or the token is rolled back.
 
 
 | Variable | Notes |

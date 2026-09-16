@@ -4,8 +4,8 @@ const authController = require('../controllers/authController');
 const { isAuthenticated } = require('../middleware/auth');
 const {
   loginLimiter,
-  forgotPasswordLimiter,
   registerLimiter,
+  forgotPasswordLimiter,
   resetPasswordLimiter,
 } = require('../middleware/rateLimiter');
 
@@ -24,6 +24,7 @@ router.get('/me', isAuthenticated, authController.getCurrentUser);
 
 // Separate limiter so failed logins cannot masquerade as reset-path errors.
 router.post('/forgot-password', forgotPasswordLimiter, authController.forgotPassword);
+router.get('/reset-password/:token', resetPasswordLimiter, authController.validateResetToken);
 router.post('/reset-password', resetPasswordLimiter, authController.resetPassword);
 
 module.exports = router;

@@ -27,17 +27,17 @@ let profileApproved = true;
 let searchDebounceTimer = null;
 const DEBOUNCE_MS = 400;
 
+function asOpportunityList(data) {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.opportunities)) return data.opportunities;
+  if (Array.isArray(data?.data)) return data.data;
+  return [];
+}
+
 function toDateOnly(value) {
   if (!value) return null;
   return String(value).slice(0, 10);
 }
-
-function asOpportunityList(data) {
-  if (Array.isArray(data)) return data;
-  if (data && Array.isArray(data.opportunities)) return data.opportunities;
-  return [];
-}
-
 
 function isQualificationValid(award, asOf = new Date()) {
   if (!award) return false;
@@ -453,7 +453,7 @@ async function fetchCoverSwaps() {
   try {
     const res = await apiRequest('/applications/swaps/available', { method: 'GET' });
     if (!res.ok) return [];
-    const data = await res.json();
+    const data = await res.json().catch(() => []);
     return Array.isArray(data) ? data : [];
   } catch (error) {
     console.error('[Volunteer] fetchCoverSwaps error:', error);
@@ -617,18 +617,24 @@ async function init() {
     if (profileRes?.ok) {
       const profile = await profileRes.json().catch(() => ({}));
       profileApproved = Boolean(profile?.approved);
-    } else if (profileRes) {
+    } else {
+      // Covers both a real error response and the fetch itself throwing
+      // (.catch(() => null) above) — either way, don't assume approved.
       profileApproved = false;
     }
 
     if (appRes?.ok) {
       const data = await appRes.json().catch(() => []);
       myApplications = Array.isArray(data) ? data : [];
+    } else {
+      myApplications = [];
     }
 
     if (qualsRes?.ok) {
       const data = await qualsRes.json().catch(() => []);
       myQualifications = Array.isArray(data) ? data : [];
+    } else {
+      myQualifications = [];
     }
 
     await loadTagFilterOptions();
@@ -655,9 +661,18 @@ window.addEventListener('popstate', () => {
   applyFiltersAndRender();
 });
 
-document.addEventListener('DOMContentLoaded', () => {
+function start() {
   init().catch((err) => {
-    console.error(err);
+    console.error('[Volunteer] browse-shifts start error:', err);
     showBrowseLoadError();
   });
-});
+}
+
+// A deferred module script can still run after DOMContentLoaded already
+// fired (slow module fetch) — listening unconditionally would then wait
+// forever for an event that's already happened.
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', start);
+} else {
+  start();
+}

@@ -1,5 +1,4 @@
 const bcrypt = require('bcrypt');
-const crypto = require('crypto');
 const { pool } = require('../config/database');
 const User = require('../models/User');
 const { sendEmail } = require('../utils/emailService');
@@ -8,6 +7,11 @@ const {
   regenerateSession,
   destroyUserSessions,
 } = require('../utils/sessionCookie');
+const {
+  hashResetToken,
+  createResetToken,
+  productionResetBaseUrl,
+} = require('../utils/resetToken');
 
 function respondSafeUser(row) {
   if (!row) return null;
@@ -198,6 +202,12 @@ async function forgotPassword(req, res) {
     // Always the same 200 body — never 401 "Invalid credentials".
     const generic = () => res.status(200).json({ message: GENERIC_RESET_MESSAGE });
 
+    const appUrl = productionResetBaseUrl();
+    if (!appUrl) {
+      console.error('[Auth] forgotPassword refused: APP_URL missing or localhost in production');
+      return generic();
+    }
+
     const [rows] = await pool.execute(
       'SELECT user_id, email, first_name FROM users WHERE email = ? LIMIT 1',
       [email]
@@ -205,17 +215,15 @@ async function forgotPassword(req, res) {
     const user = rows[0];
     if (!user) return generic();
 
-    // Generate a secure random token
-    const token = crypto.randomBytes(32).toString('hex');
-    const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+    const { raw, hash } = createResetToken();
+    const expires = new Date(Date.now() + 60 * 60 * 1000);
 
     await pool.execute(
       'UPDATE users SET reset_token = ?, reset_token_expires = ? WHERE user_id = ?',
-      [token, expires, user.user_id]
+      [hash, expires, user.user_id]
     );
 
-    const appUrl = process.env.APP_URL || `http://localhost:${process.env.PORT || 3000}`;
-    const resetLink = `${appUrl}/reset-password.html?token=${token}`;
+    const resetLink = `${appUrl}/reset-password.html?token=${raw}`;
 
     try {
       await sendEmail(
@@ -236,12 +244,42 @@ async function forgotPassword(req, res) {
       );
     } catch (emailError) {
       console.error('[Auth] forgotPassword email error:', emailError.message);
+      await pool.execute(
+        'UPDATE users SET reset_token = NULL, reset_token_expires = NULL WHERE user_id = ? AND reset_token = ?',
+        [user.user_id, hash]
+      );
+      return generic();
     }
 
     return generic();
   } catch (error) {
     console.error('[Auth] forgotPassword error:', error.message);
     return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+async function validateResetToken(req, res) {
+  try {
+    const token = String(req.params.token || '').trim();
+    if (!token) {
+      return res.status(200).json({ valid: false });
+    }
+
+    const [rows] = await pool.execute(
+      `SELECT reset_token_expires
+       FROM users
+       WHERE reset_token = ?
+       LIMIT 1`,
+      [hashResetToken(token)]
+    );
+    const user = rows[0];
+    if (!user || new Date(user.reset_token_expires) < new Date()) {
+      return res.status(200).json({ valid: false });
+    }
+    return res.status(200).json({ valid: true });
+  } catch (error) {
+    console.error('[Auth] validateResetToken error:', error.message);
+    return res.status(200).json({ valid: false });
   }
 }
 
@@ -259,11 +297,11 @@ async function resetPassword(req, res) {
     }
 
     const [rows] = await pool.execute(
-      `SELECT user_id, reset_token_expires 
-       FROM users 
-       WHERE reset_token = ? 
+      `SELECT user_id, reset_token_expires
+       FROM users
+       WHERE reset_token = ?
        LIMIT 1`,
-      [token]
+      [hashResetToken(token)]
     );
     const user = rows[0];
 
@@ -297,5 +335,6 @@ module.exports = {
   logout,
   getCurrentUser,
   forgotPassword,
+  validateResetToken,
   resetPassword,
 };

@@ -21,6 +21,7 @@ require.cache[emailPath] = {
 };
 
 const { communityServiceProgress } = require('../utils/communityService');
+const GroupBooking = require('../models/GroupBooking');
 const groupCtrl = require('../controllers/groupBookingController');
 const { restrictKioskSession, isKioskSession } = require('../middleware/auth');
 const { displayName } = require('../controllers/kioskController');
@@ -37,6 +38,21 @@ function makeRes() {
   };
   return res;
 }
+
+test('GroupBooking.findAll orders by status without MySQL-only FIELD()', async () => {
+  // Regression: this query used FIELD(gb.status, 'pending', ...) to sort by
+  // status, which doesn't exist in Postgres and 500'd every load of the
+  // admin Groups page (`function field(...) does not exist`). The mock DB
+  // only regex-matches SQL — it never actually executes it — so this
+  // wouldn't have been caught by running against Postgres for real.
+  mock.resetCalls();
+  mock.setHandler(async () => [[]]);
+  await GroupBooking.findAll({ status: 'pending' });
+  const call = mock.calls.find((c) => /FROM group_bookings/i.test(c.sql));
+  assert.ok(call, 'findAll queried group_bookings');
+  assert.ok(!/\bFIELD\s*\(/i.test(call.sql), 'must not use MySQL-only FIELD()');
+  assert.match(call.sql, /CASE\s+gb\.status/i);
+});
 
 test('community service progress math', () => {
   assert.deepStrictEqual(

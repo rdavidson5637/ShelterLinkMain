@@ -4,6 +4,54 @@ const assert = require('node:assert');
 const mock = require('./helpers/mockDb');
 const Opportunity = require('../models/Opportunity');
 
+function makeRes() {
+  const res = { statusCode: 200, body: undefined };
+  res.status = (c) => { res.statusCode = c; return res; };
+  res.json = (b) => { res.body = b; return res; };
+  return res;
+}
+
+function nonOpenOpportunityHandler() {
+  return async (sql, params) => {
+    if (/FROM opportunities/i.test(sql) && /WHERE opportunity_id = \?/i.test(sql)) {
+      return [[{ opportunity_id: 5, title: 'Closed shift', status: 'closed' }]];
+    }
+    if (/FROM applications/i.test(sql) && /WHERE user_id = \? AND opportunity_id = \?/i.test(sql)) {
+      // Only user 2 has an application to this opportunity.
+      return Number(params[0]) === 2
+        ? [[{ application_id: 99, status: 'accepted' }]]
+        : [[]];
+    }
+    return [[]];
+  };
+}
+
+test('getOpportunity 404s a non-open shift for a volunteer who never applied', async () => {
+  mock.resetCalls();
+  mock.setHandler(nonOpenOpportunityHandler());
+  const { getOpportunity } = require('../controllers/opportunityController');
+
+  const res = makeRes();
+  await getOpportunity({ params: { id: 5 }, session: { userId: 3, role: 'volunteer' } }, res);
+  assert.strictEqual(res.statusCode, 404);
+});
+
+test('getOpportunity still shows a non-open shift to a volunteer who applied to it', async () => {
+  // Regression: a shift stops being 'open' the moment it fills, ends, or is
+  // cancelled — exactly when My Applications needs to fetch its details for
+  // a volunteer who already applied. This 404'd for every past/closed shift
+  // and, via the frontend's global error interceptor, took the whole My
+  // Applications page down to a "page not found" screen.
+  mock.resetCalls();
+  mock.setHandler(nonOpenOpportunityHandler());
+  const { getOpportunity } = require('../controllers/opportunityController');
+
+  const res = makeRes();
+  await getOpportunity({ params: { id: 5 }, session: { userId: 2, role: 'volunteer' } }, res);
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.title, 'Closed shift');
+});
+
 test('create inserts all columns with created_by and default status', async () => {
   mock.resetCalls();
   mock.setHandler(async (sql) => {

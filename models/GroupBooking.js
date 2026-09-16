@@ -71,7 +71,12 @@ async function findAll({ status = null } = {}) {
     LEFT JOIN opportunities o ON o.opportunity_id = gb.opportunity_id
     ${where}
     ORDER BY
-      FIELD(gb.status, 'pending', 'confirmed', 'cancelled'),
+      CASE gb.status
+        WHEN 'pending' THEN 0
+        WHEN 'confirmed' THEN 1
+        WHEN 'cancelled' THEN 2
+        ELSE 3
+      END,
       gb.created_at DESC
   `;
   const [rows] = await pool.execute(sql, params);

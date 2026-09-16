@@ -1,4 +1,6 @@
 const Opportunity = require('../models/Opportunity');
+const { excludeTestOpportunities, isTestOrE2EOpportunity } = require('../utils/testOpportunityGuard');
+const Application = require('../models/Application');
 const Qualification = require('../models/Qualification');
 const Tag = require('../models/Tag');
 const Animal = require('../models/Animal');
@@ -235,6 +237,9 @@ async function getAllOpportunities(req, res) {
 
     let opportunities = await Opportunity.findAll(filters);
     const admin = isStaffOrAdmin(req);
+    if (!admin) {
+      opportunities = excludeTestOpportunities(opportunities);
+    }
     let enriched = await withExtras(opportunities);
 
     const tagFilter = req.query?.tag || req.query?.tag_id || req.query?.tagId;
@@ -263,8 +268,20 @@ async function getOpportunity(req, res) {
     if (!opportunity) {
       return res.status(404).json({ error: 'Opportunity not found' });
     }
-    if (!isStaffOrAdmin(req) && opportunity.status !== 'open') {
+    if (!isStaffOrAdmin(req) && process.env.NODE_ENV === 'production' && isTestOrE2EOpportunity(opportunity)) {
       return res.status(404).json({ error: 'Opportunity not found' });
+    }
+    if (!isStaffOrAdmin(req) && opportunity.status !== 'open') {
+      // A shift stops being 'open' the moment it's full, past, or cancelled —
+      // which is exactly when a volunteer with a real (often accepted, often
+      // completed) application to it needs to still be able to see it, e.g.
+      // from My Applications. Gate on having applied, not on current status.
+      const applied = req.session?.userId
+        ? await Application.checkExisting(req.session.userId, id)
+        : null;
+      if (!applied) {
+        return res.status(404).json({ error: 'Opportunity not found' });
+      }
     }
     const enriched = await withExtras(opportunity);
     return res.status(200).json(stripAdminFields(enriched, isStaffOrAdmin(req)));

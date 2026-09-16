@@ -2,11 +2,14 @@ import { apiRequest } from '../config.js';
 import { requireAuth, checkAuth, logout, isStaffOrAdminRole, applyRoleVisibility} from '../auth.js';
 import { renderTagChips, getSelectedTagIds } from '../components/tagChips.js';
 import { showFormErrors, clearFormErrors } from '../utils/formErrors.js';
+import { combineDateTime } from '../utils/dateFormat.js';
 
 const form = document.getElementById('opportunityForm');
 const messageEl = document.getElementById('message');
 const startDateInput = document.getElementById('start_date');
+const startTimeInput = document.getElementById('start_time');
 const endDateInput = document.getElementById('end_date');
+const endTimeInput = document.getElementById('end_time');
 const recurrenceRuleInput = document.getElementById('recurrence_rule');
 const recurrenceUntilInput = document.getElementById('recurrence_until');
 const recurrenceUntilField = document.getElementById('recurrenceUntilField');
@@ -72,8 +75,8 @@ function formDataToPayload(formElement) {
     title: data.get('title'),
     description: data.get('description'),
     location: data.get('location'),
-    start_date: data.get('start_date'),
-    end_date: data.get('end_date'),
+    start_date: combineDateTime(data.get('start_date'), data.get('start_time')),
+    end_date: combineDateTime(data.get('end_date'), data.get('end_time')),
     requirements: data.get('requirements'),
     max_volunteers: data.get('max_volunteers') ? Number(data.get('max_volunteers')) : null,
     cancellation_cutoff_hours: data.get('cancellation_cutoff_hours')
@@ -96,8 +99,13 @@ function validateDates() {
   const start = startDateInput.value;
   const end = endDateInput.value;
   if (!start || !end) return true;
-  if (new Date(end) < new Date(start)) {
-    showFormErrors(form, [{ field: 'end_date', message: 'End date must be on or after start date.' }]);
+  // Compare full date+time (not just the date) so a same-day shift with an
+  // end time before its start time — e.g. start 12:00, end 09:00 — is
+  // rejected instead of silently creating a shift that runs backwards.
+  const startAt = combineDateTime(start, startTimeInput?.value);
+  const endAt = combineDateTime(end, endTimeInput?.value);
+  if (new Date(end) < new Date(start) || (end === start && new Date(endAt) < new Date(startAt))) {
+    showFormErrors(form, [{ field: 'end_date', message: 'End must be on or after start.' }]);
     return false;
   }
   const rule = recurrenceRuleInput?.value || 'none';

@@ -1,10 +1,10 @@
 import { apiRequest } from '../config.js';
 import { requireAuth, checkAuth, logout, isStaffOrAdminRole, applyRoleVisibility} from '../auth.js';
+import { showToast } from '../utils/errorHandler.js';
 import { renderTagChips, getSelectedTagIds, setSelectedTagIds } from '../components/tagChips.js';
-import { formatShiftWhen } from '../utils/dateFormat.js';
+import { formatShiftWhen, splitDateTime, combineDateTime } from '../utils/dateFormat.js';
 import { createStatusBadge } from '../components/statusBadge.js';
 import { escapeHtml } from '../utils/escapeHtml.js';
-import { showToast } from '../utils/errorHandler.js';
 
 const tableBody = document.getElementById('opportunitiesTableBody');
 const statusFilter = document.getElementById('statusFilter');
@@ -19,7 +19,9 @@ const titleInput = document.getElementById('title');
 const descriptionInput = document.getElementById('description');
 const locationInput = document.getElementById('location');
 const startDateInput = document.getElementById('start_date');
+const startTimeInput = document.getElementById('start_time');
 const endDateInput = document.getElementById('end_date');
+const endTimeInput = document.getElementById('end_time');
 const maxVolunteersInput = document.getElementById('max_volunteers');
 const cancellationCutoffInput = document.getElementById('cancellation_cutoff_hours');
 const activityNotesInput = document.getElementById('activity_notes');
@@ -84,6 +86,15 @@ function validateFormDates() {
     setMessage('error', 'End date must be on or after start date.');
     return false;
   }
+  // Same-day shifts also need their times compared — a same-day end time
+  // before the start time (e.g. start 12:00, end 09:00) passes the
+  // date-only check above but is still a shift that runs backwards.
+  const startAt = new Date(combineDateTime(startDateInput.value, startTimeInput?.value));
+  const endAt = new Date(combineDateTime(endDateInput.value, endTimeInput?.value));
+  if (endAt < startAt) {
+    setMessage('error', 'End must be on or after start.');
+    return false;
+  }
   return true;
 }
 
@@ -93,8 +104,15 @@ function populateEditForm(opportunity) {
   if (titleInput) titleInput.value = opportunity.title || '';
   if (descriptionInput) descriptionInput.value = opportunity.description || '';
   if (locationInput) locationInput.value = opportunity.location || '';
-  if (startDateInput) startDateInput.value = (opportunity.start_date || '').slice(0, 10);
-  if (endDateInput) endDateInput.value = (opportunity.end_date || '').slice(0, 10);
+  // Split into separate date/time inputs — truncating to slice(0, 10) alone
+  // (the old behavior) discards the time entirely, so saving the form again
+  // without touching dates would silently reset the shift to midnight.
+  const start = splitDateTime(opportunity.start_date);
+  const end = splitDateTime(opportunity.end_date);
+  if (startDateInput) startDateInput.value = start.date;
+  if (startTimeInput) startTimeInput.value = start.time;
+  if (endDateInput) endDateInput.value = end.date;
+  if (endTimeInput) endTimeInput.value = end.time;
   if (maxVolunteersInput) {
     maxVolunteersInput.value =
       opportunity.max_volunteers === null || opportunity.max_volunteers === undefined
@@ -447,8 +465,8 @@ function buildUpdatePayload() {
     title: titleInput?.value?.trim(),
     description: descriptionInput?.value?.trim(),
     location: locationInput?.value?.trim(),
-    start_date: startDateInput?.value,
-    end_date: endDateInput?.value,
+    start_date: combineDateTime(startDateInput?.value, startTimeInput?.value),
+    end_date: combineDateTime(endDateInput?.value, endTimeInput?.value),
     requirements: requirementsInput?.value?.trim(),
     max_volunteers: maxVolunteersInput?.value ? Number(maxVolunteersInput.value) : null,
     cancellation_cutoff_hours: cancellationCutoffInput?.value
@@ -532,12 +550,14 @@ async function flagUrgentCover(opportunity) {
   if (!confirmed) return;
 
   try {
+    setMessage('success', 'Sending urgent cover…');
     const response = await apiRequest(`/opportunities/${opportunity.id}/urgent`, {
       method: 'POST',
     });
     const body = await response.json().catch(() => ({}));
     if (!response.ok) {
-      setMessage('error', body?.error || 'Failed to flag urgent cover.');
+      const msg = body?.error || 'Failed to flag urgent cover.';
+      setMessage('error', msg);
       return;
     }
     const sent = Number(body.sent) || 0;

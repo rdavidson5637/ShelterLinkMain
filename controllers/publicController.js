@@ -8,6 +8,7 @@ const {
   filterPublicBoardOpportunities,
   isAcceptingApplications,
 } = require('../utils/publicOpportunityFilter');
+const { excludeTestOpportunities } = require('../utils/testOpportunityGuard');
 
 let cache = { at: 0, data: null };
 const CACHE_MS = 60 * 1000;
@@ -130,7 +131,8 @@ function toPublicOpportunity(opp) {
 }
 
 async function loadUpcomingPublicOpportunities() {
-  const all = filterPublicBoardOpportunities(await Opportunity.findAll({ status: 'open' }));
+  const raw = excludeTestOpportunities(await Opportunity.findAll({ status: 'open' }));
+  const all = filterPublicBoardOpportunities(raw);
   const future = all.filter((opp) => {
     const start = new Date(opp.start_date);
     return !Number.isNaN(start.getTime()) && start.getTime() >= Date.now() - 12 * 60 * 60 * 1000;

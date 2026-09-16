@@ -84,6 +84,11 @@ function futureDate(daysAhead, hour) {
 }
 
 async function main() {
+  if (process.env.NODE_ENV === 'production' || /shelterlink\.online/i.test(BASE)) {
+    console.error('Refusing to run smoke tests against production.');
+    process.exit(1);
+  }
+
   console.log(`ShelterLink smoke test → ${BASE}\n`);
 
   // 0. Health check

@@ -168,3 +168,43 @@ test('my-shifts feed requires token and wrong token 404s', async () => {
   await publicCtrl.myShiftsIcs({ query: { token: 'nope' } }, wrong);
   assert.strictEqual(wrong.statusCode, 404);
 });
+
+test('production public list hides smoke-test shifts', async () => {
+  const prev = process.env.NODE_ENV;
+  process.env.NODE_ENV = 'production';
+  publicCtrl._resetCacheForTests();
+  mock.resetCalls();
+  mock.setHandler(async () => [[
+    {
+      opportunity_id: 1,
+      id: 1,
+      title: 'Smoke Test Shift 99',
+      description: 'Automated end-to-end test shift.',
+      location: 'Yard',
+      start_date: '2099-01-01 10:00:00',
+      end_date: '2099-01-01 12:00:00',
+      max_volunteers: 4,
+      spots_filled: 0,
+      status: 'open',
+    },
+    {
+      opportunity_id: 2,
+      id: 2,
+      title: 'Kennel clean',
+      description: 'Real shift',
+      location: 'Yard',
+      start_date: '2099-01-02 10:00:00',
+      end_date: '2099-01-02 12:00:00',
+      max_volunteers: 4,
+      spots_filled: 0,
+      status: 'open',
+    },
+  ]]);
+
+  const res = makeRes();
+  await publicCtrl.listPublicOpportunities({}, res);
+  process.env.NODE_ENV = prev;
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.length, 1);
+  assert.strictEqual(res.body[0].title, 'Kennel clean');
+});

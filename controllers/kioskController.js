@@ -2,6 +2,7 @@
 
 const bcrypt = require('bcrypt');
 const { pool } = require('../config/database');
+const { clearSessionCookie } = require('../utils/sessionCookie');
 const Application = require('../models/Application');
 const VolunteerHours = require('../models/VolunteerHours');
 const { hasRole } = require('../middleware/auth');

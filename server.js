@@ -9,28 +9,16 @@ const { testConnection, pgPool, closePool, pool } = require('./config/database')
 const { sanitizeInput } = require('./middleware/sanitize');
 const { apiLimiter } = require('./middleware/rateLimiter');
 const { errorHandler } = require('./middleware/errorHandler');
+const { validateEnv } = require('./utils/validateEnv');
+const { corsOriginDelegate } = require('./utils/corsOrigins');
 const { sessionCookieOptions } = require('./utils/sessionCookie');
 
 dotenv.config();
+validateEnv();
 
 const app = express();
 app.set('etag', false);
 app.set('trust proxy', 1);
-const isProduction = process.env.NODE_ENV === 'production';
-
-// Fail fast rather than booting production on placeholder secrets.
-if (isProduction) {
-  const missing = [];
-  const isPlaceholder = (v) => !v || /^change_me/i.test(v);
-  if (isPlaceholder(process.env.SESSION_SECRET)) missing.push('SESSION_SECRET');
-  if (isPlaceholder(process.env.ADMIN_REGISTRATION_KEY)) missing.push('ADMIN_REGISTRATION_KEY');
-  if (!process.env.APP_URL) missing.push('APP_URL');
-  if (missing.length) {
-    console.error('\u2717 Refusing to start in production without: ' + missing.join(', '));
-    console.error('  Set these on the host and redeploy. See DEPLOY.md.');
-    process.exit(1);
-  }
-}
 
 app.use(helmet({
   contentSecurityPolicy: {
@@ -47,27 +35,18 @@ app.use(helmet({
   },
 }));
 
-// Credentialed cross-origin requests are limited to APP_URL in production.
-// Same-origin requests are unaffected: browsers do not apply CORS to them,
-// and the frontend is served by this same app. Development stays permissive
-// so localhost ports and phones on the LAN can hit the API.
-const allowedOrigins = (process.env.CORS_ORIGINS || process.env.APP_URL || '')
-  .split(',')
-  .map((o) => o.trim().replace(/\/$/, ''))
-  .filter(Boolean);
-
+// Credentialed CORS: production allowlists https://shelterlink.online (plus
+// APP_URL / CORS_ORIGINS). Non-production allows localhost only. Same-origin
+// browser requests do not use CORS.
 app.use(cors({
-  origin(origin, callback) {
-    if (!isProduction) return callback(null, true);
-    if (!origin) return callback(null, true);
-    return callback(null, allowedOrigins.includes(origin.replace(/\/$/, '')));
-  },
+  origin: corsOriginDelegate,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 }));
 
-// Serve static files from frontend directory (must be before other middleware)
-// Never serve the stale localhost API config, even if the file is restored.
+// Never serve the stale localhost API config/auth files, even if restored —
+// these were deleted (superseded by frontend/js/config.js and auth.js) but a
+// backup or stale deploy artifact could still drop them back on disk.
 app.get('/public/js/config.js', (req, res) => {
   res.status(404).type('text/plain').send('Not found');
 });
@@ -75,6 +54,7 @@ app.get('/public/js/auth.js', (req, res) => {
   res.status(404).type('text/plain').send('Not found');
 });
 
+// Serve static files from frontend directory (must be before other middleware)
 app.use(express.static(path.join(__dirname, 'frontend')));
 
 // Body parsers
@@ -87,8 +67,12 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
-// Sessions
-const SESSION_SECRET = process.env.SESSION_SECRET || 'change_me_in_env';
+// Sessions — no fallback secret. Production already exited if this is weak.
+const SESSION_SECRET = process.env.SESSION_SECRET;
+if (!SESSION_SECRET) {
+  console.error('\u2717 SESSION_SECRET is required. Set it in .env (see .env.example).');
+  process.exit(1);
+}
 
 const sessionStore = new PgSession({
   pool: pgPool,

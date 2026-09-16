@@ -2,71 +2,81 @@ const rateLimit = require('express-rate-limit');
 
 const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
-// Strict limit for login — prevents brute-force attacks
+const LIMITS = {
+  login: 15,
+  api: 300,
+  register: 8,
+  forgotPassword: 5,
+  resetPassword: 8,
+  message: 10,
+  groupBooking: 8,
+};
+
 const loginLimiter = rateLimit({
   windowMs: WINDOW_MS,
-  max: 15, // 15 attempts per 15 minutes per IP
+  max: LIMITS.login,
   message: 'Too many login attempts. Please try again in 15 minutes.',
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: true, // Only count failed attempts
+  skipSuccessfulRequests: true,
 });
 
-const forgotPasswordLimiter = rateLimit({
+// General API limit — generous enough for real use, tight enough to block abuse
+const apiLimiter = rateLimit({
   windowMs: WINDOW_MS,
-  max: 5,
-  message: 'Too many password reset requests. Please try again later.',
+  max: LIMITS.api,
+  message: 'Too many requests. Please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 const registerLimiter = rateLimit({
   windowMs: WINDOW_MS,
-  max: 8,
+  max: LIMITS.register,
   message: 'Too many registration attempts. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const forgotPasswordLimiter = rateLimit({
+  windowMs: WINDOW_MS,
+  max: LIMITS.forgotPassword,
+  message: 'Too many password reset requests. Please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 const resetPasswordLimiter = rateLimit({
   windowMs: WINDOW_MS,
-  max: 8,
+  max: LIMITS.resetPassword,
   message: 'Too many password reset attempts. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const messageLimiter = rateLimit({
+  windowMs: WINDOW_MS,
+  max: LIMITS.message,
+  message: 'Too many message sends. Please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 const groupBookingLimiter = rateLimit({
   windowMs: WINDOW_MS,
-  max: 8,
+  max: LIMITS.groupBooking,
   message: 'Too many group booking requests. Please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
 });
 
-// General API limit — generous enough for real use, tight enough to block abuse
-const apiLimiter = rateLimit({
-  windowMs: WINDOW_MS,
-  max: 300, // 300 requests per 15 minutes per IP
-  message: 'Too many requests. Please try again later.',
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-// Bulk messaging — protect SMTP account
-const messageLimiter = rateLimit({
-  windowMs: WINDOW_MS,
-  max: 10,
-  message: 'Too many message sends. Please try again later.',
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
 module.exports = {
+  LIMITS,
+  WINDOW_MS,
   loginLimiter,
   apiLimiter,
-  forgotPasswordLimiter,
   registerLimiter,
+  forgotPasswordLimiter,
   resetPasswordLimiter,
   groupBookingLimiter,
   messageLimiter,
