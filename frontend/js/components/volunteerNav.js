@@ -36,12 +36,13 @@ function ensureVolunteerNavStyles() {
     }
     .nav-more-toggle--current { background: var(--green-tint); color: var(--text); font-weight: 600; }
     .nav-more-panel {
-      position: absolute; right: 0; top: calc(100% + 4px); min-width: 12.5rem;
+      display: flex !important; flex-direction: column !important; align-items: stretch;
+      flex-wrap: nowrap; position: absolute; right: 0; top: calc(100% + 4px); min-width: 12.5rem;
       margin: 0; padding: 0.25rem 0; list-style: none; background: var(--surface);
       border: 1px solid var(--border); border-radius: var(--radius-control);
       box-shadow: var(--shadow-card); z-index: 30;
     }
-    .nav-more-panel li { display: block; margin: 0; padding: 0; }
+    .site-nav .nav-menu .nav-more-panel li { display: block; width: 100%; margin: 0; padding: 0; }
     .nav-more-link {
       display: block; margin: 0; padding: 0.55rem 0.85rem;
       color: var(--text-secondary); font-weight: 500; text-decoration: none; white-space: nowrap;
@@ -57,7 +58,7 @@ function ensureVolunteerNavStyles() {
       }
       .nav-more-toggle::after { display: none; }
       .nav-more-panel, .nav-more-panel[hidden] {
-        display: block !important; position: static; min-width: 0; padding: 0;
+        display: flex !important; flex-direction: column !important; position: static; min-width: 0; padding: 0;
         border: 0; border-radius: 0; box-shadow: none; background: transparent;
       }
       .nav-more-link { min-height: 44px; padding: 0.75rem 0.65rem 0.75rem 1.15rem; }
