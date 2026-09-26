@@ -37,7 +37,7 @@ async function loadMatching() {
   const requests = data.requests || [];
   if (!requests.length) {
     matchingList.innerHTML =
-      '<p>No matching open foster requests right now. Update your foster home details on My profile, and ask staff to mark you foster-approved.</p>';
+      '<p>No matching open foster requests right now. Update your foster home details on Profile, and ask staff to mark you foster-approved.</p>';
     return;
   }
 

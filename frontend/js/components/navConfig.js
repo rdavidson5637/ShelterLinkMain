@@ -32,17 +32,24 @@ export const ADMIN_INSIGHT = [
   { id: 'privacy', label: 'Privacy and GDPR', href: '/pages/admin/privacy.html', adminOnly: true },
 ];
 
-export const VOLUNTEER_NAV = [
-  { id: 'dashboard', label: 'Dashboard', href: '/pages/volunteer/dashboard.html' },
-  { id: 'browse', label: 'Browse shifts', href: '/pages/volunteer/browse-shifts.html' },
+/** Daily volunteer destinations — stay visible in the top bar. */
+export const VOLUNTEER_PRIMARY = [
+  { id: 'dashboard', label: 'Home', href: '/pages/volunteer/dashboard.html' },
+  { id: 'browse', label: 'Find shifts', href: '/pages/volunteer/browse-shifts.html' },
   { id: 'calendar', label: 'Calendar', href: '/pages/volunteer/calendar.html' },
-  { id: 'applications', label: 'My applications', href: '/pages/volunteer/my-applications.html' },
+  { id: 'messages', label: 'Messages', href: '/pages/volunteer/messages.html' },
+];
+
+/** Lower-frequency destinations — grouped under More so the bar stays one row. */
+export const VOLUNTEER_MORE = [
+  { id: 'applications', label: 'Applications', href: '/pages/volunteer/my-applications.html' },
+  { id: 'hours', label: 'Hours', href: '/pages/volunteer/my-hours.html' },
   { id: 'foster', label: 'Foster', href: '/pages/volunteer/foster.html' },
   { id: 'transport', label: 'Transport', href: '/pages/volunteer/transport.html' },
-  { id: 'messages', label: 'Messages', href: '/pages/volunteer/messages.html' },
-  { id: 'hours', label: 'My hours', href: '/pages/volunteer/my-hours.html' },
-  { id: 'profile', label: 'My profile', href: '/pages/volunteer/complete-profile.html' },
+  { id: 'profile', label: 'Profile', href: '/pages/volunteer/complete-profile.html' },
 ];
+
+export const VOLUNTEER_NAV = [...VOLUNTEER_PRIMARY, ...VOLUNTEER_MORE];
 
 /**
  * Filter nav items for a session role. Staff see a subset of admin items;
@@ -62,5 +69,12 @@ export function isCurrentPath(href, pathname = '') {
   if (file === 'opportunities.html' && pathname.includes('create-opportunity.html')) {
     return true;
   }
+  if (file === 'my-hours.html' && (pathname.includes('log-hours.html') || pathname.includes('certificate.html'))) {
+    return true;
+  }
   return false;
+}
+
+export function volunteerMoreContainsPath(pathname = '') {
+  return VOLUNTEER_MORE.some((item) => isCurrentPath(item.href, pathname));
 }

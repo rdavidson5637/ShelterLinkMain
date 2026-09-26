@@ -13,7 +13,7 @@
     "db:reset": "node scripts/setup-db.js --seed",
     "db:clean-demo": "node scripts/clean-demo.js",
     "create-admin": "node create-admin.js",
-    "test": "node --test --test-concurrency=1 \"test/*.test.js\"",
+    "test": "node --test --test-concurrency=1 test/*.test.js",
     "migrate": "node scripts/migrate.js",
     "smoke": "node scripts/smoke-test.js",
     "backup": "node scripts/backup.js"
