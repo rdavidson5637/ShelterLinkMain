@@ -1,1 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Claim shift cover - ShelterLink</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <main class="container" style="max-width: 560px; margin: 2rem auto;">
+      <h1>Claim shift cover</h1>
+      <p id="claimStatus">Checking your waitlist offer…</p>
+      <button type="button" id="claimButton" hidden>Claim this shift</button>
       <p><a href="/pages/volunteer/browse-shifts.html">Back to find shifts</a></p>
+    </main>
+    
+    <footer class="container" data-site-footer></footer>
+<script type="module">
+      import { apiRequest } from '/js/config.js';
+      import { requireAuth } from '/js/auth.js';
+
+      const statusEl = document.getElementById('claimStatus');
+      const claimButton = document.getElementById('claimButton');
+      const params = new URLSearchParams(window.location.search);
+      const token = (params.get('token') || '').trim();
+
+      async function init() {
+        await requireAuth();
+        if (!token) {
+          statusEl.textContent = 'This claim link is missing a token.';
+          return;
+        }
+        statusEl.textContent = 'You have a waitlist offer to cover a shift. Claim it within 12 hours of the email.';
+        claimButton.hidden = false;
+        claimButton.addEventListener('click', async () => {
+          claimButton.disabled = true;
+          try {
+            const res = await apiRequest('/applications/swaps/claim-by-token', {
+              method: 'POST',
+              body: { token },
+            });
+            const body = await res.json().catch(() => ({}));
+            if (!res.ok) {
+              statusEl.textContent = body?.error || 'Unable to claim this shift.';
+              claimButton.disabled = false;
+              return;
+            }
+            statusEl.textContent = body.message || 'Shift claimed successfully.';
+            claimButton.hidden = true;
+          } catch (error) {
+            console.error(error);
+            statusEl.textContent = 'Network error while claiming.';
+            claimButton.disabled = false;
+          }
+        });
+      }
+
+      document.addEventListener('DOMContentLoaded', init);
+    </script>
+      <script type="module" src="/js/utils/footerYear.js"></script>
+      <script type="module" src="/js/components/volunteerNav.js"></script>
+  </body>
+</html>
