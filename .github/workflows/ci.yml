@@ -15,6 +15,6 @@ jobs:
           node-version: '20'
           cache: npm
       - run: npm ci
-      # The 247 unit tests run against an in-process mock DB (test/helpers/mockDb.js),
-      # so no Postgres service is needed here.
+      # Unit tests run against an in-process mock DB (test/helpers/mockDb.js),
+      # so no Postgres service is needed here. 350 tests, including the PWA/push suite.
       - run: npm test
