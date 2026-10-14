@@ -18,5 +18,10 @@ export function apiRequest(endpoint, options = {}) {
     }
   }
 
-  return fetch(url, fetchOptions);
+  return fetch(url, fetchOptions).catch((error) => {
+    if (error instanceof TypeError && typeof navigator !== 'undefined' && navigator.onLine === false) {
+      throw new Error("You're offline. Try again when you have signal.");
+    }
+    throw error;
+  });
 }
