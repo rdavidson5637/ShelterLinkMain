@@ -2,7 +2,7 @@
 
 Direction: production platform for Assisi. See `DEPLOY.md` and `ASSISI-DEMO.md`.
 
-Product surface for the shelter call is complete. `npm test` — **242** green.
+Product surface for the shelter call is complete. `npm test` — **350** green (PWA, push, CSP, dates).
 Live prove-out still needs your `DATABASE_URL`.
 
 ## 1. Point the app at Postgres (you) — blocking for demo
@@ -17,7 +17,7 @@ Live prove-out still needs your `DATABASE_URL`.
 Scheduling, animals, day/week sheets, messaging, fosters, transport relays,
 urgent cover + push, shift notes, templates, away mode, certificates,
 AccessNI + references, onboarding pipeline, incident/welfare notes (staff),
-PWA, privacy notice, staff morning guide.
+PWA (root service worker, install prompt, offline shifts, push on dashboard), privacy notice, staff morning guide.
 
 ## 3. After the call (only if they ask)
 

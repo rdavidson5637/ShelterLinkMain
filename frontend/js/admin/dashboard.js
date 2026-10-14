@@ -3,6 +3,7 @@ import { requireAuth, checkAuth, logout, isStaffOrAdminRole, applyRoleVisibility
 import { formatDateOnly } from '../utils/dateFormat.js';
 import { createStatusBadge } from '../components/statusBadge.js';
 import { renderStatCards } from '../components/statCard.js';
+import { mountInstallPrompt } from '../components/installPrompt.js';
 
 const logoutButton = document.getElementById('logoutButton');
 const statsGrid = document.getElementById('statsGrid');
@@ -213,6 +214,7 @@ function attachExportHandlers() {
 }
 
 async function init() {
+  mountInstallPrompt(document.getElementById('installPrompt'));
   await requireAuth();
   await enforceAdmin();
 

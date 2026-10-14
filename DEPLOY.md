@@ -54,6 +54,8 @@ reset emails need working `EMAIL_*` SMTP or the token is rolled back.
 | `NODE_ENV` | `production` |
 | `PORT` | Provided by the host |
 | `SHELTER_TIMEZONE` | IANA zone the shelter is physically in, e.g. `Europe/London`. The host almost never runs in this zone (most default to UTC) — this is what the day sheet/week sheet use to work out "today", not the server clock |
+| `TZ` | Set `Europe/London` on the host as well. `utils/scheduler.js` matches cron hours against the host clock, so daily jobs only run at local 08:00 if the process timezone is London |
+| `WEB_PUSH_VAPID_PUBLIC_KEY` `WEB_PUSH_VAPID_PRIVATE_KEY` `WEB_PUSH_VAPID_SUBJECT` | Generate once with `npx web-push generate-vapid-keys`. Do not rotate after launch |
 | `EMAIL_HOST` `EMAIL_PORT` `EMAIL_USER` `EMAIL_PASS` `EMAIL_FROM` | Brevo SMTP (or equivalent) |
 | `DATA_RETENTION_YEARS` | Confirm (default 3) |
 | `DB_CONNECTION_LIMIT` | `10` (Supabase free-tier budget) |

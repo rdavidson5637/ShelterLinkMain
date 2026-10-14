@@ -7,6 +7,7 @@ const {
   regenerateSession,
   destroyUserSessions,
 } = require('../utils/sessionCookie');
+const pushService = require('../utils/pushService');
 const {
   hashResetToken,
   createResetToken,
@@ -63,7 +64,7 @@ async function register(req, res) {
 
 async function login(req, res) {
   try {
-    const { email, password } = req.body || {};
+    const { email, password, rememberMe, pushEndpoint } = req.body || {};
     if (!email || !password) {
       return res.status(400).json({ error: 'email and password are required' });
     }
@@ -90,11 +91,60 @@ async function login(req, res) {
       role: user.role,
     });
 
+    if (!req.session.cookie) req.session.cookie = {};
+    req.session.loginAt = Date.now();
+    if (rememberMe) {
+      if (user.role === 'volunteer') {
+        req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000;
+      } else if (user.role === 'staff' || user.role === 'admin') {
+        req.session.cookie.maxAge = 8 * 60 * 60 * 1000;
+      }
+    }
+
     await pool.execute('UPDATE users SET last_login = NOW() WHERE user_id = ?', [user.user_id]);
 
-    return res.status(200).json(respondSafeUser(user));
+    let pushReset = false;
+    if (pushEndpoint) {
+      try {
+        const existing = await pushService.findByEndpoint(pushEndpoint);
+        if (existing && Number(existing.user_id) !== Number(user.user_id)) {
+          await pushService.removeByEndpoint(pushEndpoint);
+          pushReset = true;
+        }
+      } catch (pushError) {
+        console.warn('[Auth] pushEndpoint check failed:', pushError.message);
+      }
+    }
+
+    const body = respondSafeUser(user);
+    if (pushReset) body.pushReset = true;
+    return res.status(200).json(body);
   } catch (error) {
     console.error('[Auth] login error:', error.message);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+async function logoutAll(req, res) {
+  try {
+    if (!req.session || !req.session.userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const userId = req.session.userId;
+    await destroyUserSessions(pool, userId);
+    if (typeof req.session.destroy === 'function') {
+      return req.session.destroy((err) => {
+        if (err) {
+          return res.status(500).json({ error: 'Failed to logout' });
+        }
+        clearSessionCookie(res);
+        return res.status(200).json({ message: 'Signed out of all devices' });
+      });
+    }
+    clearSessionCookie(res);
+    return res.status(200).json({ message: 'Signed out of all devices' });
+  } catch (error) {
+    console.error('[Auth] logoutAll error:', error.message);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -333,6 +383,7 @@ module.exports = {
   registerAdmin,
   login,
   logout,
+  logoutAll,
   getCurrentUser,
   forgotPassword,
   validateResetToken,

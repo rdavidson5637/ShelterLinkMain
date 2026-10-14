@@ -3,15 +3,12 @@
 const Qualification = require('../models/Qualification');
 const { sendQualificationExpiryNotice } = require('../utils/emailService');
 const { recordJobRun } = require('../utils/jobLog');
+const { formatShelterDate } = require('../utils/shelterTime');
 
 const JOB_NAME = 'qualificationExpiry';
 
 function formatDate(value) {
-  if (!value) return 'TBA';
-  const raw = String(value).slice(0, 10);
-  const d = new Date(`${raw}T00:00:00`);
-  if (Number.isNaN(d.getTime())) return raw;
-  return d.toLocaleDateString();
+  return formatShelterDate(value);
 }
 
 async function notifyRow(row, kind, now) {

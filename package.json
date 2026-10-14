@@ -13,13 +13,17 @@
     "db:reset": "node scripts/setup-db.js --seed",
     "db:clean-demo": "node scripts/clean-demo.js",
     "create-admin": "node create-admin.js",
-    "test": "node --test --test-concurrency=1 \"test/*.test.js\"",
+    "test": "node --test --test-concurrency=1 test/*.test.js",
     "migrate": "node scripts/migrate.js",
     "smoke": "node scripts/smoke-test.js",
-    "backup": "node scripts/backup.js"
+    "backup": "node scripts/backup.js",
+    "icons": "node scripts/generate-icons.js",
+    "pwa:check": "node scripts/pwa-check.js",
+    "postinstall": "node scripts/ensure-vendor.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "compression": "^1.8.2",
     "connect-pg-simple": "^10.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
@@ -36,6 +40,7 @@
     "xss": "^1.0.15"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "sharp": "^0.34.5"
   }
 }

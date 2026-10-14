@@ -129,7 +129,7 @@ test('confirmOffer is atomic: placement + animal foster + request matched + reje
       return [[
         {
           id: 3,
-          animal_id: 2,
+          animal_id: 4,
           created_by: 1,
           status: 'matched',
           requirements_json: null,
@@ -253,4 +253,58 @@ test('endPlacement restores animal availability', async () => {
   const animalUpdate = mock.calls.find((c) => /UPDATE animals SET status/i.test(c.sql));
   assert.equal(animalUpdate.params[0], 'available');
   assert.equal(animalUpdate.params[1], 2);
+});
+
+test('createRequest controller pushes to matching volunteers and survives push errors', async () => {
+  const pushService = require('../utils/pushService');
+  const fosterCtrl = require('../controllers/fosterController');
+  const calls = [];
+  const orig = pushService.sendToUsers;
+  pushService.sendToUsers = async (...args) => {
+    calls.push(args);
+    return { sent: 1 };
+  };
+
+  mock.setHandler(async (sql) => {
+    if (/FROM animals/i.test(sql)) return [[{ id: 4, name: 'Rex', species: 'dog', handling_notes: 'secret' }]];
+    if (/FROM foster_placements/i.test(sql)) return [[]];
+    if (/INSERT INTO foster_requests/i.test(sql)) return [{ insertId: 22 }];
+    if (/FROM foster_requests fr/i.test(sql)) {
+      return [[{
+        id: 22,
+        animal_id: 4,
+        needed_from: '2026-06-11',
+        animal_species: 'dog',
+        animal_handling_notes: 'secret',
+        requirements_json: {},
+        status: 'open',
+      }]];
+    }
+    if (/FROM volunteer_profiles/i.test(sql)) {
+      return [[
+        { user_id: 10, foster_approved: 1, away_until: null },
+        { user_id: 11, foster_approved: 1, away_until: '2099-01-01' },
+      ]];
+    }
+    return [[]];
+  });
+
+  const res = { statusCode: 200, body: undefined, status(c) { this.statusCode = c; return this; }, json(b) { this.body = b; return this; } };
+  await fosterCtrl.createRequest(
+    { session: { userId: 1, role: 'admin' }, body: { animal_id: 4, needed_from: '2026-06-11' } },
+    res
+  );
+  assert.equal(res.statusCode, 201);
+  assert.equal(calls[0][2].category, 'fosters');
+  assert.deepEqual(calls[0][0], [10]);
+  assert.equal(JSON.stringify(calls[0][1]).includes('secret'), false);
+
+  pushService.sendToUsers = async () => { throw new Error('push down'); };
+  const res2 = { statusCode: 200, body: undefined, status(c) { this.statusCode = c; return this; }, json(b) { this.body = b; return this; } };
+  await fosterCtrl.createRequest(
+    { session: { userId: 1, role: 'admin' }, body: { animal_id: 4, needed_from: '2026-06-11' } },
+    res2
+  );
+  assert.equal(res2.statusCode, 201);
+  pushService.sendToUsers = orig;
 });

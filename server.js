@@ -3,7 +3,9 @@ const session = require('express-session');
 const PgSession = require('connect-pg-simple')(session);
 const cors = require('cors');
 const helmet = require('helmet');
+const compression = require('compression');
 const dotenv = require('dotenv');
+const fs = require('fs');
 const path = require('path');
 const { testConnection, pgPool, closePool, pool } = require('./config/database');
 const { sanitizeInput } = require('./middleware/sanitize');
@@ -12,6 +14,8 @@ const { errorHandler } = require('./middleware/errorHandler');
 const { validateEnv } = require('./utils/validateEnv');
 const { corsOriginDelegate } = require('./utils/corsOrigins');
 const { sessionCookieOptions } = require('./utils/sessionCookie');
+const { cspDirectives } = require('./utils/csp');
+const { buildServiceWorker, getSwVersion } = require('./utils/serviceWorker');
 
 dotenv.config();
 validateEnv();
@@ -22,18 +26,11 @@ app.set('trust proxy', 1);
 
 app.use(helmet({
   contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'"],
-      fontSrc: ["'self'", "https:", "data:"],
-      workerSrc: ["'self'"],
-      manifestSrc: ["'self'"],
-    },
+    directives: cspDirectives(process.env.NODE_ENV === 'production'),
   },
 }));
+
+app.use(compression());
 
 // Credentialed CORS: production allowlists https://shelterlink.online (plus
 // APP_URL / CORS_ORIGINS). Non-production allows localhost only. Same-origin
@@ -54,16 +51,31 @@ app.get('/public/js/auth.js', (req, res) => {
   res.status(404).type('text/plain').send('Not found');
 });
 
-// Serve static files from frontend directory (must be before other middleware)
-// Never serve the stale localhost API config, even if the file is restored.
-app.get('/public/js/config.js', (req, res) => {
-  res.status(404).type('text/plain').send('Not found');
-});
-app.get('/public/js/auth.js', (req, res) => {
-  res.status(404).type('text/plain').send('Not found');
+const swSource = fs.readFileSync(path.join(__dirname, 'frontend', 'sw.js'), 'utf8');
+const swBody = buildServiceWorker(swSource, getSwVersion());
+app.get('/sw.js', (req, res) => {
+  res.set({
+    'Content-Type': 'application/javascript; charset=utf-8',
+    'Cache-Control': 'no-cache',
+    'Service-Worker-Allowed': '/',
+  });
+  res.send(swBody);
 });
 
-app.use(express.static(path.join(__dirname, 'frontend')));
+app.use(express.static(path.join(__dirname, 'frontend'), {
+  setHeaders(res, filePath) {
+    const rel = filePath.replace(/\\/g, '/');
+    if (rel.includes('/public/css/vendor/') || rel.includes('/public/js/vendor/')) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      return;
+    }
+    if (rel.includes('/public/icons/') || rel.includes('/public/images/')) {
+      res.setHeader('Cache-Control', 'public, max-age=604800');
+      return;
+    }
+    res.setHeader('Cache-Control', 'no-cache');
+  },
+}));
 
 // Body parsers
 app.use(express.json());
@@ -190,6 +202,8 @@ app.get('/', (req, res) => {
 app.get('/kiosk', (req, res) => {
   res.sendFile(path.join(__dirname, 'frontend', 'kiosk.html'));
 });
+
+app.get('/launch', require('./controllers/launchController').launch);
 
 // Health/test route for API
 app.get('/api', (req, res) => {
