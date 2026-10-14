@@ -9,6 +9,7 @@ const { notifyOnOpportunityCreate } = require('../jobs/opportunityMatchDigest');
 const { isStaffOrAdmin } = require('../middleware/auth');
 const { sendUrgentCover } = require('../utils/emailService');
 const pushService = require('../utils/pushService');
+const { buildUrgentPayload } = require('../utils/pushPayloads');
 const Vetting = require('../models/Vetting');
 
 const REQUIRED_FIELDS = ['title', 'description', 'location', 'start_date', 'end_date'];
@@ -486,15 +487,12 @@ async function flagOpportunityUrgent(req, res) {
     try {
       pushResult = await pushService.sendToUsers(
         recipients.map((r) => r.user_id),
-        {
+        buildUrgentPayload({
           title: subject,
-          body: `Urgent cover needed for ${opportunity.title || 'a shift'}${
-            whenLabel ? ` on ${whenLabel}` : ''
-          }.`,
-          url: '/pages/volunteer/browse-shifts.html',
-          type: 'urgent_cover',
+          whenLabel,
+          location: opportunity.location,
           opportunityId: Number(id),
-        },
+        }),
         { category: 'urgent' }
       );
     } catch (pushError) {
