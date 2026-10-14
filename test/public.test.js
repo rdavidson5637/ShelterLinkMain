@@ -144,7 +144,7 @@ test('ics output has basic VCALENDAR structure and escapes text', () => {
       uid: '1@test',
       start: '20260101T100000Z',
       end: '20260101T120000Z',
-      summary: 'Dogs, cats; walk\nline',
+      summary: 'Dogs, cats; walk\\nline',
       description: 'Hello, world',
       location: 'Main, Yard',
     },
@@ -153,7 +153,7 @@ test('ics output has basic VCALENDAR structure and escapes text', () => {
   assert.match(ics, /BEGIN:VEVENT/);
   assert.match(ics, /END:VEVENT/);
   assert.match(ics, /END:VCALENDAR/);
-  assert.match(ics, /SUMMARY:Dogs\\, cats\\; walk\\nline/);
+  assert.match(ics, /SUMMARY:Dogs\\\\, cats\\\\; walk\\\\nline/);
 });
 
 test('my-shifts feed requires token and wrong token 404s', async () => {
@@ -207,4 +207,21 @@ test('production public list hides smoke-test shifts', async () => {
   assert.strictEqual(res.statusCode, 200);
   assert.strictEqual(res.body.length, 1);
   assert.strictEqual(res.body[0].title, 'Kennel clean');
+});
+
+test('ical feed URL uses APP_URL when set', async () => {
+  const prev = process.env.APP_URL;
+  process.env.APP_URL = 'https://shelterlink.online';
+  mock.setHandler(async (sql) => {
+    if (/ical_token/i.test(sql) && /SELECT/i.test(sql)) {
+      return [[{ user_id: 3, ical_token: 'tok123' }]];
+    }
+    return [{ affectedRows: 1 }];
+  });
+  const res = makeRes();
+  await publicCtrl.getMyIcalToken({ session: { userId: 3 }, protocol: 'http', get: () => 'localhost:3000' }, res);
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.url, 'https://shelterlink.online/api/my-shifts.ics?token=tok123');
+  if (prev === undefined) delete process.env.APP_URL;
+  else process.env.APP_URL = prev;
 });
