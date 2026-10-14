@@ -70,10 +70,6 @@ function mapPlacement(row) {
   };
 }
 
-/**
- * Returns true when the volunteer is foster-approved and satisfies every
- * stated requirement on the request.
- */
 function matchRequestToProfile(requirements, profile) {
   if (!profile || Number(profile.foster_approved) !== 1) {
     return false;
@@ -328,6 +324,27 @@ async function listOpenMatchingForUser(userId) {
     });
 }
 
+async function listMatchingVolunteerIds(request, now = new Date()) {
+  const { todayIso } = require('../utils/shelterTime');
+  const today = todayIso(now);
+  const [rows] = await pool.execute(
+    `
+      SELECT vp.*
+      FROM volunteer_profiles vp
+      WHERE vp.foster_approved = 1
+    `
+  );
+  return rows
+    .filter((profile) => {
+      if (profile.away_until) {
+        const away = String(profile.away_until).slice(0, 10);
+        if (away >= today) return false;
+      }
+      return matchRequestToProfile(request.requirements_json || request.requirements, profile);
+    })
+    .map((profile) => Number(profile.user_id));
+}
+
 async function findOfferById(id) {
   const [rows] = await pool.execute(
     `
@@ -410,10 +427,6 @@ async function createOffer({ requestId, userId, note = null } = {}) {
   }
 }
 
-/**
- * Atomically accept an offer: create placement, set animal to foster,
- * mark request matched, accept offer, reject sibling pending offers.
- */
 async function confirmOffer(offerId, { startedOn = null, expectedEndOn = null, notes = null } = {}) {
   const connection = await pool.getConnection();
   try {
@@ -448,11 +461,6 @@ async function confirmOffer(offerId, { startedOn = null, expectedEndOn = null, n
       throw err;
     }
 
-    // Guard against double-placing the same animal: two separate open
-    // requests for one animal (e.g. a stale request nobody cancelled) could
-    // otherwise both be confirmed. Lock any existing active placement row so
-    // two concurrent confirmOffer calls for the same animal can't both pass
-    // this check before either commits.
     const [activeRows] = await connection.execute(
       `SELECT id FROM foster_placements WHERE animal_id = ? AND status = 'active' FOR UPDATE`,
       [offer.animal_id]
@@ -679,6 +687,7 @@ module.exports = {
   updateRequest,
   cancelRequest,
   listOpenMatchingForUser,
+  listMatchingVolunteerIds,
   createOffer,
   findOfferById,
   listOffersForRequest,
