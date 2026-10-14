@@ -3,13 +3,22 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1b5e20" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Page not found - ShelterLink</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" />
     <link rel="stylesheet" href="/public/css/custom.css" />
   </head>
   <body>
     <main class="container">
       <article class="auth-card" style="max-width: 680px; margin-top: 2rem;">
+        <p><a href="/launch">Back to ShelterLink</a></p>
         <h1>Oops! We could not find that page.</h1>
         <p>The page you were looking for has moved or does not exist.</p>
         <button id="goButton" type="button">Go to Dashboard</button>
@@ -20,32 +29,7 @@
       <small>&copy; 2026 ShelterLink</small>
     </footer>
 
-    <script type="module">
-      import { checkAuth } from '/js/auth.js';
-
-      function goToDashboard(user) {
-        if (user?.role === 'admin') {
-          window.location.href = '/pages/admin/dashboard.html';
-        } else {
-          window.location.href = '/pages/volunteer/dashboard.html';
-        }
-      }
-
-      document.addEventListener('DOMContentLoaded', async () => {
-        const btn = document.getElementById('goButton');
-        const user = await checkAuth();
-        if (user) {
-          btn.textContent = 'Go to Dashboard';
-          btn.onclick = () => goToDashboard(user);
-        } else {
-          btn.textContent = 'Go to Home Page';
-          btn.onclick = () => {
-            window.location.href = '/index.html';
-          };
-        }
-      });
-    </script>
+    <script type="module" src="/js/error/404.js"></script>
       <script type="module" src="/js/utils/footerYear.js"></script>
   </body>
 </html>
-
