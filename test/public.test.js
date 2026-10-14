@@ -144,7 +144,7 @@ test('ics output has basic VCALENDAR structure and escapes text', () => {
       uid: '1@test',
       start: '20260101T100000Z',
       end: '20260101T120000Z',
-      summary: 'Dogs, cats; walk\\nline',
+      summary: 'Dogs, cats; walk\nline',
       description: 'Hello, world',
       location: 'Main, Yard',
     },
@@ -153,7 +153,7 @@ test('ics output has basic VCALENDAR structure and escapes text', () => {
   assert.match(ics, /BEGIN:VEVENT/);
   assert.match(ics, /END:VEVENT/);
   assert.match(ics, /END:VCALENDAR/);
-  assert.match(ics, /SUMMARY:Dogs\\\\, cats\\\\; walk\\\\nline/);
+  assert.match(ics, /SUMMARY:Dogs\\, cats\\; walk\\nline/);
 });
 
 test('my-shifts feed requires token and wrong token 404s', async () => {
