@@ -4,6 +4,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 process.env.NODE_ENV = 'test';
+// Jobs skip when email is unconfigured; the email service itself is stubbed below.
+process.env.EMAIL_HOST = 'smtp.test.invalid';
+process.env.EMAIL_FROM = 'ShelterLink <test@example.com>';
 
 const mock = require('./helpers/mockDb');
 

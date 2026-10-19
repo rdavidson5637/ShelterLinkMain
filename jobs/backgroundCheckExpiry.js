@@ -3,6 +3,7 @@
 const Vetting = require('../models/Vetting');
 const { sendEmail } = require('../utils/emailService');
 const { recordJobRun } = require('../utils/jobLog');
+const { isEmailConfigured } = require('../utils/emailConfig');
 
 const JOB_NAME = 'backgroundCheckExpiry';
 
@@ -38,7 +39,10 @@ async function runBackgroundCheckExpiry(now = new Date()) {
   }
 
   const staffEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
-  if (staffEmail && warnings.length) {
+  if (staffEmail && warnings.length && !isEmailConfigured()) {
+    // Expiry above still ran; only the staff warning email is skipped.
+    console.warn('[Job:backgroundCheckExpiry] staff warning skipped: email not configured');
+  } else if (staffEmail && warnings.length) {
     const listHtml = warnings
       .map((w) => {
         const name = `${w.first_name || ''} ${w.last_name || ''}`.trim() || `User ${w.user_id}`;

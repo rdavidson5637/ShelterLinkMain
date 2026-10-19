@@ -3,6 +3,7 @@
 const MessageThread = require('../models/MessageThread');
 const { sendThreadDigest } = require('../utils/emailService');
 const { recordJobRun } = require('../utils/jobLog');
+const { skipJobIfEmailUnconfigured } = require('../utils/emailConfig');
 
 const JOB_NAME = 'messageDigest';
 
@@ -12,6 +13,8 @@ const JOB_NAME = 'messageDigest';
  */
 async function runMessageDigest(options = {}) {
   const now = options.now || new Date();
+  const skippedRun = await skipJobIfEmailUnconfigured(JOB_NAME, recordJobRun);
+  if (skippedRun) return { sent: 0, skipped: 0, failed: 0, detail: 'skipped:email_not_configured' };
   let sent = 0;
   let skipped = 0;
   let failed = 0;

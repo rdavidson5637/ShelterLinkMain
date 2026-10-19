@@ -9,12 +9,13 @@ const { testConnection, pgPool, closePool, pool } = require('./config/database')
 const { sanitizeInput } = require('./middleware/sanitize');
 const { apiLimiter } = require('./middleware/rateLimiter');
 const { errorHandler } = require('./middleware/errorHandler');
-const { validateEnv } = require('./utils/validateEnv');
+const { validateEnv, logStartupWarnings } = require('./utils/validateEnv');
 const { corsOriginDelegate } = require('./utils/corsOrigins');
 const { sessionCookieOptions } = require('./utils/sessionCookie');
 
 dotenv.config();
 validateEnv();
+logStartupWarnings();
 
 const app = express();
 app.set('etag', false);
