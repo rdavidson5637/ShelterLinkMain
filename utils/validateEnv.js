@@ -1,5 +1,7 @@
 'use strict';
 
+const { isEmailConfigured } = require('./emailConfig');
+
 const WEAK_PATTERN = /change_me|replace_me|shelterlink-admin|\bdemo\b|changeme/i;
 
 function isBlank(value) {
@@ -36,6 +38,38 @@ function collectProductionProblems() {
   return missing;
 }
 
+/**
+ * Optional integrations that are off in production. Non-fatal: the app runs
+ * without them, but features degrade silently, so we say so once at boot.
+ */
+function collectProductionWarnings() {
+  if (process.env.NODE_ENV !== 'production') return [];
+  const warnings = [];
+  if (!isEmailConfigured()) {
+    warnings.push(
+      'Email is not configured (EMAIL_HOST, EMAIL_FROM/EMAIL_USER, EMAIL_PASS): password resets and all email digests are off'
+    );
+  }
+  const vapidPublic = process.env.WEB_PUSH_VAPID_PUBLIC_KEY || process.env.VAPID_PUBLIC_KEY;
+  const vapidPrivate = process.env.WEB_PUSH_VAPID_PRIVATE_KEY || process.env.VAPID_PRIVATE_KEY;
+  if (isBlank(vapidPublic) || isBlank(vapidPrivate)) {
+    warnings.push('Web push is not configured (WEB_PUSH_VAPID_PUBLIC_KEY / WEB_PUSH_VAPID_PRIVATE_KEY): urgent cover push alerts are off');
+  }
+  if (isBlank(process.env.SHELTER_EMERGENCY_PHONE)) {
+    warnings.push('SHELTER_EMERGENCY_PHONE is not set: foster emergency phone will not be shown');
+  }
+  return warnings;
+}
+
+function logStartupWarnings() {
+  const warnings = collectProductionWarnings();
+  if (warnings.length) {
+    console.warn('! Optional integrations missing:');
+    warnings.forEach((w) => console.warn(`  - ${w}`));
+  }
+  return warnings;
+}
+
 function validateEnv({ exitProcess } = {}) {
   const missing = collectProductionProblems();
   const shouldExit = exitProcess ?? process.env.NODE_ENV === 'production';
@@ -52,4 +86,6 @@ module.exports = {
   isWeakSecret,
   isWeakAppUrl,
   collectProductionProblems,
+  collectProductionWarnings,
+  logStartupWarnings,
 };

@@ -4,6 +4,7 @@ const Qualification = require('../models/Qualification');
 const { sendQualificationExpiryNotice } = require('../utils/emailService');
 const { recordJobRun } = require('../utils/jobLog');
 const { formatShelterDate } = require('../utils/shelterTime');
+const { skipJobIfEmailUnconfigured } = require('../utils/emailConfig');
 
 const JOB_NAME = 'qualificationExpiry';
 
@@ -27,6 +28,8 @@ async function notifyRow(row, kind, now) {
 }
 
 async function runQualificationExpiry(now = new Date()) {
+  const skippedRun = await skipJobIfEmailUnconfigured(JOB_NAME, recordJobRun);
+  if (skippedRun) return 'skipped:email_not_configured';
   const warnings = await Qualification.findNeedingExpiryWarning(now);
   const expired = await Qualification.findNeedingExpiryNotice(now);
 

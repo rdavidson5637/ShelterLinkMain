@@ -3,6 +3,7 @@
 const { pool } = require('../config/database');
 const { sendWeeklyDigest } = require('../utils/emailService');
 const { recordJobRun } = require('../utils/jobLog');
+const { skipJobIfEmailUnconfigured } = require('../utils/emailConfig');
 
 const JOB_NAME = 'weeklyDigest';
 
@@ -164,6 +165,11 @@ async function runWeeklyDigest(options = {}) {
   const weekStart = startOfIsoWeek(now);
   const weekEnd = endOfIsoWeek(now);
   const weekKey = isoWeekKey(now);
+
+  const skippedRun = await skipJobIfEmailUnconfigured(JOB_NAME, recordJobRun);
+  if (skippedRun) {
+    return { sent: 0, skipped: 0, failed: 0, detail: 'skipped:email_not_configured', weekKey };
+  }
 
   let sent = 0;
   let skipped = 0;
