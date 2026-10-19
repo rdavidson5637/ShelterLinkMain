@@ -37,3 +37,35 @@ test('filterNavForRole hides admin navigation from volunteers', async () => {
   const applications = VOLUNTEER_NAV.find((item) => item.id === 'applications');
   assert.equal(applications.href, '/pages/volunteer/my-applications.html');
 });
+
+test('volunteer nav keeps daily items primary and tucks the rest under More', async () => {
+  const { VOLUNTEER_MORE, VOLUNTEER_NAV, VOLUNTEER_PRIMARY } = await import(
+    '../frontend/js/components/navConfig.js'
+  );
+  assert.deepEqual(
+    VOLUNTEER_PRIMARY.map((item) => item.label),
+    ['Home', 'Find shifts', 'Calendar', 'Messages']
+  );
+  assert.deepEqual(
+    VOLUNTEER_MORE.map((item) => item.label),
+    ['Applications', 'Hours', 'Foster', 'Transport', 'Profile']
+  );
+  assert.deepEqual(
+    VOLUNTEER_NAV.map((item) => item.id),
+    ['dashboard', 'browse', 'calendar', 'messages', 'applications', 'hours', 'foster', 'transport', 'profile']
+  );
+});
+
+test('isCurrentPath treats hours subpages as Hours, and More detects those paths', async () => {
+  const { isCurrentPath, volunteerMoreContainsPath } = await import(
+    '../frontend/js/components/navConfig.js'
+  );
+  const hours = '/pages/volunteer/my-hours.html';
+  assert.equal(isCurrentPath(hours, '/pages/volunteer/my-hours.html'), true);
+  assert.equal(isCurrentPath(hours, '/pages/volunteer/log-hours.html'), true);
+  assert.equal(isCurrentPath(hours, '/pages/volunteer/certificate.html'), true);
+  assert.equal(isCurrentPath(hours, '/pages/volunteer/calendar.html'), false);
+  assert.equal(volunteerMoreContainsPath('/pages/volunteer/foster.html'), true);
+  assert.equal(volunteerMoreContainsPath('/pages/volunteer/log-hours.html'), true);
+  assert.equal(volunteerMoreContainsPath('/pages/volunteer/dashboard.html'), false);
+});
