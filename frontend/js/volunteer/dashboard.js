@@ -7,6 +7,7 @@ import { escapeHtml } from '../utils/escapeHtml.js';
 import { mountInstallPrompt } from '../components/installPrompt.js';
 import { mountPushToggle } from '../components/pushToggle.js';
 import { buildCalendarSubscribeUrls } from '../utils/calendarUrls.js';
+import { shelterName } from '../utils/branding.js';
 
 const userNameEl = document.getElementById('userName');
 const profileStatusBannerEl = document.getElementById('profileStatusBanner');
@@ -152,7 +153,7 @@ function drawImpactCard(stats) {
   ctx.fillText(earned.length ? `Badges: ${earned.map((b) => b.label).join(', ')}` : 'Keep going — badges await!', 48, 340);
   ctx.font = '16px system-ui, sans-serif';
   ctx.fillStyle = 'rgba(255,255,255,0.85)';
-  ctx.fillText('Assisi Animal Sanctuary', 48, 390);
+  ctx.fillText(shelterName(), 48, 390);
 }
 
 function renderCommunityServiceProgress(profile, approvedHours) {

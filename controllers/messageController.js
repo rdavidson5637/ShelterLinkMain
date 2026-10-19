@@ -1,6 +1,7 @@
 'use strict';
 
 const AdminMessage = require('../models/AdminMessage');
+const { shelterNameHtml } = require('../utils/branding');
 const { sendEmail } = require('../utils/emailService');
 
 function sleep(ms) {
@@ -31,7 +32,7 @@ function toPlainTextHtml(subject, body) {
     <p>${safeBody}</p>
     <hr/>
     <p style="font-size:0.85em;color:#666;">
-      You received this message from ShelterLink (Assisi Animal Sanctuary).
+      You received this message from ShelterLink (${shelterNameHtml()}).
       To unsubscribe or update your contact preferences, please contact the shelter directly.
     </p>
   `;

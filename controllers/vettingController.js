@@ -1,6 +1,7 @@
 'use strict';
 
 const Vetting = require('../models/Vetting');
+const { getBranding, shelterNameHtml } = require('../utils/branding');
 const User = require('../models/User');
 const { isStaffOrAdmin } = require('../middleware/auth');
 const { sendEmail } = require('../utils/emailService');
@@ -49,11 +50,11 @@ async function requestReference(req, res) {
     try {
       await sendEmail(
         referee_email,
-        'Reference request - ShelterLink / Assisi Animal Sanctuary',
+        `Reference request - ShelterLink / ${getBranding().name}`,
         `
         <p>Hello ${reference.referee_name},</p>
         <p>${volunteer.first_name || 'A volunteer'} has listed you as a referee for volunteering
-        at Assisi Animal Sanctuary via ShelterLink.</p>
+        at ${shelterNameHtml()} via ShelterLink.</p>
         <p>Please complete this short confidential form:</p>
         <p><a href="${link}">Provide a reference</a></p>
         <p>This link expires on ${String(reference.expires_at).slice(0, 10)}.</p>

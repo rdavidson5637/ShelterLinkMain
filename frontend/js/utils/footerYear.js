@@ -5,13 +5,14 @@
  */
 import './skipLink.js';
 import '../pwa.js';
+import { shelterName } from './branding.js';
 
 export function currentFooterYear(now = new Date()) {
   return now.getFullYear();
 }
 
 export function footerText(now = new Date()) {
-  return `© ${currentFooterYear(now)} ShelterLink. Assisi Animal Sanctuary.`;
+  return `© ${currentFooterYear(now)} ShelterLink. ${shelterName()}.`;
 }
 
 export function applySiteFooter(root = document) {

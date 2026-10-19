@@ -71,6 +71,23 @@ Create the first real admin after deploy (`POST /api/auth/register-admin` stays 
 npm run create-admin -- "Name" admin@your-shelter.org 'a-strong-password'
 ```
 
+## Running ShelterLink for another rescue
+
+One codebase serves any rescue; the identity comes from environment variables
+(see `.env.example`). With none set, the site is Assisi Animal Sanctuary.
+
+| Variable | Used for |
+| --- | --- |
+| `SHELTER_NAME` | Page titles and text, emails, web app manifest |
+| `SHELTER_SHORT_NAME` | Short mentions ("shared with Assisi staff"). Defaults to the full name when `SHELTER_NAME` is set |
+| `SHELTER_LOCATION` | "Browse open shifts in ..." and the footer |
+| `SHELTER_PRIMARY_COLOUR` | PWA theme colour (hex, e.g. `#1b5e20`) |
+| `SHELTER_WEBSITE_URL`, `SHELTER_LOGO_URL`, `SHELTER_CHARITY_NUMBER`, `SHELTER_CONTACT_EMAIL` | Exposed to the front end through `/api/public/config` as `branding` |
+
+Also set `APP_URL` to the rescue's own domain (canonical links, sitemap and the
+www redirect use it) and `WEB_PUSH_VAPID_SUBJECT` to a mailbox you control.
+Invalid colours, URLs and emails are ignored and the default is used.
+
 ## 4. Health checks and backups
 
 - Point UptimeRobot (or the host health check) at `GET /healthz`.
