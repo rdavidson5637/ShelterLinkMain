@@ -3,6 +3,7 @@
 const Tag = require('../models/Tag');
 const { sendOpportunityMatchDigest } = require('../utils/emailService');
 const { recordJobRun } = require('../utils/jobLog');
+const { skipJobIfEmailUnconfigured } = require('../utils/emailConfig');
 
 const JOB_NAME = 'opportunityMatchDigest';
 
@@ -21,6 +22,8 @@ function formatDate(value) {
  */
 async function runOpportunityMatchDigest(options = {}) {
   const now = options.now || new Date();
+  const skippedRun = await skipJobIfEmailUnconfigured(JOB_NAME, recordJobRun);
+  if (skippedRun) return { sent: 0, skipped: 0, failed: 0, detail: 'skipped:email_not_configured' };
   const maxUsers =
     typeof options.maxUsers === 'number' ? options.maxUsers : null;
 

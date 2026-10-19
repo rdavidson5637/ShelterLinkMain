@@ -48,7 +48,7 @@ See `DEPLOY.md` for production setup and `ASSISI-DEMO.md` for the shelter demo s
 ## Getting started
 
 ### Prerequisites
-- Node.js 18+
+- Node.js 22+
 - A Postgres database. Local (`brew install postgresql@16`) or a free
   [Supabase](https://supabase.com) project. Use the **session pooler** URI
   (port 5432), not the transaction pooler (6543).
