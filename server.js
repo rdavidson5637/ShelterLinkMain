@@ -10,6 +10,7 @@ const { sanitizeInput } = require('./middleware/sanitize');
 const { apiLimiter } = require('./middleware/rateLimiter');
 const { errorHandler } = require('./middleware/errorHandler');
 const { validateEnv, logStartupWarnings } = require('./utils/validateEnv');
+const { wwwToApex } = require('./utils/seo');
 const { corsOriginDelegate } = require('./utils/corsOrigins');
 const { sessionCookieOptions } = require('./utils/sessionCookie');
 
@@ -63,6 +64,11 @@ app.get('/public/js/config.js', (req, res) => {
 app.get('/public/js/auth.js', (req, res) => {
   res.status(404).type('text/plain').send('Not found');
 });
+
+// SEO: www -> apex 301, robots.txt, sitemap.xml and the public pages with
+// absolute canonical/OG URLs (must come before express.static).
+app.use(wwwToApex());
+app.use(require('./routes/seo'));
 
 app.use(express.static(path.join(__dirname, 'frontend')));
 
