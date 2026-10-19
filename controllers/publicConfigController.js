@@ -20,11 +20,14 @@ const DEMO_ACCOUNTS = [
 ];
 
 const { getBranding } = require('../utils/branding');
+const { isDemoMode } = require('../utils/demoMode');
 
 function getPublicConfig(req, res) {
-  const showDemoHints = process.env.NODE_ENV !== 'production';
+  const demoMode = isDemoMode();
+  const showDemoHints = process.env.NODE_ENV !== 'production' || demoMode;
   return res.status(200).json({
     showDemoHints,
+    demoMode,
     accounts: showDemoHints ? DEMO_ACCOUNTS : [],
     branding: getBranding(),
   });

@@ -1680,3 +1680,13 @@ p {
   border-radius: 4px;
   flex-shrink: 0;
 }
+
+/* Demo instances (DEMO_MODE=true) show this on every page. */
+.demo-banner {
+  background: #fff4cc;
+  border-bottom: 1px solid #e0c36a;
+  color: #4a3b00;
+  font-size: 0.875rem;
+  padding: 0.35rem 1rem;
+  text-align: center;
+}

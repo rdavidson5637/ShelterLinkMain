@@ -14,6 +14,7 @@
     "dev": "nodemon server.js",
     "db:setup": "node scripts/setup-db.js --no-seed",
     "db:reset": "node scripts/setup-db.js --seed",
+    "db:demo": "node scripts/setup-db.js --demo",
     "db:clean-demo": "node scripts/clean-demo.js",
     "create-admin": "node create-admin.js",
     "test": "node --test --test-concurrency=1 test/*.test.js",

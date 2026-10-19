@@ -5,6 +5,7 @@ const path = require('path');
 const express = require('express');
 const { siteOrigin, buildRobotsTxt, buildSitemapXml } = require('../utils/seo');
 const { getBranding, applyBrandingTokens, escapeHtml } = require('../utils/branding');
+const { isDemoMode } = require('../utils/demoMode');
 
 const FRONTEND = path.join(__dirname, '..', 'frontend');
 const router = express.Router();
@@ -43,7 +44,8 @@ const pageCache = new Map();
 function renderPage(absFile) {
   const origin = siteOrigin();
   const branding = getBranding();
-  const key = `${origin}|${JSON.stringify(branding)}|${absFile}`;
+  const demo = isDemoMode();
+  const key = `${origin}|${JSON.stringify(branding)}|${demo}|${absFile}`;
   if (!pageCache.has(key)) {
     let html = fs.readFileSync(absFile, 'utf8');
     html = html.split('%%APP_URL%%').join(origin);
@@ -52,6 +54,9 @@ function renderPage(absFile) {
       `    <meta name="shelter-name" content="${escapeHtml(branding.name)}" />\n` +
       `    <meta name="shelter-short-name" content="${escapeHtml(branding.shortName)}" />\n`;
     html = html.includes('</head>') ? html.replace('</head>', `${metas}  </head>`) : html;
+    if (demo) {
+      html = html.replace(/<body([^>]*)>/i, '<body$1>\n    <div class="demo-banner" role="status">Demo: data resets nightly</div>');
+    }
     pageCache.set(key, html);
   }
   return pageCache.get(key);

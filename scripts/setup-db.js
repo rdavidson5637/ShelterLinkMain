@@ -10,6 +10,8 @@
  *   node scripts/setup-db.js            # schema + sample data (default)
  *   node scripts/setup-db.js --no-seed  # schema only, empty database
  *   node scripts/setup-db.js --seed     # explicit schema + sample data
+ *   DEMO_MODE=true node scripts/setup-db.js --demo   # demo instance (works with NODE_ENV=production;
+ *                                                    refuses unless every account is fictional)
  *
  * or via npm:
  *   npm run db:setup      # schema only
@@ -27,21 +29,14 @@ require('dotenv').config();
 const { pgPool, closePool } = require('../config/database');
 
 const args = process.argv.slice(2);
-const isProduction = process.env.NODE_ENV === 'production';
-const forced = args.includes('--force');
-const withSeed =
-  !isProduction && (args.includes('--seed') || !args.includes('--no-seed'));
+const { resolveSetupMode, assertOnlyFictionalData } = require('../utils/demoMode');
 
-if (isProduction && !forced) {
-  console.error('\n✗ Refusing to run in production: this DROPs every table.');
-  console.error('  For a first-time production build this is expected — re-run with --force.');
-  console.error('  To upgrade an existing production database without data loss: npm run migrate');
+const mode = resolveSetupMode({ args, env: process.env });
+if (!mode.ok) {
+  console.error(`\n\u2717 ${mode.error}`);
   process.exit(1);
 }
-if (isProduction && (args.includes('--seed'))) {
-  console.error('\n✗ Refusing to load demo/sample data in production (--seed ignored in prod).');
-  process.exit(1);
-}
+const withSeed = mode.withSeed;
 
 function describeTarget() {
   if (process.env.DATABASE_URL) {
@@ -80,6 +75,9 @@ async function run() {
   }
 
   try {
+    if (mode.demo) {
+      await assertOnlyFictionalData(pgPool);
+    }
     console.log('\n→ Building schema...');
     await pgPool.query(loadSql('schema.pg.sql'));
     console.log('  ✓ Tables created.');

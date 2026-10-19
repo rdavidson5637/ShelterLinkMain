@@ -11,6 +11,8 @@ const { runDbKeepAlive } = require('./dbKeepAlive');
 const { runMessageDigest } = require('./messageDigest');
 const { runBackgroundCheckExpiry } = require('./backgroundCheckExpiry');
 const { runWeeklyDigest } = require('./weeklyDigest');
+const { runDemoReset } = require('./demoReset');
+const { isDemoMode } = require('../utils/demoMode');
 
 /**
  * Register all scheduled jobs. Importing this module must be safe under test
@@ -39,6 +41,10 @@ function registerAllJobs() {
   scheduler.registerJob('dataRetention', '30 3 * * *', () => runDataRetentionJob());
   // Daily: keep a paused-after-inactivity Supabase project awake (app host must be always-on).
   scheduler.registerJob('dbKeepAlive', '0 6 * * *', () => runDbKeepAlive());
+  // Demo instances only (DEMO_MODE=true): rebuild fictional data in the 03:xx shelter hour.
+  if (isDemoMode()) {
+    scheduler.registerJob('demoReset', '5 * * * *', () => runDemoReset());
+  }
 }
 
 module.exports = {
