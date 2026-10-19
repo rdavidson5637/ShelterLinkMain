@@ -4,6 +4,9 @@
   "description": "ShelterLink Backend API - Animal shelter volunteer management system",
   "private": true,
   "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
   "type": "commonjs",
   "main": "server.js",
   "scripts": {

@@ -4,6 +4,7 @@ const ShiftFeedback = require('../models/ShiftFeedback');
 const { createFeedbackToken } = require('../utils/feedbackToken');
 const { sendFeedbackRequest } = require('../utils/emailService');
 const { recordJobRun } = require('../utils/jobLog');
+const { skipJobIfEmailUnconfigured } = require('../utils/emailConfig');
 
 const JOB_NAME = 'feedbackRequests';
 
@@ -19,6 +20,8 @@ function formatDate(value) {
 }
 
 async function runFeedbackRequests(now = new Date()) {
+  const skippedRun = await skipJobIfEmailUnconfigured(JOB_NAME, recordJobRun);
+  if (skippedRun) return 'skipped:email_not_configured';
   const due = await ShiftFeedback.findAcceptedNeedingFeedbackRequest(now);
   let sent = 0;
   let failed = 0;
