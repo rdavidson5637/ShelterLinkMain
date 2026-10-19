@@ -3,48 +3,49 @@
 const Application = require('../models/Application');
 const { sendShiftReminder } = require('../utils/emailService');
 const { recordJobRun } = require('../utils/jobLog');
-const { skipJobIfEmailUnconfigured } = require('../utils/emailConfig');
+const { formatShelterDate, formatShelterTime } = require('../utils/shelterTime');
+const { buildReminderPayload } = require('../utils/pushPayloads');
+const pushService = require('../utils/pushService');
+const { isEmailConfigured } = require('../utils/emailConfig');
 
 const JOB_NAME = 'shiftReminders';
 
-function formatDate(value) {
-  if (!value) return 'TBA';
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return String(value).slice(0, 10);
-  return d.toLocaleDateString();
-}
-
-function formatTime(value) {
-  if (!value) return '';
-  const raw = String(value);
-  if (/T\d{2}:\d{2}/.test(raw) || /\s\d{2}:\d{2}/.test(raw)) {
-    const d = new Date(value);
-    if (!Number.isNaN(d.getTime())) {
-      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
-  }
-  return '';
-}
-
 async function runShiftReminders(now = new Date()) {
-  const skippedRun = await skipJobIfEmailUnconfigured(JOB_NAME, recordJobRun);
-  if (skippedRun) return 'skipped:email_not_configured';
+  // Push still works without email, so only the email part is skipped here.
+  const emailOn = isEmailConfigured();
+  if (!emailOn) console.warn(`[Job:${JOB_NAME}] email not configured: sending push only`);
   const due = await Application.findAcceptedNeedingReminder(now);
   let sent = 0;
   let failed = 0;
 
   for (const app of due) {
     try {
-      if (!app.email) {
-        failed += 1;
-        continue;
+      if (emailOn) {
+        if (!app.email) {
+          failed += 1;
+          continue;
+        }
+        await sendShiftReminder(app.email, {
+          title: app.opportunity_title,
+          date: formatShelterDate(app.opportunity_start_date),
+          time: formatShelterTime(app.opportunity_start_date),
+          location: app.opportunity_location,
+        });
       }
-      await sendShiftReminder(app.email, {
-        title: app.opportunity_title,
-        date: formatDate(app.opportunity_start_date),
-        time: formatTime(app.opportunity_start_date),
-        location: app.opportunity_location,
-      });
+      let pushSent = 0;
+      try {
+        const pushResult = await pushService.sendToUsers(
+          [app.user_id],
+          buildReminderPayload(app),
+          { category: 'reminders' }
+        );
+        pushSent = Number(pushResult.sent) || 0;
+      } catch (pushError) {
+        console.error('[Job:shiftReminders] push failed:', pushError.message);
+      }
+      app._pushSent = pushSent;
+      // With email off, only mark the reminder sent if a push actually went out.
+      if (!emailOn && pushSent === 0) continue;
       const marked = await Application.markReminderSent(app.application_id, now);
       if (marked) sent += 1;
     } catch (error) {
@@ -53,7 +54,8 @@ async function runShiftReminders(now = new Date()) {
     }
   }
 
-  const detail = `sent=${sent};failed=${failed};candidates=${due.length}`;
+  const pushSent = due.reduce((sum, app) => sum + (Number(app._pushSent) || 0), 0);
+  const detail = `sent=${sent};failed=${failed};candidates=${due.length};pushSent=${pushSent}`;
   try {
     await recordJobRun(JOB_NAME, failed && !sent ? 'error' : 'ok', detail);
   } catch (logError) {

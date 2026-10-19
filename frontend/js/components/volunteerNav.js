@@ -178,6 +178,20 @@ async function attachUnreadBadge(listEl) {
   }
 }
 
+function addRefreshButton(nav) {
+  if (!nav || nav.querySelector('.nav-refresh')) return;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'nav-refresh';
+  btn.setAttribute('aria-label', 'Refresh');
+  btn.innerHTML =
+    '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.6 6.4A8 8 0 1 0 20 12h-2a6 6 0 1 1-1.8-4.2L14 10h6V4l-2.4 2.4z"/></svg>';
+  btn.addEventListener('click', () => window.location.reload());
+  const logout = nav.querySelector('#logoutButton');
+  if (logout) nav.insertBefore(btn, logout);
+  else nav.appendChild(btn);
+}
+
 function bindMobileToggle(nav) {
   const toggle = nav?.querySelector('.nav-toggle');
   if (!nav || !toggle || toggle.dataset.navBound === '1') return;
@@ -201,7 +215,9 @@ async function mount() {
   if (!list) return;
   await checkAuth();
   renderVolunteerNav(list);
-  bindMobileToggle(nav || list.closest('.site-nav'));
+  const navRoot = nav || list.closest('.site-nav');
+  bindMobileToggle(navRoot);
+  addRefreshButton(navRoot);
   await attachUnreadBadge(list);
 }
 

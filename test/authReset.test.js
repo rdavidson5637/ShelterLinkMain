@@ -144,6 +144,7 @@ test('reset-password looks up the hashed token', async () => {
   const res = makeRes();
   await auth.resetPassword({ body: { token: raw, password: 'Password1' } }, res);
   assert.strictEqual(res.statusCode, 200);
+  assert.ok(mock.calls.some((c) => /DELETE FROM session/i.test(c.sql)));
 });
 
 test('logout clears connect.sid with production cookie flags when NODE_ENV=production', async () => {
