@@ -18,6 +18,9 @@ jobs:
           cache: npm
       - run: node --version
       - run: npm ci
-      # The unit tests run against an in-process mock DB (test/helpers/mockDb.js),
-      # so no Postgres service is needed here.
+      # Vendor Pico/FullCalendar (postinstall) and render A2 icons so tests
+      # that stat files under frontend/public pass without committed blobs.
+      - run: npm run icons
+      # Unit tests run against an in-process mock DB (test/helpers/mockDb.js),
+      # so no Postgres service is needed here. 350 tests, including the PWA/push suite.
       - run: npm test

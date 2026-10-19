@@ -33,6 +33,7 @@ function renderPage(relativeFile) {
 
 function servePage(relativeFile) {
   return (req, res) => {
+    res.set('Cache-Control', 'no-cache');
     res.type('html').send(renderPage(relativeFile));
   };
 }

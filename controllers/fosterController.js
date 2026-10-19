@@ -5,6 +5,8 @@ const Animal = require('../models/Animal');
 const VolunteerProfile = require('../models/VolunteerProfile');
 const { isStaffOrAdmin } = require('../middleware/auth');
 const { sendFosterPlacementConfirmation } = require('../utils/emailService');
+const pushService = require('../utils/pushService');
+const { buildFosterPayload } = require('../utils/pushPayloads');
 
 function ensureAuth(req, res) {
   if (!req.session?.userId) {
@@ -43,6 +45,20 @@ async function createRequest(req, res) {
       requirements: body.requirements || body.requirements_json,
       description: body.description,
     });
+    try {
+      const userIds = await Foster.listMatchingVolunteerIds(request);
+      await pushService.sendToUsers(
+        userIds,
+        buildFosterPayload({
+          species: request.animal_species,
+          needed_from: request.needed_from,
+          requestId: request.id,
+        }),
+        { category: 'fosters' }
+      );
+    } catch (pushError) {
+      console.error('[Foster] push failed:', pushError.message);
+    }
     return res.status(201).json(request);
   } catch (error) {
     if ([400, 409].includes(error.status)) {

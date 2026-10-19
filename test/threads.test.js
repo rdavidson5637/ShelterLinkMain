@@ -50,7 +50,7 @@ test('createOrGetForContext adds the recipient to a new direct thread, not just 
   const insertedParticipants = [];
   mock.setHandler(async (sql, params) => {
     if (/FROM message_threads/i.test(sql) && /context_type = \?/i.test(sql)) {
-      return [[]]; // no existing thread
+      return [[]];
     }
     if (/INSERT INTO message_threads/i.test(sql)) {
       return [{ insertId: 55 }];
@@ -60,7 +60,7 @@ test('createOrGetForContext adds the recipient to a new direct thread, not just 
       return [{ affectedRows: 1 }];
     }
     if (/SELECT user_id FROM users WHERE role IN/i.test(sql)) {
-      return [[{ user_id: 1 }]]; // staff creator
+      return [[{ user_id: 1 }]];
     }
     if (/FROM message_threads WHERE id/i.test(sql)) {
       return [[{ id: 55, context_type: 'direct', context_id: 42 }]];
@@ -75,8 +75,6 @@ test('createOrGetForContext adds the recipient to a new direct thread, not just 
     subject: 'Direct message',
   });
 
-  // The volunteer this thread is supposed to be "direct" with must actually
-  // be a participant, not just the staff creator.
   assert.ok(insertedParticipants.includes(42), 'recipient (context_id) was added');
   assert.ok(insertedParticipants.includes(1), 'creator was added');
 });
@@ -127,57 +125,20 @@ test('getThread strips contact fields for volunteers', async () => {
   mock.resetCalls();
   mock.setHandler(async (sql) => {
     if (/FROM message_threads WHERE id/i.test(sql)) {
-      return [[{
-        id: 5,
-        subject: 'Shift chat',
-        context_type: 'opportunity',
-        context_id: 3,
-        created_by: 1,
-        created_at: new Date().toISOString(),
-        closed_at: null,
-      }]];
+      return [[{ id: 5, subject: 'Shift chat', context_type: 'opportunity', context_id: 3, created_by: 1, created_at: new Date().toISOString(), closed_at: null }]];
     }
     if (/FROM thread_participants[\s\S]*WHERE thread_id = \? AND user_id/i.test(sql)) {
       return [[{ ok: 1 }]];
     }
     if (/FROM thread_participants tp/i.test(sql) && /INNER JOIN users/i.test(sql)) {
       return [[
-        {
-          thread_id: 5,
-          user_id: 9,
-          last_read_at: null,
-          muted: 0,
-          first_name: 'Ada',
-          last_name: 'Lovelace',
-          role: 'volunteer',
-          email: 'ada@secret.com',
-        },
-        {
-          thread_id: 5,
-          user_id: 1,
-          last_read_at: null,
-          muted: 0,
-          first_name: 'Sam',
-          last_name: 'Staff',
-          role: 'staff',
-          email: 'staff@secret.com',
-        },
+        { thread_id: 5, user_id: 9, last_read_at: null, muted: 0, first_name: 'Ada', last_name: 'Lovelace', role: 'volunteer', email: 'ada@secret.com' },
+        { thread_id: 5, user_id: 1, last_read_at: null, muted: 0, first_name: 'Sam', last_name: 'Staff', role: 'staff', email: 'staff@secret.com' },
       ]];
     }
     if (/FROM messages m/i.test(sql) && /INNER JOIN users/i.test(sql)) {
       return [[
-        {
-          id: 100,
-          thread_id: 5,
-          user_id: 1,
-          body: 'Hello team',
-          created_at: new Date().toISOString(),
-          deleted_at: null,
-          deleted_by: null,
-          first_name: 'Sam',
-          last_name: 'Staff',
-          role: 'staff',
-        },
+        { id: 100, thread_id: 5, user_id: 1, body: 'Hello team', created_at: new Date().toISOString(), deleted_at: null, deleted_by: null, first_name: 'Sam', last_name: 'Staff', role: 'staff' },
       ]];
     }
     if (/UPDATE thread_participants/i.test(sql)) return [{ affectedRows: 1 }];
@@ -207,15 +168,7 @@ test('softDeleteMessage allows volunteer own message within 15 minutes', async (
   const created = new Date(Date.now() - 5 * 60 * 1000).toISOString();
   mock.setHandler(async (sql) => {
     if (/FROM messages WHERE id/i.test(sql)) {
-      return [[{
-        id: 7,
-        thread_id: 1,
-        user_id: 9,
-        body: 'oops',
-        created_at: created,
-        deleted_at: null,
-        deleted_by: null,
-      }]];
+      return [[{ id: 7, thread_id: 1, user_id: 9, body: 'oops', created_at: created, deleted_at: null, deleted_by: null }]];
     }
     if (/UPDATE messages/i.test(sql)) return [{ affectedRows: 1 }];
     return [[]];
@@ -229,15 +182,7 @@ test('softDeleteMessage rejects volunteer deleting another user message', async 
   mock.resetCalls();
   mock.setHandler(async (sql) => {
     if (/FROM messages WHERE id/i.test(sql)) {
-      return [[{
-        id: 7,
-        thread_id: 1,
-        user_id: 2,
-        body: 'nope',
-        created_at: new Date().toISOString(),
-        deleted_at: null,
-        deleted_by: null,
-      }]];
+      return [[{ id: 7, thread_id: 1, user_id: 2, body: 'nope', created_at: new Date().toISOString(), deleted_at: null, deleted_by: null }]];
     }
     return [[]];
   });
@@ -252,15 +197,7 @@ test('softDeleteMessage rejects volunteer after 15 minutes', async () => {
   const old = new Date(Date.now() - 20 * 60 * 1000).toISOString();
   mock.setHandler(async (sql) => {
     if (/FROM messages WHERE id/i.test(sql)) {
-      return [[{
-        id: 7,
-        thread_id: 1,
-        user_id: 9,
-        body: 'late',
-        created_at: old,
-        deleted_at: null,
-        deleted_by: null,
-      }]];
+      return [[{ id: 7, thread_id: 1, user_id: 9, body: 'late', created_at: old, deleted_at: null, deleted_by: null }]];
     }
     return [[]];
   });
@@ -275,15 +212,7 @@ test('softDeleteMessage allows staff to delete any message', async () => {
   const old = new Date(Date.now() - 60 * 60 * 1000).toISOString();
   mock.setHandler(async (sql) => {
     if (/FROM messages WHERE id/i.test(sql)) {
-      return [[{
-        id: 7,
-        thread_id: 1,
-        user_id: 9,
-        body: 'remove me',
-        created_at: old,
-        deleted_at: null,
-        deleted_by: null,
-      }]];
+      return [[{ id: 7, thread_id: 1, user_id: 9, body: 'remove me', created_at: old, deleted_at: null, deleted_by: null }]];
     }
     if (/UPDATE messages/i.test(sql)) return [{ affectedRows: 1 }];
     return [[]];
@@ -308,4 +237,57 @@ test('addMessage rejects bodies over 2000 characters', async () => {
     () => MessageThread.addMessage(1, 2, 'x'.repeat(2001)),
     /2000/
   );
+});
+
+test('postMessage pushes to unmuted participants and swallows push errors', async () => {
+  const pushService = require('../utils/pushService');
+  const calls = [];
+  const orig = pushService.sendToUsers;
+  pushService.sendToUsers = async (...args) => {
+    calls.push(args);
+    return { sent: 1 };
+  };
+
+  mock.setHandler(async (sql) => {
+    if (/FROM message_threads WHERE id/i.test(sql) || /FROM message_threads t/i.test(sql)) {
+      return [[{ id: 12, subject: 'Kennels', closed_at: null, context_type: 'opportunity' }]];
+    }
+    if (/FROM thread_participants/i.test(sql) && /SELECT/i.test(sql) && /u.role/i.test(sql)) {
+      return [[
+        { user_id: 1, role: 'volunteer', muted: 0, first_name: 'A', last_name: 'A' },
+        { user_id: 2, role: 'volunteer', muted: 1, first_name: 'B', last_name: 'B' },
+        { user_id: 3, role: 'staff', muted: 0, first_name: 'C', last_name: 'C' },
+      ]];
+    }
+    if (/FROM thread_participants/i.test(sql)) return [[{ user_id: 1 }]];
+    if (/INSERT INTO messages/i.test(sql)) return [{ insertId: 99 }];
+    if (/FROM messages m/i.test(sql)) {
+      return [[{ id: 99, thread_id: 12, user_id: 1, body: 'Hello there', first_name: 'A', last_name: 'A', role: 'volunteer' }]];
+    }
+    return [[]];
+  });
+
+  const res = makeRes();
+  await threadCtrl.postMessage(
+    { session: { userId: 1, role: 'volunteer' }, params: { id: '12' }, body: { body: 'Hello there' } },
+    res
+  );
+  assert.equal(res.statusCode, 201);
+  await new Promise((r) => setTimeout(r, 20));
+  const recipients = calls.map((c) => c[0][0]);
+  assert.ok(recipients.includes(3));
+  assert.equal(recipients.includes(2), false);
+  assert.equal(recipients.includes(1), false);
+  assert.equal(calls[0][2].category, 'threads');
+
+  pushService.sendToUsers = async () => {
+    throw new Error('push down');
+  };
+  const res2 = makeRes();
+  await threadCtrl.postMessage(
+    { session: { userId: 1, role: 'volunteer' }, params: { id: '12' }, body: { body: 'Hello again' } },
+    res2
+  );
+  assert.equal(res2.statusCode, 201);
+  pushService.sendToUsers = orig;
 });

@@ -4,6 +4,13 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#1b5e20" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Offline - ShelterLink</title>
     <link rel="stylesheet" href="/public/css/custom.css" />
     <style>
@@ -28,8 +35,9 @@
   <body>
     <main>
       <h1>You're offline</h1>
-      <p>Your shifts will load when you reconnect.</p>
-      <p><button type="button" onclick="location.reload()">Try again</button></p>
+      <p>This page isn't saved on this phone yet. Pages you've opened recently, like your dashboard, still work.</p>
+      <p><button type="button">Try again</button></p>
     </main>
+    <script type="module" src="/js/offlinePage.js"></script>
   </body>
 </html>

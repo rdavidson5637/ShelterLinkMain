@@ -74,6 +74,21 @@ function bindDisclosureChrome(root) {
   document.addEventListener('click', onPointer);
 }
 
+function addRefreshButton() {
+  const headerNav = document.querySelector('.site-header .site-nav');
+  if (!headerNav || headerNav.querySelector('.nav-refresh')) return;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'nav-refresh';
+  btn.setAttribute('aria-label', 'Refresh');
+  btn.innerHTML =
+    '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.6 6.4A8 8 0 1 0 20 12h-2a6 6 0 1 1-1.8-4.2L14 10h6V4l-2.4 2.4z"/></svg>';
+  btn.addEventListener('click', () => window.location.reload());
+  const logout = headerNav.querySelector('#logoutButton');
+  if (logout) headerNav.insertBefore(btn, logout);
+  else headerNav.appendChild(btn);
+}
+
 function bindMobileToggle(navRoot) {
   const toggle = document.querySelector('.site-header .nav-toggle');
   if (!toggle || !navRoot || toggle.dataset.navBound === '1') return;
@@ -125,6 +140,7 @@ async function mount() {
   const role = user?.role || '';
   renderAdminNav(root, role);
   bindMobileToggle(root);
+  addRefreshButton();
   try {
     const res = await apiRequest('/threads/unread-count', { method: 'GET' });
     if (!res.ok) return;

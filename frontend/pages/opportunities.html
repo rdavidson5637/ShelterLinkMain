@@ -3,6 +3,14 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1b5e20" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Open shifts - ShelterLink</title>
     <meta name="description" content="See open volunteer shifts at Assisi Animal Sanctuary. Pick a shift that suits you, apply online and get a reminder before you go." />
     <link rel="canonical" href="%%APP_URL%%/pages/opportunities.html" />
@@ -18,7 +26,7 @@
     <meta name="twitter:title" content="Open volunteer shifts - ShelterLink" />
     <meta name="twitter:description" content="See open volunteer shifts at Assisi Animal Sanctuary. Pick a shift that suits you, apply online and get a reminder before you go." />
     <meta name="twitter:image" content="%%APP_URL%%/public/images/og.png" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" />
     <link rel="stylesheet" href="/public/css/custom.css" />
   </head>
   <body>
@@ -56,17 +64,7 @@
       <small>&copy; 2026 ShelterLink</small>
     </footer>
 
-    <script>
-      (() => {
-        const nav = document.querySelector('.site-nav');
-        const toggle = nav?.querySelector('.nav-toggle');
-        if (!nav || !toggle) return;
-        toggle.addEventListener('click', () => {
-          const open = nav.classList.toggle('nav-open');
-          toggle.setAttribute('aria-expanded', String(open));
-        });
-      })();
-    </script>
+    <script type="module" src="/js/components/publicNav.js"></script>
     <script type="module" src="/js/public/opportunities.js"></script>
       <script type="module" src="/js/utils/footerYear.js"></script>
   </body>

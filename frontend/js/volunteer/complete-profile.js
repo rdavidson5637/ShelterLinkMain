@@ -2,6 +2,8 @@ import { apiRequest } from '../config.js';
 import { requireAuth } from '../auth.js';
 import { renderTagChips, getSelectedTagIds } from '../components/tagChips.js';
 import { showFormErrors, clearFormErrors } from '../utils/formErrors.js';
+import { mountPushToggle } from '../components/pushToggle.js';
+import { showConfirm } from '../components/confirmDialog.js';
 
 const form = document.getElementById('profileForm');
 const messageEl = document.getElementById('message');
@@ -356,9 +358,7 @@ async function loadNotificationPrefs() {
     const prefs = await res.json();
     fillNotificationPrefs(prefs);
     const status = document.getElementById('pushStatus');
-    const enableBtn = document.getElementById('enablePushButton');
     const pushConfigured = prefs.configured === true;
-    if (enableBtn) enableBtn.hidden = !pushConfigured;
     if (status && !pushConfigured) {
       status.textContent = 'Browser push is not configured on this server (email alerts still work).';
     }
@@ -384,63 +384,6 @@ async function saveNotificationPrefs() {
     console.error('[Profile] saveNotificationPrefs error:', error);
     setMessage('error', 'Network error saving notification preferences');
   }
-}
-
-async function enableBrowserPush() {
-  const status = document.getElementById('pushStatus');
-  try {
-    const keyRes = await apiRequest('/push/vapid-public-key', { method: 'GET' });
-    const keyBody = await keyRes.json().catch(() => ({}));
-    if (!keyRes.ok || !keyBody.publicKey) {
-      if (status) status.textContent = keyBody.error || 'Push is not available.';
-      return;
-    }
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      if (status) status.textContent = 'This browser does not support push notifications.';
-      return;
-    }
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') {
-      if (status) status.textContent = 'Notification permission was not granted.';
-      return;
-    }
-    // Minimal registration: subscribe without a custom SW file when unsupported.
-    const reg = await navigator.serviceWorker.getRegistration()
-      || await navigator.serviceWorker.register('/sw.js').catch(() => null);
-    if (!reg) {
-      if (status) {
-        status.textContent =
-          'Preferences saved for when a service worker is available. Enable push again after deploy includes /sw.js.';
-      }
-      await saveNotificationPrefs();
-      return;
-    }
-    const sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(keyBody.publicKey),
-    });
-    const res = await apiRequest('/push/subscribe', {
-      method: 'POST',
-      body: { subscription: sub.toJSON() },
-    });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      if (status) status.textContent = body.error || 'Failed to save push subscription';
-      return;
-    }
-    await saveNotificationPrefs();
-    if (status) status.textContent = 'Browser push enabled.';
-  } catch (error) {
-    console.error('[Profile] enableBrowserPush error:', error);
-    if (status) status.textContent = 'Could not enable browser push.';
-  }
-}
-
-function urlBase64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = window.atob(base64);
-  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
 }
 
 async function checkExistingProfile() {
@@ -558,10 +501,20 @@ async function init() {
     event.preventDefault();
     saveNotificationPrefs();
   });
-  document.getElementById('enablePushButton')?.addEventListener('click', (event) => {
+  document.getElementById('logoutAllButton')?.addEventListener('click', (event) => {
     event.preventDefault();
-    enableBrowserPush();
+    showConfirm({
+      heading: 'Sign out of all devices?',
+      body: 'This ends every signed-in session, including this one.',
+      confirmText: 'Sign out everywhere',
+      cancelText: 'Stay signed in',
+      onConfirm: async () => {
+        await apiRequest('/auth/logout-all', { method: 'POST' });
+        window.location.href = '/login.html';
+      },
+    });
   });
+  await mountPushToggle(document.getElementById('pushToggle'));
 
   await loadNotificationPrefs();
   if (existingProfile) {
