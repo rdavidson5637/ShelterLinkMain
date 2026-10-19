@@ -1,3 +1,7 @@
+// Error reporting first so it can see everything; a no-op without SENTRY_DSN.
+require('dotenv').config();
+require('./utils/sentry').initSentry();
+
 const express = require('express');
 const session = require('express-session');
 const PgSession = require('connect-pg-simple')(session);

@@ -1,3 +1,5 @@
+const { captureError } = require('../utils/sentry');
+
 function resolveStatusCode(err) {
   if (!err) return 500;
 
@@ -35,6 +37,7 @@ function defaultMessageForStatus(status) {
 function errorHandler(err, req, res, next) { // eslint-disable-line no-unused-vars
   const isProduction = process.env.NODE_ENV === 'production';
   const status = resolveStatusCode(err);
+  if (status >= 500) captureError(err, { tags: { source: 'express' } });
 
   if (isProduction) {
     const safeType = err?.type || err?.name || 'UnknownError';

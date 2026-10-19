@@ -6,6 +6,8 @@
  * Jobs never crash the process — errors are logged and recorded.
  */
 
+const { captureError } = require('./sentry');
+
 const jobs = new Map();
 let started = false;
 let tickTimer = null;
@@ -73,6 +75,7 @@ async function runJob(job, detailExtra = null) {
     return { status: 'ok', detail: detailExtra || detail || null, ranAt };
   } catch (error) {
     console.error(`[Scheduler] job "${job.name}" failed:`, error.message);
+    captureError(error, { tags: { job: job.name } });
     return { status: 'error', detail: error.message, ranAt };
   }
 }
