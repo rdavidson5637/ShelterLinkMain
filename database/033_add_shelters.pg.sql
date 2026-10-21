@@ -9,6 +9,7 @@
 
 CREATE ROLE shelterlink_tenant NOLOGIN NOBYPASSRLS;
 GRANT shelterlink_tenant TO CURRENT_USER;
+GRANT shelterlink_tenant TO postgres;
 ALTER ROLE shelterlink_tenant SET search_path TO public;
 
 -- @break
@@ -140,6 +141,15 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO shelterli
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO shelterlink_tenant;
 REVOKE INSERT, UPDATE, DELETE ON shelters FROM shelterlink_tenant;
 REVOKE ALL ON schema_migrations FROM shelterlink_tenant;
+
+-- job_runs has no shelter_id. The scheduler writes it while switched into
+-- shelterlink_tenant. No volunteer or staff route reads this table.
+DROP POLICY IF EXISTS job_runs_tenant_log ON job_runs;
+CREATE POLICY job_runs_tenant_log ON job_runs
+  FOR ALL
+  TO shelterlink_tenant
+  USING (true)
+  WITH CHECK (true);
 
 -- A tenant insert carries the caller's shelter_id. Foreign keys are on the
 -- parent id only, so reject a reference whose parent row belongs to another
