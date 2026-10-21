@@ -169,7 +169,7 @@ function renderShiftNotes(notes = []) {
     .map((n) => {
       const when = formatNoteWhen(n.created_at);
       const canDelete = currentUserRole === 'admin';
-      return `<article style="margin:0.5rem 0;padding:0.5rem 0.75rem;border-left:3px solid #1b5e20;background:#f6f7f6;">
+      return `<article class="strip">
         <p style="margin:0;"><strong>${n.author_name || 'Staff'}</strong>${
           when ? ` · ${when}` : ''
         }</p>

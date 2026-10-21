@@ -23,8 +23,8 @@ function showToast(message, type = 'success') {
     top: 1rem;
     right: 1rem;
     padding: 1rem;
-    background: ${type === 'success' ? '#4caf50' : '#f44336'};
-    color: white;
+    background: ${type === 'success' ? 'var(--green)' : 'var(--danger)'};
+    color: ${type === 'success' ? 'var(--on-primary)' : 'var(--on-danger)'};
     border-radius: 4px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     z-index: 10000;
@@ -126,8 +126,7 @@ async function loadShiftNotesForApplication(app, container) {
   container.appendChild(heading);
   notes.forEach((note) => {
     const block = document.createElement('div');
-    block.style.cssText =
-      'margin:0.35rem 0;padding:0.5rem 0.75rem;border-left:3px solid #1b5e20;background:#f6f7f6;';
+    block.className = 'strip';
     const meta = document.createElement('small');
     meta.style.display = 'block';
     meta.style.color = 'var(--text-muted)';
@@ -328,8 +327,8 @@ function renderApplications() {
       reasonBox.style.cssText = `
         margin-top: 0.75rem;
         padding: 0.65rem 0.85rem;
-        background: #fff3f3;
-        border-left: 3px solid #d93025;
+        background: var(--danger-tint);
+        border-left: 3px solid var(--danger);
         border-radius: 4px;
         font-size: 0.9rem;
       `;

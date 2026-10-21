@@ -446,13 +446,13 @@ async function viewProfile(userId) {
         </div>
         <div>
           <strong>Status:</strong> 
-          <span style="padding: 0.25rem 0.5rem; border-radius: 999px; font-size: 0.875rem; font-weight: 600; ${profile.approved ? 'background: #edf4ee; color: #1b5e20; border: 1px solid #d3e3d5;' : 'background: #fdf6e7; color: #7a5200; border: 1px solid #ecd9a8;'}">
+          <span class="badge ${profile.approved ? 'badge--approved' : 'badge--pending'}">
             ${profile.approved ? 'Approved' : 'Pending'}
           </span>
         </div>
         <div>
           <strong>Foster approved:</strong>
-          <span style="padding: 0.25rem 0.5rem; border-radius: 999px; font-size: 0.875rem; font-weight: 600; ${profile.foster_approved ? 'background: #edf4ee; color: #1b5e20; border: 1px solid #d3e3d5;' : 'background: #f5f5f5; color: #555; border: 1px solid #ddd;'}">
+          <span class="badge ${profile.foster_approved ? 'badge--approved' : 'badge--neutral'}">
             ${profile.foster_approved ? 'Yes' : 'No'}
           </span>
           <button type="button" class="secondary button-small" id="toggleFosterApprovedBtn" style="margin-left:0.5rem;">

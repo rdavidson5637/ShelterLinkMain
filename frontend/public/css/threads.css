@@ -64,12 +64,12 @@
 
 .thread-list-meta {
   font-size: 0.85rem;
-  color: var(--text-muted, #666);
+  color: var(--text-muted, #5b6670);
 }
 
 .threads-empty,
 .threads-empty-inline {
-  color: var(--text-muted, #666);
+  color: var(--text-muted, #5b6670);
 }
 
 .thread-view-header {
@@ -89,7 +89,7 @@
 .threads-meta {
   margin: 0.25rem 0 0;
   font-size: 0.875rem;
-  color: var(--text-muted, #666);
+  color: var(--text-muted, #5b6670);
 }
 
 .thread-participants {

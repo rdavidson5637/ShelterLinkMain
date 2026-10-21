@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#1b5e20" />
+    <meta name="theme-color" content="#0f766e" />
     <link rel="manifest" href="/public/manifest.webmanifest" />
     <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
     <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
@@ -17,14 +17,14 @@
     <link rel="stylesheet" href="/public/css/opportunity-modal.css" />
     <style>
       .calendar-banner {
-        background: linear-gradient(135deg, rgba(46, 125, 50, 0.15), rgba(76, 175, 80, 0.1));
-        border: 1px solid rgba(46, 125, 50, 0.3);
-        border-radius: 12px;
+        background: var(--green-tint);
+        border: 1px solid var(--green-tint-border);
+        border-radius: var(--radius-card);
         padding: 1rem 1.5rem;
         margin-bottom: 1.25rem;
         font-size: 1.1rem;
         font-weight: 500;
-        color: var(--primary-dark, #1b5e20);
+        color: var(--green);
       }
       .calendar-view-toggles {
         display: flex;
@@ -36,20 +36,18 @@
         margin: 0;
       }
       .calendar-wrapper {
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 12px;
+        background: var(--surface);
+        border-radius: var(--radius-card);
         padding: 1.25rem;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
-        border: 1px solid rgba(46, 125, 50, 0.1);
+        border: 1px solid var(--border);
       }
-      /* Fix PicoCSS dark background conflict */
       .fc-daygrid-day,
       .fc-daygrid-day-frame,
       .fc td,
       .fc th,
       .fc table {
         background: transparent !important;
-        color: #1e293b !important;
+        color: var(--text) !important;
       }
       .fc {
         font-size: 1rem;
@@ -72,7 +70,7 @@
         text-align: center;
         padding: 4rem 2rem;
         font-size: 1.5rem;
-        color: #666;
+        color: var(--text-muted);
       }
     </style>
   </head>
@@ -92,11 +90,11 @@
     <main class="container">
       <section>
         <h1>Shift Calendar</h1>
-        <p>View available shifts at a glance. Click any green shift to apply.</p>
+        <p>View available shifts at a glance. Click an open shift to apply.</p>
       </section>
 
       <div id="calendarBanner" class="calendar-banner" role="status">
-        Click any green shift to apply
+        Click an open shift to apply
       </div>
 
       <div class="calendar-view-toggles">

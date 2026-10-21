@@ -15,7 +15,7 @@
 .confirm-dialog-card {
   max-width: 440px;
   padding: 1.5rem;
-  background: #fff;
+  background: var(--surface, #ffffff);
   border-radius: 12px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
 }
@@ -24,13 +24,13 @@
   font-size: 1.25rem;
   font-weight: 700;
   margin: 0 0 0.75rem;
-  color: #1b5e20;
+  color: var(--green, #0f766e);
 }
 
 .confirm-dialog-body {
   font-size: 1rem;
   margin: 0 0 1.25rem;
-  color: #555;
+  color: var(--text-secondary, #5b6670);
   line-height: 1.5;
 }
 
@@ -51,13 +51,13 @@
 }
 
 .confirm-dialog-btn:focus {
-  outline: 2px solid #2e7d32;
+  outline: 2px solid var(--green, #0f766e);
   outline-offset: 2px;
 }
 
 .confirm-dialog-btn-keep {
-  background: #4caf50;
-  color: #fff;
+  background: var(--green, #0f766e);
+  color: var(--on-primary, #ffffff);
   border: none;
 }
 
@@ -66,11 +66,11 @@
 }
 
 .confirm-dialog-btn-cancel {
-  background: transparent;
-  color: #e65100;
-  border: 2px solid #ff9800;
+  background: var(--surface, #ffffff);
+  color: var(--text, #1f2937);
+  border: 1px solid var(--border-strong, #c5d4cf);
 }
 
 .confirm-dialog-btn-cancel:hover {
-  background: rgba(255, 152, 0, 0.1);
+  background: var(--green-tint, #e7f4f2);
 }

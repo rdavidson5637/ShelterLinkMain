@@ -328,7 +328,7 @@ async function forgotPassword(req, res) {
           <p>Hi ${user.first_name || 'there'},</p>
           <p>We received a request to reset your ShelterLink password${safeShelter ? ` for ${safeShelter}` : ''}.</p>
           <p>
-            <a href="${resetLink}" style="display:inline-block;padding:0.6rem 1.4rem;background:#2e7d32;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;">
+            <a href="${resetLink}" style="display:inline-block;padding:0.6rem 1.4rem;background:#0f766e;color:#ffffff;border-radius:6px;text-decoration:none;font-weight:600;">
               Reset My Password
             </a>
           </p>

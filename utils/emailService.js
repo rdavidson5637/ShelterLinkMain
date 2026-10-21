@@ -555,7 +555,7 @@ async function sendShiftNoteUpdate(volunteerEmail, details = {}) {
     <p>There is an update for your upcoming shift <strong>${title}</strong>${
       date ? ` on <strong>${date}</strong>` : ''
     }:</p>
-    <blockquote style="border-left:3px solid #1b5e20;padding-left:0.75rem;margin:1rem 0;">
+    <blockquote style="border-left:3px solid #0f766e;padding-left:0.75rem;margin:1rem 0;">
       ${String(body).replace(/\n/g, '<br/>')}
     </blockquote>
     <p>Thank you,<br/>${brand.signoff}</p>

@@ -11,11 +11,11 @@ const SOURCE_SVG = path.join(ICONS, 'icon.svg');
 const LOGO = path.join(IMAGES, 'shelterlink-logo.png');
 
 const PAW_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <circle cx="176" cy="170" r="48" fill="#f6f7f6"/>
-  <circle cx="336" cy="170" r="48" fill="#f6f7f6"/>
-  <circle cx="128" cy="280" r="40" fill="#f6f7f6"/>
-  <circle cx="384" cy="280" r="40" fill="#f6f7f6"/>
-  <ellipse cx="256" cy="340" rx="100" ry="110" fill="#f6f7f6"/>
+  <circle cx="176" cy="170" r="48" fill="#f8faf9"/>
+  <circle cx="336" cy="170" r="48" fill="#f8faf9"/>
+  <circle cx="128" cy="280" r="40" fill="#f8faf9"/>
+  <circle cx="384" cy="280" r="40" fill="#f8faf9"/>
+  <ellipse cx="256" cy="340" rx="100" ry="110" fill="#f8faf9"/>
 </svg>`;
 
 const BADGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
@@ -35,7 +35,7 @@ async function maskable(size) {
       width: size,
       height: size,
       channels: 4,
-      background: { r: 27, g: 94, b: 32, alpha: 1 },
+      background: { r: 15, g: 118, b: 110, alpha: 1 },
     },
   })
     .composite([{ input: paw, top: offset, left: offset }])
@@ -77,7 +77,7 @@ async function main() {
       width: 180,
       height: 180,
       channels: 3,
-      background: { r: 27, g: 94, b: 32 },
+      background: { r: 15, g: 118, b: 110 },
     },
   })
     .composite([{ input: applePaw, top: 36, left: 36 }])

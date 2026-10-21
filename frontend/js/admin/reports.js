@@ -83,7 +83,7 @@ function renderMonthlyChart(months) {
     const x = 20 + i * (barWidth + gap);
     const y = height - 30 - barHeight;
     return `
-      <rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" fill="#2e7d32"></rect>
+      <rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" fill="var(--green)"></rect>
       <text x="${x + barWidth / 2}" y="${height - 12}" text-anchor="middle" font-size="10">${MONTH_LABELS[i]}</text>
     `;
   }).join('');

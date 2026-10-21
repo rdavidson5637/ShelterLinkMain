@@ -130,16 +130,12 @@ function drawImpactCard(stats) {
   const ctx = impactCanvas.getContext('2d');
   const w = impactCanvas.width;
   const h = impactCanvas.height;
-  const grad = ctx.createLinearGradient(0, 0, w, h);
-  grad.addColorStop(0, '#1b5e20');
-  grad.addColorStop(1, '#43a047');
-  ctx.fillStyle = grad;
+  const styles = getComputedStyle(document.documentElement);
+  const brand = styles.getPropertyValue('--green').trim() || '#0f766e';
+  const ink = styles.getPropertyValue('--on-primary').trim() || '#ffffff';
+  ctx.fillStyle = brand;
   ctx.fillRect(0, 0, w, h);
-  ctx.fillStyle = 'rgba(255,255,255,0.08)';
-  ctx.beginPath();
-  ctx.arc(w - 80, 80, 140, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#ffffff';
+  ctx.fillStyle = ink;
   ctx.font = 'bold 42px Georgia, serif';
   ctx.fillText('ShelterLink', 48, 70);
   ctx.font = '22px Georgia, serif';
@@ -154,8 +150,10 @@ function drawImpactCard(stats) {
   ctx.font = '20px system-ui, sans-serif';
   ctx.fillText(earned.length ? `Badges: ${earned.map((b) => b.label).join(', ')}` : 'Keep going — badges await!', 48, 340);
   ctx.font = '16px system-ui, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.globalAlpha = 0.85;
+  ctx.fillStyle = ink;
   ctx.fillText(shelterLabel || 'ShelterLink', 48, 390);
+  ctx.globalAlpha = 1;
 }
 
 function renderCommunityServiceProgress(profile, approvedHours) {

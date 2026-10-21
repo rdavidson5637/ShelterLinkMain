@@ -21,8 +21,8 @@ export function showToast(message = 'Something went wrong.', type = 'error') {
     z-index: 10002;
     padding: 1rem;
     max-width: 360px;
-    background: ${type === 'success' ? '#4caf50' : '#f44336'};
-    color: #fff;
+    background: ${type === 'success' ? 'var(--green)' : 'var(--danger)'};
+    color: ${type === 'success' ? 'var(--on-primary)' : 'var(--on-danger)'};
     border-radius: 8px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
     font-weight: 600;

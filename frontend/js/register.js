@@ -31,16 +31,16 @@ function updateSubmitState() {
 
 function getStrengthInfo(checks, passwordValue = '') {
   const metCount = [checks.minLength, checks.hasUppercase, checks.hasNumber].filter(Boolean).length;
-  if (!passwordValue) return { label: 'Weak', color: '#c62828' };
-  if (metCount <= 1) return { label: 'Weak', color: '#c62828' };
-  if (metCount === 2) return { label: 'Fair', color: '#e65100' };
-  return { label: 'Strong', color: '#2e7d32' };
+  if (!passwordValue) return { label: 'Weak', color: 'var(--danger)' };
+  if (metCount <= 1) return { label: 'Weak', color: 'var(--danger)' };
+  if (metCount === 2) return { label: 'Fair', color: 'var(--accent-text)' };
+  return { label: 'Strong', color: 'var(--green)' };
 }
 
 function renderChecklistItem(li, passed, text) {
   if (!li) return;
   li.textContent = `${passed ? '✓' : '✗'} ${text}`;
-  li.style.color = passed ? '#2e7d32' : '#c62828';
+  li.style.color = passed ? 'var(--green)' : 'var(--danger)';
 }
 
 function updatePasswordFeedback() {
@@ -65,9 +65,9 @@ function setupPasswordFeedback() {
   wrapper.id = 'passwordFeedback';
   wrapper.style.marginTop = '0.5rem';
   wrapper.style.padding = '0.75rem';
-  wrapper.style.border = '1px solid rgba(46, 125, 50, 0.2)';
+  wrapper.style.border = '1px solid var(--border)';
   wrapper.style.borderRadius = '8px';
-  wrapper.style.background = 'rgba(255, 255, 255, 0.9)';
+  wrapper.style.background = 'var(--surface)';
 
   meterTextEl = document.createElement('p');
   meterTextEl.style.margin = '0 0 0.5rem';
