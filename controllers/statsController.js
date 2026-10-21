@@ -86,6 +86,7 @@ async function getAdminStats(req, res) {
     });
   } catch (error) {
     console.error('[Stats] getAdminStats error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -121,6 +122,7 @@ async function getMyImpactStats(req, res) {
     });
   } catch (error) {
     console.error('[Stats] getMyImpactStats error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -161,6 +163,7 @@ async function getLeaderboard(req, res) {
     );
   } catch (error) {
     console.error('[Stats] getLeaderboard error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -196,6 +199,7 @@ async function getMonthlyHoursChart(req, res) {
     return res.status(200).json({ year, months: byMonth });
   } catch (error) {
     console.error('[Stats] getMonthlyHoursChart error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

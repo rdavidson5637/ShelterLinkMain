@@ -118,6 +118,7 @@ async function createProfile(req, res) {
     });
   } catch (error) {
     console.error('[Profile] createProfile error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -136,6 +137,7 @@ async function getProfile(req, res) {
     return res.status(200).json(withCustom);
   } catch (error) {
     console.error('[Profile] getProfile error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -191,6 +193,7 @@ async function updateProfile(req, res) {
     return res.status(200).json(withCustom);
   } catch (error) {
     console.error('[Profile] updateProfile error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -236,6 +239,7 @@ async function getAllVolunteers(req, res) {
     return res.status(200).json(withId);
   } catch (error) {
     console.error('[Profile] getAllVolunteers error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -285,6 +289,7 @@ async function updateVolunteerApproval(req, res) {
     });
   } catch (error) {
     console.error('[Profile] updateVolunteerApproval error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -309,6 +314,7 @@ async function getVolunteerProfile(req, res) {
     return res.status(200).json(withCustom);
   } catch (error) {
     console.error('[Profile] getVolunteerProfile error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -321,6 +327,7 @@ async function getBadges(req, res) {
     return res.status(200).json(badges);
   } catch (error) {
     console.error('[Profile] getBadges error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -353,6 +360,7 @@ async function updateVolunteerServiceSettings(req, res) {
     }
   } catch (error) {
     console.error('[Profile] updateVolunteerServiceSettings error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

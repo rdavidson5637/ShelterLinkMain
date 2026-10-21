@@ -1,6 +1,7 @@
 'use strict';
 
 const Qualification = require('../models/Qualification');
+const User = require('../models/User');
 const { isAdminUser, isStaffOrAdmin } = require('../middleware/auth');
 
 function ensureAdmin(req, res) {
@@ -42,6 +43,7 @@ async function listQualifications(req, res) {
     return res.status(200).json(qualifications);
   } catch (error) {
     console.error('[Qualification] listQualifications error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -73,6 +75,7 @@ async function createQualification(req, res) {
       return res.status(409).json({ error: 'A qualification with that name already exists' });
     }
     console.error('[Qualification] createQualification error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -117,6 +120,7 @@ async function updateQualification(req, res) {
       return res.status(409).json({ error: 'A qualification with that name already exists' });
     }
     console.error('[Qualification] updateQualification error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -131,6 +135,7 @@ async function deleteQualification(req, res) {
     return res.status(200).json({ message: 'Qualification deleted' });
   } catch (error) {
     console.error('[Qualification] deleteQualification error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -160,6 +165,7 @@ async function getMyQualifications(req, res) {
     return res.status(200).json(enriched);
   } catch (error) {
     console.error('[Qualification] getMyQualifications error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -167,10 +173,13 @@ async function getMyQualifications(req, res) {
 async function getVolunteerQualifications(req, res) {
   try {
     if (!ensureStaff(req, res)) return;
+    const user = await User.findById(req.params.userId);
+    if (!user) return res.status(404).json({ error: 'Not found' });
     const rows = await Qualification.findByUserId(req.params.userId);
     return res.status(200).json(rows);
   } catch (error) {
     console.error('[Qualification] getVolunteerQualifications error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -203,6 +212,7 @@ async function awardQualification(req, res) {
       return res.status(404).json({ error: error.message });
     }
     console.error('[Qualification] awardQualification error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -219,6 +229,7 @@ async function revokeQualification(req, res) {
     return res.status(200).json({ message: 'Qualification revoked' });
   } catch (error) {
     console.error('[Qualification] revokeQualification error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

@@ -42,7 +42,7 @@ async function create(userData) {
 
 async function findByEmail(email) {
   const [rows] = await pool.execute(
-    `SELECT user_id, name, email, password, role, created_at
+    `SELECT user_id, name, email, password, role, shelter_id, created_at
      FROM users
      WHERE email = ?
      LIMIT 1`,
@@ -53,7 +53,7 @@ async function findByEmail(email) {
 
 async function findById(userId) {
   const [rows] = await pool.execute(
-    `SELECT user_id, name, email, role, created_at
+    `SELECT user_id, name, email, role, shelter_id, created_at
      FROM users
      WHERE user_id = ?
      LIMIT 1`,

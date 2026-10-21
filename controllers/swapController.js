@@ -115,6 +115,7 @@ async function requestSwap(req, res) {
     });
   } catch (error) {
     console.error('[Swap] requestSwap error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -144,6 +145,7 @@ async function listAvailableSwaps(req, res) {
     return res.status(200).json(enriched);
   } catch (error) {
     console.error('[Swap] listAvailableSwaps error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -239,6 +241,7 @@ function mapClaimError(error, res) {
     return res.status(400).json({ error: error.message });
   }
   console.error('[Swap] claim error:', error.message);
+  if (error.status === 404) return res.status(404).json({ error: 'Not found' });
   return res.status(500).json({ error: 'Internal server error' });
 }
 
@@ -335,6 +338,7 @@ async function cancelSwap(req, res) {
     return res.status(200).json({ message: 'Swap cancelled', swap: toOwnerSafeSwap(result) });
   } catch (error) {
     console.error('[Swap] cancelSwap error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

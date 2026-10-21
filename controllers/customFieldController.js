@@ -1,6 +1,7 @@
 'use strict';
 
 const CustomField = require('../models/CustomField');
+const User = require('../models/User');
 const { isAdminUser, isStaffOrAdmin } = require('../middleware/auth');
 
 function ensureAdmin(req, res) {
@@ -50,6 +51,7 @@ async function listCustomFields(req, res) {
     return res.status(200).json(fields);
   } catch (error) {
     console.error('[CustomField] listCustomFields error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -61,6 +63,7 @@ async function listActiveProfileFields(req, res) {
     return res.status(200).json(fields);
   } catch (error) {
     console.error('[CustomField] listActiveProfileFields error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -102,6 +105,7 @@ async function createCustomField(req, res) {
       return res.status(400).json({ error: error.message });
     }
     console.error('[CustomField] createCustomField error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -171,6 +175,7 @@ async function updateCustomField(req, res) {
       return res.status(400).json({ error: error.message });
     }
     console.error('[CustomField] updateCustomField error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -185,6 +190,7 @@ async function deactivateCustomField(req, res) {
     return res.status(200).json(updated);
   } catch (error) {
     console.error('[CustomField] deactivateCustomField error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -206,6 +212,7 @@ async function deleteCustomField(req, res) {
     return res.status(200).json({ message: 'Custom field deleted', deleted: true });
   } catch (error) {
     console.error('[CustomField] deleteCustomField error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -221,6 +228,7 @@ async function reorderCustomFields(req, res) {
     return res.status(200).json(fields);
   } catch (error) {
     console.error('[CustomField] reorderCustomFields error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -233,10 +241,13 @@ async function getVolunteerCustomValues(req, res) {
     if (!isStaffOrAdmin(req)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
+    const user = await User.findById(req.params.userId);
+    if (!user) return res.status(404).json({ error: 'Not found' });
     const values = await CustomField.findValuesByUserId(req.params.userId);
     return res.status(200).json(values);
   } catch (error) {
     console.error('[CustomField] getVolunteerCustomValues error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

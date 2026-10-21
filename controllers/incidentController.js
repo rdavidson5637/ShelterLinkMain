@@ -28,6 +28,7 @@ async function listIncidents(req, res) {
     return res.status(200).json(incidents);
   } catch (error) {
     console.error('[Incident] list error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -40,6 +41,7 @@ async function getIncident(req, res) {
     return res.status(200).json(incident);
   } catch (error) {
     console.error('[Incident] get error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -59,6 +61,7 @@ async function createIncident(req, res) {
   } catch (error) {
     if (error.status === 400) return res.status(400).json({ error: error.message });
     console.error('[Incident] create error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -72,6 +75,7 @@ async function updateIncident(req, res) {
   } catch (error) {
     if (error.status === 400) return res.status(400).json({ error: error.message });
     console.error('[Incident] update error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -84,6 +88,7 @@ async function resolveIncident(req, res) {
     return res.status(200).json(incident);
   } catch (error) {
     console.error('[Incident] resolve error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -96,6 +101,7 @@ async function deleteIncident(req, res) {
     return res.status(200).json({ ok: true });
   } catch (error) {
     console.error('[Incident] delete error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

@@ -1,4 +1,7 @@
 import { API_URL } from '../config.js';
+import { applyShelterBrand } from '../brand.js';
+
+document.body.dataset.brandLock = 'token';
 
 const params = new URLSearchParams(window.location.search);
 const token = params.get('token') || '';
@@ -25,9 +28,17 @@ async function loadRequest() {
       introEl.textContent = body.error || 'Unable to load this reference request.';
       return;
     }
-    introEl.textContent = `Hello ${body.referee_name || ''}. Please complete this confidential reference${
+    const shelter = body.shelter_name ? ` for ${body.shelter_name}` : '';
+    introEl.textContent = `Hello ${body.referee_name || ''}. Please complete this confidential reference${shelter}${
       body.referee_relationship ? ` (${body.referee_relationship})` : ''
     }. It expires on ${String(body.expires_at || '').slice(0, 10)}.`;
+    if (body.shelter_name) {
+      applyShelterBrand({
+        name: body.shelter_name,
+        hasLogo: Boolean(body.has_logo),
+        logoUrl: `/api/public/references/${encodeURIComponent(token)}/logo`,
+      });
+    }
     form.hidden = false;
   } catch (error) {
     console.error('[Reference] load error:', error);

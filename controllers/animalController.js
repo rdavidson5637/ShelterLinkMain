@@ -88,6 +88,7 @@ async function listAnimals(req, res) {
     return res.status(200).json(animals);
   } catch (error) {
     console.error('[Animal] list error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -124,6 +125,7 @@ async function getAnimal(req, res) {
     return res.status(200).json(toPublicAnimal(animal, { includeHandling }));
   } catch (error) {
     console.error('[Animal] get error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -136,6 +138,7 @@ async function createAnimal(req, res) {
   } catch (error) {
     if (error.status === 400) return res.status(400).json({ error: error.message });
     console.error('[Animal] create error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -149,6 +152,7 @@ async function updateAnimal(req, res) {
   } catch (error) {
     if (error.status === 400) return res.status(400).json({ error: error.message });
     console.error('[Animal] update error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -178,6 +182,7 @@ async function uploadPhoto(req, res) {
     return res.status(200).json(animal);
   } catch (error) {
     console.error('[Animal] uploadPhoto error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -194,6 +199,7 @@ async function getPhoto(req, res) {
     return res.send(photo.buffer);
   } catch (error) {
     console.error('[Animal] getPhoto error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -235,6 +241,7 @@ async function logActivity(req, res) {
   } catch (error) {
     if (error.status === 400) return res.status(400).json({ error: error.message });
     console.error('[Animal] logActivity error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -246,6 +253,7 @@ async function myHelpedAnimals(req, res) {
     return res.status(200).json(rows);
   } catch (error) {
     console.error('[Animal] myHelpedAnimals error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

@@ -4,6 +4,9 @@ const Vetting = require('../models/Vetting');
 const User = require('../models/User');
 const { isStaffOrAdmin } = require('../middleware/auth');
 const { sendEmail } = require('../utils/emailService');
+const { currentShelterName } = require('../utils/shelterBrand');
+const { pool } = require('../config/database');
+const { currentShelterId, isBypass, runWithShelter, runWithoutShelter } = require('../utils/shelterContext');
 
 function ensureAuth(req, res) {
   if (!req.session || !req.session.userId) {
@@ -46,14 +49,19 @@ async function requestReference(req, res) {
     });
 
     const link = buildReferenceLink(token);
+    const shelterName = String(await currentShelterName()).replace(/[\r\n]/g, '').trim();
+    const shelterLabel = shelterName
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;') || 'the shelter';
     try {
       await sendEmail(
         referee_email,
-        'Reference request - ShelterLink / Assisi Animal Sanctuary',
+        `Reference request - ShelterLink${shelterName ? ` / ${shelterName}` : ''}`,
         `
         <p>Hello ${reference.referee_name},</p>
         <p>${volunteer.first_name || 'A volunteer'} has listed you as a referee for volunteering
-        at Assisi Animal Sanctuary via ShelterLink.</p>
+        at ${shelterLabel} via ShelterLink.</p>
         <p>Please complete this short confidential form:</p>
         <p><a href="${link}">Provide a reference</a></p>
         <p>This link expires on ${String(reference.expires_at).slice(0, 10)}.</p>
@@ -67,6 +75,7 @@ async function requestReference(req, res) {
     return res.status(201).json({ reference, link_sent: true });
   } catch (error) {
     console.error('[Vetting] requestReference error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -77,10 +86,13 @@ async function listVolunteerReferences(req, res) {
       return res.status(403).json({ error: 'Forbidden' });
     }
     const userId = Number(req.params.userId);
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: 'Not found' });
     const rows = await Vetting.listReferencesForUser(userId, { includeComments: true });
     return res.status(200).json(rows);
   } catch (error) {
     console.error('[Vetting] listVolunteerReferences error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -95,6 +107,7 @@ async function listMyReferences(req, res) {
     return res.status(200).json(rows);
   } catch (error) {
     console.error('[Vetting] listMyReferences error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -105,10 +118,13 @@ async function listBackgroundChecks(req, res) {
       return res.status(403).json({ error: 'Forbidden' });
     }
     const userId = Number(req.params.userId);
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: 'Not found' });
     const rows = await Vetting.listBackgroundChecksForUser(userId);
     return res.status(200).json(rows);
   } catch (error) {
     console.error('[Vetting] listBackgroundChecks error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -120,6 +136,7 @@ async function listMyBackgroundChecks(req, res) {
     return res.status(200).json(rows);
   } catch (error) {
     console.error('[Vetting] listMyBackgroundChecks error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -135,6 +152,8 @@ async function upsertBackgroundCheck(req, res) {
     if (!checkType) {
       return res.status(400).json({ error: 'Valid check_type is required' });
     }
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: 'Not found' });
     const status = Vetting.normalizeCheckStatus(body.status) || 'pending';
     const row = await Vetting.upsertBackgroundCheck({
       id: body.id ? Number(body.id) : null,
@@ -164,6 +183,7 @@ async function getOnboardingChecklist(req, res) {
     return res.status(200).json(checklist);
   } catch (error) {
     console.error('[Vetting] getOnboardingChecklist error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -178,11 +198,15 @@ async function getOnboardingPipeline(req, res) {
     return res.status(200).json(pipeline);
   } catch (error) {
     console.error('[Vetting] getOnboardingPipeline error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
 async function getPublicReference(req, res) {
+  if (!currentShelterId() && !isBypass()) {
+    return runWithoutShelter(() => getPublicReference(req, res));
+  }
   try {
     const token = req.params.token;
     const row = await Vetting.findReferenceByToken(token);
@@ -195,19 +219,39 @@ async function getPublicReference(req, res) {
     if (row.status !== 'requested') {
       return res.status(410).json({ error: 'This reference has already been submitted' });
     }
+    let shelterName = '';
+    let hasLogo = false;
+    if (row.shelter_id) {
+      const brand = await runWithShelter(row.shelter_id, async () => {
+        const [shelters] = await pool.execute(
+          `SELECT name, (logo IS NOT NULL AND octet_length(logo) > 0) AS has_logo
+             FROM shelters WHERE id = ? LIMIT 1`,
+          [row.shelter_id]
+        );
+        return shelters[0] || null;
+      });
+      shelterName = brand && brand.name ? String(brand.name) : '';
+      hasLogo = Boolean(brand && brand.has_logo);
+    }
     return res.status(200).json({
       referee_name: row.referee_name,
       referee_relationship: row.referee_relationship,
       expires_at: row.expires_at,
       status: row.status,
+      shelter_name: shelterName,
+      has_logo: hasLogo,
     });
   } catch (error) {
     console.error('[Vetting] getPublicReference error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
 async function submitPublicReference(req, res) {
+  if (!currentShelterId() && !isBypass()) {
+    return runWithoutShelter(() => submitPublicReference(req, res));
+  }
   try {
     const token = req.params.token;
     const body = req.body || {};
@@ -241,6 +285,36 @@ async function submitPublicReference(req, res) {
     return res.status(200).json({ message: 'Thank you. Your reference has been recorded.' });
   } catch (error) {
     console.error('[Vetting] submitPublicReference error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+async function getPublicReferenceLogo(req, res) {
+  if (!currentShelterId() && !isBypass()) {
+    return runWithoutShelter(() => getPublicReferenceLogo(req, res));
+  }
+  try {
+    const row = await Vetting.findReferenceByToken(req.params.token);
+    if (!row || !row.shelter_id) return res.status(404).json({ error: 'Not found' });
+    const logo = await runWithShelter(row.shelter_id, async () => {
+      const [shelters] = await pool.execute(
+        'SELECT logo, logo_mime FROM shelters WHERE id = ? LIMIT 1',
+        [row.shelter_id]
+      );
+      return shelters[0] || null;
+    });
+    const mime = String(logo && logo.logo_mime || '').toLowerCase();
+    if (!logo || !logo.logo || !['image/jpeg', 'image/png'].includes(mime)) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+    res.setHeader('Content-Type', mime);
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    return res.status(200).send(logo.logo);
+  } catch (error) {
+    console.error('[Vetting] getPublicReferenceLogo error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -255,5 +329,6 @@ module.exports = {
   getOnboardingChecklist,
   getOnboardingPipeline,
   getPublicReference,
+  getPublicReferenceLogo,
   submitPublicReference,
 };

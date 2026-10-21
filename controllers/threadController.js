@@ -1,6 +1,9 @@
 'use strict';
 
 const MessageThread = require('../models/MessageThread');
+const Opportunity = require('../models/Opportunity');
+const Foster = require('../models/Foster');
+const Transport = require('../models/Transport');
 const { isStaffOrAdmin } = require('../middleware/auth');
 const { hasContactLeak } = require('../utils/contactPrivacy');
 
@@ -45,6 +48,7 @@ async function listThreads(req, res) {
     return res.status(200).json(threads);
   } catch (error) {
     console.error('[Threads] listThreads error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -61,6 +65,7 @@ async function getUnreadCount(req, res) {
     return res.status(200).json({ count });
   } catch (error) {
     console.error('[Threads] getUnreadCount error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -100,6 +105,7 @@ async function getThread(req, res) {
     return res.status(200).json(detail);
   } catch (error) {
     console.error('[Threads] getThread error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -156,6 +162,23 @@ async function createThread(req, res) {
       }
     } else if (!staff) {
       return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    if (contextType === 'opportunity') {
+      const opportunity = await Opportunity.findById(contextId);
+      if (!opportunity) return res.status(404).json({ error: 'Not found' });
+    } else if (contextType === 'foster_placement') {
+      if (!Number.isFinite(contextId) || contextId < 1) {
+        return res.status(400).json({ error: 'context_id is required' });
+      }
+      const placement = await Foster.findPlacementById(contextId);
+      if (!placement) return res.status(404).json({ error: 'Not found' });
+    } else if (contextType === 'transport_run') {
+      if (!Number.isFinite(contextId) || contextId < 1) {
+        return res.status(400).json({ error: 'context_id is required' });
+      }
+      const run = await Transport.findRunById(contextId);
+      if (!run) return res.status(404).json({ error: 'Not found' });
     }
 
     const thread = await MessageThread.createOrGetForContext({
@@ -307,6 +330,7 @@ async function markThreadRead(req, res) {
     return res.status(200).json({ ok: true });
   } catch (error) {
     console.error('[Threads] markThreadRead error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -339,6 +363,7 @@ async function muteThread(req, res) {
     return res.status(200).json(result);
   } catch (error) {
     console.error('[Threads] muteThread error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

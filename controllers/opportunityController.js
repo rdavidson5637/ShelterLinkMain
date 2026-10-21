@@ -194,6 +194,7 @@ async function createOpportunity(req, res) {
     });
   } catch (error) {
     console.error('[Opportunity] createOpportunity error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -257,6 +258,7 @@ async function getAllOpportunities(req, res) {
     return res.status(200).json(enriched.map((o) => stripAdminFields(o, admin)));
   } catch (error) {
     console.error('[Opportunity] getAllOpportunities error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -287,6 +289,7 @@ async function getOpportunity(req, res) {
     return res.status(200).json(stripAdminFields(enriched, isStaffOrAdmin(req)));
   } catch (error) {
     console.error('[Opportunity] getOpportunity error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -359,6 +362,7 @@ async function updateOpportunity(req, res) {
     return res.status(200).json(await withExtras(opportunity));
   } catch (error) {
     console.error('[Opportunity] updateOpportunity error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -395,6 +399,7 @@ async function deleteOpportunity(req, res) {
     return res.status(200).json({ message: 'Opportunity closed' });
   } catch (error) {
     console.error('[Opportunity] deleteOpportunity error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -430,6 +435,7 @@ async function cloneOpportunity(req, res) {
     return res.status(201).json(await withExtras(clone));
   } catch (error) {
     console.error('[Opportunity] cloneOpportunity error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -519,6 +525,7 @@ async function flagOpportunityUrgent(req, res) {
     });
   } catch (error) {
     console.error('[Opportunity] flagOpportunityUrgent error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

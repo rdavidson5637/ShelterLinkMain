@@ -9,8 +9,14 @@ const {
   isAcceptingApplications,
 } = require('../utils/publicOpportunityFilter');
 const { excludeTestOpportunities } = require('../utils/testOpportunityGuard');
+const {
+  currentShelterId,
+  runWithShelter,
+  runWithoutShelter,
+} = require('../utils/shelterContext');
+const { assisiShelterId } = require('../middleware/shelter');
 
-let cache = { at: 0, data: null };
+let cache = { at: 0, key: null, data: null };
 const CACHE_MS = 60 * 1000;
 
 function escapeIcalText(value) {
@@ -148,23 +154,35 @@ async function loadUpcomingPublicOpportunities() {
 
 async function listPublicOpportunities(req, res) {
   try {
+    if (!currentShelterId()) {
+      const id = await assisiShelterId();
+      if (!id) return res.status(404).json({ error: 'Not found' });
+      return runWithShelter(id, () => listPublicOpportunities(req, res));
+    }
     const now = Date.now();
-    if (cache.data && now - cache.at < CACHE_MS) {
+    const key = String(currentShelterId());
+    if (cache.data && cache.key === key && now - cache.at < CACHE_MS) {
       return res.status(200).json(cache.data);
     }
 
     const future = await loadUpcomingPublicOpportunities();
     const payload = future.map(toPublicOpportunity);
-    cache = { at: now, data: payload };
+    cache = { at: now, key, data: payload };
     return res.status(200).json(payload);
   } catch (error) {
     console.error('[Public] listPublicOpportunities error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
 async function publicOpportunitiesIcs(req, res) {
   try {
+    if (!currentShelterId()) {
+      const id = await assisiShelterId();
+      if (!id) return res.status(404).json({ error: 'Not found' });
+      return runWithShelter(id, () => publicOpportunitiesIcs(req, res));
+    }
     const future = await loadUpcomingPublicOpportunities();
     const events = future.map(opportunityToEvent).filter((e) => e.start);
     const body = buildVCalendar(events, 'ShelterLink Open Shifts');
@@ -173,6 +191,7 @@ async function publicOpportunitiesIcs(req, res) {
     return res.status(200).send(body);
   } catch (error) {
     console.error('[Public] publicOpportunitiesIcs error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -199,6 +218,7 @@ async function getMyIcalToken(req, res) {
     return res.status(200).json({ token, url });
   } catch (error) {
     console.error('[Public] getMyIcalToken error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -208,13 +228,17 @@ async function myShiftsIcs(req, res) {
     const token = String(req.query.token || '').trim();
     if (!token) return res.status(404).json({ error: 'Not found' });
 
-    const [users] = await pool.execute(
-      `SELECT user_id FROM users WHERE ical_token = ? LIMIT 1`,
+    const [users] = await runWithoutShelter(() => pool.execute(
+      `SELECT user_id, shelter_id FROM users WHERE ical_token = ? LIMIT 1`,
       [token]
-    );
+    ));
     if (!users.length) return res.status(404).json({ error: 'Not found' });
+    const owner = users[0];
+    if (currentShelterId() && Number(owner.shelter_id) !== Number(currentShelterId())) {
+      return res.status(404).json({ error: 'Not found' });
+    }
 
-    const apps = await Application.findByUserId(users[0].user_id);
+    const apps = await runWithShelter(owner.shelter_id, () => Application.findByUserId(owner.user_id));
     const upcoming = apps.filter((app) => {
       const status = (app.status || '').toLowerCase();
       if (status !== 'accepted' && status !== 'approved') return false;
@@ -238,6 +262,7 @@ async function myShiftsIcs(req, res) {
     return res.status(200).send(body);
   } catch (error) {
     console.error('[Public] myShiftsIcs error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -265,6 +290,7 @@ async function applicationIcs(req, res) {
     return res.status(200).send(body);
   } catch (error) {
     console.error('[Public] applicationIcs error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -279,5 +305,5 @@ module.exports = {
   buildVCalendar,
   toIcalDate,
   toPublicOpportunity,
-  _resetCacheForTests: () => { cache = { at: 0, data: null }; },
+  _resetCacheForTests: () => { cache = { at: 0, key: null, data: null }; },
 };

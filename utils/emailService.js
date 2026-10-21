@@ -1,4 +1,21 @@
 const nodemailer = require('nodemailer');
+const { currentShelterName } = require('./shelterBrand');
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+async function brandBits() {
+  const name = await currentShelterName();
+  const safe = name ? escapeHtml(name) : '';
+  return {
+    name: safe,
+    signoff: safe ? `ShelterLink, ${safe}` : 'ShelterLink',
+  };
+}
 
 const {
   EMAIL_HOST,
@@ -34,6 +51,7 @@ async function sendEmail(to, subject, htmlContent) {
 }
 
 async function sendApplicationConfirmation(volunteerEmail, opportunityTitle) {
+  const brand = await brandBits();
   const safeTitle = opportunityTitle || 'the selected opportunity';
   return sendEmail(
     volunteerEmail,
@@ -42,12 +60,13 @@ async function sendApplicationConfirmation(volunteerEmail, opportunityTitle) {
     <p>Hello,</p>
     <p>Your application for <strong>${safeTitle}</strong> has been received.</p>
     <p>We will review it and update you soon.</p>
-    <p>Thank you,<br/>ShelterLink &mdash; Assisi Animal Sanctuary</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
     `
   );
 }
 
 async function sendApplicationApproval(volunteerEmail, opportunityTitle) {
+  const brand = await brandBits();
   const safeTitle = opportunityTitle || 'the selected opportunity';
   return sendEmail(
     volunteerEmail,
@@ -56,12 +75,13 @@ async function sendApplicationApproval(volunteerEmail, opportunityTitle) {
     <p>Hello,</p>
     <p>Great news! Your application for <strong>${safeTitle}</strong> has been approved.</p>
     <p>You can now participate and log your volunteer hours after the shift.</p>
-    <p>Best regards,<br/>ShelterLink &mdash; Assisi Animal Sanctuary</p>
+    <p>Best regards,<br/>${brand.signoff}</p>
     `
   );
 }
 
 async function sendApplicationRejection(volunteerEmail, opportunityTitle, reason = null) {
+  const brand = await brandBits();
   const safeTitle = opportunityTitle || 'the selected opportunity';
   const reasonHtml = reason
     ? `<p><strong>Reason:</strong> ${reason}</p>`
@@ -75,12 +95,13 @@ async function sendApplicationRejection(volunteerEmail, opportunityTitle, reason
     <p>Unfortunately we are unable to accept your application at this time.</p>
     ${reasonHtml}
     <p>There may be other opportunities available — please log in and browse shifts.</p>
-    <p>Thank you,<br/>ShelterLink &mdash; Assisi Animal Sanctuary</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
     `
   );
 }
 
 async function sendApplicationCancellation(volunteerEmail, opportunityTitle) {
+  const brand = await brandBits();
   const safeTitle = opportunityTitle || 'the selected opportunity';
   return sendEmail(
     volunteerEmail,
@@ -89,12 +110,13 @@ async function sendApplicationCancellation(volunteerEmail, opportunityTitle) {
     <p>Hello,</p>
     <p>Your application for <strong>${safeTitle}</strong> has been cancelled.</p>
     <p>If you did not request this cancellation, please contact us.</p>
-    <p>Thank you,<br/>ShelterLink &mdash; Assisi Animal Sanctuary</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
     `
   );
 }
 
 async function sendHoursApproval(volunteerEmail, hours, opportunityTitle) {
+  const brand = await brandBits();
   const safeHours = Number(hours) || 0;
   const safeTitle = opportunityTitle || 'the selected opportunity';
   return sendEmail(
@@ -105,26 +127,28 @@ async function sendHoursApproval(volunteerEmail, hours, opportunityTitle) {
     <p>Your submitted hours have been approved.</p>
     <p><strong>Opportunity:</strong> ${safeTitle}<br/>
     <strong>Approved Hours:</strong> ${safeHours}</p>
-    <p>Thank you for your contribution,<br/>ShelterLink &mdash; Assisi Animal Sanctuary</p>
+    <p>Thank you for your contribution,<br/>${brand.signoff}</p>
     `
   );
 }
 
 async function sendVolunteerApprovalNotification(volunteerEmail, volunteerName) {
+  const brand = await brandBits();
   const safeName = volunteerName || 'there';
   return sendEmail(
     volunteerEmail,
     'Profile Approved - ShelterLink',
     `
     <p>Hi ${safeName},</p>
-    <p>Great news! Your volunteer profile has been approved by the Assisi Animal Sanctuary team.</p>
+    <p>Great news! Your volunteer profile has been approved${brand.name ? ` by the ${brand.name} team` : ""}.</p>
     <p>You can now browse and apply for volunteer shifts. Log in to get started!</p>
-    <p>Thank you for volunteering,<br/>ShelterLink &mdash; Assisi Animal Sanctuary</p>
+    <p>Thank you for volunteering,<br/>${brand.signoff}</p>
     `
   );
 }
 
 async function sendWaitlistPromotion(volunteerEmail, opportunityTitle) {
+  const brand = await brandBits();
   const safeTitle = opportunityTitle || 'the selected opportunity';
   return sendEmail(
     volunteerEmail,
@@ -133,12 +157,13 @@ async function sendWaitlistPromotion(volunteerEmail, opportunityTitle) {
     <p>Hello,</p>
     <p>Good news! A spot opened up for <strong>${safeTitle}</strong>.</p>
     <p>Your application is now pending review. We will update you once an admin has reviewed it.</p>
-    <p>Thank you,<br/>ShelterLink &mdash; Assisi Animal Sanctuary</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
     `
   );
 }
 
 async function sendShiftReminder(volunteerEmail, details = {}) {
+  const brand = await brandBits();
   const title = details.title || 'your upcoming shift';
   const date = details.date || 'TBA';
   const time = details.time || '';
@@ -155,12 +180,13 @@ async function sendShiftReminder(volunteerEmail, details = {}) {
       <strong>Location:</strong> ${location}
     </p>
     <p>We look forward to seeing you.</p>
-    <p>Thank you,<br/>ShelterLink &mdash; Assisi Animal Sanctuary</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
     `
   );
 }
 
 async function sendOpportunityMatchDigest(volunteerEmail, details = {}) {
+  const brand = await brandBits();
   const name = details.name || 'there';
   const opportunities = Array.isArray(details.opportunities) ? details.opportunities : [];
   const listHtml = opportunities.length
@@ -182,12 +208,13 @@ async function sendOpportunityMatchDigest(volunteerEmail, details = {}) {
     <p>Based on your interests, we found new volunteer opportunities that may suit you:</p>
     ${listHtml}
     <p>Log in to ShelterLink to browse and apply.</p>
-    <p>Thank you,<br/>ShelterLink &mdash; Assisi Animal Sanctuary</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
     `
   );
 }
 
 async function sendQualificationExpiryNotice(volunteerEmail, details = {}) {
+  const brand = await brandBits();
   const name = details.name || 'there';
   const qualificationName = details.qualificationName || 'a qualification';
   const expiresAt = details.expiresAt || 'soon';
@@ -201,7 +228,7 @@ async function sendQualificationExpiryNotice(volunteerEmail, details = {}) {
       <p>Hi ${name},</p>
       <p>Your qualification <strong>${qualificationName}</strong> expired on <strong>${expiresAt}</strong>.</p>
       <p>You may no longer be eligible for shifts that require this training. Please contact the shelter to renew it.</p>
-      <p>Thank you,<br/>ShelterLink &mdash; Assisi Animal Sanctuary</p>
+      <p>Thank you,<br/>${brand.signoff}</p>
       `
     );
   }
@@ -213,12 +240,13 @@ async function sendQualificationExpiryNotice(volunteerEmail, details = {}) {
     <p>Hi ${name},</p>
     <p>This is a reminder that your qualification <strong>${qualificationName}</strong> expires on <strong>${expiresAt}</strong> (in 30 days).</p>
     <p>Please renew it before then so you can keep applying for shifts that require this training.</p>
-    <p>Thank you,<br/>ShelterLink &mdash; Assisi Animal Sanctuary</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
     `
   );
 }
 
 async function sendSwapOpened(volunteerEmail, opportunityTitle) {
+  const brand = await brandBits();
   const safeTitle = opportunityTitle || 'your shift';
   return sendEmail(
     volunteerEmail,
@@ -227,12 +255,13 @@ async function sendSwapOpened(volunteerEmail, opportunityTitle) {
     <p>Hello,</p>
     <p>Your swap request for <strong>${safeTitle}</strong> is open.</p>
     <p>We will email you when another volunteer covers the shift.</p>
-    <p>Thank you,<br/>ShelterLink &mdash; Assisi Animal Sanctuary</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
     `
   );
 }
 
 async function sendSwapWaitlistOffer(volunteerEmail, details = {}) {
+  const brand = await brandBits();
   const title = details.title || 'a shift';
   const claimLink = details.claimLink || '#';
   const hours = details.hours || 12;
@@ -244,12 +273,13 @@ async function sendSwapWaitlistOffer(volunteerEmail, details = {}) {
     <p>A spot on <strong>${title}</strong> is available via a shift swap, and you are first on the waitlist.</p>
     <p>You have <strong>${hours} hours</strong> to claim it before it is offered publicly:</p>
     <p><a href="${claimLink}">Claim this shift</a></p>
-    <p>Thank you,<br/>ShelterLink &mdash; Assisi Animal Sanctuary</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
     `
   );
 }
 
 async function sendSwapClaimedToOriginal(volunteerEmail, opportunityTitle) {
+  const brand = await brandBits();
   const safeTitle = opportunityTitle || 'your shift';
   return sendEmail(
     volunteerEmail,
@@ -258,12 +288,13 @@ async function sendSwapClaimedToOriginal(volunteerEmail, opportunityTitle) {
     <p>Hello,</p>
     <p>Good news — another volunteer has covered <strong>${safeTitle}</strong>.</p>
     <p>Your application for that shift is now cancelled.</p>
-    <p>Thank you,<br/>ShelterLink &mdash; Assisi Animal Sanctuary</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
     `
   );
 }
 
 async function sendSwapClaimedToClaimer(volunteerEmail, opportunityTitle) {
+  const brand = await brandBits();
   const safeTitle = opportunityTitle || 'the shift';
   return sendEmail(
     volunteerEmail,
@@ -272,12 +303,13 @@ async function sendSwapClaimedToClaimer(volunteerEmail, opportunityTitle) {
     <p>Hello,</p>
     <p>You have successfully claimed <strong>${safeTitle}</strong>.</p>
     <p>Your application is accepted — see you at the shelter!</p>
-    <p>Thank you,<br/>ShelterLink &mdash; Assisi Animal Sanctuary</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
     `
   );
 }
 
 async function sendFeedbackRequest(volunteerEmail, details = {}) {
+  const brand = await brandBits();
   const name = details.name || 'there';
   const title = details.title || 'your recent shift';
   const date = details.date || 'recently';
@@ -290,12 +322,13 @@ async function sendFeedbackRequest(volunteerEmail, details = {}) {
     <p>Thanks for volunteering at <strong>${title}</strong> on <strong>${date}</strong>.</p>
     <p>We would love a quick rating (no login needed):</p>
     <p><a href="${feedbackLink}">Leave feedback</a></p>
-    <p>Thank you,<br/>ShelterLink &mdash; Assisi Animal Sanctuary</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
     `
   );
 }
 
 async function sendFeedbackConcernAlert(adminEmail, details = {}) {
+  const brand = await brandBits();
   const volunteerName = details.volunteerName || 'A volunteer';
   const title = details.title || 'a shift';
   const date = details.date || 'recently';
@@ -318,6 +351,7 @@ async function sendFeedbackConcernAlert(adminEmail, details = {}) {
 }
 
 async function sendGroupBookingReceived(contactEmail, details = {}) {
+  const brand = await brandBits();
   const groupName = details.groupName || 'your group';
   const title = details.opportunityTitle || 'a volunteer opportunity';
   const size = details.size != null ? details.size : '';
@@ -329,12 +363,13 @@ async function sendGroupBookingReceived(contactEmail, details = {}) {
     <p>We received your group booking request for <strong>${groupName}</strong>
     (${size} people) on <strong>${title}</strong>.</p>
     <p>An administrator will review your request and email you once it is confirmed or declined.</p>
-    <p>Thank you,<br/>ShelterLink &mdash; Assisi Animal Sanctuary</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
     `
   );
 }
 
 async function sendGroupBookingConfirmed(contactEmail, details = {}) {
+  const brand = await brandBits();
   const groupName = details.groupName || 'your group';
   const title = details.opportunityTitle || 'a volunteer opportunity';
   const when = details.startDate || 'the scheduled date';
@@ -346,12 +381,13 @@ async function sendGroupBookingConfirmed(contactEmail, details = {}) {
     <p>Great news! Your group booking for <strong>${groupName}</strong> on
     <strong>${title}</strong> (${when}) has been <strong>confirmed</strong>.</p>
     <p>We look forward to welcoming your group.</p>
-    <p>Thank you,<br/>ShelterLink &mdash; Assisi Animal Sanctuary</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
     `
   );
 }
 
 async function sendGroupBookingDeclined(contactEmail, details = {}) {
+  const brand = await brandBits();
   const groupName = details.groupName || 'your group';
   const title = details.opportunityTitle || 'a volunteer opportunity';
   return sendEmail(
@@ -362,12 +398,13 @@ async function sendGroupBookingDeclined(contactEmail, details = {}) {
     <p>Unfortunately we are unable to confirm the group booking for
     <strong>${groupName}</strong> on <strong>${title}</strong> at this time.</p>
     <p>Please reply if you would like to discuss alternative dates or sizes.</p>
-    <p>Thank you,<br/>ShelterLink &mdash; Assisi Animal Sanctuary</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
     `
   );
 }
 
 async function sendUrgentCover(volunteerEmail, details = {}) {
+  const brand = await brandBits();
   const title = details.opportunityTitle || 'a volunteer shift';
   const when = details.whenLabel || details.date || '';
   const location = details.location || '';
@@ -380,12 +417,13 @@ async function sendUrgentCover(volunteerEmail, details = {}) {
     <p>We urgently need cover for <strong>${title}</strong>${when ? ` on <strong>${when}</strong>` : ''}.</p>
     ${location ? `<p>Location: ${location}</p>` : ''}
     <p>If you can help, please log in to ShelterLink and apply for the shift.</p>
-    <p>Thank you,<br/>ShelterLink &mdash; Assisi Animal Sanctuary</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
     `
   );
 }
 
 async function sendFosterPlacementConfirmation(volunteerEmail, details = {}) {
+  const brand = await brandBits();
   const name = details.volunteerName || 'there';
   const animalName = details.animalName || 'your foster animal';
   const startedOn = details.startedOn || 'soon';
@@ -410,12 +448,13 @@ async function sendFosterPlacementConfirmation(volunteerEmail, details = {}) {
     ${handling}
     ${emergency}
     <p>Please log check-ins from your Foster page in ShelterLink.</p>
-    <p>Thank you,<br/>ShelterLink &mdash; Assisi Animal Sanctuary</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
     `
   );
 }
 
 async function sendWeeklyDigest(volunteerEmail, details = {}) {
+  const brand = await brandBits();
   const name = details.name || 'there';
   const myShifts = Array.isArray(details.myShifts) ? details.myShifts : [];
   const openShifts = Array.isArray(details.openShifts) ? details.openShifts : [];
@@ -465,7 +504,7 @@ async function sendWeeklyDigest(volunteerEmail, details = {}) {
     'Your weekly ShelterLink digest',
     `
     <p>Hi ${name},</p>
-    <p>Here is your week ahead at Assisi Animal Sanctuary.</p>
+    <p>Here is your week ahead${brand.name ? ` at ${brand.name}` : ""}.</p>
     <h3>Your shifts this week</h3>
     ${myHtml}
     <h3>Open shifts you could help with</h3>
@@ -473,12 +512,13 @@ async function sendWeeklyDigest(volunteerEmail, details = {}) {
     ${fosterHtml ? `<h3>Foster matches</h3>${fosterHtml}` : ''}
     ${unreadHtml}
     <p>Log in to ShelterLink for full details.</p>
-    <p>Thank you,<br/>ShelterLink &mdash; Assisi Animal Sanctuary</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
     `
   );
 }
 
 async function sendThreadDigest(volunteerEmail, details = {}) {
+  const brand = await brandBits();
   const name = details.name || 'there';
   const unreadCount = Number(details.unreadCount) || 1;
   const base = process.env.APP_URL || '';
@@ -495,12 +535,13 @@ async function sendThreadDigest(volunteerEmail, details = {}) {
     <p>You have <strong>${unreadCount}</strong> unread message${unreadCount === 1 ? '' : 's'} in ShelterLink.</p>
     <p><a href="${link}">Open your messages</a></p>
     <p>You can mute a thread from the messages page if you prefer not to get these reminders.</p>
-    <p>Thank you,<br/>ShelterLink &mdash; Assisi Animal Sanctuary</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
     `
   );
 }
 
 async function sendShiftNoteUpdate(volunteerEmail, details = {}) {
+  const brand = await brandBits();
   const title = details.title || 'your shift';
   const date = details.date || '';
   const body = details.body || '';
@@ -516,12 +557,14 @@ async function sendShiftNoteUpdate(volunteerEmail, details = {}) {
     <blockquote style="border-left:3px solid #1b5e20;padding-left:0.75rem;margin:1rem 0;">
       ${String(body).replace(/\n/g, '<br/>')}
     </blockquote>
-    <p>Thank you,<br/>ShelterLink &mdash; Assisi Animal Sanctuary</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
     `
   );
 }
 
 module.exports = {
+  currentShelterName,
+  brandBits,
   sendEmail,
   sendApplicationConfirmation,
   sendApplicationApproval,

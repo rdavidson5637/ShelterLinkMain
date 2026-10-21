@@ -18,6 +18,7 @@ async function listTags(req, res) {
     return res.status(200).json(tags);
   } catch (error) {
     console.error('[Tags] listTags error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -31,6 +32,7 @@ async function getRecommended(req, res) {
     return res.status(200).json(recommended);
   } catch (error) {
     console.error('[Tags] getRecommended error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

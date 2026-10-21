@@ -38,6 +38,7 @@ async function listWaivers(req, res) {
     return res.status(200).json(waivers);
   } catch (error) {
     console.error('[Waiver] listWaivers error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -70,6 +71,7 @@ async function createWaiver(req, res) {
     return res.status(201).json(created);
   } catch (error) {
     console.error('[Waiver] createWaiver error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -109,6 +111,7 @@ async function updateWaiver(req, res) {
     return res.status(200).json(updated);
   } catch (error) {
     console.error('[Waiver] updateWaiver error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -120,6 +123,7 @@ async function getPendingWaivers(req, res) {
     return res.status(200).json(pending);
   } catch (error) {
     console.error('[Waiver] getPendingWaivers error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -174,6 +178,7 @@ async function acceptWaiver(req, res) {
     }
   } catch (error) {
     console.error('[Waiver] acceptWaiver error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -186,10 +191,13 @@ async function getVolunteerWaiverStatus(req, res) {
     if (!isStaffOrAdmin(req)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
+    const user = await User.findById(req.params.userId);
+    if (!user) return res.status(404).json({ error: 'Not found' });
     const status = await Waiver.getStatusForUser(req.params.userId);
     return res.status(200).json(status);
   } catch (error) {
     console.error('[Waiver] getVolunteerWaiverStatus error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

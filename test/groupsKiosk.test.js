@@ -195,6 +195,9 @@ test('kiosk session cannot access admin APIs', async () => {
 test('public group booking is rejected when the shift is full', async () => {
   mock.resetCalls();
   mock.setHandler(async (sql) => {
+    if (/FROM shelters/i.test(sql)) {
+      return [[{ id: 1 }]];
+    }
     if (/FROM opportunities/i.test(sql) && /WHERE opportunity_id/i.test(sql)) {
       return [[{
         opportunity_id: 3,

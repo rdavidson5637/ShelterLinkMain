@@ -33,6 +33,7 @@ async function listAuditLog(req, res) {
     return res.status(200).json(rows);
   } catch (error) {
     console.error('[Admin] listAuditLog error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -68,6 +69,7 @@ async function exportVolunteerGdpr(req, res) {
     if (error.statusCode) {
       return res.status(error.statusCode).json({ error: error.message });
     }
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -110,6 +112,7 @@ async function eraseVolunteer(req, res) {
     if (error.statusCode) {
       return res.status(error.statusCode).json({ error: error.message });
     }
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -131,6 +134,7 @@ async function runRetention(req, res) {
     return res.status(200).json(summary);
   } catch (error) {
     console.error('[Admin] runRetention error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -169,6 +173,7 @@ async function updateUserRole(req, res) {
     return res.status(200).json({ message: 'Role updated', user_id: userId, role });
   } catch (error) {
     console.error('[Admin] updateUserRole error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

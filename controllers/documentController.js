@@ -4,6 +4,7 @@ const path = require('path');
 const crypto = require('crypto');
 const multer = require('multer');
 const UserDocument = require('../models/UserDocument');
+const User = require('../models/User');
 
 const { isStaffOrAdmin } = require('../middleware/auth');
 
@@ -89,6 +90,7 @@ async function uploadDocument(req, res) {
     return res.status(201).json(doc);
   } catch (error) {
     console.error('[Document] uploadDocument error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -100,6 +102,7 @@ async function listMyDocuments(req, res) {
     return res.status(200).json(docs);
   } catch (error) {
     console.error('[Document] listMyDocuments error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -107,10 +110,13 @@ async function listMyDocuments(req, res) {
 async function listVolunteerDocuments(req, res) {
   try {
     if (!ensureAdmin(req, res)) return;
+    const user = await User.findById(req.params.userId);
+    if (!user) return res.status(404).json({ error: 'Not found' });
     const docs = await UserDocument.findByUserId(req.params.userId);
     return res.status(200).json(docs);
   } catch (error) {
     console.error('[Document] listVolunteerDocuments error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -140,6 +146,7 @@ async function updateDocument(req, res) {
     return res.status(200).json(updated);
   } catch (error) {
     console.error('[Document] updateDocument error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -176,6 +183,7 @@ async function downloadDocument(req, res) {
     return res.send(file.buffer);
   } catch (error) {
     console.error('[Document] downloadDocument error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -199,6 +207,7 @@ async function deleteDocument(req, res) {
     return res.status(200).json({ message: 'Document deleted' });
   } catch (error) {
     console.error('[Document] deleteDocument error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

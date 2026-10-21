@@ -207,6 +207,7 @@ async function applyForOpportunity(req, res) {
     });
   } catch (error) {
     console.error('[Application] applyForOpportunity error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -220,6 +221,7 @@ async function getMyApplications(req, res) {
     return res.status(200).json(applications);
   } catch (error) {
     console.error('[Application] getMyApplications error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -241,6 +243,7 @@ async function getAllApplications(req, res) {
     return res.status(200).json(applications);
   } catch (error) {
     console.error('[Application] getAllApplications error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -329,6 +332,7 @@ async function updateApplicationStatus(req, res) {
     return res.status(200).json(application);
   } catch (error) {
     console.error('[Application] updateApplicationStatus error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -408,6 +412,7 @@ async function cancelApplication(req, res) {
     return res.status(200).json({ message: 'Cancellation confirmed' });
   } catch (error) {
     console.error('[Application] cancelApplication error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -444,6 +449,7 @@ async function markApplicationNoShow(req, res) {
     return res.status(200).json(updated);
   } catch (error) {
     console.error('[Application] markApplicationNoShow error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -492,6 +498,7 @@ async function checkInApplication(req, res) {
     return res.status(200).json(updated);
   } catch (error) {
     console.error('[Application] checkInApplication error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -552,6 +559,7 @@ async function checkOutApplication(req, res) {
     return res.status(200).json({ application: updated, hours: hoursRecord });
   } catch (error) {
     console.error('[Application] checkOutApplication error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

@@ -4,6 +4,9 @@ import { formatShiftWhen, parseShiftDate } from '../utils/dateFormat.js';
 import { renderStatCards } from '../components/statCard.js';
 import { showConfirm } from '../components/confirmDialog.js';
 import { escapeHtml } from '../utils/escapeHtml.js';
+import { loadBrand } from '../brand.js';
+
+let shelterLabel = '';
 
 const userNameEl = document.getElementById('userName');
 const profileStatusBannerEl = document.getElementById('profileStatusBanner');
@@ -180,7 +183,7 @@ function drawImpactCard(stats) {
 
   ctx.font = '16px system-ui, sans-serif';
   ctx.fillStyle = 'rgba(255,255,255,0.85)';
-  ctx.fillText('Assisi Animal Sanctuary', 48, 390);
+  ctx.fillText(shelterLabel || 'ShelterLink', 48, 390);
 }
 
 function renderCommunityServiceProgress(profile, approvedHours) {
@@ -216,6 +219,8 @@ async function fetchAndDisplayStats() {
     }
     const stats = await res.json();
     impactSnapshot = stats;
+    const brand = await loadBrand();
+    shelterLabel = brand && brand.name ? brand.name : '';
     setImpactStats(stats);
     renderBadges(stats.badges || {});
     drawImpactCard(stats);

@@ -11,6 +11,7 @@ const { runDbKeepAlive } = require('./dbKeepAlive');
 const { runMessageDigest } = require('./messageDigest');
 const { runBackgroundCheckExpiry } = require('./backgroundCheckExpiry');
 const { runWeeklyDigest } = require('./weeklyDigest');
+const { forEachShelter } = require('../middleware/shelter');
 
 /**
  * Register all scheduled jobs. Importing this module must be safe under test
@@ -18,25 +19,25 @@ const { runWeeklyDigest } = require('./weeklyDigest');
  */
 function registerAllJobs() {
   // Hourly: remind volunteers of accepted shifts starting within 24 hours.
-  scheduler.registerJob('shiftReminders', '0 * * * *', () => runShiftReminders());
+  scheduler.registerJob('shiftReminders', '0 * * * *', () => forEachShelter(() => runShiftReminders()));
   // Daily: qualification expiry warnings (30 days) and day-of notices.
-  scheduler.registerJob('qualificationExpiry', '0 8 * * *', () => runQualificationExpiry());
+  scheduler.registerJob('qualificationExpiry', '0 8 * * *', () => forEachShelter(() => runQualificationExpiry()));
   // Hourly: send queued new-opportunity match digests (max one per volunteer/day).
   scheduler.registerJob('opportunityMatchDigest', '15 * * * *', () =>
-    runOpportunityMatchDigest()
+    forEachShelter(() => runOpportunityMatchDigest())
   );
   // Hourly: publish swap offers after the waitlist exclusive window.
-  scheduler.registerJob('swapWaitlistExpiry', '20 * * * *', () => runSwapWaitlistExpiry());
+  scheduler.registerJob('swapWaitlistExpiry', '20 * * * *', () => forEachShelter(() => runSwapWaitlistExpiry()));
   // Hourly: unread thread digests (messages older than 15 min; max one email/hour/user).
-  scheduler.registerJob('messageDigest', '25 * * * *', () => runMessageDigest());
+  scheduler.registerJob('messageDigest', '25 * * * *', () => forEachShelter(() => runMessageDigest()));
   // Daily: email post-shift feedback links for opportunities from yesterday.
-  scheduler.registerJob('feedbackRequests', '30 8 * * *', () => runFeedbackRequests());
+  scheduler.registerJob('feedbackRequests', '30 8 * * *', () => forEachShelter(() => runFeedbackRequests()));
   // Daily: expire AccessNI checks / reference tokens; warn staff 60 days out.
-  scheduler.registerJob('backgroundCheckExpiry', '0 7 * * *', () => runBackgroundCheckExpiry());
+  scheduler.registerJob('backgroundCheckExpiry', '0 7 * * *', () => forEachShelter(() => runBackgroundCheckExpiry()));
   // Monday 07:00: weekly volunteer digest (shifts, open matches, fosters, unread).
-  scheduler.registerJob('weeklyDigest', '0 7 * * 1', () => runWeeklyDigest());
+  scheduler.registerJob('weeklyDigest', '0 7 * * 1', () => forEachShelter(() => runWeeklyDigest()));
   // Daily: anonymise volunteer accounts inactive beyond DATA_RETENTION_YEARS (default 3).
-  scheduler.registerJob('dataRetention', '30 3 * * *', () => runDataRetentionJob());
+  scheduler.registerJob('dataRetention', '30 3 * * *', () => forEachShelter(() => runDataRetentionJob()));
   // Daily: keep a paused-after-inactivity Supabase project awake (app host must be always-on).
   scheduler.registerJob('dbKeepAlive', '0 6 * * *', () => runDbKeepAlive());
 }

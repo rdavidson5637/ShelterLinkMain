@@ -24,7 +24,7 @@ const loginLimiter = rateLimit({
 // General API limit — generous enough for real use, tight enough to block abuse
 const apiLimiter = rateLimit({
   windowMs: WINDOW_MS,
-  max: LIMITS.api,
+  max: process.env.NODE_ENV === 'test' ? 10000 : LIMITS.api,
   message: 'Too many requests. Please try again later.',
   standardHeaders: true,
   legacyHeaders: false,

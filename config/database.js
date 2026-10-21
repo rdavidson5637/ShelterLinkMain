@@ -2,6 +2,7 @@
 
 const { Pool, types } = require('pg');
 const dotenv = require('dotenv');
+const { shelterStore, mentionsTenantTable } = require('../utils/shelterContext');
 
 dotenv.config();
 
@@ -221,29 +222,80 @@ function connectionConfig() {
 
 const pgPool = new Pool(connectionConfig());
 
+function tagTenantError(error) {
+  if (error && error.code === 'P0001' && /cross-tenant reference/.test(error.message || '')) {
+    error.status = 404;
+  }
+  return error;
+}
+
+function assertTenantContext(sql) {
+  const ctx = shelterStore.getStore();
+  if (ctx?.bypass || ctx?.shelterId) return;
+  if (!mentionsTenantTable(sql)) return;
+  const err = new Error('Refusing an unscoped tenant query');
+  err.status = 500;
+  throw err;
+}
+
+async function applyTenant(client) {
+  const ctx = shelterStore.getStore();
+  if (!ctx?.shelterId || ctx.bypass) return;
+  await client.query(`SELECT set_config('app.shelter_id', $1, true)`, [String(ctx.shelterId)]);
+  await client.query('SET LOCAL ROLE shelterlink_tenant');
+}
+
 async function runOn(querier, sql, params) {
+  assertTenantContext(sql);
   const translated = translatePlaceholders(sql, params);
   const text = ensureReturning(translated.sql);
-  const result = await querier.query(text, translated.params);
-  return shapeExecuteResult(sql, result);
+  try {
+    const result = await querier.query(text, translated.params);
+    return shapeExecuteResult(sql, result);
+  } catch (error) {
+    throw tagTenantError(error);
+  }
+}
+
+async function runScoped(client, sql, params, alreadyInTx) {
+  if (alreadyInTx) {
+    await applyTenant(client);
+    return runOn(client, sql, params);
+  }
+  await client.query('BEGIN');
+  try {
+    await applyTenant(client);
+    const result = await runOn(client, sql, params);
+    await client.query('COMMIT');
+    return result;
+  } catch (error) {
+    try { await client.query('ROLLBACK'); } catch { /* already aborted */ }
+    throw error;
+  }
 }
 
 function wrapClient(client) {
+  let inTx = false;
   return {
     async beginTransaction() {
       await client.query('BEGIN');
+      inTx = true;
+      await applyTenant(client);
     },
     async commit() {
       await client.query('COMMIT');
+      inTx = false;
     },
     async rollback() {
       await client.query('ROLLBACK');
+      inTx = false;
     },
     async execute(sql, params = []) {
+      if (!inTx) return runScoped(client, sql, params, false);
       return runOn(client, sql, params);
     },
     async query(sql, params = []) {
-      return runOn(client, sql, params);
+      return this.execute(sql, params);
     },
     release() {
       client.release();
@@ -253,10 +305,15 @@ function wrapClient(client) {
 
 const pool = {
   async execute(sql, params = []) {
-    return runOn(pgPool, sql, params);
+    const client = await pgPool.connect();
+    try {
+      return await runScoped(client, sql, params, false);
+    } finally {
+      client.release();
+    }
   },
   async query(sql, params = []) {
-    return runOn(pgPool, sql, params);
+    return this.execute(sql, params);
   },
   async getConnection() {
     const client = await pgPool.connect();

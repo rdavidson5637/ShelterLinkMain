@@ -3,6 +3,7 @@
 const Certificate = require('../models/Certificate');
 const Badge = require('../models/Badge');
 const User = require('../models/User');
+const { currentShelterId, isBypass, runWithoutShelter } = require('../utils/shelterContext');
 
 function ensureAuthenticated(req, res) {
   if (!req.session || !req.session.userId) {
@@ -58,6 +59,7 @@ async function getMyCertificate(req, res) {
     return res.status(200).json(fullCertificatePayload(cert, { badges }));
   } catch (error) {
     console.error('[Certificate] getMyCertificate error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -83,11 +85,15 @@ async function issueMyCertificate(req, res) {
     return res.status(201).json(fullCertificatePayload(cert, { badges }));
   } catch (error) {
     console.error('[Certificate] issueMyCertificate error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
 async function verifyCertificate(req, res) {
+  if (!currentShelterId() && !isBypass()) {
+    return runWithoutShelter(() => verifyCertificate(req, res));
+  }
   try {
     const code = String(req.params.code || '').trim();
     if (!code || code.length > 12) {
@@ -100,6 +106,7 @@ async function verifyCertificate(req, res) {
     return res.status(200).json(publicVerifyPayload(cert));
   } catch (error) {
     console.error('[Certificate] verifyCertificate error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

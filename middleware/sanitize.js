@@ -48,7 +48,21 @@ function sanitizeContainer(container, invalidEmails) {
   return sanitized;
 }
 
+function containsShelterKey(value) {
+  if (!value || typeof value !== 'object') return false;
+  if (Array.isArray(value)) return value.some(containsShelterKey);
+  for (const [key, nested] of Object.entries(value)) {
+    if (key === 'shelter_id' || key === 'shelterId') return true;
+    if (containsShelterKey(nested)) return true;
+  }
+  return false;
+}
+
 function sanitizeInput(req, res, next) {
+  if (containsShelterKey(req.body) || containsShelterKey(req.query) || containsShelterKey(req.params)) {
+    return res.status(400).json({ error: 'shelter_id is not accepted' });
+  }
+
   const invalidEmails = [];
 
   req.body = sanitizeContainer(req.body, invalidEmails);
@@ -64,5 +78,5 @@ function sanitizeInput(req, res, next) {
   return next();
 }
 
-module.exports = { sanitizeInput, SKIP_SANITIZE_KEYS };
+module.exports = { sanitizeInput, SKIP_SANITIZE_KEYS, containsShelterKey };
 

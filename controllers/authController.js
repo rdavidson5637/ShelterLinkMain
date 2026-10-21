@@ -12,10 +12,17 @@ const {
   createResetToken,
   productionResetBaseUrl,
 } = require('../utils/resetToken');
+const {
+  runWithoutShelter,
+  runWithShelter,
+  isBypass,
+  currentShelterId,
+} = require('../utils/shelterContext');
+const { assisiShelterId } = require('../middleware/shelter');
 
 function respondSafeUser(row) {
   if (!row) return null;
-  const { password, reset_token, reset_token_expires, ...safe } = row;
+  const { password, reset_token, reset_token_expires, shelter_id, ...safe } = row;
   return safe;
 }
 
@@ -25,6 +32,16 @@ function isStrongPassword(password = '') {
   const hasUppercase = /[A-Z]/.test(pwd);
   const hasNumber = /[0-9]/.test(pwd);
   return hasMinLength && hasUppercase && hasNumber;
+}
+
+async function insertAssisiUser(sql, params) {
+  const shelterId = await assisiShelterId();
+  if (!shelterId) {
+    const err = new Error('Assisi shelter is not configured');
+    err.status = 500;
+    throw err;
+  }
+  return runWithShelter(shelterId, () => pool.execute(sql, params));
 }
 
 async function register(req, res) {
@@ -40,7 +57,7 @@ async function register(req, res) {
       });
     }
 
-    const existing = await User.findByEmail(email);
+    const existing = await runWithoutShelter(() => User.findByEmail(email));
     if (existing) {
       return res.status(409).json({ error: 'Email already in use' });
     }
@@ -52,16 +69,18 @@ async function register(req, res) {
       INSERT INTO users (first_name, last_name, name, phone, email, password, role, created_at)
       VALUES (?, ?, ?, ?, ?, ?, 'volunteer', NOW())
     `;
-    await pool.execute(sql, [first_name, last_name, name, phone || null, email, passwordHash]);
+    await insertAssisiUser(sql, [first_name, last_name, name, phone || null, email, passwordHash]);
 
     return res.status(201).json({ message: 'Registration successful' });
   } catch (error) {
     console.error('[Auth] register error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
 async function login(req, res) {
+  if (!isBypass()) return runWithoutShelter(() => login(req, res));
   try {
     const { email, password } = req.body || {};
     if (!email || !password) {
@@ -69,7 +88,7 @@ async function login(req, res) {
     }
 
     const [rows] = await pool.execute(
-      `SELECT user_id, first_name, last_name, name, email, password, role, created_at
+      `SELECT user_id, first_name, last_name, name, email, password, role, shelter_id, created_at
        FROM users
        WHERE email = ?
        LIMIT 1`,
@@ -88,6 +107,7 @@ async function login(req, res) {
     await regenerateSession(req, {
       userId: user.user_id,
       role: user.role,
+      shelterId: user.shelter_id,
     });
 
     await pool.execute('UPDATE users SET last_login = NOW() WHERE user_id = ?', [user.user_id]);
@@ -95,6 +115,7 @@ async function login(req, res) {
     return res.status(200).json(respondSafeUser(user));
   } catch (error) {
     console.error('[Auth] login error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -113,6 +134,7 @@ async function logout(req, res) {
     });
   } catch (error) {
     console.error('[Auth] logout error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -144,7 +166,7 @@ async function registerAdmin(req, res) {
       });
     }
 
-    const existing = await User.findByEmail(email);
+    const existing = await runWithoutShelter(() => User.findByEmail(email));
     if (existing) {
       return res.status(409).json({ error: 'Email already in use' });
     }
@@ -156,11 +178,12 @@ async function registerAdmin(req, res) {
       INSERT INTO users (first_name, last_name, name, phone, email, password, role, created_at)
       VALUES (?, ?, ?, ?, ?, ?, 'admin', NOW())
     `;
-    await pool.execute(sql, [first_name, last_name, name, phone || null, email, passwordHash]);
+    await insertAssisiUser(sql, [first_name, last_name, name, phone || null, email, passwordHash]);
 
     return res.status(201).json({ message: 'Admin registration successful' });
   } catch (error) {
     console.error('[Auth] registerAdmin error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -184,6 +207,7 @@ async function getCurrentUser(req, res) {
     return res.status(200).json(respondSafeUser(user));
   } catch (error) {
     console.error('[Auth] getCurrentUser error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -193,6 +217,9 @@ async function getCurrentUser(req, res) {
 const GENERIC_RESET_MESSAGE = 'If that email is registered, a reset link has been sent.';
 
 async function forgotPassword(req, res) {
+  if (!currentShelterId() && !isBypass()) {
+    return runWithoutShelter(() => forgotPassword(req, res));
+  }
   try {
     const { email } = req.body || {};
     if (!email) {
@@ -209,7 +236,7 @@ async function forgotPassword(req, res) {
     }
 
     const [rows] = await pool.execute(
-      'SELECT user_id, email, first_name FROM users WHERE email = ? LIMIT 1',
+      'SELECT user_id, email, first_name, shelter_id FROM users WHERE email = ? LIMIT 1',
       [email]
     );
     const user = rows[0];
@@ -224,6 +251,24 @@ async function forgotPassword(req, res) {
     );
 
     const resetLink = `${appUrl}/reset-password.html?token=${raw}`;
+    let shelterName = '';
+    if (user.shelter_id) {
+      try {
+        shelterName = await runWithShelter(user.shelter_id, async () => {
+          const [shelters] = await pool.execute(
+            'SELECT name FROM shelters WHERE id = ? LIMIT 1',
+            [user.shelter_id]
+          );
+          return shelters[0] && shelters[0].name ? String(shelters[0].name) : '';
+        });
+      } catch (lookupError) {
+        console.error('[Auth] forgotPassword shelter lookup error:', lookupError.message);
+      }
+    }
+    const safeShelter = shelterName
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
 
     try {
       await sendEmail(
@@ -231,7 +276,7 @@ async function forgotPassword(req, res) {
         'Reset Your ShelterLink Password',
         `
           <p>Hi ${user.first_name || 'there'},</p>
-          <p>We received a request to reset your ShelterLink password.</p>
+          <p>We received a request to reset your ShelterLink password${safeShelter ? ` for ${safeShelter}` : ''}.</p>
           <p>
             <a href="${resetLink}" style="display:inline-block;padding:0.6rem 1.4rem;background:#2e7d32;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;">
               Reset My Password
@@ -254,11 +299,15 @@ async function forgotPassword(req, res) {
     return generic();
   } catch (error) {
     console.error('[Auth] forgotPassword error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
 async function validateResetToken(req, res) {
+  if (!currentShelterId() && !isBypass()) {
+    return runWithoutShelter(() => validateResetToken(req, res));
+  }
   try {
     const token = String(req.params.token || '').trim();
     if (!token) {
@@ -284,6 +333,9 @@ async function validateResetToken(req, res) {
 }
 
 async function resetPassword(req, res) {
+  if (!currentShelterId() && !isBypass()) {
+    return runWithoutShelter(() => resetPassword(req, res));
+  }
   try {
     const { token, password } = req.body || {};
     if (!token || !password) {
@@ -324,6 +376,7 @@ async function resetPassword(req, res) {
     return res.status(200).json({ message: 'Password reset successfully. You can now log in.' });
   } catch (error) {
     console.error('[Auth] resetPassword error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

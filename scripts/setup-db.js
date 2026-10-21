@@ -25,6 +25,7 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 const { pgPool, closePool } = require('../config/database');
+const { applySql } = require('./applySql');
 
 const args = process.argv.slice(2);
 const isProduction = process.env.NODE_ENV === 'production';
@@ -88,6 +89,13 @@ async function run() {
       console.log('→ Loading sample data...');
       await pgPool.query(loadSql('seed.pg.sql'));
       console.log('  ✓ Sample data loaded.');
+    }
+
+    console.log('→ Applying shelter tenancy...');
+    await applySql(pgPool, loadSql('033_add_shelters.pg.sql'));
+    console.log('  ✓ Shelter tenancy applied.');
+
+    if (withSeed) {
       console.log('\n  Login credentials:');
       console.log('    Admin      admin@shelterlink.org   /  Admin123!');
       console.log('    Volunteer  alex.jenkins@example.com /  Password1');

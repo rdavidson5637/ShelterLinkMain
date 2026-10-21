@@ -2,6 +2,7 @@
 
 const AdminMessage = require('../models/AdminMessage');
 const { sendEmail } = require('../utils/emailService');
+const { currentShelterName } = require('../utils/shelterBrand');
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -21,17 +22,22 @@ function normalizeFilter(raw = {}) {
   };
 }
 
-function toPlainTextHtml(subject, body) {
+function toPlainTextHtml(subject, body, shelterName) {
   const safeBody = String(body || '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/\n/g, '<br/>');
+  const safeName = String(shelterName || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  const from = safeName ? `ShelterLink (${safeName})` : 'ShelterLink';
   return `
     <p>${safeBody}</p>
     <hr/>
     <p style="font-size:0.85em;color:#666;">
-      You received this message from ShelterLink (Assisi Animal Sanctuary).
+      You received this message from ${from}.
       To unsubscribe or update your contact preferences, please contact the shelter directly.
     </p>
   `;
@@ -47,6 +53,7 @@ async function previewRecipients(req, res) {
     return res.status(200).json({ count: recipients.length });
   } catch (error) {
     console.error('[AdminMessages] previewRecipients error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -72,7 +79,7 @@ async function sendBulkMessage(req, res) {
 
     let sent = 0;
     let failed = 0;
-    const html = toPlainTextHtml(subject, body);
+    const html = toPlainTextHtml(subject, body, await currentShelterName());
 
     for (const recipient of recipients) {
       try {
@@ -102,6 +109,7 @@ async function sendBulkMessage(req, res) {
     });
   } catch (error) {
     console.error('[AdminMessages] sendBulkMessage error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -115,6 +123,7 @@ async function listMessages(req, res) {
     return res.status(200).json(messages);
   } catch (error) {
     console.error('[AdminMessages] listMessages error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

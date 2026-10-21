@@ -12,6 +12,7 @@ async function listTemplates(req, res) {
     return res.status(200).json(rows);
   } catch (error) {
     console.error('[Templates] listTemplates error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -58,6 +59,7 @@ async function getTemplate(req, res) {
     return res.status(200).json(row);
   } catch (error) {
     console.error('[Templates] getTemplate error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -74,6 +76,7 @@ async function deleteTemplate(req, res) {
     return res.status(200).json({ deleted: true });
   } catch (error) {
     console.error('[Templates] deleteTemplate error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -124,6 +127,7 @@ async function saveFromOpportunityBody(req, res) {
     return res.status(201).json(row);
   } catch (error) {
     console.error('[Templates] saveFromOpportunityBody error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

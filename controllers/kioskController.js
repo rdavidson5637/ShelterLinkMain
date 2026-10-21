@@ -6,10 +6,11 @@ const { clearSessionCookie, regenerateSession } = require('../utils/sessionCooki
 const Application = require('../models/Application');
 const VolunteerHours = require('../models/VolunteerHours');
 const { hasRole } = require('../middleware/auth');
+const { isBypass, runWithoutShelter } = require('../utils/shelterContext');
 
 function respondSafeUser(row) {
   if (!row) return null;
-  const { password, reset_token, reset_token_expires, ...safe } = row;
+  const { password, reset_token, reset_token_expires, shelter_id, ...safe } = row;
   return safe;
 }
 
@@ -44,6 +45,7 @@ function todayBounds() {
 }
 
 async function unlockKiosk(req, res) {
+  if (!isBypass()) return runWithoutShelter(() => unlockKiosk(req, res));
   try {
     const { email, password } = req.body || {};
     if (!email || !password) {
@@ -51,7 +53,7 @@ async function unlockKiosk(req, res) {
     }
 
     const [rows] = await pool.execute(
-      `SELECT user_id, first_name, last_name, name, email, password, role, created_at
+      `SELECT user_id, first_name, last_name, name, email, password, role, shelter_id, created_at
        FROM users
        WHERE email = ?
        LIMIT 1`,
@@ -74,6 +76,7 @@ async function unlockKiosk(req, res) {
     await regenerateSession(req, {
       userId: user.user_id,
       role: user.role,
+      shelterId: user.shelter_id,
       kioskMode: true,
     });
 
@@ -83,6 +86,7 @@ async function unlockKiosk(req, res) {
     });
   } catch (error) {
     console.error('[Kiosk] unlockKiosk error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -99,6 +103,7 @@ async function getKioskStatus(req, res) {
     });
   } catch (error) {
     console.error('[Kiosk] getKioskStatus error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -172,6 +177,7 @@ async function listTodayShifts(req, res) {
     return res.status(200).json(shifts);
   } catch (error) {
     console.error('[Kiosk] listTodayShifts error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -211,6 +217,7 @@ async function kioskCheckIn(req, res) {
     return res.status(200).json(updated);
   } catch (error) {
     console.error('[Kiosk] kioskCheckIn error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -271,6 +278,7 @@ async function kioskCheckOut(req, res) {
     return res.status(200).json({ application: updated, hours: hoursRecord });
   } catch (error) {
     console.error('[Kiosk] kioskCheckOut error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -289,6 +297,7 @@ async function lockKiosk(req, res) {
     });
   } catch (error) {
     console.error('[Kiosk] lockKiosk error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

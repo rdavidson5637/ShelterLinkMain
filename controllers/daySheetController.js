@@ -39,6 +39,7 @@ async function getDaySheet(req, res) {
     if (/date must be/i.test(error.message)) {
       return res.status(400).json({ error: error.message });
     }
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

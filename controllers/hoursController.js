@@ -61,6 +61,7 @@ async function logHours(req, res) {
     return res.status(201).json({ message: 'Hours logged successfully' });
   } catch (error) {
     console.error('[Hours] logHours error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -74,6 +75,7 @@ async function getMyHours(req, res) {
     return res.status(200).json(hours);
   } catch (error) {
     console.error('[Hours] getMyHours error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -89,6 +91,7 @@ async function getAllPendingHours(req, res) {
     return res.status(200).json(hours);
   } catch (error) {
     console.error('[Hours] getAllPendingHours error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -123,6 +126,7 @@ async function approveHours(req, res) {
     return res.status(200).json({ message: 'Hours approved successfully' });
   } catch (error) {
     console.error('[Hours] approveHours error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -150,6 +154,7 @@ async function getVolunteerStats(req, res) {
     });
   } catch (error) {
     console.error('[Hours] getVolunteerStats error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

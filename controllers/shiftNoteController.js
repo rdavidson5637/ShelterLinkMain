@@ -54,6 +54,7 @@ async function listNotes(req, res) {
     return res.status(200).json(notes);
   } catch (error) {
     console.error('[ShiftNotes] listNotes error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -126,6 +127,7 @@ async function createNote(req, res) {
     if (/body is required|opportunityId|authorId/i.test(error.message)) {
       return res.status(400).json({ error: error.message });
     }
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -158,6 +160,7 @@ async function deleteNote(req, res) {
     return res.status(200).json({ message: 'Note deleted' });
   } catch (error) {
     console.error('[ShiftNotes] deleteNote error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

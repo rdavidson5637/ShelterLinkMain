@@ -17,6 +17,7 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 const { pgPool, pool, closePool } = require('../config/database');
+const { applySql } = require('./applySql');
 
 const dryRun = process.argv.includes('--dry-run');
 
@@ -71,7 +72,7 @@ async function run() {
       const sql = fs.readFileSync(path.join(dir, file), 'utf8').trim();
       process.stdout.write(`→ Applying ${file}... `);
       try {
-        await pgPool.query(sql);
+        await applySql(pgPool, sql);
         await pool.execute(
           'INSERT INTO schema_migrations (filename) VALUES (?) ON CONFLICT (filename) DO NOTHING',
           [file]

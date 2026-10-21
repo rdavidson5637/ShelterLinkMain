@@ -51,6 +51,7 @@ async function createRun(req, res) {
   } catch (error) {
     if (error.status === 400) return res.status(400).json({ error: error.message });
     console.error('[Transport] createRun error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -62,6 +63,7 @@ async function listRuns(req, res) {
     return res.status(200).json(runs);
   } catch (error) {
     console.error('[Transport] listRuns error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -111,6 +113,7 @@ async function getRun(req, res) {
     return res.status(200).json(detail);
   } catch (error) {
     console.error('[Transport] getRun error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -125,6 +128,7 @@ async function updateRunStatus(req, res) {
   } catch (error) {
     if (error.status === 400) return res.status(400).json({ error: error.message });
     console.error('[Transport] updateRunStatus error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -139,6 +143,7 @@ async function listOpenLegs(req, res) {
     });
   } catch (error) {
     console.error('[Transport] listOpenLegs error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -153,6 +158,7 @@ async function listMyLegs(req, res) {
     });
   } catch (error) {
     console.error('[Transport] listMyLegs error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -179,6 +185,7 @@ async function claimLeg(req, res) {
       return res.status(error.status).json({ error: error.message });
     }
     console.error('[Transport] claimLeg error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -197,6 +204,7 @@ async function completeLeg(req, res) {
       return res.status(error.status).json({ error: error.message });
     }
     console.error('[Transport] completeLeg error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -213,6 +221,7 @@ async function setExpenseClaimed(req, res) {
     return res.status(200).json(leg);
   } catch (error) {
     console.error('[Transport] setExpenseClaimed error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -225,6 +234,7 @@ async function mileageTotals(req, res) {
     return res.status(200).json(totals);
   } catch (error) {
     console.error('[Transport] mileageTotals error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -279,6 +289,7 @@ async function chaseCover(req, res) {
     });
   } catch (error) {
     console.error('[Transport] chaseCover error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

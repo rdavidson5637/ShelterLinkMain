@@ -49,6 +49,7 @@ async function createRequest(req, res) {
       return res.status(error.status).json({ error: error.message });
     }
     console.error('[Foster] createRequest error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -60,6 +61,7 @@ async function listRequests(req, res) {
     return res.status(200).json(requests);
   } catch (error) {
     console.error('[Foster] listRequests error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -73,6 +75,7 @@ async function getRequest(req, res) {
     return res.status(200).json({ ...request, offers });
   } catch (error) {
     console.error('[Foster] getRequest error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -86,6 +89,7 @@ async function updateRequest(req, res) {
   } catch (error) {
     if (error.status === 400) return res.status(400).json({ error: error.message });
     console.error('[Foster] updateRequest error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -99,6 +103,7 @@ async function cancelRequest(req, res) {
   } catch (error) {
     if (error.status === 400) return res.status(400).json({ error: error.message });
     console.error('[Foster] cancelRequest error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -112,6 +117,7 @@ async function listOffers(req, res) {
     return res.status(200).json(offers);
   } catch (error) {
     console.error('[Foster] listOffers error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -151,6 +157,7 @@ async function confirmOffer(req, res) {
       return res.status(error.status).json({ error: error.message });
     }
     console.error('[Foster] confirmOffer error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -165,6 +172,7 @@ async function listActivePlacements(req, res) {
     });
   } catch (error) {
     console.error('[Foster] listActivePlacements error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -185,6 +193,7 @@ async function endPlacement(req, res) {
       return res.status(error.status).json({ error: error.message });
     }
     console.error('[Foster] endPlacement error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -199,6 +208,7 @@ async function listMatching(req, res) {
     });
   } catch (error) {
     console.error('[Foster] listMatching error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -217,6 +227,7 @@ async function createOffer(req, res) {
       return res.status(error.status).json({ error: error.message });
     }
     console.error('[Foster] createOffer error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -232,6 +243,7 @@ async function listMyPlacements(req, res) {
     });
   } catch (error) {
     console.error('[Foster] listMyPlacements error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -265,6 +277,7 @@ async function logCheckIn(req, res) {
   } catch (error) {
     if (error.status === 400) return res.status(400).json({ error: error.message });
     console.error('[Foster] logCheckIn error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -275,6 +288,7 @@ async function getEmergencyPhone(req, res) {
     return res.status(200).json({ emergency_phone: emergencyPhone() });
   } catch (error) {
     console.error('[Foster] getEmergencyPhone error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -298,6 +312,7 @@ async function updateFosterApproval(req, res) {
     });
   } catch (error) {
     console.error('[Foster] updateFosterApproval error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

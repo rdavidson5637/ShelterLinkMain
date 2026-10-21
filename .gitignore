@@ -76,5 +76,8 @@ build/
 .DS_Store
 .vscode/
 .idea/
+.cursor/
+.agents/
+.claude/
 
 

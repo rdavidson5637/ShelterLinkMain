@@ -21,6 +21,7 @@ async function getVapidPublicKey(req, res) {
     return res.status(200).json({ publicKey: key, configured: true });
   } catch (error) {
     console.error('[Push] getVapidPublicKey error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -55,6 +56,7 @@ async function unsubscribe(req, res) {
     return res.status(200).json({ removed });
   } catch (error) {
     console.error('[Push] unsubscribe error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -91,6 +93,7 @@ async function updateNotificationPrefs(req, res) {
     });
   } catch (error) {
     console.error('[Push] updateNotificationPrefs error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -117,6 +120,7 @@ async function getNotificationPrefs(req, res) {
     });
   } catch (error) {
     console.error('[Push] getNotificationPrefs error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

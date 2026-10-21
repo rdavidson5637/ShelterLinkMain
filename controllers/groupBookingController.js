@@ -8,6 +8,8 @@ const {
   sendGroupBookingDeclined,
 } = require('../utils/emailService');
 const { isStaffOrAdmin } = require('../middleware/auth');
+const { currentShelterId, runWithShelter } = require('../utils/shelterContext');
+const { assisiShelterId } = require('../middleware/shelter');
 
 const MAX_GROUP_SIZE = 40;
 
@@ -28,6 +30,11 @@ function isValidEmail(value) {
 }
 
 async function createGroupBooking(req, res) {
+  if (!currentShelterId()) {
+    const id = await assisiShelterId();
+    if (!id) return res.status(404).json({ error: 'Opportunity not found or not open' });
+    return runWithShelter(id, () => createGroupBooking(req, res));
+  }
   try {
     const {
       opportunity_id: opportunityId,
@@ -97,6 +104,7 @@ async function createGroupBooking(req, res) {
     return res.status(201).json(booking);
   } catch (error) {
     console.error('[GroupBooking] createGroupBooking error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -109,6 +117,7 @@ async function listGroupBookings(req, res) {
     return res.status(200).json(rows);
   } catch (error) {
     console.error('[GroupBooking] listGroupBookings error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -162,6 +171,7 @@ async function confirmGroupBooking(req, res) {
     return res.status(200).json(updated);
   } catch (error) {
     console.error('[GroupBooking] confirmGroupBooking error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -193,6 +203,7 @@ async function declineGroupBooking(req, res) {
     return res.status(200).json(updated);
   } catch (error) {
     console.error('[GroupBooking] declineGroupBooking error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

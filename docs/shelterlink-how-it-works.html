@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>ShelterLink — How it works</title>
+  <style>
+    :root { --green: #1b5e20; --ink: #1a1a1a; --muted: #4a4a4a; --line: #d5d5d5; --tint: #e8f0e8; }
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: var(--ink); line-height: 1.45; margin: 0; padding: 0; font-size: 11.5pt; }
+    .page { max-width: 800px; margin: 0 auto; padding: 36px 48px 48px; }
+    h1 { color: var(--green); font-size: 26pt; margin: 0 0 6px; letter-spacing: -0.02em; }
+    .subtitle { color: var(--muted); font-size: 12pt; margin: 0 0 22px; }
+    h2 { color: var(--green); font-size: 14pt; margin: 26px 0 8px; border-bottom: 2px solid var(--green); padding-bottom: 4px; }
+    h3 { font-size: 12pt; margin: 16px 0 6px; }
+    p, li { color: var(--ink); }
+    p { margin: 0 0 10px; }
+    ul, ol { margin: 0 0 12px; padding-left: 1.25rem; }
+    li { margin-bottom: 4px; }
+    .banner { background: var(--tint); border: 1px solid #c5d8c5; border-radius: 8px; padding: 12px 16px; margin: 0 0 18px; }
+    table { width: 100%; border-collapse: collapse; margin: 8px 0 16px; font-size: 10.5pt; }
+    th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+    th { background: var(--green); color: #fff; font-weight: 600; }
+    tr:nth-child(even) td { background: #f7faf7; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 10pt; }
+    .callout { border-left: 4px solid var(--green); padding: 8px 12px; background: #fafcfa; margin: 10px 0 16px; }
+    .no { border-left-color: #8a1f1f; background: #fdf6f6; }
+    .yes { border-left-color: var(--green); }
+    footer { margin-top: 28px; font-size: 9.5pt; color: var(--muted); border-top: 1px solid var(--line); padding-top: 10px; }
+    @page { size: A4; margin: 16mm; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>ShelterLink</h1>
+    <p class="subtitle">How it works for volunteers and staff &nbsp;·&nbsp; Assisi demo guide</p>
+
+    <div class="banner">
+      <p style="margin:0;"><strong>What it is.</strong> ShelterLink is a volunteer system built for animal shelters, with the animals in it. Staff run the day from a browser. Volunteers pick shifts, foster, and message without sharing phone numbers. It is meant to replace paper rotas, WhatsApp groups, and spreadsheet hours.</p>
+    </div>
+
+    <h2>1. Demo logins (this copy only)</h2>
+    <p>Open <span class="mono">http://localhost:3001</span> while the app is running (<span class="mono">npm run dev</span>). On a development copy the login page shows a Demo accounts card.</p>
+    <table>
+      <thead>
+        <tr><th>Role</th><th>Email</th><th>Password</th><th>What you see</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Admin / staff</td>
+          <td class="mono">admin@shelterlink.org</td>
+          <td class="mono">Admin123!</td>
+          <td>Day sheet, animals, volunteers, onboarding, messages, reports</td>
+        </tr>
+        <tr>
+          <td>Volunteer</td>
+          <td class="mono">alex.jenkins@example.com</td>
+          <td class="mono">Password1</td>
+          <td>Browse shifts, foster, transport, hours, messages, profile</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>Other seeded volunteers also use password <span class="mono">Password1</span>. These accounts exist only because sample data was loaded. <strong>Do not use them on a live shelter site.</strong> For a real deploy you create a real admin and turn seed data off.</p>
+
+    <h2>2. Two sides of the same system</h2>
+    <p>Everyone uses the same website. After login, ShelterLink shows a different menu depending on the account.</p>
+    <table>
+      <thead>
+        <tr><th>Volunteers</th><th>Admin / staff</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Register, complete a profile, wait for approval, then apply for shifts.</td>
+          <td>Approve new people, create shifts, print the day/week sheet, fill gaps.</td>
+        </tr>
+        <tr>
+          <td>See animals on a shift (name, photo, handling notes). Log walk / feed / socialise.</td>
+          <td>Keep animal records, handling notes, and staff-only welfare / incident notes.</td>
+        </tr>
+        <tr>
+          <td>Offer to foster if their home matches. Claim a transport leg if they drive.</td>
+          <td>Post foster requests, confirm placements, set up relay runs with claimable legs.</td>
+        </tr>
+        <tr>
+          <td>Chat about a shift by first name only. Never see another volunteer’s phone or email.</td>
+          <td>Read every thread, post announcements, soft-delete messages if needed.</td>
+        </tr>
+        <tr>
+          <td>Log hours, collect badges, download a service certificate.</td>
+          <td>Approve hours, track AccessNI and references, see who is stuck in onboarding.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>3. Volunteer path</h2>
+    <ol>
+      <li><strong>Register</strong> with name, email, phone, and a password. They are not fully active until staff approve the profile.</li>
+      <li><strong>Complete profile</strong> — availability, tags, foster home details (garden, other animals, children, medication), away mode if they are on holiday.</li>
+      <li><strong>Onboarding checklist</strong> on the dashboard: profile, waiver, references, AccessNI where required. They can see what is waiting on them vs waiting on the shelter.</li>
+      <li><strong>Browse shifts</strong> — open slots, animals on the shift, handling notes (“muzzle required”, “pulls left”). Apply once. Full shifts can waitlist.</li>
+      <li><strong>Show up</strong> — check in with a code or kiosk. After the shift they log hours and animal activity (walk / feed / socialise).</li>
+      <li><strong>Foster</strong> — they only see requests they match. They offer; staff confirm one carer. Emergency phone is shown to active foster carers.</li>
+      <li><strong>Transport</strong> — claim one leg of a relay. They do not see the next driver’s phone; handover goes through the shelter.</li>
+      <li><strong>Messages</strong> — shift, foster, and transport threads. Names only between volunteers.</li>
+      <li><strong>Impact</strong> — hours, badges, animals helped, printable certificate. Calendar / ICS for their phone.</li>
+    </ol>
+    <p>Volunteers can also install ShelterLink as a phone app (PWA) from the browser. There is no App Store build.</p>
+
+    <h2>4. Admin / staff path</h2>
+    <p>Log in as admin, then work from the <strong>Staff guide</strong> in this order on a typical morning:</p>
+    <ol>
+      <li><strong>Day sheet</strong> — today’s roster, phones, emergency contacts, animal photos and handling notes. Print for reception.</li>
+      <li><strong>Week sheet</strong> — who is on site this week, plus ICS download.</li>
+      <li><strong>Check-ins</strong> — codes on the day sheet, or the tablet kiosk at reception.</li>
+      <li><strong>Urgent cover</strong> — flag an understaffed shift. Matching approved volunteers get email (and push, if keys are set). No phone tree.</li>
+      <li><strong>Animals</strong> — residents linked to shifts. Add a staff-only welfare / incident note when something happens.</li>
+      <li><strong>Messages</strong> — unread shift and foster threads instead of WhatsApp.</li>
+      <li><strong>Fosters</strong> — post a request, review offers, confirm a placement, end it when the animal comes back.</li>
+      <li><strong>Transport</strong> — a run with ordered legs. See who has claimed and which gap still needs a driver.</li>
+      <li><strong>Applications and hours</strong> — accept people onto shifts; approve yesterday’s hours so badges stay true.</li>
+      <li><strong>Onboarding</strong> — pipeline of who is stuck on waiver, references, or AccessNI.</li>
+      <li><strong>Privacy</strong> — export or erase a volunteer; staff keep contact details, volunteers never see each other’s.</li>
+    </ol>
+    <p>Staff can also save shift <strong>templates</strong> (morning walks, cattery, kennel clean), clone a shift, and add a shift note such as “bring wellies”.</p>
+
+    <h2>5. How a shift actually moves</h2>
+    <ol>
+      <li>Staff create a shift (or from a template), optionally attach animals and a required qualification or AccessNI level.</li>
+      <li>Approved volunteers apply. If the slot is full they waitlist. If they lack a qualification or check, they are blocked with a clear reason.</li>
+      <li>Staff accept (or the system fills by policy). A thread exists for that shift when someone messages.</li>
+      <li>On the day: check-in, handling notes on the day sheet, activity logged against named animals.</li>
+      <li>Volunteer logs hours → staff approve → badges / certificate update.</li>
+    </ol>
+    <div class="callout">
+      <strong>Privacy promise you can say out loud.</strong> Volunteers see other volunteers’ names, never their email, phone, or address. Staff and admins still have contacts for emergencies. Transport handovers and shift chat follow the same rule.
+    </div>
+
+    <h2>6. Can you host this on Vercel so they can use it?</h2>
+    <p><strong>No. Do not put ShelterLink on Vercel.</strong> Volunteers and staff would not get a reliable app.</p>
+    <div class="callout no">
+      Vercel is built for websites that wake up per request and then sleep. ShelterLink is a long-running Node/Express server. It keeps login sessions in Postgres, sends shift reminders, weekly digests, and a daily “keep the database awake” ping. If the process sleeps, reminders stop, check-in flows glitch, and a free Supabase database can pause. The frontend is also served by that same Express server, not a static Vercel site.
+    </div>
+    <div class="callout yes">
+      <strong>What to use instead.</strong> Keep the database on Supabase (already set up). Host the app on an always-on service such as <strong>Railway</strong>, <strong>Render</strong>, or <strong>Fly.io</strong>. Those give you a public HTTPS link (for example <span class="mono">https://shelterlink.up.railway.app</span>). Staff and volunteers then log in from any phone or computer — same emails and roles, no need to install anything except the optional phone PWA.
+    </div>
+    <p>For a live shelter (not this demo):</p>
+    <ul>
+      <li>Build the database <em>without</em> sample logins.</li>
+      <li>Create a real admin account for coordinators.</li>
+      <li>Set a public URL, HTTPS, and email (Brevo or similar) so password resets and urgent cover actually send.</li>
+      <li>Demo passwords above must be removed or never loaded.</li>
+    </ul>
+    <p>Until that host is set up, only people on this computer (or on the same network if you share <span class="mono">http://your-mac-ip:3001</span>) can use the running demo.</p>
+
+    <h2>7. Quick click-through for a demo</h2>
+    <p><strong>As admin</strong> — Staff guide → Day sheet → Week sheet → Animals (add a note) → understaffed shift / urgent cover → Messages → Fosters → Transport → Onboarding → Privacy in the footer.</p>
+    <p><strong>As volunteer</strong> — log out, log in as Alex → dashboard checklist → browse a shift with animals → messages → foster / transport → hours / certificate.</p>
+
+    <footer>
+      ShelterLink is a self-hosted volunteer system for a single shelter. SMS, donor CRM, and native App Store apps are out of scope. This sheet describes the demo copy with sample data, not a production policy document.
+    </footer>
+  </div>
+</body>
+</html>

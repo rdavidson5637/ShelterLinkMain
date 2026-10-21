@@ -7,6 +7,7 @@ const dotenv = require('dotenv');
 const path = require('path');
 const { testConnection, pgPool, closePool, pool } = require('./config/database');
 const { sanitizeInput } = require('./middleware/sanitize');
+const { bindShelter } = require('./middleware/shelter');
 const { apiLimiter } = require('./middleware/rateLimiter');
 const { errorHandler } = require('./middleware/errorHandler');
 const { validateEnv } = require('./utils/validateEnv');
@@ -110,6 +111,7 @@ const {
 } = require('./middleware/auth');
 
 app.use('/api', restrictKioskSession);
+app.use('/api', bindShelter);
 
 // Routes
 const authRoutes = require('./routes/auth');
@@ -279,4 +281,8 @@ async function startServer() {
   }
 }
 
-startServer();
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = { app, startServer };

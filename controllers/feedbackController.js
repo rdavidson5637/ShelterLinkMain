@@ -9,6 +9,7 @@ const {
 const { averageRating, averagesByOpportunity } = require('../utils/feedbackMath');
 const { sendFeedbackConcernAlert } = require('../utils/emailService');
 const { isStaffOrAdmin } = require('../middleware/auth');
+const { currentShelterId, isBypass, runWithoutShelter } = require('../utils/shelterContext');
 
 function ensureAuthenticated(req, res) {
   if (!req.session || !req.session.userId) {
@@ -48,6 +49,9 @@ async function loadTokenContext(token) {
  * Public: load opportunity details for the feedback form via signed token.
  */
 async function getFeedbackForm(req, res) {
+  if (!currentShelterId() && !isBypass()) {
+    return runWithoutShelter(() => getFeedbackForm(req, res));
+  }
   try {
     const token = String(req.query.token || '').trim();
     if (!token) {
@@ -76,6 +80,7 @@ async function getFeedbackForm(req, res) {
     });
   } catch (error) {
     console.error('[Feedback] getFeedbackForm error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -84,6 +89,9 @@ async function getFeedbackForm(req, res) {
  * Public: submit feedback with signed token (no login).
  */
 async function submitFeedback(req, res) {
+  if (!currentShelterId() && !isBypass()) {
+    return runWithoutShelter(() => submitFeedback(req, res));
+  }
   try {
     const { token, rating, comment, flag_concern: flagConcern } = req.body || {};
     if (!token || typeof token !== 'string') {
@@ -148,6 +156,7 @@ async function submitFeedback(req, res) {
     });
   } catch (error) {
     console.error('[Feedback] submitFeedback error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -175,6 +184,7 @@ async function getMyPastShiftsForFeedback(req, res) {
     return res.status(200).json(items);
   } catch (error) {
     console.error('[Feedback] getMyPastShiftsForFeedback error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -228,6 +238,7 @@ async function getFeedbackLinkForApplication(req, res) {
     });
   } catch (error) {
     console.error('[Feedback] getFeedbackLinkForApplication error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -271,6 +282,7 @@ async function listFeedback(req, res) {
     });
   } catch (error) {
     console.error('[Feedback] listFeedback error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -299,6 +311,7 @@ async function markFeedbackHandled(req, res) {
     return res.status(200).json({ message: 'Concern marked as handled', feedback: updated });
   } catch (error) {
     console.error('[Feedback] markFeedbackHandled error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

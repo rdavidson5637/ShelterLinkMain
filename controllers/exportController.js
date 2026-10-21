@@ -44,7 +44,7 @@ async function fetchHoursForExport({ userId = null, startDate, endDate }) {
       u.last_name,
       u.email,
       o.title AS opportunity_title,
-      vh.date AS \`date\`,
+      vh.date AS "date",
       vh.hours,
       vh.approved
     FROM volunteer_hours vh
@@ -134,6 +134,7 @@ async function exportVolunteers(req, res) {
     return res.status(200).send(csv);
   } catch (error) {
     console.error('[Export] exportVolunteers error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -159,6 +160,7 @@ async function exportHours(req, res) {
     return res.status(200).send(csv);
   } catch (error) {
     console.error('[Export] exportHours error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -180,6 +182,7 @@ async function exportVolunteerOwnHours(req, res) {
     return res.status(200).send(csv);
   } catch (error) {
     console.error('[Export] exportVolunteerOwnHours error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -229,6 +232,7 @@ async function exportCommunityService(req, res) {
     return res.status(200).send(csv);
   } catch (error) {
     console.error('[Export] exportCommunityService error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

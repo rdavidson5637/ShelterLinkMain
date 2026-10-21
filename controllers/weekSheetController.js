@@ -71,6 +71,7 @@ async function getWeekSheet(req, res) {
     if (error.status === 400 || /week_start must be/i.test(error.message)) {
       return res.status(400).json({ error: error.message });
     }
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -136,6 +137,7 @@ async function getWeekSheetIcs(req, res) {
     if (error.status === 400 || /week_start must be/i.test(error.message)) {
       return res.status(400).json({ error: error.message });
     }
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
