@@ -6,6 +6,8 @@ const Foster = require('../models/Foster');
 const Transport = require('../models/Transport');
 const { isStaffOrAdmin } = require('../middleware/auth');
 const { hasContactLeak } = require('../utils/contactPrivacy');
+const pushService = require('../utils/pushService');
+const { buildThreadPayload } = require('../utils/pushPayloads');
 
 function ensureAuth(req, res) {
   if (!req.session || !req.session.userId) {
@@ -268,6 +270,33 @@ async function postMessage(req, res) {
         );
 
     if (!staff && !assertNoContactLeak(safe, res)) return;
+
+    Promise.resolve()
+      .then(async () => {
+        const participants = await MessageThread.getParticipants(threadId);
+        const recipients = participants.filter((p) => {
+          if (Number(p.user_id) === Number(req.session.userId)) return false;
+          return Number(p.muted) !== 1;
+        });
+        await Promise.all(
+          recipients.map((person) =>
+            pushService.sendToUsers(
+              [person.user_id],
+              buildThreadPayload({
+                subject: thread.subject,
+                body: message.body || body,
+                threadId,
+                role: person.role,
+              }),
+              { category: 'threads' }
+            )
+          )
+        );
+      })
+      .catch((pushError) => {
+        console.error('[Threads] push failed:', pushError.message);
+      });
+
     return res.status(201).json(safe);
   } catch (error) {
     console.error('[Threads] postMessage error:', error.message);

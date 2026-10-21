@@ -3,8 +3,16 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1b5e20" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Complete profile - ShelterLink</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" />
     <link rel="stylesheet" href="/public/css/custom.css" />
   </head>
   <body>
@@ -135,7 +143,7 @@
               </p>
             </div>
 
-            <div class="form-section form-full-width" id="notificationPrefsSection">
+            <div class="form-section form-full-width" id="notifications">
               <fieldset>
                 <legend>Notification preferences</legend>
                 <p><small>Choose which alerts you want. Browser push also requires allowing notifications when prompted.</small></p>
@@ -143,12 +151,15 @@
                 <label><input type="checkbox" id="prefer_reminders" name="prefer_reminders" value="1" checked /> Shift reminders</label>
                 <label><input type="checkbox" id="prefer_threads" name="prefer_threads" value="1" /> Message thread alerts</label>
                 <label><input type="checkbox" id="prefer_fosters" name="prefer_fosters" value="1" /> Foster match alerts</label>
+                <div id="pushToggle"></div>
                 <p style="margin-top:0.5rem;">
-                  <button type="button" id="enablePushButton" class="secondary" hidden>Enable browser push</button>
                   <button type="button" id="savePrefsButton" class="secondary">Save notification prefs</button>
                 </p>
                 <p id="pushStatus" class="secondary" role="status"></p>
               </fieldset>
+              <p style="margin-top:1rem;">
+                <button type="button" id="logoutAllButton" class="secondary">Sign out of all devices</button>
+              </p>
             </div>
           </div>
 
@@ -166,16 +177,7 @@
     <script type="module" src="/js/utils/errorHandler.js"></script>
     <script type="module" src="/js/utils/sessionManager.js"></script>
     <script type="module" src="/js/volunteer/complete-profile.js"></script>
-    <script type="module">
-      import { logout } from '/js/auth.js';
-      const logoutButton = document.getElementById('logoutButton');
-      if (logoutButton) {
-        logoutButton.addEventListener('click', (e) => {
-          e.preventDefault();
-          logout();
-        });
-      }
-    </script>
+    <script type="module" src="/js/bindLogout.js"></script>
       <script type="module" src="/js/utils/footerYear.js"></script>
       <script type="module" src="/js/components/volunteerNav.js"></script>
   </body>

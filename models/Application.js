@@ -1,4 +1,5 @@
 const { pool } = require('../config/database');
+const { nowLocalSql } = require('../utils/shelterTime');
 
 const TABLE = 'applications';
 
@@ -211,7 +212,6 @@ async function updateStatus(applicationId, status, rejectionReason = null) {
       throw new Error('applicationId and status are required');
     }
 
-    // Store rejection reason if provided
     const sql = rejectionReason
       ? `UPDATE ${TABLE} SET status = ?, rejection_reason = ? WHERE application_id = ?`
       : `UPDATE ${TABLE} SET status = ? WHERE application_id = ?`;
@@ -401,10 +401,6 @@ async function findOldestWaitlisted(opportunityId) {
   }
 }
 
-/**
- * Accepted applications for opportunities starting within the next 24 hours
- * that have not yet been sent a reminder.
- */
 async function findAcceptedNeedingReminder(now = new Date()) {
   try {
     const sql = `
@@ -433,7 +429,7 @@ async function findAcceptedNeedingReminder(now = new Date()) {
         AND (vp.away_until IS NULL OR vp.away_until < CURRENT_DATE)
       ORDER BY o.start_date ASC
     `;
-    const nowSql = now.toISOString().slice(0, 19).replace('T', ' ');
+    const nowSql = nowLocalSql(now);
     const [rows] = await pool.execute(sql, [nowSql, nowSql]);
     return rows.map((row) => {
       row.id = row.application_id;
@@ -506,9 +502,6 @@ async function setCheckOut(applicationId, when = new Date()) {
   return findById(applicationId);
 }
 
-/**
- * Round a duration in hours to the nearest 15 minutes (0.25h).
- */
 function roundHoursToQuarter(hours) {
   return Math.round(Number(hours) * 4) / 4;
 }

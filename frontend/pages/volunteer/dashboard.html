@@ -4,9 +4,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#1b5e20" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <link rel="manifest" href="/public/manifest.webmanifest" />
     <title>Volunteer dashboard - ShelterLink</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" />
     <link rel="stylesheet" href="/public/css/custom.css" />
   </head>
   <body>
@@ -23,6 +29,14 @@
     </header>
 
     <main class="container">
+      <div id="installPrompt"></div>
+      <section>
+        <article class="stat-card">
+          <strong>Notifications</strong>
+          <div id="pushToggle"></div>
+          <p><a href="/pages/volunteer/complete-profile.html#notifications">Choose which notifications</a></p>
+        </article>
+      </section>
 <div class="dashboard-main">
         <section>
           <h1>Welcome, <span id="userName">Volunteer</span>!</h1>
@@ -108,7 +122,11 @@
           <article class="stat-card">
             <strong>Calendar feed</strong>
             <p id="icalFeedDetails">Loading subscribe URL...</p>
-            <button type="button" id="copyIcalButton" class="secondary button-small">Copy subscribe URL</button>
+            <p>
+              <button type="button" id="copyIcalButton" class="secondary button-small">Copy link</button>
+              <a id="appleCalLink" hidden rel="noopener" target="_blank">Add to Apple Calendar</a>
+              <a id="googleCalLink" hidden rel="noopener" target="_blank">Add to Google Calendar</a>
+            </p>
           </article>
         </section>
 
@@ -116,8 +134,8 @@
           <h2>Quick Actions</h2>
           <div class="grid">
             <a href="/pages/volunteer/calendar.html" role="button">Calendar</a>
-            <a href="/pages/volunteer/browse-shifts.html" role="button" id="browseShiftsButton">Browse Shifts</a>
-            <a href="/pages/volunteer/log-hours.html" role="button" id="logHoursButton" class="secondary">Log Hours</a>
+            <a href="/pages/volunteer/browse-shifts.html" role="button" id="browseShiftsButton">Find shifts</a>
+            <a href="/pages/volunteer/log-hours.html" role="button" id="logHoursButton" class="secondary">Log hours</a>
             <button type="button" id="exportHoursCsvButton" class="secondary">Export My Hours CSV</button>
           </div>
         </section>
@@ -135,6 +153,3 @@
       <script type="module" src="/js/components/volunteerNav.js"></script>
   </body>
 </html>
-
-
-

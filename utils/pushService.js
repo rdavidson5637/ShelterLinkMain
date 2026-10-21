@@ -140,7 +140,20 @@ function prefersCategory(row, category) {
  * Send a push to users who opted into the category. No-op without VAPID keys.
  * @returns {{ sent: number, skipped: number, failed: number, configured: boolean }}
  */
-async function sendToUsers(userIds, payload = {}, { category = 'urgent' } = {}) {
+function webPushOptions(category, payload = {}) {
+  let options;
+  if (category === 'urgent') options = { TTL: 3600, urgency: 'high' };
+  else if (category === 'reminders') options = { TTL: 6 * 3600, urgency: 'normal' };
+  else options = { TTL: 24 * 3600, urgency: 'low' };
+
+  const topic = String(payload.tag || '')
+    .replace(/[^A-Za-z0-9_-]/g, '')
+    .slice(0, 32);
+  if (topic) options.topic = topic;
+  return options;
+}
+
+async function sendToUsers(userIds, payload = {}, { category = 'urgent', ignorePrefs = false } = {}) {
   if (!isConfigured()) {
     return { sent: 0, skipped: 0, failed: 0, configured: false };
   }
@@ -155,9 +168,10 @@ async function sendToUsers(userIds, payload = {}, { category = 'urgent' } = {}) 
   let skipped = 0;
   let failed = 0;
   const body = typeof payload === 'string' ? payload : JSON.stringify(payload);
+  const options = webPushOptions(category, typeof payload === 'string' ? {} : payload);
 
   for (const row of rows) {
-    if (!prefersCategory(row, category)) {
+    if (!ignorePrefs && !prefersCategory(row, category)) {
       skipped += 1;
       continue;
     }
@@ -166,7 +180,7 @@ async function sendToUsers(userIds, payload = {}, { category = 'urgent' } = {}) 
       keys: { p256dh: row.p256dh, auth: row.auth },
     };
     try {
-      await wp.sendNotification(subscription, body);
+      await wp.sendNotification(subscription, body, options);
       sent += 1;
     } catch (error) {
       failed += 1;
@@ -185,6 +199,19 @@ async function sendToUsers(userIds, payload = {}, { category = 'urgent' } = {}) 
   return { sent, skipped, failed, configured: true };
 }
 
+async function sendToUser(userId, payload, { ignorePrefs = false, category = 'urgent' } = {}) {
+  return sendToUsers([userId], payload, { ignorePrefs, category });
+}
+
+async function findByEndpoint(endpoint) {
+  if (!endpoint) return null;
+  const [rows] = await pool.execute(
+    `SELECT user_id, endpoint FROM push_subscriptions WHERE endpoint = ? LIMIT 1`,
+    [endpoint]
+  );
+  return rows[0] || null;
+}
+
 module.exports = {
   PREF_COLUMNS,
   getVapidConfig,
@@ -194,7 +221,10 @@ module.exports = {
   saveSubscription,
   removeSubscription,
   removeByEndpoint,
+  findByEndpoint,
   listSubscriptionsForUsers,
   prefersCategory,
+  webPushOptions,
   sendToUsers,
+  sendToUser,
 };

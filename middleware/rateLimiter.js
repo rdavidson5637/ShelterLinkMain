@@ -1,4 +1,5 @@
 const rateLimit = require('express-rate-limit');
+const ipKeyGenerator = rateLimit.ipKeyGenerator;
 
 const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
@@ -10,6 +11,7 @@ const LIMITS = {
   resetPassword: 8,
   message: 10,
   groupBooking: 8,
+  pushTest: 3,
 };
 
 const loginLimiter = rateLimit({
@@ -70,6 +72,19 @@ const groupBookingLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+const pushTestLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: LIMITS.pushTest,
+  keyGenerator: (req) => {
+    if (req.session && req.session.userId) return `user:${req.session.userId}`;
+    return ipKeyGenerator(req.ip || 'anon');
+  },
+  message: { error: 'Too many test notifications. Try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+pushTestLimiter.max = LIMITS.pushTest;
+
 module.exports = {
   LIMITS,
   WINDOW_MS,
@@ -80,4 +95,5 @@ module.exports = {
   resetPasswordLimiter,
   groupBookingLimiter,
   messageLimiter,
+  pushTestLimiter,
 };

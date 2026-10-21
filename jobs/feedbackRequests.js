@@ -4,6 +4,8 @@ const ShiftFeedback = require('../models/ShiftFeedback');
 const { createFeedbackToken } = require('../utils/feedbackToken');
 const { sendFeedbackRequest } = require('../utils/emailService');
 const { recordJobRun } = require('../utils/jobLog');
+const { formatShelterDate } = require('../utils/shelterTime');
+const { skipJobIfEmailUnconfigured } = require('../utils/emailConfig');
 
 const JOB_NAME = 'feedbackRequests';
 
@@ -12,13 +14,12 @@ function appBaseUrl() {
 }
 
 function formatDate(value) {
-  if (!value) return 'TBA';
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return String(value).slice(0, 10);
-  return d.toLocaleDateString();
+  return formatShelterDate(value);
 }
 
 async function runFeedbackRequests(now = new Date()) {
+  const skippedRun = await skipJobIfEmailUnconfigured(JOB_NAME, recordJobRun);
+  if (skippedRun) return 'skipped:email_not_configured';
   const due = await ShiftFeedback.findAcceptedNeedingFeedbackRequest(now);
   let sent = 0;
   let failed = 0;

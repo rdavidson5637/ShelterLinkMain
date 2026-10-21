@@ -1,5 +1,6 @@
 import { apiRequest } from './config.js';
 import { isAdminRole, isStaffOrAdminRole } from './utils/roles.js';
+import { getRegistration, clearUserCache } from './pwa.js';
 
 export { isAdminRole, isStaffOrAdminRole };
 
@@ -14,7 +15,27 @@ export async function checkAuth() {
   }
 }
 
+async function unsubscribePushBestEffort() {
+  try {
+    const reg = await getRegistration();
+    const subscription = await reg?.pushManager?.getSubscription();
+    if (!subscription) return;
+    await apiRequest('/push/unsubscribe', {
+      method: 'POST',
+      body: { endpoint: subscription.endpoint },
+    });
+    await subscription.unsubscribe();
+  } catch (_) {
+    /* swallow */
+  }
+}
+
 export async function logout() {
+  await Promise.race([
+    unsubscribePushBestEffort(),
+    new Promise((resolve) => setTimeout(resolve, 3000)),
+  ]).catch(() => {});
+  await clearUserCache();
   try {
     await apiRequest('/auth/logout', { method: 'POST' });
   } catch (_) {

@@ -20,6 +20,7 @@ router.post('/register', registerLimiter, authController.register);
 router.post('/register-admin', adminRegistrationEnabled, authController.registerAdmin);
 router.post('/login', loginLimiter, authController.login);
 router.post('/logout', authController.logout);
+router.post('/logout-all', isAuthenticated, authController.logoutAll);
 router.get('/me', isAuthenticated, authController.getCurrentUser);
 
 // Separate limiter so failed logins cannot masquerade as reset-path errors.

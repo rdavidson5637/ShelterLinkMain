@@ -5,6 +5,9 @@ import { renderStatCards } from '../components/statCard.js';
 import { showConfirm } from '../components/confirmDialog.js';
 import { escapeHtml } from '../utils/escapeHtml.js';
 import { loadBrand } from '../brand.js';
+import { mountInstallPrompt } from '../components/installPrompt.js';
+import { mountPushToggle } from '../components/pushToggle.js';
+import { buildCalendarSubscribeUrls } from '../utils/calendarUrls.js';
 
 let shelterLabel = '';
 
@@ -35,6 +38,8 @@ const documentLabelInput = document.getElementById('documentLabel');
 const documentUploadMessage = document.getElementById('documentUploadMessage');
 const icalFeedDetailsEl = document.getElementById('icalFeedDetails');
 const copyIcalButton = document.getElementById('copyIcalButton');
+const appleCalLink = document.getElementById('appleCalLink');
+const googleCalLink = document.getElementById('googleCalLink');
 const logoutButton = document.getElementById('logoutButton');
 const exportHoursCsvButton = document.getElementById('exportHoursCsvButton');
 let icalUrl = '';
@@ -74,7 +79,6 @@ async function loadOnboardingChecklist() {
       return;
     }
     const data = await res.json();
-    // Never display referee comments (API already strips them).
     const items = [
       ['Profile completed', data.profile_complete],
       ['Profile approved', data.profile_approved],
@@ -82,12 +86,7 @@ async function loadOnboardingChecklist() {
       ['Clear background check', data.has_clear_background_check],
       ['Waivers accepted', data.waivers_complete],
     ];
-    el.innerHTML = `<ul>${items
-      .map(
-        ([label, ok]) =>
-          `<li>${ok ? '✓' : '○'} ${label}</li>`
-      )
-      .join('')}</ul>`;
+    el.innerHTML = `<ul>${items.map(([label, ok]) => `<li>${ok ? '\u2713' : '\u25cb'} ${label}</li>`).join('')}</ul>`;
   } catch (error) {
     console.error('[Dashboard] onboarding checklist error:', error);
     el.textContent = 'Unable to load onboarding checklist.';
@@ -100,18 +99,13 @@ function renderBadges(badges = {}) {
     if (!earned.length) {
       badgesListEl.innerHTML = '<p>No badges earned yet — your first shift unlocks First Step.</p>';
     } else {
-      badgesListEl.innerHTML = earned
-        .map((b) => `<span style="display:inline-block;margin:0.25rem 0.35rem 0.25rem 0;padding:0.35rem 0.6rem;background:#e8f5e9;border-radius:4px;">${b.emoji || ''} ${b.label}</span>`)
-        .join('');
+      badgesListEl.innerHTML = earned.map((b) => `<span style="display:inline-block;margin:0.25rem 0.35rem 0.25rem 0;padding:0.35rem 0.6rem;background:#e8f5e9;border-radius:4px;">${b.emoji || ''} ${b.label}</span>`).join('');
     }
   }
   if (nextBadgeProgressEl) {
     const next = badges.nextBadgeProgress;
-    if (!next) {
-      nextBadgeProgressEl.textContent = 'You have earned every badge. Amazing!';
-    } else {
-      nextBadgeProgressEl.textContent = `Next: ${next.label} — ${next.current} / ${next.target} (${next.percent}%)`;
-    }
+    if (!next) nextBadgeProgressEl.textContent = 'You have earned every badge. Amazing!';
+    else nextBadgeProgressEl.textContent = `Next: ${next.label} — ${next.current} / ${next.target} (${next.percent}%)`;
   }
 }
 
@@ -119,24 +113,13 @@ async function fetchAndDisplayHelpedAnimals() {
   if (!helpedAnimalsDetailsEl) return;
   try {
     const res = await apiRequest('/animals/me/helped');
-    if (!res.ok) {
-      helpedAnimalsDetailsEl.textContent = 'Unable to load animals right now.';
-      return;
-    }
+    if (!res.ok) { helpedAnimalsDetailsEl.textContent = 'Unable to load animals right now.'; return; }
     const rows = await res.json();
     if (!rows.length) {
-      helpedAnimalsDetailsEl.innerHTML =
-        '<p>No animal activity yet. After an accepted shift, log a walk, feed, or socialise from My applications.</p>';
+      helpedAnimalsDetailsEl.innerHTML = '<p>No animal activity yet. After an accepted shift, log a walk, feed, or socialise from My applications.</p>';
       return;
     }
-    helpedAnimalsDetailsEl.innerHTML = `<ul>${rows
-      .map(
-        (r) =>
-          `<li><strong>${r.name}</strong> (${r.species}) — ${r.activity_count} log${
-            Number(r.activity_count) === 1 ? '' : 's'
-          }</li>`
-      )
-      .join('')}</ul>`;
+    helpedAnimalsDetailsEl.innerHTML = `<ul>${rows.map((r) => `<li><strong>${r.name}</strong> (${r.species}) — ${r.activity_count} log${Number(r.activity_count) === 1 ? '' : 's'}</li>`).join('')}</ul>`;
   } catch {
     helpedAnimalsDetailsEl.textContent = 'Unable to load animals right now.';
   }
@@ -147,40 +130,29 @@ function drawImpactCard(stats) {
   const ctx = impactCanvas.getContext('2d');
   const w = impactCanvas.width;
   const h = impactCanvas.height;
-
   const grad = ctx.createLinearGradient(0, 0, w, h);
   grad.addColorStop(0, '#1b5e20');
   grad.addColorStop(1, '#43a047');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, w, h);
-
   ctx.fillStyle = 'rgba(255,255,255,0.08)';
   ctx.beginPath();
   ctx.arc(w - 80, 80, 140, 0, Math.PI * 2);
   ctx.fill();
-
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 42px Georgia, serif';
   ctx.fillText('ShelterLink', 48, 70);
   ctx.font = '22px Georgia, serif';
   ctx.fillText('My volunteer impact', 48, 110);
-
   ctx.font = '28px system-ui, sans-serif';
   ctx.fillText(displayName, 48, 170);
-
   ctx.font = 'bold 36px system-ui, sans-serif';
   ctx.fillText(`${stats.totalHours ?? 0} hours`, 48, 240);
   ctx.font = '24px system-ui, sans-serif';
   ctx.fillText(`${stats.shiftsCompleted ?? 0} shifts · ${stats.currentStreak ?? 0}-month streak`, 48, 285);
-
   const earned = stats.badges?.earned || [];
   ctx.font = '20px system-ui, sans-serif';
-  ctx.fillText(
-    earned.length ? `Badges: ${earned.map((b) => b.label).join(', ')}` : 'Keep going — badges await!',
-    48,
-    340
-  );
-
+  ctx.fillText(earned.length ? `Badges: ${earned.map((b) => b.label).join(', ')}` : 'Keep going — badges await!', 48, 340);
   ctx.font = '16px system-ui, sans-serif';
   ctx.fillStyle = 'rgba(255,255,255,0.85)';
   ctx.fillText(shelterLabel || 'ShelterLink', 48, 390);
@@ -191,32 +163,24 @@ function renderCommunityServiceProgress(profile, approvedHours) {
   const details = document.getElementById('communityServiceDetails');
   const bar = document.getElementById('communityServiceProgress');
   if (!card || !details) return;
-
   if (profile?.volunteer_type !== 'community_service' || profile.required_hours == null) {
     card.hidden = true;
     return;
   }
-
   const target = Number(profile.required_hours) || 0;
   const approved = Number(approvedHours) || 0;
   const remaining = Math.max(target - approved, 0);
   const percent = target > 0 ? Math.min(100, Math.round((approved / target) * 100)) : 0;
   const completed = target > 0 && approved >= target;
-
   card.hidden = false;
-  details.textContent = completed
-    ? `Complete — ${approved} / ${target} approved hours.`
-    : `${approved} / ${target} approved hours (${remaining} remaining).`;
+  details.textContent = completed ? `Complete — ${approved} / ${target} approved hours.` : `${approved} / ${target} approved hours (${remaining} remaining).`;
   if (bar) bar.value = percent;
 }
 
 async function fetchAndDisplayStats() {
   try {
     const res = await apiRequest('/stats/me', { method: 'GET' });
-    if (!res.ok) {
-      setImpactStats();
-      return null;
-    }
+    if (!res.ok) { setImpactStats(); return null; }
     const stats = await res.json();
     impactSnapshot = stats;
     const brand = await loadBrand();
@@ -266,23 +230,11 @@ function renderProfileIncomplete() {
   fragment.append(' to start volunteering.');
   setProfileStatus(fragment, 'warning');
 }
-
-function renderProfilePending() {
-  setProfileStatus('Profile submitted. Waiting for approval from an administrator.', 'info');
-}
-
-function renderProfileApproved() {
-  setProfileStatus('', 'success');
-}
-
+function renderProfilePending() { setProfileStatus('Profile submitted. Waiting for approval from an administrator.', 'info'); }
+function renderProfileApproved() { setProfileStatus('', 'success'); }
 function isSameCalendarDay(date, now = new Date()) {
-  return (
-    date.getFullYear() === now.getFullYear() &&
-    date.getMonth() === now.getMonth() &&
-    date.getDate() === now.getDate()
-  );
+  return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate();
 }
-
 function isWithinCutoff(appRow, now = new Date()) {
   const start = parseShiftDate(appRow.opportunity_start_date);
   if (!start) return false;
@@ -290,7 +242,6 @@ function isWithinCutoff(appRow, now = new Date()) {
   const safeCutoff = Number.isFinite(cutoff) && cutoff >= 0 ? cutoff : 24;
   return start.getTime() - now.getTime() <= safeCutoff * 60 * 60 * 1000;
 }
-
 function renderNextShiftEmpty() {
   if (!nextShiftDetailsEl) return;
   nextShiftDetailsEl.innerHTML = '';
@@ -303,16 +254,35 @@ function renderNextShiftEmpty() {
   browse.textContent = 'Browse open shifts';
   nextShiftDetailsEl.append(p, browse);
 }
-
+function disableOfflineActions(root) {
+  root.querySelectorAll('button').forEach((btn) => {
+    if (btn.textContent === 'Cancel' || btn.textContent === 'Request a swap') {
+      btn.disabled = true;
+      btn.title = 'Needs a connection';
+    }
+  });
+}
+function renderCachedNote(response) {
+  const header = response.headers.get('Date');
+  let time = '';
+  if (header) {
+    const d = new Date(header);
+    if (!Number.isNaN(d.getTime())) {
+      time = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d);
+    }
+  }
+  const note = document.createElement('p');
+  note.className = 'offline-copy-note';
+  note.textContent = `Saved copy from ${time || 'earlier'}. You're offline, so this may be out of date.`;
+  return note;
+}
 function renderNextShiftActions(next) {
   const actions = document.createElement('p');
   actions.className = 'next-shift-actions';
-
   const view = document.createElement('a');
   view.href = '/pages/volunteer/browse-shifts.html';
   view.textContent = 'View shift';
   actions.appendChild(view);
-
   const withinCutoff = isWithinCutoff(next);
   if (!withinCutoff) {
     const cancel = document.createElement('button');
@@ -350,9 +320,7 @@ function renderNextShiftActions(next) {
         onConfirm: async () => {
           const res = await apiRequest(`/applications/${next.id}/swap`, { method: 'POST' });
           const body = await res.json().catch(() => ({}));
-          if (!res.ok) {
-            throw new Error(body?.error || 'Failed to open swap');
-          }
+          if (!res.ok) throw new Error(body?.error || 'Failed to open swap');
           await fetchAndDisplayNextShift();
         },
       });
@@ -363,7 +331,6 @@ function renderNextShiftActions(next) {
     note.textContent = 'Swap request open.';
     actions.appendChild(note);
   }
-
   return actions;
 }
 
@@ -371,55 +338,42 @@ async function fetchAndDisplayNextShift() {
   if (!nextShiftDetailsEl) return;
   try {
     const res = await apiRequest('/applications/my-applications', { method: 'GET' });
-    if (!res.ok) {
-      nextShiftDetailsEl.textContent = 'Unable to load your next shift.';
-      return;
-    }
+    if (!res.ok) { nextShiftDetailsEl.textContent = 'Unable to load your next shift.'; return; }
+    const fromCache = res.headers.get('X-SL-From-Cache') === '1';
     const apps = await res.json();
     const now = Date.now();
-    const upcoming = (Array.isArray(apps) ? apps : [])
-      .filter((app) => {
-        const status = (app.status || '').toLowerCase();
-        if (status !== 'accepted' && status !== 'approved') return false;
-        const start = parseShiftDate(app.opportunity_start_date || app.opportunity_end_date);
-        return start && start.getTime() >= now - 60 * 60 * 1000;
-      })
-      .sort((a, b) => {
-        const aDate = parseShiftDate(a.opportunity_start_date);
-        const bDate = parseShiftDate(b.opportunity_start_date);
-        return (aDate?.getTime() || 0) - (bDate?.getTime() || 0);
-      });
-
-    if (!upcoming.length) {
-      renderNextShiftEmpty();
-      return;
-    }
-
+    const upcoming = (Array.isArray(apps) ? apps : []).filter((app) => {
+      const status = (app.status || '').toLowerCase();
+      if (status !== 'accepted' && status !== 'approved') return false;
+      const start = parseShiftDate(app.opportunity_start_date || app.opportunity_end_date);
+      return start && start.getTime() >= now - 60 * 60 * 1000;
+    }).sort((a, b) => {
+      const aDate = parseShiftDate(a.opportunity_start_date);
+      const bDate = parseShiftDate(b.opportunity_start_date);
+      return (aDate?.getTime() || 0) - (bDate?.getTime() || 0);
+    });
+    if (!upcoming.length) { renderNextShiftEmpty(); return; }
     const next = upcoming[0];
     const start = parseShiftDate(next.opportunity_start_date);
     nextShiftDetailsEl.innerHTML = '';
-
     const title = document.createElement('p');
     const strong = document.createElement('strong');
     strong.textContent = next.opportunity_title || 'Volunteer shift';
     title.appendChild(strong);
-
     const when = document.createElement('p');
     when.textContent = formatShiftWhen(next.opportunity_start_date, next.opportunity_end_date);
-
     const location = document.createElement('p');
     location.textContent = next.opportunity_location || 'Location TBA';
-
+    if (fromCache) nextShiftDetailsEl.append(renderCachedNote(res));
     nextShiftDetailsEl.append(title, when, location);
-
     if (start && isSameCalendarDay(start) && next.check_in_code) {
       const code = document.createElement('p');
       code.className = 'next-shift-code';
       code.innerHTML = `Check-in code: <code>${next.check_in_code}</code>`;
       nextShiftDetailsEl.appendChild(code);
     }
-
     nextShiftDetailsEl.appendChild(renderNextShiftActions(next));
+    if (fromCache) disableOfflineActions(nextShiftDetailsEl);
   } catch (error) {
     console.error('[Dashboard] fetchAndDisplayNextShift error:', error);
     nextShiftDetailsEl.textContent = 'Unable to load your next shift.';
@@ -430,31 +384,20 @@ async function fetchAndDisplayRecommended() {
   if (!recommendedDetailsEl) return;
   try {
     const res = await apiRequest('/tags/recommended', { method: 'GET' });
-    if (!res.ok) {
-      recommendedDetailsEl.textContent = 'Unable to load recommendations.';
-      return;
-    }
+    if (!res.ok) { recommendedDetailsEl.textContent = 'Unable to load recommendations.'; return; }
     const rows = await res.json();
     if (!Array.isArray(rows) || !rows.length) {
-      recommendedDetailsEl.innerHTML =
-        'No recommendations yet. <a href="/pages/volunteer/complete-profile.html">Add interest tags</a> or browse open shifts.';
+      recommendedDetailsEl.innerHTML = 'No recommendations yet. <a href="/pages/volunteer/complete-profile.html">Add interest tags</a> or browse open shifts.';
       return;
     }
-
     const list = document.createElement('div');
     list.className = 'recommended-list';
     rows.forEach((opp) => {
       const item = document.createElement('div');
       item.className = 'recommended-item';
-      const tags = (opp.tags || [])
-        .map((t) => `<span class="tag-chip-display">${escapeHtml(t.name)}</span>`)
-        .join('');
+      const tags = (opp.tags || []).map((t) => `<span class="tag-chip-display">${escapeHtml(t.name)}</span>`).join('');
       const start = opp.start_date ? new Date(opp.start_date).toLocaleString() : 'Flexible';
-      item.innerHTML = `
-        <a href="/pages/volunteer/browse-shifts.html">${escapeHtml(opp.title || 'Opportunity')}</a><br/>
-        <small>${escapeHtml(start)} · ${escapeHtml(opp.location || 'Location TBA')}</small>
-        ${tags ? `<div>${tags}</div>` : ''}
-      `;
+      item.innerHTML = `<a href="/pages/volunteer/browse-shifts.html">${escapeHtml(opp.title || 'Opportunity')}</a><br/><small>${escapeHtml(start)} · ${escapeHtml(opp.location || 'Location TBA')}</small>${tags ? `<div>${tags}</div>` : ''}`;
       list.appendChild(item);
     });
     recommendedDetailsEl.innerHTML = '';
@@ -472,104 +415,63 @@ function statusLabel(status) {
   if (status === 'never_expires') return 'Never expires';
   return 'Valid';
 }
-
 async function fetchAndDisplayQualifications() {
   if (!myQualificationsDetailsEl) return;
   try {
     const res = await apiRequest('/qualifications/mine', { method: 'GET' });
-    if (!res.ok) {
-      myQualificationsDetailsEl.textContent = 'Unable to load qualifications.';
-      return;
-    }
+    if (!res.ok) { myQualificationsDetailsEl.textContent = 'Unable to load qualifications.'; return; }
     const rows = await res.json();
-    if (!Array.isArray(rows) || !rows.length) {
-      myQualificationsDetailsEl.textContent = 'No qualifications awarded yet.';
-      return;
-    }
-    myQualificationsDetailsEl.innerHTML = `<ul style="margin:0;padding-left:1.1rem;">${rows
-      .map((q) => {
-        const expires = q.expires_at
-          ? `expires ${String(q.expires_at).slice(0, 10)}`
-          : 'never expires';
-        return `<li><strong>${q.name}</strong> — ${expires} (${statusLabel(q.status)})</li>`;
-      })
-      .join('')}</ul>`;
+    if (!Array.isArray(rows) || !rows.length) { myQualificationsDetailsEl.textContent = 'No qualifications awarded yet.'; return; }
+    myQualificationsDetailsEl.innerHTML = `<ul style="margin:0;padding-left:1.1rem;">${rows.map((q) => {
+      const expires = q.expires_at ? `expires ${String(q.expires_at).slice(0, 10)}` : 'never expires';
+      return `<li><strong>${q.name}</strong> — ${expires} (${statusLabel(q.status)})</li>`;
+    }).join('')}</ul>`;
   } catch (error) {
     console.error('[Dashboard] qualifications error:', error);
     myQualificationsDetailsEl.textContent = 'Unable to load qualifications.';
   }
 }
-
 function formatBytes(bytes) {
   const n = Number(bytes) || 0;
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
-
 async function fetchAndDisplayDocuments() {
   if (!myDocumentsDetailsEl) return;
   try {
     const res = await apiRequest('/documents/mine', { method: 'GET' });
-    if (!res.ok) {
-      myDocumentsDetailsEl.textContent = 'Unable to load documents.';
-      return;
-    }
+    if (!res.ok) { myDocumentsDetailsEl.textContent = 'Unable to load documents.'; return; }
     const docs = await res.json();
-    if (!Array.isArray(docs) || !docs.length) {
-      myDocumentsDetailsEl.textContent = 'No documents uploaded yet.';
-      return;
-    }
-    myDocumentsDetailsEl.innerHTML = `<ul style="margin:0;padding-left:1.1rem;">${docs
-      .map((d) => {
-        const label = d.label || d.original_name || 'Document';
-        const expires = d.expires_at ? ` · expires ${String(d.expires_at).slice(0, 10)}` : '';
-        return `<li>
-          <a href="/api/documents/${d.id}/download">${label}</a>
-          (${formatBytes(d.size)}${expires})
-        </li>`;
-      })
-      .join('')}</ul>`;
+    if (!Array.isArray(docs) || !docs.length) { myDocumentsDetailsEl.textContent = 'No documents uploaded yet.'; return; }
+    myDocumentsDetailsEl.innerHTML = `<ul style="margin:0;padding-left:1.1rem;">${docs.map((d) => {
+      const label = d.label || d.original_name || 'Document';
+      const expires = d.expires_at ? ` · expires ${String(d.expires_at).slice(0, 10)}` : '';
+      return `<li><a href="/api/documents/${d.id}/download">${label}</a> (${formatBytes(d.size)}${expires})</li>`;
+    }).join('')}</ul>`;
   } catch (error) {
     console.error('[Dashboard] documents error:', error);
     myDocumentsDetailsEl.textContent = 'Unable to load documents.';
   }
 }
-
 function setDocUploadMessage(text, tone = 'neutral') {
   if (!documentUploadMessage) return;
-  if (!text) {
-    documentUploadMessage.textContent = '';
-    return;
-  }
+  if (!text) { documentUploadMessage.textContent = ''; return; }
   documentUploadMessage.className = tone === 'error' ? 'error' : tone === 'success' ? 'success' : '';
   documentUploadMessage.textContent = text;
 }
-
 async function handleDocumentUpload(event) {
   event.preventDefault();
   setDocUploadMessage();
   const file = documentFileInput?.files?.[0];
-  if (!file) {
-    setDocUploadMessage('Please choose a file', 'error');
-    return;
-  }
-  if (file.size > 5 * 1024 * 1024) {
-    setDocUploadMessage('File too large. Maximum size is 5MB.', 'error');
-    return;
-  }
-
+  if (!file) { setDocUploadMessage('Please choose a file', 'error'); return; }
+  if (file.size > 5 * 1024 * 1024) { setDocUploadMessage('File too large. Maximum size is 5MB.', 'error'); return; }
   const formData = new FormData();
   formData.append('file', file);
   const label = (documentLabelInput?.value || '').trim();
   if (label) formData.append('label', label);
-
   try {
-    const res = await fetch(`${API_URL}/documents`, {
-      method: 'POST',
-      credentials: 'include',
-      body: formData,
-    });
+    const res = await fetch(`${API_URL}/documents`, { method: 'POST', credentials: 'include', body: formData });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       setDocUploadMessage(data?.error || 'Upload failed', 'error');
@@ -583,49 +485,47 @@ async function handleDocumentUpload(event) {
     setDocUploadMessage('Network error while uploading', 'error');
   }
 }
-
 async function fetchAndDisplayIcalFeed() {
   if (!icalFeedDetailsEl) return;
   try {
     const res = await apiRequest('/me/ical-feed', { method: 'GET' });
-    if (!res.ok) {
-      icalFeedDetailsEl.textContent = 'Unable to load calendar feed.';
-      return;
-    }
+    if (!res.ok) { icalFeedDetailsEl.textContent = 'Unable to load calendar feed.'; return; }
     const data = await res.json();
     icalUrl = data.url || '';
-    icalFeedDetailsEl.textContent = icalUrl
-      ? 'Subscribe in your calendar app using the button below.'
-      : 'Feed unavailable.';
+    icalFeedDetailsEl.replaceChildren();
+    if (!icalUrl) { icalFeedDetailsEl.textContent = 'Feed unavailable.'; return; }
+    const intro = document.createElement('p');
+    intro.textContent = 'Subscribe in your calendar app using the buttons below.';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.readOnly = true;
+    input.value = icalUrl;
+    input.setAttribute('aria-label', 'Calendar feed URL');
+    input.addEventListener('focus', () => input.select());
+    icalFeedDetailsEl.append(intro, input);
+    const links = buildCalendarSubscribeUrls(icalUrl);
+    if (appleCalLink) { appleCalLink.href = links.apple; appleCalLink.hidden = false; }
+    if (googleCalLink) { googleCalLink.href = links.google; googleCalLink.hidden = false; }
   } catch (error) {
     console.error('[Dashboard] ical feed error:', error);
     icalFeedDetailsEl.textContent = 'Unable to load calendar feed.';
   }
 }
-
 function setExportButtonLoading(loading) {
   if (!exportHoursCsvButton) return;
   exportHoursCsvButton.disabled = loading;
   exportHoursCsvButton.setAttribute('aria-busy', loading ? 'true' : 'false');
   exportHoursCsvButton.textContent = loading ? 'Exporting...' : 'Export My Hours CSV';
 }
-
 function getFilenameFromDisposition(contentDisposition) {
   const match = /filename="?([^"]+)"?/i.exec(contentDisposition || '');
   return match?.[1] || `my-hours-${new Date().toISOString().slice(0, 10)}.csv`;
 }
-
 async function exportMyHoursCSV() {
   setExportButtonLoading(true);
   try {
-    const response = await fetch(`${API_URL}/export/my-hours`, {
-      method: 'GET',
-      credentials: 'include',
-    });
-    if (!response.ok) {
-      throw new Error(`Export failed (${response.status})`);
-    }
-
+    const response = await fetch(`${API_URL}/export/my-hours`, { method: 'GET', credentials: 'include' });
+    if (!response.ok) throw new Error(`Export failed (${response.status})`);
     const blob = await response.blob();
     const downloadUrl = URL.createObjectURL(blob);
     const filename = getFilenameFromDisposition(response.headers.get('Content-Disposition'));
@@ -643,18 +543,16 @@ async function exportMyHoursCSV() {
     setExportButtonLoading(false);
   }
 }
-
 async function init() {
+  mountInstallPrompt(document.getElementById('installPrompt'));
+  mountPushToggle(document.getElementById('pushToggle'));
   await requireAuth();
-
   const user = await fetchCurrentUser();
   if (user && userNameEl) {
     displayName = user.first_name || user.name || 'Volunteer';
     userNameEl.textContent = displayName;
   }
-
   await loadOnboardingChecklist();
-
   const profile = await fetchProfile();
   if (profile === null) {
     renderProfileIncomplete();
@@ -674,31 +572,13 @@ async function init() {
     renderProfilePending();
     setImpactStats();
     if (nextShiftDetailsEl) renderNextShiftEmpty();
-    if (recommendedDetailsEl) {
-      recommendedDetailsEl.textContent = 'Recommendations appear once your profile is approved.';
-    }
-    if (myQualificationsDetailsEl) {
-      await fetchAndDisplayQualifications();
-    }
+    if (recommendedDetailsEl) recommendedDetailsEl.textContent = 'Recommendations appear once your profile is approved.';
+    if (myQualificationsDetailsEl) await fetchAndDisplayQualifications();
     await fetchAndDisplayDocuments();
   }
-
   documentUploadForm?.addEventListener('submit', handleDocumentUpload);
-
-  if (logoutButton) {
-    logoutButton.addEventListener('click', (event) => {
-      event.preventDefault();
-      logout();
-    });
-  }
-
-  if (exportHoursCsvButton) {
-    exportHoursCsvButton.addEventListener('click', (event) => {
-      event.preventDefault();
-      exportMyHoursCSV();
-    });
-  }
-
+  if (logoutButton) logoutButton.addEventListener('click', (event) => { event.preventDefault(); logout(); });
+  if (exportHoursCsvButton) exportHoursCsvButton.addEventListener('click', (event) => { event.preventDefault(); exportMyHoursCSV(); });
   if (downloadImpactButton) {
     downloadImpactButton.addEventListener('click', () => {
       if (!impactCanvas) return;
@@ -709,19 +589,18 @@ async function init() {
       link.click();
     });
   }
-
   if (copyIcalButton) {
     copyIcalButton.addEventListener('click', async () => {
       if (!icalUrl) return;
       try {
         await navigator.clipboard.writeText(icalUrl);
-        copyIcalButton.textContent = 'Copied!';
-        setTimeout(() => { copyIcalButton.textContent = 'Copy subscribe URL'; }, 1500);
+        copyIcalButton.textContent = 'Copied';
+        setTimeout(() => { copyIcalButton.textContent = 'Copy link'; }, 1500);
       } catch {
-        window.prompt('Copy this calendar URL:', icalUrl);
+        const input = icalFeedDetailsEl.querySelector('input');
+        if (input) input.select();
       }
     });
   }
 }
-
 document.addEventListener('DOMContentLoaded', init);

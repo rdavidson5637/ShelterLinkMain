@@ -98,6 +98,30 @@ async function updateNotificationPrefs(req, res) {
   }
 }
 
+async function sendTest(req, res) {
+  try {
+    if (!ensureAuth(req, res)) return;
+    const result = await pushService.sendToUser(
+      req.session.userId,
+      {
+        title: 'ShelterLink test',
+        body: 'Notifications are working on this phone.',
+        url: '/launch',
+        type: 'test',
+        tag: 'test',
+      },
+      { ignorePrefs: true, category: 'urgent' }
+    );
+    if (!result.sent) {
+      return res.status(409).json({ error: 'No device is set up for notifications.' });
+    }
+    return res.status(200).json({ sent: result.sent, failed: result.failed });
+  } catch (error) {
+    console.error('[Push] sendTest error:', error.message);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
 async function getNotificationPrefs(req, res) {
   try {
     if (!ensureAuth(req, res)) return;
@@ -129,6 +153,7 @@ module.exports = {
   getVapidPublicKey,
   subscribe,
   unsubscribe,
+  sendTest,
   updateNotificationPrefs,
   getNotificationPrefs,
   // exported for tests / unused staff guard helper

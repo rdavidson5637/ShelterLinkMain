@@ -1,6 +1,7 @@
 'use strict';
 
 const { pool } = require('../config/database');
+const { nowLocalSql } = require('../utils/shelterTime');
 
 const TABLE = 'shift_feedback';
 
@@ -152,7 +153,7 @@ async function markHandled(id, when = new Date()) {
  * and that have not yet been emailed a feedback request.
  */
 async function findAcceptedNeedingFeedbackRequest(now = new Date()) {
-  const nowSql = now.toISOString().slice(0, 19).replace('T', ' ');
+  const nowSql = nowLocalSql(now);
   const sql = `
     SELECT
       a.application_id,
@@ -199,7 +200,7 @@ async function markFeedbackRequested(applicationId, when = new Date()) {
  * Past accepted applications for a volunteer, with feedback status.
  */
 async function findPastShiftsForUser(userId, now = new Date()) {
-  const nowSql = now.toISOString().slice(0, 19).replace('T', ' ');
+  const nowSql = nowLocalSql(now);
   const sql = `
     SELECT
       a.application_id,

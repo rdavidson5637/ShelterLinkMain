@@ -45,10 +45,25 @@ See `DEPLOY.md` for production setup and `ASSISI-DEMO.md` for the shelter demo s
 - **nodemailer** — transactional email (password reset, application updates)
 - Vanilla HTML/CSS/JS frontend (no build step)
 
+## Vendored libraries
+
+| File | Version | Licence | Source |
+|---|---|---|---|
+| `frontend/public/css/vendor/pico-2.1.1.min.css` | 2.1.1 | MIT | https://cdn.jsdelivr.net/npm/@picocss/pico@2.1.1/css/pico.min.css |
+| `frontend/public/js/vendor/fullcalendar-6.1.19.min.js` | 6.1.19 | MIT | https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js |
+
+Check Pico and FullCalendar versions once a quarter.
+
+## Installing the app
+
+**iPhone:** open https://shelterlink.online in Safari, tap Share, then Add to Home Screen. Open ShelterLink from the home screen, then turn on notifications from the dashboard.
+
+**Android:** tap Install on the dashboard card, or use the Chrome menu, Install app. Then turn on notifications from the dashboard.
+
 ## Getting started
 
 ### Prerequisites
-- Node.js 18+
+- Node.js 22+
 - A Postgres database. Local (`brew install postgresql@16`) or a free
   [Supabase](https://supabase.com) project. Use the **session pooler** URI
   (port 5432), not the transaction pooler (6543).

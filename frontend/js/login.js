@@ -1,6 +1,7 @@
 import { apiRequest } from './config.js';
 import { redirectIfAuthenticated, hasPendingWaivers } from './auth.js';
 import { showFormErrors, clearFormErrors } from './utils/formErrors.js';
+import { clearUserCache, getRegistration } from './pwa.js';
 
 const form = document.getElementById('loginForm');
 const messageEl = document.getElementById('message');
@@ -48,17 +49,40 @@ async function handleLogin(event) {
   showMessage('');
 
   try {
+    let pushEndpoint;
+    try {
+      pushEndpoint = await Promise.race([
+        getRegistration()
+          .then((reg) => reg?.pushManager?.getSubscription())
+          .then((sub) => sub?.endpoint),
+        new Promise((resolve) => setTimeout(() => resolve(undefined), 2000)),
+      ]);
+    } catch {
+      pushEndpoint = undefined;
+    }
+
     const res = await apiRequest('/auth/login', {
       method: 'POST',
       body: JSON.stringify({
         email: payload.email,
         password: payload.password,
+        rememberMe: Boolean(payload.rememberMe || document.getElementById('rememberMe')?.checked),
+        pushEndpoint,
       }),
     });
 
     if (res.ok) {
       const user = await res.json();
-      showMessage('Login successful! Redirecting...', 'success');
+      await clearUserCache();
+      if (user.pushReset === true) {
+        try {
+          const sub = await (await getRegistration())?.pushManager?.getSubscription();
+          await sub?.unsubscribe();
+        } catch (_) {
+          /* ignore */
+        }
+      }
+      showMessage('Login successful. Redirecting...', 'success');
       setTimeout(() => redirectToDashboard(user.role), 1000);
     } else {
       const errorData = await res.json().catch(() => ({}));

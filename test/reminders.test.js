@@ -4,6 +4,9 @@ const test = require('node:test');
 const assert = require('node:assert');
 
 process.env.NODE_ENV = 'test';
+// Jobs skip when email is unconfigured; the email service itself is stubbed below.
+process.env.EMAIL_HOST = 'smtp.test.invalid';
+process.env.EMAIL_FROM = 'ShelterLink <test@example.com>';
 
 const mock = require('./helpers/mockDb');
 
@@ -43,6 +46,13 @@ require.cache[jobLogPath] = {
 const Application = require('../models/Application');
 const { runShiftReminders } = require('../jobs/shiftReminders');
 const appCtrl = require('../controllers/applicationController');
+const pushService = require('../utils/pushService');
+const pushCalls = [];
+const origSend = pushService.sendToUsers;
+pushService.sendToUsers = async (...args) => {
+  pushCalls.push(args);
+  return origSend.apply(pushService, args);
+};
 
 function makeRes() {
   const res = { statusCode: 200, body: undefined };
@@ -58,14 +68,7 @@ test('reminder query selects only unsent accepted apps in next 24h', async () =>
     assert.match(sql, /interval '24 hours'/i);
     assert.match(sql, /accepted', 'approved'/);
     assert.strictEqual(params.length, 2);
-    return [[{
-      application_id: 1,
-      email: 'a@x.com',
-      opportunity_title: 'Walk',
-      opportunity_start_date: '2026-08-11 18:00:00',
-      opportunity_location: 'Yard',
-      reminder_sent_at: null,
-    }]];
+    return [[{ application_id: 1, email: 'a@x.com', opportunity_title: 'Walk', opportunity_start_date: '2026-08-11 18:00:00', opportunity_location: 'Yard', reminder_sent_at: null }]];
   });
 
   const rows = await Application.findAcceptedNeedingReminder(new Date('2026-08-11T12:00:00Z'));
@@ -81,14 +84,7 @@ test('reminder_sent_at prevents duplicate sends', async () => {
   mock.setHandler(async (sql) => {
     if (/reminder_sent_at IS NULL/i.test(sql) && /SELECT/i.test(sql)) {
       if (reminderMarked) return [[]];
-      return [[{
-        application_id: 3,
-        email: 'v@x.com',
-        opportunity_title: 'Feed cats',
-        opportunity_start_date: '2026-08-11 20:00:00',
-        opportunity_location: 'Cattery',
-        reminder_sent_at: null,
-      }]];
+      return [[{ application_id: 3, email: 'v@x.com', opportunity_title: 'Feed cats', opportunity_start_date: '2026-08-11 20:00:00', opportunity_location: 'Cattery', reminder_sent_at: null }]];
     }
     if (/SET reminder_sent_at/i.test(sql)) {
       reminderMarked = true;
@@ -105,6 +101,32 @@ test('reminder_sent_at prevents duplicate sends', async () => {
   assert.match(second, /sent=0/);
   assert.strictEqual(emailCalls.filter((c) => c[0] === 'reminder').length, 1);
   assert.ok(jobRuns.length >= 2);
+});
+
+test('shift reminders send push with reminders category and keep going if push throws', async () => {
+  mock.resetCalls();
+  emailCalls.length = 0;
+  pushCalls.length = 0;
+  mock.setHandler(async (sql) => {
+    if (/reminder_sent_at IS NULL/i.test(sql) && /SELECT/i.test(sql)) {
+      return [[{ application_id: 8, user_id: 4, email: 'v@x.com', opportunity_title: 'Walk', opportunity_start_date: '2026-06-11 10:00:00', opportunity_location: 'Yard' }]];
+    }
+    if (/SET reminder_sent_at/i.test(sql)) return [{ affectedRows: 1 }];
+    return [[]];
+  });
+  const detail = await runShiftReminders(new Date('2026-06-11T08:00:00Z'));
+  assert.match(detail, /pushSent=/);
+  assert.equal(pushCalls[0][2].category, 'reminders');
+  assert.deepEqual(pushCalls[0][0], [4]);
+
+  pushService.sendToUsers = async () => {
+    throw new Error('push down');
+  };
+  emailCalls.length = 0;
+  const afterThrow = await runShiftReminders(new Date('2026-06-11T08:00:00Z'));
+  assert.match(afterThrow, /sent=1/);
+  assert.equal(emailCalls.length, 1);
+  pushService.sendToUsers = origSend;
 });
 
 test('no-show endpoint rejects non-admins', async () => {

@@ -214,7 +214,10 @@ async function getMyIcalToken(req, res) {
     if (!req.session?.userId) return res.status(401).json({ error: 'Unauthorized' });
     const token = await ensureIcalToken(req.session.userId);
     if (!token) return res.status(404).json({ error: 'User not found' });
-    const url = `${req.protocol}://${req.get('host')}/api/my-shifts.ics?token=${token}`;
+    const origin = process.env.APP_URL
+      ? String(process.env.APP_URL).replace(/\/$/, '')
+      : `${req.protocol}://${req.get('host')}`;
+    const url = `${origin}/api/my-shifts.ics?token=${token}`;
     return res.status(200).json({ token, url });
   } catch (error) {
     console.error('[Public] getMyIcalToken error:', error.message);

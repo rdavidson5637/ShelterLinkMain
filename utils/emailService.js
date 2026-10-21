@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 const { currentShelterName } = require('./shelterBrand');
+const { isEmailConfigured } = require('./emailConfig');
 
 function escapeHtml(value) {
   return String(value || '')
@@ -38,8 +39,8 @@ async function sendEmail(to, subject, htmlContent) {
   if (!htmlContent) throw new Error('Email content is required');
 
   const fromAddress = EMAIL_FROM || EMAIL_USER;
-  if (!fromAddress) {
-    throw new Error('Missing EMAIL_FROM/EMAIL_USER configuration');
+  if (!fromAddress || !isEmailConfigured()) {
+    throw new Error('Missing EMAIL_HOST and EMAIL_FROM/EMAIL_USER configuration');
   }
 
   return transporter.sendMail({
@@ -565,6 +566,7 @@ async function sendShiftNoteUpdate(volunteerEmail, details = {}) {
 module.exports = {
   currentShelterName,
   brandBits,
+  isEmailConfigured,
   sendEmail,
   sendApplicationConfirmation,
   sendApplicationApproval,

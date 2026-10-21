@@ -5,6 +5,7 @@ const Opportunity = require('../models/Opportunity');
 const Application = require('../models/Application');
 const { isStaffOrAdmin, isAdminUser } = require('../middleware/auth');
 const { sendShiftNoteUpdate } = require('../utils/emailService');
+const { formatShelterDate } = require('../utils/shelterTime');
 
 function ensureAuthenticated(req, res) {
   if (!req.session || !req.session.userId) {
@@ -15,14 +16,7 @@ function ensureAuthenticated(req, res) {
 }
 
 function formatDate(value) {
-  if (!value) return 'TBA';
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return String(value).slice(0, 10);
-  return d.toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
+  return formatShelterDate(value);
 }
 
 async function listNotes(req, res) {
