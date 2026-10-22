@@ -33,7 +33,7 @@ without data loss.
 ## 3. Deploy the app
 
 Set these environment variables on the host. The app **refuses to start** in
-production if `SESSION_SECRET`, `ADMIN_REGISTRATION_KEY` or `APP_URL` is missing,
+production if `SESSION_SECRET`, `ADMIN_REGISTRATION_KEY`, `APP_URL`, or `DATABASE_URL` is missing,
 weak (`change_me`, `replace_me`, `shelterlink-admin`, `demo`, localhost APP_URL),
 or too short, so a misconfigured deploy fails loudly at boot instead of running
 insecurely.

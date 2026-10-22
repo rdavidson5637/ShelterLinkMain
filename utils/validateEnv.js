@@ -35,6 +35,9 @@ function collectProductionProblems() {
   if (isWeakAppUrl(process.env.APP_URL)) {
     missing.push('APP_URL');
   }
+  if (isBlank(process.env.DATABASE_URL)) {
+    missing.push('DATABASE_URL');
+  }
   return missing;
 }
 

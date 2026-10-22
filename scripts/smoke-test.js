@@ -8,7 +8,7 @@
  *
  * Prerequisites:
  *   1. Database built with sample data:   npm run db:reset
- *      (against localhost the test signs in as the seeded admin)
+ *      Set SMOKE_ADMIN_PASSWORD to the seeded admin password (see database/seed.pg.sql).
  *   2. Server running in another terminal: npm run dev
  *
  * Run:
@@ -28,21 +28,12 @@ require('dotenv').config();
 const BASE = process.env.SMOKE_BASE_URL || `http://localhost:${process.env.PORT || 3000}`;
 const ADMIN_EMAIL = process.env.SMOKE_ADMIN_EMAIL || 'admin@shelterlink.org';
 
-function isLoopback(url) {
-  try {
-    const host = new URL(url).hostname;
-    return host === 'localhost' || host === '127.0.0.1' || host === '::1';
-  } catch {
-    return false;
-  }
-}
-
-if (!isLoopback(BASE) && !process.env.SMOKE_ADMIN_PASSWORD) {
-  console.error('Set SMOKE_ADMIN_PASSWORD when SMOKE_BASE_URL is not localhost.');
+if (!process.env.SMOKE_ADMIN_PASSWORD) {
+  console.error('Set SMOKE_ADMIN_PASSWORD. The smoke test does not keep a password in source.');
   process.exit(1);
 }
 
-const ADMIN_PASSWORD = process.env.SMOKE_ADMIN_PASSWORD || 'Admin123!';
+const ADMIN_PASSWORD = process.env.SMOKE_ADMIN_PASSWORD;
 
 let passed = 0;
 let failed = 0;

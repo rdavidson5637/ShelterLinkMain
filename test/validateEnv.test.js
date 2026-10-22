@@ -35,11 +35,13 @@ test('production collectProblems flags missing SESSION_SECRET and ADMIN_REGISTRA
     SESSION_SECRET: 'change_me_in_env',
     ADMIN_REGISTRATION_KEY: 'shelterlink-admin-2025',
     APP_URL: 'http://localhost:3000',
+    DATABASE_URL: undefined,
   }, () => {
     const missing = collectProductionProblems();
     assert.ok(missing.includes('SESSION_SECRET'));
     assert.ok(missing.includes('ADMIN_REGISTRATION_KEY'));
     assert.ok(missing.includes('APP_URL'));
+    assert.ok(missing.includes('DATABASE_URL'));
   });
 });
 
@@ -49,6 +51,7 @@ test('production passes with strong secrets and public APP_URL', () => {
     SESSION_SECRET: 'x'.repeat(40),
     ADMIN_REGISTRATION_KEY: 'y'.repeat(24),
     APP_URL: 'https://shelterlink.online',
+    DATABASE_URL: 'postgresql://db.example.test:5432/shelterlink',
   }, () => {
     const result = validateEnv({ exitProcess: false });
     assert.strictEqual(result.ok, true);
