@@ -196,6 +196,10 @@ async function uploadPhoto(req, res) {
 async function getPhoto(req, res) {
   try {
     if (!ensureAuth(req, res)) return;
+    if (!isStaffOrAdmin(req)) {
+      const allowed = await Animal.userHasAnimalAccess(req.session.userId, req.params.id);
+      if (!allowed) return res.status(404).json({ error: 'Not found' });
+    }
     const photo = await Animal.getPhoto(req.params.id);
     if (!photo) {
       return res.status(404).json({ error: 'Photo not found' });

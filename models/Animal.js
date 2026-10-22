@@ -416,6 +416,41 @@ async function findHelpedByUser(userId) {
  * Volunteer may log activity only with an accepted application on a shift
  * that includes this animal.
  */
+/**
+ * A volunteer may see an animal only when they are accepted on a shift that
+ * includes it, or they are the active foster carer.
+ */
+async function userHasAnimalAccess(userId, animalId) {
+  const uid = Number(userId);
+  const aid = Number(animalId);
+  if (!Number.isFinite(uid) || uid <= 0 || !Number.isFinite(aid) || aid <= 0) return false;
+
+  const [shift] = await pool.execute(
+    `
+      SELECT 1 AS ok
+      FROM applications a
+      INNER JOIN opportunity_animals oa
+        ON oa.opportunity_id = a.opportunity_id AND oa.animal_id = ?
+      WHERE a.user_id = ?
+        AND a.status IN ('accepted', 'approved')
+      LIMIT 1
+    `,
+    [aid, uid]
+  );
+  if (shift.length) return true;
+
+  const [foster] = await pool.execute(
+    `
+      SELECT 1 AS ok
+      FROM foster_placements
+      WHERE user_id = ? AND animal_id = ? AND status = 'active'
+      LIMIT 1
+    `,
+    [uid, aid]
+  );
+  return foster.length > 0;
+}
+
 async function assertCanLogActivity(userId, animalId, applicationId) {
   const [rows] = await pool.execute(
     `
@@ -454,4 +489,5 @@ module.exports = {
   findActivityForAnimal,
   findHelpedByUser,
   assertCanLogActivity,
+  userHasAnimalAccess,
 };
