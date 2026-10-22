@@ -82,6 +82,8 @@ CREATE TABLE users (
   reset_token         VARCHAR(64)   DEFAULT NULL,
   reset_token_expires TIMESTAMP     DEFAULT NULL,
   ical_token          VARCHAR(64)   DEFAULT NULL,
+  consent_given_at    TIMESTAMP     DEFAULT NULL,
+  privacy_notice_version VARCHAR(32) DEFAULT NULL,
   CONSTRAINT uq_users_email UNIQUE (email),
   CONSTRAINT uq_users_ical_token UNIQUE (ical_token)
 );

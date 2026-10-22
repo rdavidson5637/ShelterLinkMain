@@ -21,10 +21,16 @@ const {
   currentShelterId,
 } = require('../utils/shelterContext');
 const { assisiShelterId } = require('../middleware/shelter');
+const { PRIVACY_NOTICE_VERSION } = require('../config/privacyNotice');
+
+function privacyNoticeAccepted(value) {
+  return value === true || value === 'on' || value === 'true';
+}
 
 function respondSafeUser(row) {
   if (!row) return null;
-  const { password, reset_token, reset_token_expires, shelter_id, ...safe } = row;
+  const { password, reset_token, reset_token_expires, shelter_id, consent_given_at, privacy_notice_version, ...safe } = row;
+  safe.needsPrivacyNotice = privacy_notice_version !== PRIVACY_NOTICE_VERSION;
   return safe;
 }
 
@@ -50,6 +56,10 @@ async function register(req, res) {
       return res.status(400).json({ error: policyError });
     }
 
+    if (!privacyNoticeAccepted(req.body.privacy_notice)) {
+      return res.status(400).json({ error: 'Please confirm you have read the privacy notice.' });
+    }
+
     const normalizedEmail = String(email).trim().toLowerCase();
     const existing = await runWithoutShelter(() => User.findByEmail(normalizedEmail));
     if (existing) {
@@ -62,10 +72,21 @@ async function register(req, res) {
     const passwordHash = await hashPassword(password);
 
     const sql = `
-      INSERT INTO users (first_name, last_name, name, phone, email, password, role, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, 'volunteer', NOW())
+      INSERT INTO users (
+        first_name, last_name, name, phone, email, password, role,
+        consent_given_at, privacy_notice_version, created_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, 'volunteer', NOW(), ?, NOW())
     `;
-    await insertAssisiUser(sql, [first_name, last_name, name, phone || null, normalizedEmail, passwordHash]);
+    await insertAssisiUser(sql, [
+      first_name,
+      last_name,
+      name,
+      phone || null,
+      normalizedEmail,
+      passwordHash,
+      PRIVACY_NOTICE_VERSION,
+    ]);
 
     return res.status(201).json({ message: 'Registration successful' });
   } catch (error) {
@@ -87,7 +108,8 @@ async function login(req, res) {
     }
 
     const [rows] = await pool.execute(
-      `SELECT user_id, first_name, last_name, name, email, password, role, shelter_id, created_at
+      `SELECT user_id, first_name, last_name, name, email, password, role, shelter_id, created_at,
+              privacy_notice_version
        FROM users
        WHERE lower(email) = lower(?)`,
       [email]
@@ -156,6 +178,24 @@ async function login(req, res) {
   } catch (error) {
     console.error('[Auth] login error:', error.message);
     if (error.status === 404) return res.status(404).json({ error: 'Not found' });
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+async function acknowledgePrivacyNotice(req, res) {
+  try {
+    if (!req.session || !req.session.userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    await pool.execute(
+      `UPDATE users
+         SET consent_given_at = NOW(), privacy_notice_version = ?
+       WHERE user_id = ?`,
+      [PRIVACY_NOTICE_VERSION, req.session.userId]
+    );
+    return res.status(200).json({ needsPrivacyNotice: false });
+  } catch (error) {
+    console.error('[Auth] acknowledgePrivacyNotice error:', error.message);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -261,7 +301,7 @@ async function getCurrentUser(req, res) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
     const [rows] = await pool.execute(
-      `SELECT user_id, first_name, last_name, name, email, role, created_at
+      `SELECT user_id, first_name, last_name, name, email, role, created_at, privacy_notice_version
        FROM users
        WHERE user_id = ?
        LIMIT 1`,
@@ -459,6 +499,7 @@ module.exports = {
   logout,
   logoutAll,
   getCurrentUser,
+  acknowledgePrivacyNotice,
   forgotPassword,
   validateResetToken,
   resetPassword,

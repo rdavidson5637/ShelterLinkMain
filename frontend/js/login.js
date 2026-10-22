@@ -82,6 +82,11 @@ async function handleLogin(event) {
           /* ignore */
         }
       }
+      try {
+        sessionStorage.removeItem('privacy_notice_dismissed');
+      } catch (_) {
+        /* ignore */
+      }
       showMessage('Login successful. Redirecting...', 'success');
       setTimeout(() => redirectToDashboard(user.role), 1000);
     } else {

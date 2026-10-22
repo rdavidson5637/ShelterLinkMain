@@ -28,6 +28,12 @@ router.post('/login', loginAccountLimiter, loginLimiter, validateBody(bodies.log
 router.post('/logout', validateBody(bodies.empty), authController.logout);
 router.post('/logout-all', isAuthenticated, validateBody(bodies.empty), authController.logoutAll);
 router.get('/me', isAuthenticated, authController.getCurrentUser);
+router.post(
+  '/privacy-notice',
+  isAuthenticated,
+  validateBody(bodies.privacyNotice),
+  authController.acknowledgePrivacyNotice
+);
 
 // Separate limiter so failed logins cannot masquerade as reset-path errors.
 router.post('/forgot-password', forgotAccountLimiter, forgotPasswordLimiter, validateBody(bodies.forgot), authController.forgotPassword);

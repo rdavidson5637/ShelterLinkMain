@@ -125,12 +125,22 @@ async function handleRegister(event) {
     return;
   }
 
+  const privacyBox = document.getElementById('privacy_notice');
+  if (!privacyBox || !privacyBox.checked) {
+    showFormErrors(form, [
+      { field: 'privacy_notice', message: 'Please confirm you have read the privacy notice.' },
+    ]);
+    if (submitButton) submitButton.removeAttribute('disabled');
+    return;
+  }
+
   const data = {
     first_name: payload.first_name,
     last_name: payload.last_name,
     email: payload.email,
     phone: payload.phone,
     password: payload.password,
+    privacy_notice: true,
   };
 
   try {

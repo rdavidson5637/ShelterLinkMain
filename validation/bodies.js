@@ -33,6 +33,12 @@ const qdate = z
 
 const empty = z.object({}).strict();
 
+const privacyNotice = z
+  .object({
+    accept: z.literal(true),
+  })
+  .strict();
+
 const register = z
   .object({
     first_name: optStr(80),
@@ -40,6 +46,7 @@ const register = z
     email: optStr(254),
     password: optStr(200),
     phone: optStr(40),
+    privacy_notice: z.union([z.boolean(), z.literal('on'), z.literal('true')]).optional(),
   })
   .strict();
 
@@ -568,6 +575,7 @@ const queries = {
 const bodies = {
   empty,
   register,
+  privacyNotice,
   registerAdmin,
   login,
   forgot,

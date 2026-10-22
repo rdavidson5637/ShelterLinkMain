@@ -1725,3 +1725,34 @@ p {
   border-radius: 4px;
   flex-shrink: 0;
 }
+
+.privacy-notice-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: var(--green-tint);
+  color: var(--text);
+  border-bottom: 1px solid var(--green-tint-border);
+}
+
+.privacy-notice-bar p {
+  margin: 0;
+  max-width: 65ch;
+}
+
+.privacy-notice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.privacy-notice-actions button {
+  min-height: 2.75rem;
+}
