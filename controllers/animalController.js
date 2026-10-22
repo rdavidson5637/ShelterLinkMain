@@ -4,7 +4,6 @@ const crypto = require('crypto');
 const multer = require('multer');
 const Animal = require('../models/Animal');
 const UserDocument = require('../models/UserDocument');
-const Application = require('../models/Application');
 const { isStaffOrAdmin } = require('../middleware/auth');
 const { canonicalMime, sniffImage } = require('../utils/fileSignature');
 
@@ -108,22 +107,10 @@ async function getAnimal(req, res) {
       return res.status(200).json({ ...animal, activity, incidents });
     }
 
-    // Volunteers see public fields + handling notes only when they have an
-    // accepted shift that includes this animal.
-    const apps = await Application.findByUserId(req.session.userId);
-    const acceptedOppIds = (apps || [])
-      .filter((a) => ['accepted', 'approved'].includes(a.status))
-      .map((a) => Number(a.opportunity_id));
-    let includeHandling = false;
-    for (const oppId of acceptedOppIds) {
-      const animals = await Animal.findForOpportunity(oppId);
-      if (animals.some((a) => Number(a.id) === Number(animal.id))) {
-        includeHandling = true;
-        break;
-      }
-    }
+    const allowed = await Animal.userHasAnimalAccess(req.session.userId, animal.id);
+    if (!allowed) return res.status(404).json({ error: 'Not found' });
 
-    return res.status(200).json(toPublicAnimal(animal, { includeHandling }));
+    return res.status(200).json(toPublicAnimal(animal, { includeHandling: true }));
   } catch (error) {
     console.error('[Animal] get error:', error.message);
     if (error.status === 404) return res.status(404).json({ error: 'Not found' });

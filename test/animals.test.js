@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const mock = require('./helpers/mockDb');
 const Animal = require('../models/Animal');
-const { getPhoto } = require('../controllers/animalController');
+const { getPhoto, getAnimal } = require('../controllers/animalController');
 
 function makeRes() {
   const res = { statusCode: 200, body: undefined, headers: {} };
@@ -208,4 +208,55 @@ test('staff can fetch an animal photo without a personal shift', async () => {
   );
   assert.strictEqual(res.statusCode, 200);
   assert.ok(!mock.calls.some((call) => /FROM applications/i.test(call.sql)));
+});
+
+test('a volunteer with no relationship cannot read an animal record', async () => {
+  mock.resetCalls();
+  mock.setHandler(async (sql) => {
+    if (/FROM animals a/i.test(sql)) {
+      return [[{
+        id: 1,
+        name: 'Bella',
+        species: 'dog',
+        kennel_ref: 'K-12',
+        status: 'available',
+        handling_notes: 'Pulls left',
+      }]];
+    }
+    return [[]];
+  });
+  const res = makeRes();
+  await getAnimal(
+    { session: { userId: 4, role: 'volunteer' }, params: { id: '1' } },
+    res
+  );
+  assert.strictEqual(res.statusCode, 404);
+  assert.strictEqual(res.body.kennel_ref, undefined);
+});
+
+test('an active foster carer can read the animal without kennel notes hidden', async () => {
+  mock.resetCalls();
+  mock.setHandler(async (sql) => {
+    if (/FROM animals a/i.test(sql)) {
+      return [[{
+        id: 1,
+        name: 'Bella',
+        species: 'dog',
+        kennel_ref: 'K-12',
+        status: 'foster',
+        handling_notes: 'Pulls left',
+      }]];
+    }
+    if (/FROM foster_placements/i.test(sql)) return [[{ ok: 1 }]];
+    return [[]];
+  });
+  const res = makeRes();
+  await getAnimal(
+    { session: { userId: 4, role: 'volunteer' }, params: { id: '1' } },
+    res
+  );
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.name, 'Bella');
+  assert.strictEqual(res.body.handling_notes, 'Pulls left');
+  assert.strictEqual(res.body.kennel_ref, 'K-12');
 });
