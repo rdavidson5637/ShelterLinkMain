@@ -17,6 +17,7 @@
     "db:clean-demo": "node scripts/clean-demo.js",
     "create-admin": "node create-admin.js",
     "test": "node --test --test-concurrency=1 test/*.test.js",
+    "test:security": "node --test --test-concurrency=1 test/authForgot.test.js test/authRegister.test.js test/authReset.test.js test/passwordPolicy.test.js test/loginSession.test.js test/rateLimiter.test.js test/groupBooking.test.js test/rolesAuditGdpr.test.js test/animals.test.js test/shiftNotes.test.js test/headers.test.js test/csp.test.js test/errorHandler.test.js test/retention.test.js test/validateRequest.test.js",
     "migrate": "node scripts/migrate.js",
     "smoke": "node scripts/smoke-test.js",
     "backup": "node scripts/backup.js",
