@@ -88,6 +88,7 @@ CREATE TABLE users (
 
 CREATE INDEX idx_users_reset_token ON users (reset_token);
 CREATE INDEX idx_users_role ON users (role);
+CREATE UNIQUE INDEX uq_users_email_lower ON users (lower(email));
 
 -- ----------------------------------------------------------------------------
 -- opportunities

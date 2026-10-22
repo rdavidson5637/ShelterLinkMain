@@ -236,6 +236,15 @@ test('download route enforces ownership and streams bytes from the database', as
     adminRes
   );
   assert.ok(Buffer.isBuffer(adminRes.sent));
+
+  // Staff cannot download another volunteer's file
+  const staffRes = makeRes();
+  await docCtrl.downloadDocument(
+    makeReq({ session: { userId: 8, role: 'staff' }, params: { id: 9 } }),
+    staffRes
+  );
+  assert.strictEqual(staffRes.statusCode, 403);
+  assert.strictEqual(staffRes.sent, null);
 });
 
 test('upload stores file content in the database', async () => {
@@ -274,4 +283,55 @@ test('upload stores file content in the database', async () => {
   const contentParam = insertParams.find((p) => Buffer.isBuffer(p));
   assert.ok(contentParam, 'file bytes were passed as a bind parameter');
   assert.strictEqual(contentParam.toString(), '%PDF');
+});
+
+test('upload rejects a declared PDF whose bytes are not a PDF', async () => {
+  mock.resetCalls();
+  mock.setHandler(async () => [[]]);
+  const res = makeRes();
+  await docCtrl.uploadDocument(
+    makeReq({
+      session: { userId: 2, role: 'volunteer' },
+      file: {
+        buffer: Buffer.from('not really a pdf'),
+        originalname: 'notes.pdf',
+        mimetype: 'application/pdf',
+        size: 16,
+      },
+      body: {},
+    }),
+    res
+  );
+  assert.strictEqual(res.statusCode, 400);
+  assert.match(res.body.error, /do not match/i);
+});
+
+test('upload rejects disclosure certificate files', async () => {
+  mock.resetCalls();
+  mock.setHandler(async () => [[]]);
+  const res = makeRes();
+  await docCtrl.uploadDocument(
+    makeReq({
+      session: { userId: 2, role: 'volunteer' },
+      file: {
+        buffer: Buffer.from('%PDF-1.4'),
+        originalname: 'accessni-certificate.pdf',
+        mimetype: 'application/pdf',
+        size: 8,
+      },
+      body: { label: 'AccessNI' },
+    }),
+    res
+  );
+  assert.strictEqual(res.statusCode, 400);
+  assert.match(res.body.error, /disclosure certificates/i);
+});
+
+test('staff cannot list another volunteer documents', async () => {
+  const res = makeRes();
+  await docCtrl.listVolunteerDocuments(
+    makeReq({ session: { userId: 8, role: 'staff' }, params: { userId: 2 } }),
+    res
+  );
+  assert.strictEqual(res.statusCode, 403);
 });

@@ -55,14 +55,14 @@ async function unlockKiosk(req, res) {
     const [rows] = await pool.execute(
       `SELECT user_id, first_name, last_name, name, email, password, role, shelter_id, created_at
        FROM users
-       WHERE email = ?
-       LIMIT 1`,
+       WHERE lower(email) = lower(?)`,
       [email]
     );
-    const user = rows[0];
-    if (!user) {
+    if (rows.length !== 1) {
+      if (rows.length > 1) console.error('[Kiosk] ambiguous email match', rows.length);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
+    const user = rows[0];
 
     const match = await bcrypt.compare(String(password), String(user.password));
     if (!match) {

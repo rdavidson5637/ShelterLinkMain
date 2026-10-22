@@ -6,6 +6,7 @@ const Animal = require('../models/Animal');
 const UserDocument = require('../models/UserDocument');
 const Application = require('../models/Application');
 const { isStaffOrAdmin } = require('../middleware/auth');
+const { canonicalMime, sniffImage } = require('../utils/fileSignature');
 
 const IMAGE_MIME = new Set(['image/jpeg', 'image/png']);
 
@@ -169,9 +170,14 @@ async function uploadPhoto(req, res) {
       return res.status(404).json({ error: 'Animal not found' });
     }
 
+    const detected = sniffImage(req.file.buffer);
+    if (!detected || detected !== canonicalMime(req.file.mimetype)) {
+      return res.status(400).json({ error: 'File contents do not match the declared type' });
+    }
+
     await Animal.setPhoto(req.params.id, {
       content: req.file.buffer,
-      mimeType: String(req.file.mimetype || 'image/jpeg').toLowerCase(),
+      mimeType: detected,
     });
 
     // photo_filename is now just a "has photo" marker and cache-buster for the

@@ -7,7 +7,7 @@ const path = require('path');
 
 const LOCAL = 'postgresql://postgres@127.0.0.1:54329/shelterlink_tenant_test';
 
-test('shelter B cannot read or change shelter A', { timeout: 180000 }, () => new Promise((resolve, reject) => {
+test('shelter B cannot read or change shelter A', { timeout: 300000 }, () => new Promise((resolve, reject) => {
   const child = spawn(process.execPath, [path.join(__dirname, 'tenantIsolation.run.js')], {
     cwd: path.join(__dirname, '..'),
     env: {

@@ -5,9 +5,11 @@ const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
 const LIMITS = {
   login: 15,
+  loginAccount: 5,
   api: 300,
   register: 8,
   forgotPassword: 5,
+  forgotAccount: 5,
   resetPassword: 8,
   message: 10,
   groupBooking: 8,
@@ -21,6 +23,21 @@ const loginLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true,
+});
+
+// Failed attempts against one email, including attempts from many IPs.
+const loginAccountLimiter = rateLimit({
+  windowMs: WINDOW_MS,
+  max: LIMITS.loginAccount,
+  message: 'Too many login attempts. Please try again in 15 minutes.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  keyGenerator(req) {
+    const email = String((req.body && req.body.email) || '').trim().toLowerCase();
+    if (email) return `acct:${email}`;
+    return ipKeyGenerator(req.ip);
+  },
 });
 
 // General API limit — generous enough for real use, tight enough to block abuse
@@ -46,6 +63,19 @@ const forgotPasswordLimiter = rateLimit({
   message: 'Too many password reset requests. Please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+});
+
+const forgotAccountLimiter = rateLimit({
+  windowMs: WINDOW_MS,
+  max: LIMITS.forgotAccount,
+  message: 'Too many password reset requests. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator(req) {
+    const email = String((req.body && req.body.email) || '').trim().toLowerCase();
+    if (email) return `forgot:${email}`;
+    return ipKeyGenerator(req.ip);
+  },
 });
 
 const resetPasswordLimiter = rateLimit({
@@ -89,9 +119,11 @@ module.exports = {
   LIMITS,
   WINDOW_MS,
   loginLimiter,
+  loginAccountLimiter,
   apiLimiter,
   registerLimiter,
   forgotPasswordLimiter,
+  forgotAccountLimiter,
   resetPasswordLimiter,
   groupBookingLimiter,
   messageLimiter,

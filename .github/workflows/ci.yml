@@ -8,6 +8,20 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -21,6 +35,8 @@ jobs:
       # Vendor Pico/FullCalendar (postinstall) and render A2 icons so tests
       # that stat files under frontend/public pass without committed blobs.
       - run: npm run icons
-      # Unit tests run against an in-process mock DB (test/helpers/mockDb.js),
-      # so no Postgres service is needed here. 350 tests, including the PWA/push suite.
+      # Unit tests use an in-process mock DB. The tenant isolation test uses the
+      # Postgres service above and refuses any host that is not localhost.
       - run: npm test
+        env:
+          TENANT_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/shelterlink_tenant_test

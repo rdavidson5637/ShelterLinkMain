@@ -157,3 +157,19 @@ test('logout-all destroys sessions and clears the cookie', async () => {
 test('findByEndpoint is used by login (pushService export exists)', () => {
   assert.equal(typeof pushService.findByEndpoint, 'function');
 });
+
+test('login refuses when the email matches more than one user', async () => {
+  mock.resetCalls();
+  mock.setHandler(async (sql) => {
+    if (/FROM users/.test(sql)) return [[userRow('volunteer', 7), userRow('admin', 8)]];
+    return [{ affectedRows: 1 }];
+  });
+  const req = makeReq({ email: 'alex@example.com', password: 'Password1' });
+  const res = makeRes();
+  await auth.login(req, res);
+  assert.equal(res.statusCode, 401);
+  assert.equal(req.session.userId, undefined);
+  assert.match(mock.calls[0].sql, /lower\(email\) = lower\(\?\)/i);
+  assert.doesNotMatch(mock.calls[0].sql, /LIMIT 1/i);
+  assert.equal(mock.calls.some((call) => /UPDATE users SET last_login/i.test(call.sql)), false);
+});

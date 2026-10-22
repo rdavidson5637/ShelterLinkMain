@@ -1,7 +1,7 @@
 'use strict';
 
 const express = require('express');
-const { loginLimiter } = require('../middleware/rateLimiter');
+const { loginLimiter, loginAccountLimiter } = require('../middleware/rateLimiter');
 const { requireKiosk } = require('../middleware/auth');
 const {
   unlockKiosk,
@@ -15,7 +15,7 @@ const {
 const router = express.Router();
 
 // Unlock does not require an existing kiosk session.
-router.post('/unlock', loginLimiter, unlockKiosk);
+router.post('/unlock', loginAccountLimiter, loginLimiter, unlockKiosk);
 router.get('/status', getKioskStatus);
 router.post('/lock', lockKiosk);
 

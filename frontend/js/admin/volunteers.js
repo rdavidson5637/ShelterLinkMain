@@ -201,6 +201,16 @@ function renderTable() {
   });
 }
 
+function checkTypeLabel(value) {
+  const labels = {
+    accessni_basic: 'AccessNI Basic',
+    accessni_standard: 'AccessNI Standard',
+    accessni_enhanced: 'AccessNI Enhanced',
+    other: 'Other check',
+  };
+  return labels[value] || 'Background check';
+}
+
 async function loadVettingSection(userId) {
   const checksEl = document.getElementById('vettingChecksList');
   const refsEl = document.getElementById('vettingRefsList');
@@ -210,20 +220,39 @@ async function loadVettingSection(userId) {
     });
     if (checksRes.ok) {
       const checks = await checksRes.json();
-      checksEl.innerHTML = checks.length
-        ? `<ul>${checks
-            .map(
-              (c) =>
-                `<li><strong>${c.check_type}</strong> — ${c.status}${
-                  c.expires_on ? ` · expires ${String(c.expires_on).slice(0, 10)}` : ''
-                }${c.reference_number ? ` · ref ${c.reference_number}` : ''}${
-                  c.notes ? `<br/><em>${c.notes}</em>` : ''
-                }</li>`
-            )
-            .join('')}</ul>`
-        : '<p>No background checks recorded.</p>';
+      checksEl.replaceChildren();
+      if (!checks.length) {
+        const empty = document.createElement('p');
+        empty.textContent = 'No background checks recorded.';
+        checksEl.appendChild(empty);
+      } else {
+        const list = document.createElement('ul');
+        checks.forEach((c) => {
+          const item = document.createElement('li');
+          const title = document.createElement('strong');
+          title.textContent = checkTypeLabel(c.check_type);
+          item.appendChild(title);
+          const expiry = c.expires_on ? ` · expires ${String(c.expires_on).slice(0, 10)}` : '';
+          const reference = isAdminRole(currentUser) && c.reference_number
+            ? ` · ref ${c.reference_number}`
+            : '';
+          const detail = document.createElement('span');
+          detail.textContent = ` - ${c.status}${expiry}${reference}`;
+          item.appendChild(detail);
+          if (isAdminRole(currentUser) && c.notes) {
+            const note = document.createElement('div');
+            note.textContent = c.notes;
+            item.appendChild(note);
+          }
+          list.appendChild(item);
+        });
+        checksEl.appendChild(list);
+      }
     } else {
-      checksEl.innerHTML = '<p>Unable to load background checks.</p>';
+      checksEl.replaceChildren();
+      const failed = document.createElement('p');
+      failed.textContent = 'Unable to load background checks.';
+      checksEl.appendChild(failed);
     }
   } catch {
     if (checksEl) checksEl.innerHTML = '<p>Unable to load background checks.</p>';
@@ -233,18 +262,36 @@ async function loadVettingSection(userId) {
     const refsRes = await apiRequest(`/vetting/volunteers/${userId}/references`, { method: 'GET' });
     if (refsRes.ok) {
       const refs = await refsRes.json();
-      refsEl.innerHTML = refs.length
-        ? `<ul>${refs
-            .map(
-              (r) =>
-                `<li><strong>${r.referee_name}</strong> (${r.referee_email}) — ${r.status}${
-                  r.is_suitable != null ? ` · suitable: ${r.is_suitable ? 'yes' : 'no'}` : ''
-                }${r.comments ? `<br/><em>Comments: ${r.comments}</em>` : ''}</li>`
-            )
-            .join('')}</ul>`
-        : '<p>No references requested yet.</p>';
+      refsEl.replaceChildren();
+      if (!refs.length) {
+        const empty = document.createElement('p');
+        empty.textContent = 'No references requested yet.';
+        refsEl.appendChild(empty);
+      } else {
+        const list = document.createElement('ul');
+        refs.forEach((r) => {
+          const item = document.createElement('li');
+          const title = document.createElement('strong');
+          title.textContent = r.referee_name || 'Referee';
+          item.appendChild(title);
+          const suitable = r.is_suitable != null ? ` · suitable: ${r.is_suitable ? 'yes' : 'no'}` : '';
+          const detail = document.createElement('span');
+          detail.textContent = ` (${r.referee_email || 'no email'}) - ${r.status}${suitable}`;
+          item.appendChild(detail);
+          if (r.comments) {
+            const note = document.createElement('div');
+            note.textContent = `Comments: ${r.comments}`;
+            item.appendChild(note);
+          }
+          list.appendChild(item);
+        });
+        refsEl.appendChild(list);
+      }
     } else {
-      refsEl.innerHTML = '<p>Unable to load references.</p>';
+      refsEl.replaceChildren();
+      const failed = document.createElement('p');
+      failed.textContent = 'Unable to load references.';
+      refsEl.appendChild(failed);
     }
   } catch {
     if (refsEl) refsEl.innerHTML = '<p>Unable to load references.</p>';
@@ -376,7 +423,10 @@ async function viewProfile(userId) {
     }
 
     let docsHtml = '<p>No documents uploaded.</p>';
-    try {
+    if (!isAdminRole(currentUser)) {
+      docsHtml = '<p>Uploaded files are visible to admins only. Record the check status and dates. Reference numbers and notes are recorded by an admin. Do not upload disclosure certificates.</p>';
+    } else {
+      try {
       const docsRes = await apiRequest(`/admin/volunteers/${userId}/documents`, { method: 'GET' });
       if (docsRes.ok) {
         const docs = await docsRes.json();
@@ -394,8 +444,9 @@ async function viewProfile(userId) {
             .join('')}</ul>`;
         }
       }
-    } catch {
-      docsHtml = '<p>Unable to load documents.</p>';
+      } catch {
+        docsHtml = '<p>Unable to load documents.</p>';
+      }
     }
 
     let customHtml = '<p>No custom field answers.</p>';
@@ -538,10 +589,10 @@ async function viewProfile(userId) {
                 <option value="expired">Expired</option>
               </select>
             </label>
-            <label>Reference number <input type="text" id="bgRefNumber" /></label>
+            ${isAdminRole(currentUser) ? `<label>Reference number <input type="text" id="bgRefNumber" maxlength="100" /></label>` : '<p>Reference numbers and notes are recorded by an admin.</p>'}
             <label>Issued on <input type="date" id="bgIssuedOn" /></label>
             <label>Expires on <input type="date" id="bgExpiresOn" /></label>
-            <label>Notes <textarea id="bgNotes" rows="2"></textarea></label>
+            ${isAdminRole(currentUser) ? `<label>Notes <textarea id="bgNotes" rows="2" maxlength="2000" placeholder="Operational notes only. Do not record offence detail."></textarea></label>` : ''}
             <button type="submit" class="button-small">Save background check</button>
           </form>
         </div>

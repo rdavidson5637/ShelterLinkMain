@@ -56,7 +56,7 @@ router.delete(
 );
 router.get('/volunteers/:userId/custom-fields', isAuthenticated, staffOrAdmin, getVolunteerCustomValues);
 router.get('/volunteers/:userId/waivers', isAuthenticated, staffOrAdmin, getVolunteerWaiverStatus);
-router.get('/volunteers/:userId/documents', isAuthenticated, staffOrAdmin, listVolunteerDocuments);
+router.get('/volunteers/:userId/documents', isAuthenticated, adminOnly, listVolunteerDocuments);
 
 router.get('/messages/recipients', isAuthenticated, adminOnly, previewRecipients);
 router.get('/messages', isAuthenticated, adminOnly, listMessages);

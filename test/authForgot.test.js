@@ -57,6 +57,26 @@ test('forgot-password never returns Invalid credentials', async () => {
   assert.doesNotMatch(JSON.stringify(known.body), /Invalid credentials/i);
 });
 
+test('forgot-password does not send a reset when the email matches more than one user', async () => {
+  mock.resetCalls();
+  mock.setHandler(async (sql) => {
+    if (/SELECT user_id, email, first_name/i.test(sql)) {
+      return [[
+        { user_id: 3, email: 'a@b.c', first_name: 'Ann', shelter_id: 1 },
+        { user_id: 4, email: 'A@b.c', first_name: 'Bob', shelter_id: 2 },
+      ]];
+    }
+    return [{ affectedRows: 1 }];
+  });
+  const res = makeRes();
+  await auth.forgotPassword({ body: { email: 'a@b.c' } }, res);
+  assert.equal(res.statusCode, 200);
+  assert.match(res.body.message, /If that email is registered/i);
+  assert.match(mock.calls[0].sql, /lower\(email\) = lower\(\?\)/i);
+  assert.doesNotMatch(mock.calls[0].sql, /LIMIT 1/i);
+  assert.equal(mock.calls.some((call) => /UPDATE users SET reset_token/i.test(call.sql)), false);
+});
+
 test('register-admin is 404 in production', async () => {
   const prevAllow = process.env.ALLOW_ADMIN_REGISTRATION;
   const prevEnv = process.env.NODE_ENV;

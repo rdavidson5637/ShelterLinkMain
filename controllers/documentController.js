@@ -6,18 +6,26 @@ const multer = require('multer');
 const UserDocument = require('../models/UserDocument');
 const User = require('../models/User');
 
-const { isStaffOrAdmin } = require('../middleware/auth');
+const { isAdminUser } = require('../middleware/auth');
+const { canonicalMime, sniffDocument } = require('../utils/fileSignature');
+
+const DISCLOSURE_FILE = /access[\s_-]*ni|\bdisclosure\b|\bdbs\b|criminal|barred list|police check/i;
 
 function ensureAdmin(req, res) {
   if (!req.session || !req.session.userId) {
     res.status(401).json({ error: 'Unauthorized' });
     return false;
   }
-  if (!isStaffOrAdmin(req)) {
+  if (!isAdminUser(req)) {
     res.status(403).json({ error: 'Forbidden' });
     return false;
   }
   return true;
+}
+
+function looksLikeDisclosure(file, label) {
+  const haystack = `${(file && file.originalname) || ''} ${label || ''}`;
+  return DISCLOSURE_FILE.test(haystack);
 }
 
 function ensureAuthenticated(req, res) {
@@ -75,6 +83,16 @@ async function uploadDocument(req, res) {
     }
 
     const label = req.body?.label != null ? String(req.body.label).trim() : null;
+    if (looksLikeDisclosure(req.file, label)) {
+      return res.status(400).json({
+        error: 'Do not upload disclosure certificates. An admin records the check status and reference number.',
+      });
+    }
+
+    const detected = sniffDocument(req.file.buffer);
+    if (!detected || detected !== canonicalMime(req.file.mimetype)) {
+      return res.status(400).json({ error: 'File contents do not match the declared type' });
+    }
     const ext = path.extname(req.file.originalname || '').toLowerCase();
     const safeExt = ['.pdf', '.jpg', '.jpeg', '.png'].includes(ext) ? ext : '';
     const doc = await UserDocument.create({
@@ -82,7 +100,7 @@ async function uploadDocument(req, res) {
       content: req.file.buffer,
       filename: `${crypto.randomBytes(16).toString('hex')}${safeExt}`,
       originalName: req.file.originalname || 'document',
-      mimeType: req.file.mimetype,
+      mimeType: detected,
       size: req.file.size,
       label: label || null,
     });
@@ -161,8 +179,7 @@ async function downloadDocument(req, res) {
     }
 
     const isOwner = Number(doc.user_id) === Number(req.session.userId);
-    const isAdmin = isStaffOrAdmin(req);
-    if (!isOwner && !isAdmin) {
+    if (!isOwner && !isAdminUser(req)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -198,8 +215,7 @@ async function deleteDocument(req, res) {
     }
 
     const isOwner = Number(doc.user_id) === Number(req.session.userId);
-    const isAdmin = isStaffOrAdmin(req);
-    if (!isOwner && !isAdmin) {
+    if (!isOwner && !isAdminUser(req)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 

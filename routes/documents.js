@@ -1,7 +1,7 @@
 'use strict';
 
 const express = require('express');
-const { isAuthenticated, requireStaff } = require('../middleware/auth');
+const { isAuthenticated, requireRole } = require('../middleware/auth');
 const { auditMutations } = require('../middleware/auditLog');
 const {
   upload,
@@ -30,7 +30,7 @@ router.post(
 );
 
 router.get('/:id/download', isAuthenticated, downloadDocument);
-router.put('/:id', isAuthenticated, requireStaff, auditMutations, updateDocument);
+router.put('/:id', isAuthenticated, requireRole('admin'), auditMutations, updateDocument);
 router.delete('/:id', isAuthenticated, deleteDocument);
 
 module.exports = router;

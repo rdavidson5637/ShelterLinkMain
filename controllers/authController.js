@@ -1,4 +1,5 @@
 const bcrypt = require('bcrypt');
+const { hashPassword, passwordPolicyError, SALT_ROUNDS } = require('../utils/password');
 const { pool } = require('../config/database');
 const User = require('../models/User');
 const { sendEmail } = require('../utils/emailService');
@@ -27,14 +28,6 @@ function respondSafeUser(row) {
   return safe;
 }
 
-function isStrongPassword(password = '') {
-  const pwd = String(password);
-  const hasMinLength = pwd.length >= 8;
-  const hasUppercase = /[A-Z]/.test(pwd);
-  const hasNumber = /[0-9]/.test(pwd);
-  return hasMinLength && hasUppercase && hasNumber;
-}
-
 async function insertAssisiUser(sql, params) {
   const shelterId = await assisiShelterId();
   if (!shelterId) {
@@ -52,29 +45,32 @@ async function register(req, res) {
       return res.status(400).json({ error: 'first_name, last_name, email, and password are required' });
     }
 
-    if (!isStrongPassword(password)) {
-      return res.status(400).json({
-        error: 'Password must be at least 8 characters with one uppercase letter and one number',
-      });
+    const policyError = await passwordPolicyError(password);
+    if (policyError) {
+      return res.status(400).json({ error: policyError });
     }
 
-    const existing = await runWithoutShelter(() => User.findByEmail(email));
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const existing = await runWithoutShelter(() => User.findByEmail(normalizedEmail));
     if (existing) {
       return res.status(409).json({ error: 'Email already in use' });
     }
 
     const name = [first_name, last_name].filter(Boolean).join(' ').trim();
-    const passwordHash = await bcrypt.hash(String(password), 10);
+    const passwordHash = await hashPassword(password);
 
     const sql = `
       INSERT INTO users (first_name, last_name, name, phone, email, password, role, created_at)
       VALUES (?, ?, ?, ?, ?, ?, 'volunteer', NOW())
     `;
-    await insertAssisiUser(sql, [first_name, last_name, name, phone || null, email, passwordHash]);
+    await insertAssisiUser(sql, [first_name, last_name, name, phone || null, normalizedEmail, passwordHash]);
 
     return res.status(201).json({ message: 'Registration successful' });
   } catch (error) {
     console.error('[Auth] register error:', error.message);
+    if (error.code === 'AMBIGUOUS_EMAIL') {
+      return res.status(409).json({ error: 'Email already in use' });
+    }
     if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
@@ -91,14 +87,14 @@ async function login(req, res) {
     const [rows] = await pool.execute(
       `SELECT user_id, first_name, last_name, name, email, password, role, shelter_id, created_at
        FROM users
-       WHERE email = ?
-       LIMIT 1`,
+       WHERE lower(email) = lower(?)`,
       [email]
     );
-    const user = rows[0];
-    if (!user) {
+    if (rows.length !== 1) {
+      if (rows.length > 1) console.error('[Auth] ambiguous email match', rows.length);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
+    const user = rows[0];
 
     const match = await bcrypt.compare(String(password), String(user.password));
     if (!match) {
@@ -121,7 +117,20 @@ async function login(req, res) {
       }
     }
 
-    await pool.execute('UPDATE users SET last_login = NOW() WHERE user_id = ?', [user.user_id]);
+    const rounds = bcrypt.getRounds(String(user.password));
+    const shelterId = user.shelter_id == null ? null : user.shelter_id;
+    if (process.env.NODE_ENV !== 'test' && Number.isFinite(rounds) && rounds < SALT_ROUNDS) {
+      const upgraded = await hashPassword(password);
+      await pool.execute(
+        'UPDATE users SET password = ?, last_login = NOW() WHERE user_id = ? AND shelter_id IS NOT DISTINCT FROM ?',
+        [upgraded, user.user_id, shelterId]
+      );
+    } else {
+      await pool.execute(
+        'UPDATE users SET last_login = NOW() WHERE user_id = ? AND shelter_id IS NOT DISTINCT FROM ?',
+        [user.user_id, shelterId]
+      );
+    }
 
     let pushReset = false;
     if (pushEndpoint) {
@@ -210,29 +219,32 @@ async function registerAdmin(req, res) {
       return res.status(400).json({ error: 'first_name, last_name, email, and password are required' });
     }
 
-    if (!isStrongPassword(password)) {
-      return res.status(400).json({
-        error: 'Password must be at least 8 characters with one uppercase letter and one number',
-      });
+    const policyError = await passwordPolicyError(password);
+    if (policyError) {
+      return res.status(400).json({ error: policyError });
     }
 
-    const existing = await runWithoutShelter(() => User.findByEmail(email));
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const existing = await runWithoutShelter(() => User.findByEmail(normalizedEmail));
     if (existing) {
       return res.status(409).json({ error: 'Email already in use' });
     }
 
     const name = [first_name, last_name].filter(Boolean).join(' ').trim();
-    const passwordHash = await bcrypt.hash(String(password), 10);
+    const passwordHash = await hashPassword(password);
 
     const sql = `
       INSERT INTO users (first_name, last_name, name, phone, email, password, role, created_at)
       VALUES (?, ?, ?, ?, ?, ?, 'admin', NOW())
     `;
-    await insertAssisiUser(sql, [first_name, last_name, name, phone || null, email, passwordHash]);
+    await insertAssisiUser(sql, [first_name, last_name, name, phone || null, normalizedEmail, passwordHash]);
 
     return res.status(201).json({ message: 'Admin registration successful' });
   } catch (error) {
     console.error('[Auth] registerAdmin error:', error.message);
+    if (error.code === 'AMBIGUOUS_EMAIL') {
+      return res.status(409).json({ error: 'Email already in use' });
+    }
     if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
@@ -286,18 +298,21 @@ async function forgotPassword(req, res) {
     }
 
     const [rows] = await pool.execute(
-      'SELECT user_id, email, first_name, shelter_id FROM users WHERE email = ? LIMIT 1',
+      'SELECT user_id, email, first_name, shelter_id FROM users WHERE lower(email) = lower(?)',
       [email]
     );
+    if (rows.length !== 1) {
+      if (rows.length > 1) console.error('[Auth] ambiguous email match on reset', rows.length);
+      return generic();
+    }
     const user = rows[0];
-    if (!user) return generic();
 
     const { raw, hash } = createResetToken();
     const expires = new Date(Date.now() + 60 * 60 * 1000);
 
     await pool.execute(
-      'UPDATE users SET reset_token = ?, reset_token_expires = ? WHERE user_id = ?',
-      [hash, expires, user.user_id]
+      'UPDATE users SET reset_token = ?, reset_token_expires = ? WHERE user_id = ? AND shelter_id IS NOT DISTINCT FROM ?',
+      [hash, expires, user.user_id, user.shelter_id == null ? null : user.shelter_id]
     );
 
     const resetLink = `${appUrl}/reset-password.html?token=${raw}`;
@@ -392,10 +407,9 @@ async function resetPassword(req, res) {
       return res.status(400).json({ error: 'token and password are required' });
     }
 
-    if (!isStrongPassword(password)) {
-      return res.status(400).json({
-        error: 'Password must be at least 8 characters with one uppercase letter and one number',
-      });
+    const policyError = await passwordPolicyError(password);
+    if (policyError) {
+      return res.status(400).json({ error: policyError });
     }
 
     const [rows] = await pool.execute(
@@ -415,7 +429,7 @@ async function resetPassword(req, res) {
       return res.status(400).json({ error: 'This reset link has expired. Please request a new one.' });
     }
 
-    const passwordHash = await bcrypt.hash(String(password), 10);
+    const passwordHash = await hashPassword(password);
 
     await pool.execute(
       'UPDATE users SET password = ?, reset_token = NULL, reset_token_expires = NULL WHERE user_id = ?',

@@ -167,6 +167,55 @@ async function loadRecentHours() {
   }
 }
 
+function checkTypeLabel(value) {
+  const labels = {
+    accessni_basic: 'AccessNI Basic',
+    accessni_standard: 'AccessNI Standard',
+    accessni_enhanced: 'AccessNI Enhanced',
+    other: 'Other check',
+  };
+  return labels[value] || 'Background check';
+}
+
+async function loadExpiringChecks() {
+  const host = document.getElementById('expiringChecks');
+  if (!host) return;
+  try {
+    const res = await apiRequest('/vetting/admin/expiring', { method: 'GET' });
+    if (!res.ok) {
+      host.replaceChildren();
+      const message = document.createElement('p');
+      message.textContent = 'Could not load expiring checks.';
+      host.appendChild(message);
+      return;
+    }
+    const rows = await res.json();
+    host.replaceChildren();
+    if (!Array.isArray(rows) || !rows.length) {
+      const message = document.createElement('p');
+      message.textContent = 'No clear checks expire in the next 60 days.';
+      host.appendChild(message);
+      return;
+    }
+    const list = document.createElement('ul');
+    rows.forEach((row) => {
+      const item = document.createElement('li');
+      const link = document.createElement('a');
+      const name = `${row.first_name || ''} ${row.last_name || ''}`.trim() || 'Volunteer';
+      link.href = `/pages/admin/volunteers.html?user=${encodeURIComponent(row.user_id)}`;
+      link.textContent = name;
+      item.appendChild(link);
+      const detail = document.createElement('span');
+      detail.textContent = ` · ${checkTypeLabel(row.check_type)} · ${row.status || 'clear'} · expires ${formatDateOnly(row.expires_on) || 'unknown'}`;
+      item.appendChild(detail);
+      list.appendChild(item);
+    });
+    host.appendChild(list);
+  } catch (error) {
+    console.error('[Dashboard] loadExpiringChecks error:', error);
+  }
+}
+
 async function enforceAdmin() {
   const user = await checkAuth();
   if (!isStaffOrAdminRole(user)) {
@@ -234,6 +283,7 @@ async function init() {
     loadStats(),
     loadRecentApplications(),
     loadRecentHours(),
+    loadExpiringChecks(),
   ]);
 
   // Optionally auto-refresh stats every 60 seconds

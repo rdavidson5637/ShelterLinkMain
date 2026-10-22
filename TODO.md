@@ -2,7 +2,7 @@
 
 Direction: production platform for Assisi. See `DEPLOY.md` and `ASSISI-DEMO.md`.
 
-Product surface for the shelter call is complete. `npm test` — **350** green (PWA, push, CSP, dates).
+Product surface for the shelter call is complete. `npm test` — **381** green (PWA, push, CSP, dates, tenant isolation).
 Live prove-out still needs your `DATABASE_URL`.
 
 ## 1. Point the app at Postgres (you) — blocking for demo
@@ -28,4 +28,5 @@ PWA (root service worker, install prompt, offline shifts, push on dashboard), pr
 ## 4. Go-live
 
 Brevo SMTP, `DEPLOY.md`, privacy notice reviewed by them, seed accounts off in prod,
-one backup restore drill.
+one backup restore drill (see `docs/BACKUP-RESTORE.md`; the drill has not been run).
+Article 10 still needs a DPIA and a written controller/processor arrangement (`docs/VETTING-DATA.md`).

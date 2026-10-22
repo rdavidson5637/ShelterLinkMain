@@ -9,6 +9,7 @@ const {
   listMyReferences,
   listBackgroundChecks,
   listMyBackgroundChecks,
+  listExpiringChecks,
   upsertBackgroundCheck,
   getOnboardingChecklist,
   getOnboardingPipeline,
@@ -25,6 +26,7 @@ router.get('/me/onboarding', isAuthenticated, getOnboardingChecklist);
 
 // Staff / admin
 router.get('/admin/pipeline', isAuthenticated, requireStaff, getOnboardingPipeline);
+router.get('/admin/expiring', isAuthenticated, requireStaff, listExpiringChecks);
 router.get('/volunteers/:userId/references', isAuthenticated, requireStaff, listVolunteerReferences);
 router.post('/volunteers/:userId/references', isAuthenticated, requireStaff, requestReference);
 router.get(

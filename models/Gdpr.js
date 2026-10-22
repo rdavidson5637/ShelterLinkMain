@@ -1,6 +1,6 @@
 'use strict';
 
-const bcrypt = require('bcrypt');
+const { hashPassword } = require('../utils/password');
 const { pool } = require('../config/database');
 
 const DEFAULT_RETENTION_YEARS = 3;
@@ -141,7 +141,7 @@ async function anonymiseUser(userId, { reason = 'gdpr_erasure' } = {}) {
 
     const anonEmail = `deleted+${id}@anonymised.invalid`;
     // Unusable password hash — account cannot log in.
-    const lockedHash = await bcrypt.hash(`locked-${id}-${Date.now()}`, 10);
+    const lockedHash = await hashPassword(`locked-${id}-${Date.now()}`);
 
     await conn.execute(
       `UPDATE users SET
