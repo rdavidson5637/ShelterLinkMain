@@ -20,6 +20,7 @@
     "migrate": "node scripts/migrate.js",
     "smoke": "node scripts/smoke-test.js",
     "backup": "node scripts/backup.js",
+    "retention:sweep": "node scripts/retention-sweep.js",
     "icons": "node scripts/generate-icons.js",
     "pwa:check": "node scripts/pwa-check.js",
     "postinstall": "node scripts/ensure-vendor.js"

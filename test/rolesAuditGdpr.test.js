@@ -218,7 +218,7 @@ test('erasure anonymises PII but preserves approved hours total', async () => {
       updates.push({ type: 'delete', sql });
       return [{ affectedRows: 1 }];
     }
-    if (/UPDATE messages SET body/i.test(sql) || /UPDATE background_checks/i.test(sql)) {
+    if (/UPDATE (messages|background_checks|shift_notes|foster_offers|group_bookings|audit_log)/i.test(sql)) {
       updates.push({ type: 'scrub', sql });
       return [{ affectedRows: 1 }];
     }
@@ -235,6 +235,8 @@ test('erasure anonymises PII but preserves approved hours total', async () => {
   assert.ok(updates.some((u) => /push_subscriptions/i.test(u.sql)));
   assert.ok(updates.some((u) => /volunteer_references/i.test(u.sql)));
   assert.ok(updates.some((u) => u.type === 'scrub' && /messages/i.test(u.sql)));
+  assert.ok(updates.some((u) => u.type === 'scrub' && /shift_notes/i.test(u.sql)));
+  assert.ok(updates.some((u) => u.type === 'scrub' && /audit_log/i.test(u.sql)));
   assert.ok(updates.some((u) => /DELETE FROM session/i.test(u.sql)));
   // Hours rows must not be deleted — only user/profile/custom/docs/tags.
   assert.ok(!updates.some((u) => /volunteer_hours/i.test(String(u.sql || ''))));

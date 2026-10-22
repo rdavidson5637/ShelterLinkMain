@@ -3,13 +3,10 @@
 const { hashPassword } = require('../utils/password');
 const { pool } = require('../config/database');
 const { destroyUserSessions } = require('../utils/sessionCookie');
-
-const DEFAULT_RETENTION_YEARS = 3;
+const { periods } = require('../config/retention');
 
 function retentionYears() {
-  const raw = Number(process.env.DATA_RETENTION_YEARS);
-  if (Number.isFinite(raw) && raw > 0) return raw;
-  return DEFAULT_RETENTION_YEARS;
+  return periods().inactiveVolunteerYears;
 }
 
 /**
@@ -83,6 +80,27 @@ async function buildVolunteerExport(userId) {
      WHERE vt.user_id = ?`,
     [id]
   );
+  const [messages] = await pool.execute(
+    `SELECT id, thread_id, body, created_at FROM messages WHERE user_id = ? ORDER BY id`,
+    [id]
+  );
+  const [shiftNotes] = await pool.execute(
+    `SELECT id, opportunity_id, body, created_at FROM shift_notes WHERE author_id = ? ORDER BY id`,
+    [id]
+  );
+  const [fosterOffers] = await pool.execute(
+    `SELECT id, request_id, note, status, created_at FROM foster_offers WHERE user_id = ? ORDER BY id`,
+    [id]
+  );
+  const [references] = await pool.execute(
+    `SELECT id, referee_name, referee_email, referee_relationship, comments, status
+     FROM volunteer_references WHERE user_id = ?`,
+    [id]
+  );
+  const [checks] = await pool.execute(
+    `SELECT id, reference_number, notes, status FROM background_checks WHERE user_id = ?`,
+    [id]
+  );
 
   const hoursTotal = hours
     .filter((h) => Number(h.approved) === 1)
@@ -100,6 +118,11 @@ async function buildVolunteerExport(userId) {
     custom_field_values: customValues,
     documents,
     tags,
+    messages,
+    shift_notes: shiftNotes,
+    foster_offers: fosterOffers,
+    references,
+    background_checks: checks,
   };
 }
 
@@ -196,6 +219,29 @@ async function anonymiseUser(userId, { reason = 'gdpr_erasure' } = {}) {
        WHERE user_id = ?`,
       [id]
     );
+    await conn.execute(
+      `UPDATE shift_notes SET body = '[removed]' WHERE author_id = ?`,
+      [id]
+    );
+    await conn.execute(
+      `UPDATE foster_offers SET note = NULL WHERE user_id = ?`,
+      [id]
+    );
+    await conn.execute(
+      `UPDATE group_bookings
+         SET contact_name = 'Removed',
+             contact_email = 'removed@anonymised.invalid',
+             notes = NULL
+       WHERE lower(contact_email) = lower(?)`,
+      [user.email]
+    );
+    await conn.execute(
+      `UPDATE audit_log
+         SET detail_json = NULL
+       WHERE user_id = ?
+          OR (entity_type = 'volunteer' AND entity_id = ?)`,
+      [id, String(id)]
+    );
 
     await conn.commit();
     await destroyUserSessions(pool, id);
@@ -224,6 +270,16 @@ async function anonymiseUser(userId, { reason = 'gdpr_erasure' } = {}) {
  */
 async function runDataRetention(now = new Date()) {
   const years = retentionYears();
+  if (years == null) {
+    return {
+      retention_years: null,
+      skipped: true,
+      cutoff: null,
+      scanned: 0,
+      anonymised: 0,
+      results: [],
+    };
+  }
   const cutoff = new Date(now);
   cutoff.setFullYear(cutoff.getFullYear() - years);
 
@@ -257,7 +313,6 @@ async function runDataRetention(now = new Date()) {
 }
 
 module.exports = {
-  DEFAULT_RETENTION_YEARS,
   retentionYears,
   buildVolunteerExport,
   anonymiseUser,
