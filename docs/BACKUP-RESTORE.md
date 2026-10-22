@@ -1,5 +1,8 @@
 # Backup and restore
 
+The step-by-step runbook is `docs/runbooks/backup-and-restore.md`.
+Shell scripts: `scripts/backup-db.sh`, `scripts/restore-db.sh`, `scripts/verify-restore.sh`.
+
 Backups are gzipped, then encrypted with AES-256-GCM. The script writes
 `backups/shelterlink-YYYY-MM-DD.sql.gz.enc` and deletes files in that folder
 older than 14 days. It will not write a plaintext dump.

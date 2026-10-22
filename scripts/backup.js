@@ -28,16 +28,31 @@ const { encryptBuffer } = require('../utils/backupCrypto');
 
 const MAX_AGE_DAYS = 14;
 const BACKUP_DIR = path.join(__dirname, '..', 'backups');
-const DUMP_NAME = /^shelterlink-\d{4}-\d{2}-\d{2}\.sql\.gz(\.enc)?$/;
+const DUMP_NAME = /^shelterlink-\d{4}-\d{2}-\d{2}(-\d{6})?\.sql\.gz(\.enc)?$/;
 
-function connectionString() {
-  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
-  const host = process.env.DB_HOST || 'localhost';
-  const port = process.env.DB_PORT || '5432';
-  const user = encodeURIComponent(process.env.DB_USER || 'postgres');
-  const password = encodeURIComponent(process.env.DB_PASSWORD || '');
-  const name = process.env.DB_NAME || 'shelterlink';
-  return `postgresql://${user}:${password}@${host}:${port}/${name}`;
+function connectionParts() {
+  if (process.env.DATABASE_URL) {
+    const url = new URL(process.env.DATABASE_URL);
+    return {
+      host: url.hostname,
+      port: url.port || '5432',
+      user: decodeURIComponent(url.username || ''),
+      password: decodeURIComponent(url.password || ''),
+      database: decodeURIComponent(url.pathname.replace(/^\//, '')),
+    };
+  }
+  return {
+    host: process.env.DB_HOST || 'localhost',
+    port: String(process.env.DB_PORT || '5432'),
+    user: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'shelterlink',
+  };
+}
+
+function pgpassLine(parts) {
+  const escape = (value) => String(value).replace(/\\/g, '\\\\').replace(/:/g, '\\:');
+  return [parts.host, parts.port, '*', parts.user, parts.password].map(escape).join(':');
 }
 
 function pruneOld(dir) {
@@ -53,8 +68,22 @@ function pruneOld(dir) {
   }
 }
 
-async function dumpGzip(url) {
-  const child = spawn('pg_dump', [url], { stdio: ['ignore', 'pipe', 'pipe'] });
+async function dumpGzip(parts) {
+  const passfile = path.join(require('os').tmpdir(), `sl-pgpass-${process.pid}-${Date.now()}`);
+  fs.writeFileSync(passfile, `${pgpassLine(parts)}\n`, { mode: 0o600 });
+  const env = {
+    ...process.env,
+    PGHOST: parts.host,
+    PGPORT: String(parts.port),
+    PGUSER: parts.user,
+    PGDATABASE: parts.database,
+    PGPASSFILE: passfile,
+  };
+  delete env.PGPASSWORD;
+  const child = spawn('pg_dump', [], {
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env,
+  });
   const chunks = [];
   let stderr = '';
   child.stderr.on('data', (chunk) => {
@@ -67,18 +96,26 @@ async function dumpGzip(url) {
     },
   });
   try {
-    await pipeline(child.stdout, zlib.createGzip(), sink);
-  } catch (error) {
-    throw new Error(stderr.trim() || error.message);
+    try {
+      await pipeline(child.stdout, zlib.createGzip(), sink);
+    } catch (error) {
+      throw new Error(stderr.trim() || error.message);
+    }
+    const code = await new Promise((resolve) => {
+      if (child.exitCode != null) return resolve(child.exitCode);
+      child.on('close', resolve);
+    });
+    if (code !== 0) {
+      throw new Error(`pg_dump exited with ${code}${stderr.trim() ? `: ${stderr.trim()}` : ''}`);
+    }
+    return Buffer.concat(chunks);
+  } finally {
+    try {
+      fs.unlinkSync(passfile);
+    } catch (_) {
+      // already gone
+    }
   }
-  const code = await new Promise((resolve) => {
-    if (child.exitCode != null) return resolve(child.exitCode);
-    child.on('close', resolve);
-  });
-  if (code !== 0) {
-    throw new Error(`pg_dump exited with ${code}${stderr.trim() ? `: ${stderr.trim()}` : ''}`);
-  }
-  return Buffer.concat(chunks);
 }
 
 async function run() {
@@ -92,13 +129,13 @@ async function run() {
   fs.mkdirSync(BACKUP_DIR, { recursive: true });
   const stamp = new Date().toISOString().slice(0, 10);
   const outFile = path.join(BACKUP_DIR, `shelterlink-${stamp}.sql.gz.enc`);
-  const url = connectionString();
+  const parts = connectionParts();
 
   console.log(`ShelterLink backup → ${outFile}`);
 
   let gzipped;
   try {
-    gzipped = await dumpGzip(url);
+    gzipped = await dumpGzip(parts);
   } catch (err) {
     console.error('✗ Backup failed:', err.message);
     process.exit(1);
