@@ -92,7 +92,8 @@ if (!installed) {
     if (!api) return res;
 
     const status = res.status;
-    if (shouldRedirectStatus(status)) {
+    const explained = status === 403 ? await readErrorMessageFromResponse(res) : null;
+    if (shouldRedirectStatus(status, explained)) {
       redirectToErrorPage(status);
       return res;
     }

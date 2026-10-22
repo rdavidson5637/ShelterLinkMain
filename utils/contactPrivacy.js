@@ -51,6 +51,7 @@ function toVolunteerSafeSwap(swap) {
     original_user_id: safe.original_user_id,
     missing_qualifications: safe.missing_qualifications,
     can_claim: safe.can_claim,
+    claim_block: safe.claim_block || null,
   };
 }
 

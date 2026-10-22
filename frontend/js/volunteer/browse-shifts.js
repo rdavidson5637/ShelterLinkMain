@@ -221,8 +221,8 @@ async function handleApplyFromModal(opportunity, id, options = {}) {
     }
 
     if (res.status === 403) {
-      hideOpportunityModal();
-      shiftsContainer.innerHTML = '<p>Please complete and get your profile approved first.</p>';
+      const err = await res.json().catch(() => ({}));
+      alert(err?.error || 'You cannot apply for this shift.');
       return;
     }
 
@@ -483,7 +483,9 @@ function renderCoverSwapCard(swap) {
   actions.className = 'actions';
   const claimBtn = document.createElement('button');
   claimBtn.type = 'button';
-  claimBtn.textContent = swap.can_claim === false ? 'Cover (unqualified)' : 'Cover this shift';
+  claimBtn.textContent = swap.can_claim === false
+    ? (swap.claim_block ? 'Cannot cover' : 'Cover (unqualified)')
+    : 'Cover this shift';
   claimBtn.disabled = swap.can_claim === false;
   claimBtn.addEventListener('click', async () => {
     if (swap.can_claim === false) return;
@@ -526,6 +528,11 @@ function renderCoverSwapCard(swap) {
   } else {
     article.appendChild(title);
     article.appendChild(meta);
+  }
+  if (swap.claim_block) {
+    const blockNote = document.createElement('p');
+    blockNote.textContent = swap.claim_block;
+    article.appendChild(blockNote);
   }
   article.appendChild(actions);
   return article;

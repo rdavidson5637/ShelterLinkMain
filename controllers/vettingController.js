@@ -1,8 +1,9 @@
 'use strict';
 
 const Vetting = require('../models/Vetting');
+const { recordAudit } = require('../middleware/auditLog');
 const User = require('../models/User');
-const { isStaffOrAdmin } = require('../middleware/auth');
+const { isStaffOrAdmin, isAdminUser } = require('../middleware/auth');
 const { sendEmail } = require('../utils/emailService');
 const { currentShelterName } = require('../utils/shelterBrand');
 const { pool } = require('../config/database');
@@ -112,6 +113,16 @@ async function listMyReferences(req, res) {
   }
 }
 
+function checkVisibility(req) {
+  const admin = isAdminUser(req);
+  return { includeReference: admin, includeNotes: admin };
+}
+
+function storedText(value) {
+  if (value == null) return '';
+  return String(value);
+}
+
 async function listBackgroundChecks(req, res) {
   try {
     if (!isStaffOrAdmin(req)) {
@@ -120,7 +131,7 @@ async function listBackgroundChecks(req, res) {
     const userId = Number(req.params.userId);
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: 'Not found' });
-    const rows = await Vetting.listBackgroundChecksForUser(userId);
+    const rows = await Vetting.listBackgroundChecksForUser(userId, checkVisibility(req));
     return res.status(200).json(rows);
   } catch (error) {
     console.error('[Vetting] listBackgroundChecks error:', error.message);
@@ -132,7 +143,9 @@ async function listBackgroundChecks(req, res) {
 async function listMyBackgroundChecks(req, res) {
   try {
     if (!ensureAuth(req, res)) return;
-    const rows = await Vetting.listBackgroundChecksForUser(req.session.userId);
+    const rows = await Vetting.listBackgroundChecksForUser(req.session.userId, {
+      includeReference: true,
+    });
     return res.status(200).json(rows);
   } catch (error) {
     console.error('[Vetting] listMyBackgroundChecks error:', error.message);
@@ -155,24 +168,80 @@ async function upsertBackgroundCheck(req, res) {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: 'Not found' });
     const status = Vetting.normalizeCheckStatus(body.status) || 'pending';
+    const admin = isAdminUser(req);
+    let referenceNumber = admin ? (body.reference_number || body.referenceNumber || null) : null;
+    let notes = admin ? (body.notes || null) : null;
+    const checkId = body.id ? Number(body.id) : null;
+    let existing = null;
+    if (checkId) {
+      existing = await Vetting.findBackgroundCheckById(checkId, { full: true });
+      if (!existing || Number(existing.user_id) !== userId) {
+        return res.status(404).json({ error: 'Background check not found' });
+      }
+    }
+    if (!admin) {
+      referenceNumber = existing ? existing.reference_number : null;
+      notes = existing ? existing.notes : null;
+    }
     const row = await Vetting.upsertBackgroundCheck({
-      id: body.id ? Number(body.id) : null,
+      id: checkId,
       userId,
       checkType,
-      referenceNumber: body.reference_number || body.referenceNumber || null,
+      referenceNumber,
       issuedOn: body.issued_on || body.issuedOn || null,
       expiresOn: body.expires_on || body.expiresOn || null,
       status,
-      notes: body.notes || null,
+      notes,
       updatedBy: req.session.userId,
     });
     if (!row) {
       return res.status(404).json({ error: 'Background check not found' });
     }
-    return res.status(body.id ? 200 : 201).json(row);
+    if (admin) {
+      const referenceChanged = storedText(existing && existing.reference_number) !== storedText(referenceNumber);
+      const notesChanged = storedText(existing && existing.notes) !== storedText(notes);
+      if (referenceChanged || notesChanged) {
+        try {
+          await recordAudit(req, {
+            action: 'background_check.sensitive_update',
+            entityType: 'background_check',
+            entityId: row.id,
+            detail: {
+              user_id: userId,
+              reference_changed: referenceChanged,
+              notes_changed: notesChanged,
+            },
+          });
+        } catch (auditError) {
+          console.error('[Vetting] sensitive audit failed:', auditError.message);
+        }
+      }
+    }
+    return res.status(body.id ? 200 : 201).json(Vetting.toSafeCheck(row, checkVisibility(req)));
   } catch (error) {
     console.error('[Vetting] upsertBackgroundCheck error:', error.message);
     return res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+}
+
+async function listExpiringChecks(req, res) {
+  try {
+    if (!isStaffOrAdmin(req)) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    const rows = await Vetting.findChecksNeedingStaffWarning();
+    return res.status(200).json(rows.map((row) => ({
+      user_id: row.user_id,
+      first_name: row.first_name,
+      last_name: row.last_name,
+      check_type: row.check_type,
+      status: row.status,
+      expires_on: row.expires_on,
+    })));
+  } catch (error) {
+    console.error('[Vetting] listExpiringChecks error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
@@ -325,6 +394,7 @@ module.exports = {
   listMyReferences,
   listBackgroundChecks,
   listMyBackgroundChecks,
+  listExpiringChecks,
   upsertBackgroundCheck,
   getOnboardingChecklist,
   getOnboardingPipeline,

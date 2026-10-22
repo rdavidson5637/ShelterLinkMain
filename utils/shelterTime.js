@@ -71,6 +71,19 @@ function splitNaive(value) {
   };
 }
 
+/** 'YYYY-MM-DD' for a shift timestamp. Strings keep their wall-clock date. */
+function calendarDay(value) {
+  if (value == null || value === '') return null;
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return null;
+    const p = partsMap(value);
+    return `${p.year}-${p.month}-${p.day}`;
+  }
+  const parts = splitNaive(value);
+  if (!parts) return null;
+  return `${parts.year}-${pad2(parts.month)}-${pad2(parts.day)}`;
+}
+
 function formatShelterDate(value) {
   if (value == null || value === '') return 'TBA';
   if (value instanceof Date) {
@@ -104,6 +117,7 @@ function formatShelterTime(value) {
 module.exports = {
   TIMEZONE,
   todayIso,
+  calendarDay,
   nowLocalSql,
   formatShelterDate,
   formatShelterTime,
