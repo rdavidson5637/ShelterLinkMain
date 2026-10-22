@@ -47,7 +47,7 @@ function setMessage(type, text) {
     return;
   }
   const cssClass = type === 'error' ? 'error-message' : 'success-message';
-  messageEl.innerHTML = `<p class="${cssClass}">${text}</p>`;
+  messageEl.innerHTML = `<p class="${cssClass}">${escapeHtml(text)}</p>`;
   messageEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
@@ -170,10 +170,10 @@ function renderShiftNotes(notes = []) {
       const when = formatNoteWhen(n.created_at);
       const canDelete = currentUserRole === 'admin';
       return `<article class="strip">
-        <p style="margin:0;"><strong>${n.author_name || 'Staff'}</strong>${
-          when ? ` · ${when}` : ''
+        <p style="margin:0;"><strong>${escapeHtml(n.author_name || 'Staff')}</strong>${
+          when ? ` · ${escapeHtml(when)}` : ''
         }</p>
-        <p style="margin:0.25rem 0;">${n.body || ''}</p>
+        <p style="margin:0.25rem 0;">${escapeHtml(n.body || '')}</p>
         ${
           canDelete
             ? `<button type="button" class="secondary button-small" data-delete-note="${n.id}">Delete</button>`
@@ -408,10 +408,10 @@ function renderOpportunitiesTable() {
         w.document.write(`<!DOCTYPE html><html><head><title>Check-in code</title>
           <style>body{font-family:system-ui,sans-serif;text-align:center;padding:3rem}
           h1{font-size:1.25rem}code{font-size:3rem;letter-spacing:0.2em}</style></head><body>
-          <h1>${opportunity.title || 'Shift'}</h1>
-          <p>${formatDateRange(opportunity)}</p>
+          <h1>${escapeHtml(opportunity.title || 'Shift')}</h1>
+          <p>${escapeHtml(formatDateRange(opportunity))}</p>
           <p>Check-in code</p>
-          <code>${opportunity.check_in_code}</code>
+          <code>${escapeHtml(opportunity.check_in_code)}</code>
           <script>window.print()<\/script>
           </body></html>`);
         w.document.close();

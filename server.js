@@ -121,8 +121,11 @@ const {
   restrictKioskSession,
 } = require('./middleware/auth');
 
+const { boundQueryInput, positiveParam } = require('./middleware/validate');
+
 app.use('/api', restrictKioskSession);
 app.use('/api', bindShelter);
+app.use('/api', boundQueryInput);
 
 // Routes
 const authRoutes = require('./routes/auth');
@@ -183,7 +186,12 @@ app.use('/api/push', pushRoutes);
 app.use('/api/opportunity-templates', templateRoutes);
 app.get('/api/my-shifts.ics', myShiftsIcs);
 app.get('/api/me/ical-feed', isAuthenticated, getMyIcalToken);
-app.get('/api/applications/:id/ics', isAuthenticated, applicationIcs);
+app.get(
+  '/api/applications/:id/ics',
+  (req, res, next) => positiveParam('id')(req, res, next, req.params.id),
+  isAuthenticated,
+  applicationIcs
+);
 
 app.get('/healthz', async (req, res) => {
   try {

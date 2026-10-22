@@ -23,6 +23,12 @@ function ensureAdmin(req, res) {
   return true;
 }
 
+function safeDownloadName(name) {
+  const base = path.basename(String(name || 'document')).replace(/["\r\n\\]/g, '');
+  const cleaned = base.replace(/[^\w.\- ()]+/g, '_').replace(/^\.+/, '').slice(0, 120);
+  return cleaned || 'document';
+}
+
 function looksLikeDisclosure(file, label) {
   const haystack = `${(file && file.originalname) || ''} ${label || ''}`;
   return DISCLOSURE_FILE.test(haystack);
@@ -99,7 +105,7 @@ async function uploadDocument(req, res) {
       userId: req.session.userId,
       content: req.file.buffer,
       filename: `${crypto.randomBytes(16).toString('hex')}${safeExt}`,
-      originalName: req.file.originalname || 'document',
+      originalName: safeDownloadName(req.file.originalname || 'document'),
       mimeType: detected,
       size: req.file.size,
       label: label || null,
@@ -188,10 +194,7 @@ async function downloadDocument(req, res) {
       return res.status(404).json({ error: 'File not found' });
     }
 
-    const downloadName = (doc.original_name || doc.filename || 'document').replace(
-      /["\r\n]/g,
-      ''
-    );
+    const downloadName = safeDownloadName(doc.original_name || doc.filename || 'document');
     res.setHeader('Content-Type', file.mimeType || 'application/octet-stream');
     res.setHeader(
       'Content-Disposition',

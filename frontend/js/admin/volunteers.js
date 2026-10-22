@@ -2,6 +2,7 @@ import { apiRequest, API_URL } from '../config.js';
 import { requireAuth, checkAuth, logout, isStaffOrAdminRole, isAdminRole, applyRoleVisibility} from '../auth.js';
 import { createStatusBadge } from '../components/statusBadge.js';
 import { createOverflowMenu, createIdentityCell } from '../components/overflowMenu.js';
+import { escapeHtml } from '../utils/escapeHtml.js';
 
 const logoutButton = document.getElementById('logoutButton');
 const searchInput = document.getElementById('searchInput');
@@ -35,7 +36,7 @@ function setMessage(text, tone = 'neutral') {
     return;
   }
   const cls = tone === 'error' ? 'error' : tone === 'success' ? 'success' : '';
-  messageEl.innerHTML = `<p class="${cls}">${text}</p>`;
+  messageEl.innerHTML = `<p class="${cls}">${escapeHtml(text)}</p>`;
 }
 
 function formatNumber(num) {
@@ -387,7 +388,7 @@ async function viewProfile(userId) {
               const expires = q.expires_at
                 ? `expires ${String(q.expires_at).slice(0, 10)}`
                 : 'never expires';
-              return `<li><strong>${q.name}</strong> — awarded ${String(q.awarded_at).slice(0, 10)}, ${expires}</li>`;
+              return `<li><strong>${escapeHtml(q.name)}</strong> — awarded ${escapeHtml(String(q.awarded_at).slice(0, 10))}, ${escapeHtml(expires)}</li>`;
             })
             .join('')}</ul>`;
         }
@@ -413,7 +414,7 @@ async function viewProfile(userId) {
               const accepted = w.accepted_at
                 ? ` · accepted ${String(w.accepted_at).slice(0, 10)} (v${w.accepted_version})`
                 : '';
-              return `<li><strong>${w.title}</strong> — ${statusLabel} (current v${w.current_version})${accepted}</li>`;
+              return `<li><strong>${escapeHtml(w.title)}</strong> — ${escapeHtml(statusLabel)} (current v${escapeHtml(w.current_version)})${escapeHtml(accepted)}</li>`;
             })
             .join('')}</ul>`;
         }
@@ -436,9 +437,9 @@ async function viewProfile(userId) {
               const label = d.label || d.original_name || 'Document';
               const expires = d.expires_at ? ` · expires ${String(d.expires_at).slice(0, 10)}` : '';
               return `<li>
-                <a href="/api/documents/${d.id}/download">${label}</a>
-                (${d.mime_type}${expires})
-                <button type="button" class="secondary button-small doc-meta-btn" data-doc-id="${d.id}" data-label="${(d.label || '').replace(/"/g, '&quot;')}" data-expires="${d.expires_at ? String(d.expires_at).slice(0, 10) : ''}">Edit label/expiry</button>
+                <a href="/api/documents/${encodeURIComponent(d.id)}/download">${escapeHtml(label)}</a>
+                (${escapeHtml(d.mime_type)}${escapeHtml(expires)})
+                <button type="button" class="secondary button-small doc-meta-btn" data-doc-id="${escapeHtml(d.id)}" data-label="${escapeHtml(d.label || '')}" data-expires="${escapeHtml(d.expires_at ? String(d.expires_at).slice(0, 10) : '')}">Edit label/expiry</button>
               </li>`;
             })
             .join('')}</ul>`;
@@ -466,7 +467,7 @@ async function viewProfile(userId) {
           if (row.field_type === 'checkbox') {
             display = row.value === '1' || row.value === 1 || row.value === true ? 'Yes' : 'No';
           }
-          return `<li><strong>${label}:</strong> ${display == null || display === '' ? '—' : display}</li>`;
+          return `<li><strong>${escapeHtml(label)}:</strong> ${display == null || display === '' ? '—' : escapeHtml(display)}</li>`;
         })
         .join('')}</ul>`;
     }
@@ -475,25 +476,25 @@ async function viewProfile(userId) {
     const profileHtml = `
       <div style="display: grid; gap: 1rem;">
         <div>
-          <strong>Name:</strong> ${profile.user_name || `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'N/A'}
+          <strong>Name:</strong> ${escapeHtml(profile.user_name || `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'N/A')}
         </div>
         <div>
-          <strong>Email:</strong> ${profile.user_email || profile.email || 'N/A'}
+          <strong>Email:</strong> ${escapeHtml(profile.user_email || profile.email || 'N/A')}
         </div>
         <div>
-          <strong>Phone:</strong> ${profile.phone || 'N/A'}
+          <strong>Phone:</strong> ${escapeHtml(profile.phone || 'N/A')}
         </div>
         <div>
-          <strong>Date of Birth:</strong> ${profile.date_of_birth || 'N/A'}
+          <strong>Date of Birth:</strong> ${escapeHtml(profile.date_of_birth || 'N/A')}
         </div>
         <div>
-          <strong>Address:</strong> ${profile.address || 'N/A'}
+          <strong>Address:</strong> ${escapeHtml(profile.address || 'N/A')}
         </div>
         <div>
-          <strong>Emergency Contact:</strong> ${profile.emergency_contact || 'N/A'}
+          <strong>Emergency Contact:</strong> ${escapeHtml(profile.emergency_contact || 'N/A')}
         </div>
         <div>
-          <strong>Availability:</strong> ${profile.availability || 'N/A'}
+          <strong>Availability:</strong> ${escapeHtml(profile.availability || 'N/A')}
         </div>
         <div>
           <strong>Status:</strong> 
@@ -513,17 +514,17 @@ async function viewProfile(userId) {
         <div>
           <strong>Foster home:</strong>
           <ul style="margin:0.25rem 0 0; padding-left:1.25rem;">
-            <li>Type: ${profile.home_type || '—'}</li>
-            <li>Max size: ${profile.max_foster_size || '—'}</li>
+            <li>Type: ${escapeHtml(profile.home_type || '—')}</li>
+            <li>Max size: ${escapeHtml(profile.max_foster_size || '—')}</li>
             <li>Garden: ${profile.has_garden ? 'Yes' : 'No'}${profile.garden_secure ? ' (secure)' : ''}</li>
             <li>Other dogs/cats: ${profile.has_other_dogs ? 'dogs' : 'no dogs'} / ${profile.has_other_cats ? 'cats' : 'no cats'}</li>
             <li>Children under 16: ${profile.has_children_under_16 ? 'Yes' : 'No'}</li>
             <li>Can medicate: ${profile.can_medicate ? 'Yes' : 'No'}</li>
-            <li>Notes: ${profile.foster_notes || '—'}</li>
+            <li>Notes: ${escapeHtml(profile.foster_notes || '—')}</li>
           </ul>
         </div>
         <div>
-          <strong>Volunteer type:</strong> ${profile.volunteer_type || 'regular'}
+          <strong>Volunteer type:</strong> ${escapeHtml(profile.volunteer_type || 'regular')}
           ${
             profile.volunteer_type === 'community_service' && profile.required_hours != null
               ? ` · target ${profile.required_hours} hours`
@@ -544,7 +545,7 @@ async function viewProfile(userId) {
             <label>
               Required hours (community service)
               <input type="number" id="serviceRequiredHours" name="required_hours" min="0" step="0.25"
-                value="${profile.required_hours != null ? profile.required_hours : ''}" />
+                value="${escapeHtml(profile.required_hours != null ? profile.required_hours : '')}" />
             </label>
             <button type="submit" class="button-small">Save service settings</button>
           </form>
@@ -609,8 +610,8 @@ async function viewProfile(userId) {
         ${
           isAdminRole(currentUser)
             ? `<div data-admin-only style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
-          <button type="button" class="secondary button-small" id="gdprExportBtn" data-user-id="${userId}">Export GDPR JSON</button>
-          <button type="button" class="contrast button-small" id="gdprEraseBtn" data-user-id="${userId}">Erase account</button>
+          <button type="button" class="secondary button-small" id="gdprExportBtn" data-user-id="${escapeHtml(userId)}">Export GDPR JSON</button>
+          <button type="button" class="contrast button-small" id="gdprEraseBtn" data-user-id="${escapeHtml(userId)}">Erase account</button>
         </div>`
             : ''
         }

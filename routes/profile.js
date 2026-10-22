@@ -11,16 +11,19 @@ const {
   issueMyCertificate,
 } = require('../controllers/certificateController');
 
+const { validateBody } = require('../middleware/validate');
+const { bodies } = require('../validation/bodies');
+
 const router = express.Router();
 
 router.use(isAuthenticated);
 
-router.post('/profile', createProfile);
+router.post('/profile', validateBody(bodies.profile), createProfile);
 router.get('/profile', getProfile);
-router.put('/profile', updateProfile);
+router.put('/profile', validateBody(bodies.profile), updateProfile);
 router.get('/badges', getBadges);
 router.get('/certificate', getMyCertificate);
-router.post('/certificate', issueMyCertificate);
+router.post('/certificate', validateBody(bodies.empty), issueMyCertificate);
 
 module.exports = router;
 

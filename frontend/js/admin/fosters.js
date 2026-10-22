@@ -1,5 +1,6 @@
 import { apiRequest } from '../config.js';
 import { requireAuth, checkAuth, logout, isStaffOrAdminRole, applyRoleVisibility } from '../auth.js';
+import { escapeHtml } from '../utils/escapeHtml.js';
 
 const messageEl = document.getElementById('message');
 const requestForm = document.getElementById('requestForm');
@@ -14,7 +15,7 @@ function setMessage(type, text) {
     messageEl.innerHTML = '';
     return;
   }
-  messageEl.innerHTML = `<p class="${type === 'error' ? 'error' : 'success'}">${text}</p>`;
+  messageEl.innerHTML = `<p class="${type === 'error' ? 'error' : 'success'}">${escapeHtml(text)}</p>`;
 }
 
 function carerName(row) {
@@ -122,8 +123,8 @@ async function loadOffers(requestId, container) {
     .map((o) => {
       const name = carerName(o);
       return `<li>
-        <strong>${name}</strong> — ${o.status}
-        ${o.note ? `<br/><em>${o.note}</em>` : ''}
+        <strong>${escapeHtml(name)}</strong> — ${escapeHtml(o.status)}
+        ${o.note ? `<br/><em>${escapeHtml(o.note)}</em>` : ''}
         ${
           o.status === 'pending'
             ? `<br/><button type="button" class="button-small confirm-offer" data-offer-id="${o.id}">Confirm</button>`

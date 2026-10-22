@@ -12,13 +12,16 @@ const {
 } = require('../controllers/pushController');
 const { pushTestLimiter } = require('../middleware/rateLimiter');
 
+const { validateBody } = require('../middleware/validate');
+const { bodies } = require('../validation/bodies');
+
 const router = express.Router();
 
 router.get('/vapid-public-key', getVapidPublicKey);
-router.post('/subscribe', isAuthenticated, subscribe);
-router.post('/unsubscribe', isAuthenticated, unsubscribe);
-router.post('/test', isAuthenticated, pushTestLimiter, sendTest);
+router.post('/subscribe', isAuthenticated, validateBody(bodies.subscribe), subscribe);
+router.post('/unsubscribe', isAuthenticated, validateBody(bodies.unsubscribe), unsubscribe);
+router.post('/test', isAuthenticated, pushTestLimiter, validateBody(bodies.empty), sendTest);
 router.get('/prefs', isAuthenticated, getNotificationPrefs);
-router.put('/prefs', isAuthenticated, updateNotificationPrefs);
+router.put('/prefs', isAuthenticated, validateBody(bodies.pushPrefs), updateNotificationPrefs);
 
 module.exports = router;

@@ -3,6 +3,7 @@ import { requireAuth, logout } from '../auth.js';
 import { showConfirm } from '../components/confirmDialog.js';
 import { formatShiftWhen, formatDateOnly } from '../utils/dateFormat.js';
 import { createStatusBadge } from '../components/statusBadge.js';
+import { escapeHtml } from '../utils/escapeHtml.js';
 
 const applicationsContainer = document.getElementById('applications-container');
 const filterTabs = document.getElementById('filterTabs');
@@ -13,7 +14,7 @@ let currentFilter = 'all';
 
 function setMessage(text) {
   if (!applicationsContainer) return;
-  applicationsContainer.innerHTML = `<p>${text}</p>`;
+  applicationsContainer.innerHTML = `<p>${escapeHtml(text)}</p>`;
 }
 
 function showToast(message, type = 'success') {
