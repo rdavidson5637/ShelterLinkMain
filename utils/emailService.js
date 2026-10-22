@@ -33,20 +33,28 @@ const transporter = nodemailer.createTransport({
   auth: EMAIL_USER && EMAIL_PASS ? { user: EMAIL_USER, pass: EMAIL_PASS } : undefined,
 });
 
+function headerValue(value) {
+  return String(value || '').replace(/[\r\n]/g, ' ').trim();
+}
+
 async function sendEmail(to, subject, htmlContent) {
-  if (!to) throw new Error('Recipient email is required');
-  if (!subject) throw new Error('Email subject is required');
+  const safeTo = headerValue(to);
+  const safeSubject = headerValue(subject);
+  if (!safeTo || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(safeTo)) {
+    throw new Error('Recipient email is invalid');
+  }
+  if (!safeSubject) throw new Error('Email subject is required');
   if (!htmlContent) throw new Error('Email content is required');
 
-  const fromAddress = EMAIL_FROM || EMAIL_USER;
+  const fromAddress = headerValue(EMAIL_FROM || EMAIL_USER);
   if (!fromAddress || !isEmailConfigured()) {
     throw new Error('Missing EMAIL_HOST and EMAIL_FROM/EMAIL_USER configuration');
   }
 
   return transporter.sendMail({
     from: fromAddress,
-    to,
-    subject,
+    to: safeTo,
+    subject: safeSubject,
     html: htmlContent,
   });
 }
@@ -360,9 +368,9 @@ async function sendGroupBookingReceived(contactEmail, details = {}) {
     contactEmail,
     'Group booking received - ShelterLink',
     `
-    <p>Hello ${details.contactName || ''},</p>
-    <p>We received your group booking request for <strong>${groupName}</strong>
-    (${size} people) on <strong>${title}</strong>.</p>
+    <p>Hello ${escapeHtml(details.contactName || '')},</p>
+    <p>We received your group booking request for <strong>${escapeHtml(groupName)}</strong>
+    (${escapeHtml(size)} people) on <strong>${escapeHtml(title)}</strong>.</p>
     <p>An administrator will review your request and email you once it is confirmed or declined.</p>
     <p>Thank you,<br/>${brand.signoff}</p>
     `
@@ -378,9 +386,9 @@ async function sendGroupBookingConfirmed(contactEmail, details = {}) {
     contactEmail,
     'Group booking confirmed - ShelterLink',
     `
-    <p>Hello ${details.contactName || ''},</p>
-    <p>Great news! Your group booking for <strong>${groupName}</strong> on
-    <strong>${title}</strong> (${when}) has been <strong>confirmed</strong>.</p>
+    <p>Hello ${escapeHtml(details.contactName || '')},</p>
+    <p>Great news! Your group booking for <strong>${escapeHtml(groupName)}</strong> on
+    <strong>${escapeHtml(title)}</strong> (${escapeHtml(when)}) has been <strong>confirmed</strong>.</p>
     <p>We look forward to welcoming your group.</p>
     <p>Thank you,<br/>${brand.signoff}</p>
     `
@@ -395,9 +403,9 @@ async function sendGroupBookingDeclined(contactEmail, details = {}) {
     contactEmail,
     'Group booking update - ShelterLink',
     `
-    <p>Hello ${details.contactName || ''},</p>
+    <p>Hello ${escapeHtml(details.contactName || '')},</p>
     <p>Unfortunately we are unable to confirm the group booking for
-    <strong>${groupName}</strong> on <strong>${title}</strong> at this time.</p>
+    <strong>${escapeHtml(groupName)}</strong> on <strong>${escapeHtml(title)}</strong> at this time.</p>
     <p>Please reply if you would like to discuss alternative dates or sizes.</p>
     <p>Thank you,<br/>${brand.signoff}</p>
     `

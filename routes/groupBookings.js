@@ -3,7 +3,7 @@
 const express = require('express');
 const { isAuthenticated, requireStaff } = require('../middleware/auth');
 const { auditMutations } = require('../middleware/auditLog');
-const { groupBookingLimiter } = require('../middleware/rateLimiter');
+const { groupBookingLimiter, groupBookingEmailLimiter } = require('../middleware/rateLimiter');
 const {
   createGroupBooking,
   listGroupBookings,
@@ -18,7 +18,13 @@ const router = express.Router();
 router.param('id', positiveParam('id'));
 
 // Public request form
-router.post('/', groupBookingLimiter, validateBody(bodies.groupBooking), createGroupBooking);
+router.post(
+  '/',
+  groupBookingLimiter,
+  groupBookingEmailLimiter,
+  validateBody(bodies.groupBooking),
+  createGroupBooking
+);
 
 // Admin/staff management
 router.get('/', isAuthenticated, requireStaff, validateQuery(queries.status), listGroupBookings);

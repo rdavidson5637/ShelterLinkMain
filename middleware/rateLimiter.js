@@ -21,6 +21,7 @@ const LIMITS = {
   resetPassword: positiveInt('RATE_LIMIT_RESET', 8),
   message: positiveInt('RATE_LIMIT_MESSAGE', 10),
   groupBooking: positiveInt('RATE_LIMIT_GROUP_BOOKING', 8),
+  groupBookingEmail: positiveInt('RATE_LIMIT_GROUP_BOOKING_EMAIL', 3),
   pushTest: positiveInt('RATE_LIMIT_PUSH_TEST', 3),
 };
 
@@ -112,6 +113,21 @@ const groupBookingLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+const groupBookingEmailLimiter = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000,
+  max: LIMITS.groupBookingEmail,
+  message: 'Too many group booking requests for this email. Try again tomorrow.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator(req) {
+    const email = String((req.body && req.body.contact_email) || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[\r\n]/g, '');
+    return email ? `group:${email}` : 'group:missing';
+  },
+});
+
 const pushTestLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: LIMITS.pushTest,
@@ -136,6 +152,7 @@ module.exports = {
   forgotAccountLimiter,
   resetPasswordLimiter,
   groupBookingLimiter,
+  groupBookingEmailLimiter,
   messageLimiter,
   pushTestLimiter,
 };

@@ -17,4 +17,7 @@ test('rate limiters match live production budgets', () => {
   const authRoute = fs.readFileSync(path.join(__dirname, '../routes/auth.js'), 'utf8');
   assert.match(authRoute, /forgotAccountLimiter,\s*forgotPasswordLimiter/);
   assert.ok(LIMITS.resetPassword <= 10);
+  assert.strictEqual(LIMITS.groupBookingEmail, 3);
+  const groupRoute = fs.readFileSync(path.join(__dirname, '../routes/groupBookings.js'), 'utf8');
+  assert.match(groupRoute, /groupBookingEmailLimiter/);
 });

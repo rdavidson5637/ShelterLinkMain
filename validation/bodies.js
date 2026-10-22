@@ -73,6 +73,8 @@ const groupBooking = z
     contact_email: optStr(254),
     size: z.union([z.number().int().min(0).max(1000), z.string().regex(/^\d{1,4}$/)]).optional().nullable(),
     notes: optStr(2000),
+    fax_extension: optStr(200),
+    started_at: z.union([z.number(), z.string().regex(/^\d{10,16}$/)]).optional(),
   })
   .strict();
 

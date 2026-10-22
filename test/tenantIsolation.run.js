@@ -524,6 +524,7 @@ function cases(feedbackToken) {
       contact_name: 'Pat',
       contact_email: 'pat@example.test',
       size: 1,
+      started_at: Date.now() - 10000,
     }),
     deny('POST', '/api/group-bookings/1/confirm'),
     deny('POST', '/api/group-bookings/1/decline'),

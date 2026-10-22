@@ -43,6 +43,13 @@
 
       <section>
         <form id="groupBookingForm">
+          <div class="visually-hidden" aria-hidden="true">
+            <label for="faxExtension">
+              Fax extension
+              <input type="text" id="faxExtension" name="fax_extension" tabindex="-1" autocomplete="off" />
+            </label>
+          </div>
+          <input type="hidden" id="startedAt" name="started_at" />
           <label for="opportunityId">
             Opportunity
             <select id="opportunityId" name="opportunity_id" required>

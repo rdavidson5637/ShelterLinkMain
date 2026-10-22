@@ -80,6 +80,8 @@ async function submitForm(event) {
     contact_email: contactEmail,
     size,
     notes: document.getElementById('notes').value.trim() || null,
+    fax_extension: document.getElementById('faxExtension')?.value || '',
+    started_at: Number(document.getElementById('startedAt')?.value),
   };
 
   try {
@@ -104,6 +106,8 @@ async function submitForm(event) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  const startedAt = document.getElementById('startedAt');
+  if (startedAt) startedAt.value = String(Date.now());
   loadOpportunities();
   if (form) form.addEventListener('submit', submitForm);
 });
