@@ -141,7 +141,7 @@ test('reset-password destroys other sessions for that user', async () => {
     return [{ affectedRows: 1 }];
   });
   const res = makeRes();
-  await auth.resetPassword({ body: { token: 'abc', password: 'Password1' } }, res);
+  await auth.resetPassword({ body: { token: 'abc', password: 'longpassword' } }, res);
   assert.equal(res.statusCode, 200);
   assert.ok(mock.calls.some((c) => /DELETE FROM session/i.test(c.sql)));
 });

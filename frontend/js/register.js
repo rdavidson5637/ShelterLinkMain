@@ -13,14 +13,12 @@ let checklistItems = null;
 function getPasswordChecks(password = '') {
   const value = String(password);
   return {
-    minLength: value.length >= 8,
-    hasUppercase: /[A-Z]/.test(value),
-    hasNumber: /[0-9]/.test(value),
+    minLength: value.length >= 10,
   };
 }
 
 function allPasswordChecksPass(checks) {
-  return checks.minLength && checks.hasUppercase && checks.hasNumber;
+  return checks.minLength;
 }
 
 function updateSubmitState() {
@@ -30,11 +28,9 @@ function updateSubmitState() {
 }
 
 function getStrengthInfo(checks, passwordValue = '') {
-  const metCount = [checks.minLength, checks.hasUppercase, checks.hasNumber].filter(Boolean).length;
-  if (!passwordValue) return { label: 'Weak', color: 'var(--danger)' };
-  if (metCount <= 1) return { label: 'Weak', color: 'var(--danger)' };
-  if (metCount === 2) return { label: 'Fair', color: 'var(--accent-text)' };
-  return { label: 'Strong', color: 'var(--green)' };
+  if (!passwordValue || !checks.minLength) return { label: 'Too short', color: 'var(--danger)' };
+  if (passwordValue.length < 14) return { label: 'Long enough', color: 'var(--accent-text)' };
+  return { label: 'Long', color: 'var(--green)' };
 }
 
 function renderChecklistItem(li, passed, text) {
@@ -51,9 +47,7 @@ function updatePasswordFeedback() {
   meterTextEl.textContent = `Strength: ${strength.label}`;
   meterTextEl.style.color = strength.color;
 
-  renderChecklistItem(checklistItems.minLength, checks.minLength, 'At least 8 characters');
-  renderChecklistItem(checklistItems.hasUppercase, checks.hasUppercase, 'At least one uppercase letter');
-  renderChecklistItem(checklistItems.hasNumber, checks.hasNumber, 'At least one number');
+  renderChecklistItem(checklistItems.minLength, checks.minLength, 'At least 10 characters');
 
   updateSubmitState();
 }
@@ -79,17 +73,11 @@ function setupPasswordFeedback() {
   checklist.style.paddingLeft = '1.25rem';
 
   const minLengthItem = document.createElement('li');
-  const uppercaseItem = document.createElement('li');
-  const numberItem = document.createElement('li');
   checklist.appendChild(minLengthItem);
-  checklist.appendChild(uppercaseItem);
-  checklist.appendChild(numberItem);
   wrapper.appendChild(checklist);
 
   checklistItems = {
     minLength: minLengthItem,
-    hasUppercase: uppercaseItem,
-    hasNumber: numberItem,
   };
 
   const passwordLabel = passwordInput.closest('label');
@@ -117,7 +105,7 @@ async function handleRegister(event) {
     showFormErrors(form, [
       {
         field: 'password',
-        message: 'Password must be at least 8 characters with one uppercase letter and one number.',
+        message: 'Password must be at least 10 characters.',
       },
     ]);
     return;

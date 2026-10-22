@@ -9,6 +9,7 @@ const { SALT_ROUNDS, passwordPolicyError } = require('../utils/password');
 
 test('new passwords use bcrypt cost 12 and tests skip the breach lookup', async () => {
   assert.strictEqual(SALT_ROUNDS, 12);
-  assert.strictEqual(await passwordPolicyError('short'), 'Password must be at least 8 characters with one uppercase letter and one number');
-  assert.strictEqual(await passwordPolicyError('Password1'), null);
+  assert.strictEqual(await passwordPolicyError('short'), 'Password must be at least 10 characters');
+  assert.strictEqual(await passwordPolicyError('password12'), 'Password is too common');
+  assert.strictEqual(await passwordPolicyError('longpassword'), null);
 });

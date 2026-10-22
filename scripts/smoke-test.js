@@ -113,7 +113,7 @@ async function main() {
       first_name: 'Smoke',
       last_name: 'Tester',
       email: volEmail,
-      password: 'Password1',
+      password: 'longpassword',
       phone: '07700 900999',
     },
   });
@@ -121,7 +121,7 @@ async function main() {
 
   // 2. Volunteer login
   const volLogin = await req('POST', '/api/auth/login', {
-    body: { email: volEmail, password: 'Password1' },
+    body: { email: volEmail, password: 'longpassword' },
   });
   const volCookie = volLogin.cookie;
   ok('Volunteer login', volLogin.status === 200 && !!volCookie, `${volLogin.status}`);

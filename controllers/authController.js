@@ -1,5 +1,5 @@
 const bcrypt = require('bcrypt');
-const { hashPassword, passwordPolicyError, SALT_ROUNDS } = require('../utils/password');
+const { hashPassword, passwordPolicyError, SALT_ROUNDS, DUMMY_PASSWORD_HASH } = require('../utils/password');
 const { pool } = require('../config/database');
 const User = require('../models/User');
 const { sendEmail } = require('../utils/emailService');
@@ -91,13 +91,16 @@ async function login(req, res) {
       [email]
     );
     if (rows.length !== 1) {
+      await bcrypt.compare(String(password), DUMMY_PASSWORD_HASH);
       if (rows.length > 1) console.error('[Auth] ambiguous email match', rows.length);
+      console.warn('[Auth] failed login', req.ip || '');
       return res.status(401).json({ error: 'Invalid credentials' });
     }
     const user = rows[0];
 
     const match = await bcrypt.compare(String(password), String(user.password));
     if (!match) {
+      console.warn('[Auth] failed login', req.ip || '');
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 

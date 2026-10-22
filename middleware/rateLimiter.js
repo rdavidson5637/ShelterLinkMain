@@ -1,19 +1,27 @@
 const rateLimit = require('express-rate-limit');
 const ipKeyGenerator = rateLimit.ipKeyGenerator;
 
-const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+function positiveInt(name, fallback) {
+  const raw = process.env[name];
+  if (raw == null || String(raw).trim() === '') return fallback;
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value <= 0) return fallback;
+  return Math.floor(value);
+}
+
+const WINDOW_MS = positiveInt('RATE_LIMIT_WINDOW_MS', 15 * 60 * 1000);
 
 const LIMITS = {
-  login: 15,
-  loginAccount: 5,
-  api: 300,
-  register: 8,
-  forgotPassword: 5,
-  forgotAccount: 5,
-  resetPassword: 8,
-  message: 10,
-  groupBooking: 8,
-  pushTest: 3,
+  login: positiveInt('RATE_LIMIT_LOGIN', 15),
+  loginAccount: positiveInt('RATE_LIMIT_LOGIN_ACCOUNT', 5),
+  api: positiveInt('RATE_LIMIT_API', 300),
+  register: positiveInt('RATE_LIMIT_REGISTER', 8),
+  forgotPassword: positiveInt('RATE_LIMIT_FORGOT', 5),
+  forgotAccount: positiveInt('RATE_LIMIT_FORGOT_ACCOUNT', 5),
+  resetPassword: positiveInt('RATE_LIMIT_RESET', 8),
+  message: positiveInt('RATE_LIMIT_MESSAGE', 10),
+  groupBooking: positiveInt('RATE_LIMIT_GROUP_BOOKING', 8),
+  pushTest: positiveInt('RATE_LIMIT_PUSH_TEST', 3),
 };
 
 const loginLimiter = rateLimit({
@@ -25,7 +33,8 @@ const loginLimiter = rateLimit({
   skipSuccessfulRequests: true,
 });
 
-// Failed attempts against one email, including attempts from many IPs.
+// Failed attempts for one email from one IP. Another IP is a separate counter.
+// The window expires on its own. No staff action is required.
 const loginAccountLimiter = rateLimit({
   windowMs: WINDOW_MS,
   max: LIMITS.loginAccount,
@@ -35,8 +44,9 @@ const loginAccountLimiter = rateLimit({
   skipSuccessfulRequests: true,
   keyGenerator(req) {
     const email = String((req.body && req.body.email) || '').trim().toLowerCase();
-    if (email) return `acct:${email}`;
-    return ipKeyGenerator(req.ip);
+    const ip = ipKeyGenerator(req.ip);
+    if (email) return `acct:${email}|${ip}`;
+    return ip;
   },
 });
 
