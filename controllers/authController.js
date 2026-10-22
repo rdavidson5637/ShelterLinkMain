@@ -53,7 +53,9 @@ async function register(req, res) {
     const normalizedEmail = String(email).trim().toLowerCase();
     const existing = await runWithoutShelter(() => User.findByEmail(normalizedEmail));
     if (existing) {
-      return res.status(409).json({ error: 'Email already in use' });
+      // Same response as a new account, so the form does not reveal which emails are registered.
+      await hashPassword(password);
+      return res.status(201).json({ message: 'Registration successful' });
     }
 
     const name = [first_name, last_name].filter(Boolean).join(' ').trim();
@@ -68,8 +70,8 @@ async function register(req, res) {
     return res.status(201).json({ message: 'Registration successful' });
   } catch (error) {
     console.error('[Auth] register error:', error.message);
-    if (error.code === 'AMBIGUOUS_EMAIL') {
-      return res.status(409).json({ error: 'Email already in use' });
+    if (error.code === 'AMBIGUOUS_EMAIL' || /email/i.test(String(error.constraint || ''))) {
+      return res.status(201).json({ message: 'Registration successful' });
     }
     if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
@@ -435,7 +437,9 @@ async function resetPassword(req, res) {
     const passwordHash = await hashPassword(password);
 
     await pool.execute(
-      'UPDATE users SET password = ?, reset_token = NULL, reset_token_expires = NULL WHERE user_id = ?',
+      `UPDATE users
+         SET password = ?, reset_token = NULL, reset_token_expires = NULL, ical_token = NULL
+       WHERE user_id = ?`,
       [passwordHash, user.user_id]
     );
     await destroyUserSessions(pool, user.user_id);
