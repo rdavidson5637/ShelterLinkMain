@@ -2,6 +2,7 @@
 
 const { hashPassword } = require('../utils/password');
 const { pool } = require('../config/database');
+const { destroyUserSessions } = require('../utils/sessionCookie');
 
 const DEFAULT_RETENTION_YEARS = 3;
 
@@ -165,7 +166,16 @@ async function anonymiseUser(userId, { reason = 'gdpr_erasure' } = {}) {
          address = NULL,
          emergency_contact = NULL,
          skills = NULL,
-         availability = NULL
+         availability = NULL,
+         home_type = NULL,
+         has_garden = NULL,
+         garden_secure = NULL,
+         has_other_dogs = NULL,
+         has_other_cats = NULL,
+         has_children_under_16 = NULL,
+         can_medicate = NULL,
+         max_foster_size = NULL,
+         foster_notes = NULL
        WHERE user_id = ?`,
       [id]
     );
@@ -174,18 +184,21 @@ async function anonymiseUser(userId, { reason = 'gdpr_erasure' } = {}) {
     await conn.execute('DELETE FROM custom_field_values WHERE user_id = ?', [id]);
     await conn.execute('DELETE FROM user_documents WHERE user_id = ?', [id]);
     await conn.execute('DELETE FROM volunteer_tags WHERE user_id = ?', [id]);
-
-    // Drop sessions if the sessions table stores user data (best-effort).
-    try {
-      await conn.execute(
-        `DELETE FROM sessions WHERE data LIKE ? OR data LIKE ?`,
-        [`%"userId":${id}%`, `%"userId": ${id}%`]
-      );
-    } catch (_) {
-      // sessions table may not support LIKE well; ignore
-    }
+    await conn.execute('DELETE FROM push_subscriptions WHERE user_id = ?', [id]);
+    await conn.execute('DELETE FROM volunteer_references WHERE user_id = ?', [id]);
+    await conn.execute(
+      `UPDATE messages SET body = '[removed]' WHERE user_id = ?`,
+      [id]
+    );
+    await conn.execute(
+      `UPDATE background_checks
+         SET reference_number = NULL, notes = NULL
+       WHERE user_id = ?`,
+      [id]
+    );
 
     await conn.commit();
+    await destroyUserSessions(pool, id);
     return {
       user_id: id,
       already_anonymised: false,
