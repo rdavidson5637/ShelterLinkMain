@@ -5,6 +5,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const dotenv = require('dotenv');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const { testConnection, pgPool, closePool, pool } = require('./config/database');
@@ -23,6 +24,12 @@ validateEnv();
 logStartupWarnings();
 
 const app = express();
+app.use((req, res, next) => {
+  const id = crypto.randomUUID();
+  req.id = id;
+  res.setHeader('X-Request-Id', id);
+  next();
+});
 app.set('etag', false);
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
@@ -193,6 +200,17 @@ app.get(
   applicationIcs
 );
 
+app.get('/api/health', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT 1 AS ok');
+    if (!rows || !rows.length) throw new Error('empty');
+    return res.status(200).json({ status: 'ok' });
+  } catch {
+    console.error('[health] check failed');
+    return res.status(503).json({ status: 'unavailable' });
+  }
+});
+
 app.get('/healthz', async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT 1 AS ok');
@@ -276,6 +294,14 @@ function shutdown(signal) {
 
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('unhandledRejection', (reason) => {
+  const message = reason && reason.message ? reason.message : 'unhandled rejection';
+  console.error('[process] unhandledRejection:', String(message).replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[email]'));
+});
+process.on('uncaughtException', (err) => {
+  console.error('[process] uncaughtException:', err && err.message ? err.message : 'uncaught exception');
+  shutdown('uncaughtException');
+});
 
 async function startServer() {
   try {
