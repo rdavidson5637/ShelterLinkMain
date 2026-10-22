@@ -27,7 +27,11 @@ const {
   listAuditLog,
 } = require('../controllers/gdprController');
 const { exportVolunteers } = require('../controllers/exportController');
-const { updateVolunteerApproval } = require('../controllers/profileController');
+const {
+  updateVolunteerApproval,
+  getAllVolunteers,
+  getVolunteerProfile,
+} = require('../controllers/profileController');
 const { approveHours } = require('../controllers/hoursController');
 
 function makeRes() {
@@ -350,4 +354,104 @@ test('staff can approve hours (controller allows staff)', async () => {
   } finally {
     VolunteerHours.approve = originalApprove;
   }
+});
+
+test('staff view of a volunteer profile is audited without contact fields', async () => {
+  mock.resetCalls();
+  const inserts = [];
+  mock.setHandler(async (sql, params) => {
+    if (/INSERT INTO audit_log/i.test(sql)) {
+      inserts.push({ params });
+      return [{ insertId: 1 }];
+    }
+    if (/FROM volunteer_profiles/i.test(sql)) {
+      return [[{
+        user_id: 3,
+        profile_id: 8,
+        address: '12 Secret Road',
+        phone: '07700900123',
+        date_of_birth: '1980-04-02',
+        emergency_contact: 'Pat 07700900999',
+        email: 'vol@example.com',
+      }]];
+    }
+    return [[]];
+  });
+
+  const res = makeRes();
+  await getVolunteerProfile(
+    makeReq({
+      session: { userId: 9, role: 'staff' },
+      params: { userId: '3' },
+    }),
+    res
+  );
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.address, '12 Secret Road');
+  assert.strictEqual(inserts.length, 1);
+  assert.strictEqual(inserts[0].params[0], 9);
+  assert.strictEqual(inserts[0].params[1], 'volunteer.profile.view');
+  assert.strictEqual(inserts[0].params[2], 'volunteer');
+  assert.strictEqual(inserts[0].params[3], '3');
+  const detail = String(inserts[0].params[4] || '');
+  assert.doesNotMatch(detail, /Secret Road|07700900123|07700900999|vol@example.com|1980-04-02/);
+});
+
+test('a volunteer opening a profile does not write an audit row', async () => {
+  mock.resetCalls();
+  const inserts = [];
+  mock.setHandler(async (sql) => {
+    if (/INSERT INTO audit_log/i.test(sql)) {
+      inserts.push(sql);
+      return [{ insertId: 1 }];
+    }
+    return [[]];
+  });
+
+  const res = makeRes();
+  await getVolunteerProfile(
+    makeReq({
+      session: { userId: 4, role: 'volunteer' },
+      params: { userId: '3' },
+    }),
+    res
+  );
+  assert.strictEqual(res.statusCode, 403);
+  assert.strictEqual(inserts.length, 0);
+});
+
+test('staff volunteer list view is audited without phone or email', async () => {
+  mock.resetCalls();
+  const inserts = [];
+  mock.setHandler(async (sql, params) => {
+    if (/INSERT INTO audit_log/i.test(sql)) {
+      inserts.push({ params });
+      return [{ insertId: 1 }];
+    }
+    if (/FROM users u/i.test(sql)) {
+      return [[{
+        user_id: 3,
+        first_name: 'Ada',
+        last_name: 'Lovelace',
+        email: 'vol@example.com',
+        phone: '07700900123',
+        approved: 1,
+      }]];
+    }
+    return [[]];
+  });
+
+  const res = makeRes();
+  await getAllVolunteers(
+    makeReq({ session: { userId: 9, role: 'staff' } }),
+    res
+  );
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body[0].phone, '07700900123');
+  assert.strictEqual(inserts.length, 1);
+  assert.strictEqual(inserts[0].params[0], 9);
+  assert.strictEqual(inserts[0].params[1], 'volunteer.list.view');
+  const detail = String(inserts[0].params[4] || '');
+  assert.match(detail, /"count":1/);
+  assert.doesNotMatch(detail, /07700900123|vol@example.com/);
 });

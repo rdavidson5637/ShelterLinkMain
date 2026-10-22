@@ -6,6 +6,7 @@ const { calculateBadges } = require('../models/Badge');
 const { pool } = require('../config/database');
 const { sendVolunteerApprovalNotification } = require('../utils/emailService');
 const { isStaffOrAdmin, isAdminUser } = require('../middleware/auth');
+const { recordAudit } = require('../middleware/auditLog');
 
 const REQUIRED_FIELDS = ['availability'];
 
@@ -236,6 +237,15 @@ async function getAllVolunteers(req, res) {
 
     const [rows] = await pool.execute(sql);
     const withId = rows.map((row) => ({ ...row, id: row.user_id }));
+    try {
+      await recordAudit(req, {
+        action: 'volunteer.list.view',
+        entityType: 'volunteer',
+        detail: { count: withId.length },
+      });
+    } catch (auditError) {
+      console.error('[Profile] volunteer list audit error:', auditError.message);
+    }
     return res.status(200).json(withId);
   } catch (error) {
     console.error('[Profile] getAllVolunteers error:', error.message);
@@ -311,6 +321,16 @@ async function getVolunteerProfile(req, res) {
     // Admins also see values for inactive fields the volunteer previously answered
     const allValues = await CustomField.findValuesByUserId(userId);
     withCustom.custom_field_values = allValues;
+    try {
+      await recordAudit(req, {
+        action: 'volunteer.profile.view',
+        entityType: 'volunteer',
+        entityId: userId,
+        detail: { user_id: Number(userId) },
+      });
+    } catch (auditError) {
+      console.error('[Profile] volunteer profile audit error:', auditError.message);
+    }
     return res.status(200).json(withCustom);
   } catch (error) {
     console.error('[Profile] getVolunteerProfile error:', error.message);
