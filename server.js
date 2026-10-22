@@ -15,7 +15,7 @@ const { errorHandler } = require('./middleware/errorHandler');
 const { validateEnv, logStartupWarnings } = require('./utils/validateEnv');
 const { corsOriginDelegate } = require('./utils/corsOrigins');
 const { sessionCookieOptions } = require('./utils/sessionCookie');
-const { cspDirectives } = require('./utils/csp');
+const { securityHeaders, permissionsPolicy } = require('./utils/securityHeaders');
 const { buildServiceWorker, getSwVersion } = require('./utils/serviceWorker');
 
 dotenv.config();
@@ -25,12 +25,10 @@ logStartupWarnings();
 const app = express();
 app.set('etag', false);
 app.set('trust proxy', 1);
+app.disable('x-powered-by');
 
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: cspDirectives(process.env.NODE_ENV === 'production'),
-  },
-}));
+app.use(helmet(securityHeaders(process.env.NODE_ENV === 'production')));
+app.use(permissionsPolicy);
 
 app.use(compression());
 
