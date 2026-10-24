@@ -26,10 +26,7 @@ npm run dev
 
 4. Open http://localhost:3000
 
-| Role      | Email                      | Password  |
-|-----------|----------------------------|-----------|
-| Admin     | admin@shelterlink.org      | Admin123! |
-| Volunteer | alex.jenkins@example.com   | Password1 |
+On a development server the login page shows a Demo accounts card. That card is hidden in production. Do not use the sample accounts on a live shelter site.
 
 ## Smoke test
 

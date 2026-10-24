@@ -8,14 +8,14 @@
  *
  * Prerequisites:
  *   1. Database built with sample data:   npm run db:reset
- *      (the test signs in as the seeded admin admin@shelterlink.org / Admin123!)
+ *      Set SMOKE_ADMIN_PASSWORD to the seeded admin password (see database/seed.pg.sql).
  *   2. Server running in another terminal: npm run dev
  *
  * Run:
  *   npm run smoke
  *   # or target a different host/creds:
  *   SMOKE_BASE_URL=http://localhost:3000 \
- *   SMOKE_ADMIN_EMAIL=admin@shelterlink.org SMOKE_ADMIN_PASSWORD=Admin123! \
+ *   SMOKE_ADMIN_EMAIL=admin@shelterlink.org SMOKE_ADMIN_PASSWORD='(set this)' \
  *   node scripts/smoke-test.js
  *
  * Exit code 0 = all steps passed, 1 = one or more failed.
@@ -27,7 +27,13 @@ require('dotenv').config();
 
 const BASE = process.env.SMOKE_BASE_URL || `http://localhost:${process.env.PORT || 3000}`;
 const ADMIN_EMAIL = process.env.SMOKE_ADMIN_EMAIL || 'admin@shelterlink.org';
-const ADMIN_PASSWORD = process.env.SMOKE_ADMIN_PASSWORD || 'Admin123!';
+
+if (!process.env.SMOKE_ADMIN_PASSWORD) {
+  console.error('Set SMOKE_ADMIN_PASSWORD. The smoke test does not keep a password in source.');
+  process.exit(1);
+}
+
+const ADMIN_PASSWORD = process.env.SMOKE_ADMIN_PASSWORD;
 
 let passed = 0;
 let failed = 0;
@@ -107,7 +113,7 @@ async function main() {
       first_name: 'Smoke',
       last_name: 'Tester',
       email: volEmail,
-      password: 'Password1',
+      password: 'longpassword',
       phone: '07700 900999',
     },
   });
@@ -115,7 +121,7 @@ async function main() {
 
   // 2. Volunteer login
   const volLogin = await req('POST', '/api/auth/login', {
-    body: { email: volEmail, password: 'Password1' },
+    body: { email: volEmail, password: 'longpassword' },
   });
   const volCookie = volLogin.cookie;
   ok('Volunteer login', volLogin.status === 200 && !!volCookie, `${volLogin.status}`);

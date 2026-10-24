@@ -2,28 +2,29 @@
 
 /**
  * Non-production demo hints for the login page.
- * Seed credentials match database/seed.pg.sql / README.md.
+ * Passwords come from the environment. Nothing is returned in production,
+ * and nothing is returned when the demo env vars are unset.
  */
-const DEMO_ACCOUNTS = [
-  {
-    role: 'admin',
-    label: 'Admin',
-    email: 'admin@shelterlink.org',
-    password: 'Admin123!',
-  },
-  {
-    role: 'volunteer',
-    label: 'Volunteer',
-    email: 'alex.jenkins@example.com',
-    password: 'Password1',
-  },
-];
+function accountFromEnv(role, label, emailName, passwordName) {
+  const email = String(process.env[emailName] || '').trim();
+  const password = String(process.env[passwordName] || '');
+  if (!email || !password) return null;
+  return { role, label, email, password };
+}
+
+function demoAccounts() {
+  if (process.env.NODE_ENV === 'production') return [];
+  return [
+    accountFromEnv('admin', 'Admin', 'DEMO_ADMIN_EMAIL', 'DEMO_ADMIN_PASSWORD'),
+    accountFromEnv('volunteer', 'Volunteer', 'DEMO_VOLUNTEER_EMAIL', 'DEMO_VOLUNTEER_PASSWORD'),
+  ].filter(Boolean);
+}
 
 function getPublicConfig(req, res) {
-  const showDemoHints = process.env.NODE_ENV !== 'production';
+  const accounts = demoAccounts();
   return res.status(200).json({
-    showDemoHints,
-    accounts: showDemoHints ? DEMO_ACCOUNTS : [],
+    showDemoHints: accounts.length > 0,
+    accounts,
   });
 }
 
@@ -34,5 +35,4 @@ function getDemoInfo(req, res) {
 module.exports = {
   getPublicConfig,
   getDemoInfo,
-  DEMO_ACCOUNTS,
 };

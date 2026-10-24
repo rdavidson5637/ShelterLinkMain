@@ -143,15 +143,13 @@ async function applyForOpportunity(req, res) {
       });
     }
 
-    const requiredCheck = opportunity.required_background_check_type;
-    if (requiredCheck) {
-      const hasClear = await Vetting.hasClearCheck(userId, requiredCheck);
-      if (!hasClear) {
-        return res.status(403).json({
-          error: `This opportunity requires a clear ${requiredCheck.replace(/_/g, ' ')} background check before you can apply.`,
-          required_background_check_type: requiredCheck,
-        });
-      }
+    const checkAssessment = await Vetting.assessRequiredCheck(userId, opportunity);
+    if (!checkAssessment.ok) {
+      return res.status(403).json({
+        error: Vetting.requiredCheckMessage(checkAssessment, 'apply'),
+        required_background_check_type: checkAssessment.checkType,
+        check_expires_before_shift: Boolean(checkAssessment.expiresBeforeShift),
+      });
     }
 
     const maxVolunteers = Number(opportunity.max_volunteers);
@@ -287,6 +285,18 @@ async function updateApplicationStatus(req, res) {
         if (currentApprovedCount >= maxVolunteers) {
           return res.status(400).json({ error: 'This opportunity is at full capacity' });
         }
+      }
+
+      const checkAssessment = await Vetting.assessRequiredCheck(
+        existingApplication.user_id,
+        opportunity
+      );
+      if (!checkAssessment.ok) {
+        return res.status(400).json({
+          error: Vetting.requiredCheckMessage(checkAssessment, 'accept'),
+          required_background_check_type: checkAssessment.checkType,
+          check_expires_before_shift: Boolean(checkAssessment.expiresBeforeShift),
+        });
       }
     }
 

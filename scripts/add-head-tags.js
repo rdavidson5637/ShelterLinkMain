@@ -16,7 +16,7 @@ const TAGS = [
   '<meta name="apple-mobile-web-app-status-bar-style" content="default" />',
 ];
 
-const THEME = '<meta name="theme-color" content="#1b5e20" />';
+const THEME = '<meta name="theme-color" content="#0f766e" />';
 
 function walk(dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

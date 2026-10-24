@@ -482,12 +482,13 @@ async function resolveUrgentCoverRecipients(opportunityId, { limit = 200 } = {})
           )
       )
     ORDER BY u.last_name ASC, u.first_name ASC
-    LIMIT ${safeLimit}
+    LIMIT ?
   `;
   const [rows] = await pool.execute(sql, [
     opportunityId,
     opportunityId,
     opportunityId,
+    safeLimit,
   ]);
   return rows.map((row) => ({ ...row, id: row.user_id }));
 }

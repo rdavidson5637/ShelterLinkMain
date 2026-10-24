@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#1b5e20" />
+    <meta name="theme-color" content="#0f766e" />
     <link rel="manifest" href="/public/manifest.webmanifest" />
     <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
     <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
@@ -43,6 +43,13 @@
 
       <section>
         <form id="groupBookingForm">
+          <div class="visually-hidden" aria-hidden="true">
+            <label for="faxExtension">
+              Fax extension
+              <input type="text" id="faxExtension" name="fax_extension" tabindex="-1" autocomplete="off" />
+            </label>
+          </div>
+          <input type="hidden" id="startedAt" name="started_at" />
           <label for="opportunityId">
             Opportunity
             <select id="opportunityId" name="opportunity_id" required>

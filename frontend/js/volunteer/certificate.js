@@ -1,6 +1,7 @@
 import { apiRequest } from '../config.js';
 import { requireAuth, logout } from '../auth.js';
 import { formatDateOnly } from '../utils/dateFormat.js';
+import { escapeHtml } from '../utils/escapeHtml.js';
 
 const messageEl = document.getElementById('message');
 const issueButton = document.getElementById('issueButton');
@@ -16,7 +17,7 @@ function setMessage(type, text) {
     return;
   }
   const css = type === 'error' ? 'error' : 'success';
-  messageEl.innerHTML = `<p class="${css}">${text}</p>`;
+  messageEl.innerHTML = `<p class="${css}">${escapeHtml(text)}</p>`;
 }
 
 function renderCertificate(cert) {
@@ -37,7 +38,7 @@ function renderCertificate(cert) {
   const badges = cert.badges || [];
   if (badges.length) {
     badgesEl.innerHTML = `<p><strong>Badges earned:</strong> ${badges
-      .map((b) => `${b.emoji || ''} ${b.label}`.trim())
+      .map((b) => escapeHtml(`${b.emoji || ''} ${b.label}`.trim()))
       .join(', ')}</p>`;
   } else {
     badgesEl.innerHTML = '';

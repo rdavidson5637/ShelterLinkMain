@@ -1,5 +1,6 @@
 import { apiRequest } from '../config.js';
 import { requireAuth } from '../auth.js';
+import { escapeHtml } from '../utils/escapeHtml.js';
 
 const messageEl = document.getElementById('message');
 const matchingList = document.getElementById('matchingList');
@@ -13,7 +14,7 @@ function setMessage(type, text) {
     messageEl.innerHTML = '';
     return;
   }
-  messageEl.innerHTML = `<p class="${type === 'error' ? 'error' : 'success'}">${text}</p>`;
+  messageEl.innerHTML = `<p class="${type === 'error' ? 'error' : 'success'}">${escapeHtml(text)}</p>`;
 }
 
 function showEmergency(phone) {
@@ -47,18 +48,18 @@ async function loadMatching() {
     const offered = req.my_offer && req.my_offer.status === 'pending';
     article.innerHTML = `
       <header>
-        <strong>${req.animal_name || `Animal #${req.animal_id}`}</strong>
-        · ${req.urgency}
-        · from ${String(req.needed_from || '').slice(0, 10)}
+        <strong>${escapeHtml(req.animal_name || `Animal #${req.animal_id}`)}</strong>
+        · ${escapeHtml(req.urgency)}
+        · from ${escapeHtml(String(req.needed_from || '').slice(0, 10))}
       </header>
-      <p>${req.description || 'No description.'}</p>
+      <p>${escapeHtml(req.description || 'No description.')}</p>
       ${
         offered
           ? '<p class="success">You have offered to foster.</p>'
           : `<label>Note (optional)
               <textarea class="offer-note" rows="2"></textarea>
             </label>
-            <button type="button" class="offer-btn" data-id="${req.id}">Offer to foster</button>`
+            <button type="button" class="offer-btn" data-id="${escapeHtml(req.id)}">Offer to foster</button>`
       }
     `;
     matchingList.appendChild(article);
@@ -101,9 +102,9 @@ async function loadPlacements() {
     const active = p.status === 'active';
     article.innerHTML = `
       <header>
-        <strong>${p.animal_name || `Animal #${p.animal_id}`}</strong>
-        · ${p.status}
-        · started ${String(p.started_on || '').slice(0, 10)}
+        <strong>${escapeHtml(p.animal_name || `Animal #${p.animal_id}`)}</strong>
+        · ${escapeHtml(p.status)}
+        · started ${escapeHtml(String(p.started_on || '').slice(0, 10))}
       </header>
       ${
         p.animal_handling_notes

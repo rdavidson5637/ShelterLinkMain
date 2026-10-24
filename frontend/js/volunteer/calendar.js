@@ -23,9 +23,9 @@ function isOpportunityFull(opportunity) {
 
 function getEventColor(opportunity, appliedIds) {
   const id = opportunity.id ?? opportunity.opportunity_id;
-  if (appliedIds.has(id)) return '#1976d2';
-  if (isOpportunityFull(opportunity)) return '#9e9e9e';
-  return '#4caf50';
+  if (appliedIds.has(id)) return { color: '#f59e0b', textColor: '#1f2937' };
+  if (isOpportunityFull(opportunity)) return { color: '#5b6670', textColor: '#ffffff' };
+  return { color: '#0f766e', textColor: '#ffffff' };
 }
 
 function mapOpportunitiesToEvents(opportunities, appliedIds) {
@@ -35,7 +35,7 @@ function mapOpportunitiesToEvents(opportunities, appliedIds) {
     const location = opp.location || '';
     const startDate = opp.start_date || opp.start;
     const endDate = opp.end_date || opp.end || startDate;
-    const color = getEventColor(opp, appliedIds);
+    const colors = getEventColor(opp, appliedIds);
 
     const startDay = String(startDate || '').slice(0, 10);
     const endDay = String(endDate || '').slice(0, 10) || startDay;
@@ -58,7 +58,8 @@ function mapOpportunitiesToEvents(opportunities, appliedIds) {
       start,
       ...(end ? { end } : {}),
       allDay: true,
-      color,
+      color: colors.color,
+      textColor: colors.textColor,
       extendedProps: { ...opp, opportunityId: id },
     };
   });

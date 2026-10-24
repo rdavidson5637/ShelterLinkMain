@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <title>ShelterLink — How it works</title>
   <style>
-    :root { --green: #1b5e20; --ink: #1a1a1a; --muted: #4a4a4a; --line: #d5d5d5; --tint: #e8f0e8; }
+    :root { --green: #0f766e; --ink: #1f2937; --muted: #5b6670; --line: #dde5e2; --tint: #e7f4f2; }
     * { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: var(--ink); line-height: 1.45; margin: 0; padding: 0; font-size: 11.5pt; }
     .page { max-width: 800px; margin: 0 auto; padding: 36px 48px 48px; }
@@ -39,27 +39,23 @@
     </div>
 
     <h2>1. Demo logins (this copy only)</h2>
-    <p>Open <span class="mono">http://localhost:3001</span> while the app is running (<span class="mono">npm run dev</span>). On a development copy the login page shows a Demo accounts card.</p>
+    <p>Open <span class="mono">http://localhost:3001</span> while the app is running (<span class="mono">npm run dev</span>). On a development copy the login page shows a Demo accounts card with the sample emails and passwords. That card is hidden in production.</p>
     <table>
       <thead>
-        <tr><th>Role</th><th>Email</th><th>Password</th><th>What you see</th></tr>
+        <tr><th>Role</th><th>What you see</th></tr>
       </thead>
       <tbody>
         <tr>
           <td>Admin / staff</td>
-          <td class="mono">admin@shelterlink.org</td>
-          <td class="mono">Admin123!</td>
           <td>Day sheet, animals, volunteers, onboarding, messages, reports</td>
         </tr>
         <tr>
           <td>Volunteer</td>
-          <td class="mono">alex.jenkins@example.com</td>
-          <td class="mono">Password1</td>
           <td>Browse shifts, foster, transport, hours, messages, profile</td>
         </tr>
       </tbody>
     </table>
-    <p>Other seeded volunteers also use password <span class="mono">Password1</span>. These accounts exist only because sample data was loaded. <strong>Do not use them on a live shelter site.</strong> For a real deploy you create a real admin and turn seed data off.</p>
+    <p>These accounts exist only because sample data was loaded. <strong>Do not use them on a live shelter site.</strong> For a real deploy you create a real admin and turn seed data off.</p>
 
     <h2>2. Two sides of the same system</h2>
     <p>Everyone uses the same website. After login, ShelterLink shows a different menu depending on the account.</p>

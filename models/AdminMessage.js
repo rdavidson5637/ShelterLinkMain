@@ -91,8 +91,9 @@ async function findAll(limit = 50) {
       FROM admin_messages m
       LEFT JOIN users u ON u.user_id = m.admin_id
       ORDER BY m.created_at DESC
-      LIMIT ${safeLimit}
-    `
+      LIMIT ?
+    `,
+    [safeLimit]
   );
   return rows;
 }

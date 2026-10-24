@@ -182,6 +182,31 @@ test('listNotes forbids volunteers who have not applied', async () => {
   assert.strictEqual(res.statusCode, 403);
 });
 
+test('listNotes forbids pending and waitlisted applicants', async () => {
+  for (const status of ['pending', 'waitlisted']) {
+    mock.resetCalls();
+    mock.setHandler(async (sql) => {
+      if (/FROM opportunities/i.test(sql)) {
+        return [[{ opportunity_id: 5, id: 5, title: 'Walk', status: 'open' }]];
+      }
+      if (/FROM applications/i.test(sql)) {
+        return [[{ application_id: 3, status }]];
+      }
+      if (/FROM shift_notes/i.test(sql)) {
+        return [[{ id: 2, body: 'Bring wellies', notify: 1 }]];
+      }
+      return [[]];
+    });
+    const res = makeRes();
+    await listNotes(
+      { session: { userId: 9, role: 'volunteer' }, params: { id: '5' } },
+      res
+    );
+    assert.strictEqual(res.statusCode, 403, status);
+    assert.ok(!mock.calls.some((call) => /FROM shift_notes/i.test(call.sql)));
+  }
+});
+
 test('listNotes hides internal notes from volunteers on the shift', async () => {
   mock.resetCalls();
   mock.setHandler(async (sql) => {

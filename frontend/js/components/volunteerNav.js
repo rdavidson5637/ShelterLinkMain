@@ -48,7 +48,7 @@ function ensureVolunteerNavStyles() {
       color: var(--text-secondary); font-weight: 500; text-decoration: none; white-space: nowrap;
     }
     .nav-more-link:hover, .nav-more-link:focus-visible { background: var(--green-tint); color: var(--text); }
-    .nav-more-link[aria-current='page'] { background: var(--green); color: #fff; font-weight: 600; }
+    .nav-more-link[aria-current='page'] { background: var(--green); color: var(--on-primary); font-weight: 600; }
     @media (max-width: 600px) {
       .nav-more { display: block; }
       button.nav-more-toggle.secondary {

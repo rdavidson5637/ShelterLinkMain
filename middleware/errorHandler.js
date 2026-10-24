@@ -32,21 +32,36 @@ function defaultMessageForStatus(status) {
   }
 }
 
+function clientMessage(err, status, isProduction) {
+  const fallback = defaultMessageForStatus(status);
+  const message = String(err?.message || fallback);
+  if (!isProduction) return message;
+  if (status >= 500) return fallback;
+  if (/(\bSELECT\b|\bINSERT\b|\bUPDATE\b|\bDELETE\b|syntax error|\/Users\/|node_modules)/i.test(message)) {
+    return fallback;
+  }
+  return message;
+}
+
 function errorHandler(err, req, res, next) { // eslint-disable-line no-unused-vars
   const isProduction = process.env.NODE_ENV === 'production';
   const status = resolveStatusCode(err);
+  const requestId = req && req.id ? req.id : null;
+  const logged = String(err?.message || err?.type || 'error').replace(
+    /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,
+    '[email]'
+  );
 
   if (isProduction) {
-    const safeType = err?.type || err?.name || 'UnknownError';
-    console.error(`[ErrorHandler] ${safeType} (${status})`);
+    console.error(`[ErrorHandler] ${status} ${requestId || '-'} ${logged}`);
   } else {
-    console.error('[ErrorHandler] Full error:', err);
+    console.error(`[ErrorHandler] ${status} ${requestId || '-'}`, err);
   }
 
-  const message = isProduction && status >= 500
-    ? defaultMessageForStatus(status)
-    : (err?.message || defaultMessageForStatus(status));
-  return res.status(status).json({ error: message });
+  return res.status(status).json({
+    error: clientMessage(err, status, isProduction),
+    requestId,
+  });
 }
 
 module.exports = { errorHandler };

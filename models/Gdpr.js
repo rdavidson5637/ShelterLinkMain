@@ -1,14 +1,12 @@
 'use strict';
 
-const bcrypt = require('bcrypt');
+const { hashPassword } = require('../utils/password');
 const { pool } = require('../config/database');
-
-const DEFAULT_RETENTION_YEARS = 3;
+const { destroyUserSessions } = require('../utils/sessionCookie');
+const { periods } = require('../config/retention');
 
 function retentionYears() {
-  const raw = Number(process.env.DATA_RETENTION_YEARS);
-  if (Number.isFinite(raw) && raw > 0) return raw;
-  return DEFAULT_RETENTION_YEARS;
+  return periods().inactiveVolunteerYears;
 }
 
 /**
@@ -82,6 +80,27 @@ async function buildVolunteerExport(userId) {
      WHERE vt.user_id = ?`,
     [id]
   );
+  const [messages] = await pool.execute(
+    `SELECT id, thread_id, body, created_at FROM messages WHERE user_id = ? ORDER BY id`,
+    [id]
+  );
+  const [shiftNotes] = await pool.execute(
+    `SELECT id, opportunity_id, body, created_at FROM shift_notes WHERE author_id = ? ORDER BY id`,
+    [id]
+  );
+  const [fosterOffers] = await pool.execute(
+    `SELECT id, request_id, note, status, created_at FROM foster_offers WHERE user_id = ? ORDER BY id`,
+    [id]
+  );
+  const [references] = await pool.execute(
+    `SELECT id, referee_name, referee_email, referee_relationship, comments, status
+     FROM volunteer_references WHERE user_id = ?`,
+    [id]
+  );
+  const [checks] = await pool.execute(
+    `SELECT id, reference_number, notes, status FROM background_checks WHERE user_id = ?`,
+    [id]
+  );
 
   const hoursTotal = hours
     .filter((h) => Number(h.approved) === 1)
@@ -99,6 +118,11 @@ async function buildVolunteerExport(userId) {
     custom_field_values: customValues,
     documents,
     tags,
+    messages,
+    shift_notes: shiftNotes,
+    foster_offers: fosterOffers,
+    references,
+    background_checks: checks,
   };
 }
 
@@ -141,7 +165,7 @@ async function anonymiseUser(userId, { reason = 'gdpr_erasure' } = {}) {
 
     const anonEmail = `deleted+${id}@anonymised.invalid`;
     // Unusable password hash — account cannot log in.
-    const lockedHash = await bcrypt.hash(`locked-${id}-${Date.now()}`, 10);
+    const lockedHash = await hashPassword(`locked-${id}-${Date.now()}`);
 
     await conn.execute(
       `UPDATE users SET
@@ -165,7 +189,16 @@ async function anonymiseUser(userId, { reason = 'gdpr_erasure' } = {}) {
          address = NULL,
          emergency_contact = NULL,
          skills = NULL,
-         availability = NULL
+         availability = NULL,
+         home_type = NULL,
+         has_garden = NULL,
+         garden_secure = NULL,
+         has_other_dogs = NULL,
+         has_other_cats = NULL,
+         has_children_under_16 = NULL,
+         can_medicate = NULL,
+         max_foster_size = NULL,
+         foster_notes = NULL
        WHERE user_id = ?`,
       [id]
     );
@@ -174,18 +207,44 @@ async function anonymiseUser(userId, { reason = 'gdpr_erasure' } = {}) {
     await conn.execute('DELETE FROM custom_field_values WHERE user_id = ?', [id]);
     await conn.execute('DELETE FROM user_documents WHERE user_id = ?', [id]);
     await conn.execute('DELETE FROM volunteer_tags WHERE user_id = ?', [id]);
-
-    // Drop sessions if the sessions table stores user data (best-effort).
-    try {
-      await conn.execute(
-        `DELETE FROM sessions WHERE data LIKE ? OR data LIKE ?`,
-        [`%"userId":${id}%`, `%"userId": ${id}%`]
-      );
-    } catch (_) {
-      // sessions table may not support LIKE well; ignore
-    }
+    await conn.execute('DELETE FROM push_subscriptions WHERE user_id = ?', [id]);
+    await conn.execute('DELETE FROM volunteer_references WHERE user_id = ?', [id]);
+    await conn.execute(
+      `UPDATE messages SET body = '[removed]' WHERE user_id = ?`,
+      [id]
+    );
+    await conn.execute(
+      `UPDATE background_checks
+         SET reference_number = NULL, notes = NULL
+       WHERE user_id = ?`,
+      [id]
+    );
+    await conn.execute(
+      `UPDATE shift_notes SET body = '[removed]' WHERE author_id = ?`,
+      [id]
+    );
+    await conn.execute(
+      `UPDATE foster_offers SET note = NULL WHERE user_id = ?`,
+      [id]
+    );
+    await conn.execute(
+      `UPDATE group_bookings
+         SET contact_name = 'Removed',
+             contact_email = 'removed@anonymised.invalid',
+             notes = NULL
+       WHERE lower(contact_email) = lower(?)`,
+      [user.email]
+    );
+    await conn.execute(
+      `UPDATE audit_log
+         SET detail_json = NULL
+       WHERE user_id = ?
+          OR (entity_type = 'volunteer' AND entity_id = ?)`,
+      [id, String(id)]
+    );
 
     await conn.commit();
+    await destroyUserSessions(pool, id);
     return {
       user_id: id,
       already_anonymised: false,
@@ -211,6 +270,16 @@ async function anonymiseUser(userId, { reason = 'gdpr_erasure' } = {}) {
  */
 async function runDataRetention(now = new Date()) {
   const years = retentionYears();
+  if (years == null) {
+    return {
+      retention_years: null,
+      skipped: true,
+      cutoff: null,
+      scanned: 0,
+      anonymised: 0,
+      results: [],
+    };
+  }
   const cutoff = new Date(now);
   cutoff.setFullYear(cutoff.getFullYear() - years);
 
@@ -244,7 +313,6 @@ async function runDataRetention(now = new Date()) {
 }
 
 module.exports = {
-  DEFAULT_RETENTION_YEARS,
   retentionYears,
   buildVolunteerExport,
   anonymiseUser,

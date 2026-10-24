@@ -5,7 +5,7 @@
  * Example: node create-admin.js "Admin User" admin@example.com admin123
  */
 
-const bcrypt = require('bcrypt');
+const { hashPassword, passwordPolicyError } = require('./utils/password');
 const { pool, closePool } = require('./config/database');
 
 async function createAdmin() {
@@ -18,32 +18,37 @@ async function createAdmin() {
   }
 
   const [name, email, password] = args;
+  const normalizedEmail = String(email).trim().toLowerCase();
+  const policyError = await passwordPolicyError(password);
+  if (policyError) {
+    console.error(policyError);
+    await closePool();
+    process.exit(1);
+  }
 
   try {
-    // Check if user already exists
     const [existing] = await pool.execute(
-      'SELECT user_id FROM users WHERE email = ?',
-      [email]
+      'SELECT user_id FROM users WHERE lower(email) = lower(?)',
+      [normalizedEmail]
     );
 
     if (existing.length > 0) {
-      console.error(`User with email ${email} already exists!`);
+      console.error(`User with email ${normalizedEmail} already exists!`);
       process.exitCode = 1;
       return;
     }
 
     // Hash password
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await hashPassword(password);
 
-    // Create admin user
     const [result] = await pool.execute(
       "INSERT INTO users (name, email, password, role, created_at) VALUES (?, ?, ?, 'admin', NOW())",
-      [name, email, passwordHash]
+      [name, normalizedEmail, passwordHash]
     );
 
     console.log('✓ Admin user created successfully!');
     console.log(`  Name: ${name}`);
-    console.log(`  Email: ${email}`);
+    console.log(`  Email: ${normalizedEmail}`);
     console.log(`  Role: admin`);
     console.log(`  User ID: ${result.insertId}`);
     console.log('\nYou can now login with these credentials.');

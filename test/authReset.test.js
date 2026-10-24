@@ -142,9 +142,13 @@ test('reset-password looks up the hashed token', async () => {
     return [{ affectedRows: 1 }];
   });
   const res = makeRes();
-  await auth.resetPassword({ body: { token: raw, password: 'Password1' } }, res);
+  await auth.resetPassword({ body: { token: raw, password: 'longpassword' } }, res);
   assert.strictEqual(res.statusCode, 200);
   assert.ok(mock.calls.some((c) => /DELETE FROM session/i.test(c.sql)));
+  assert.ok(
+    mock.calls.some((c) => /UPDATE users/i.test(c.sql) && /ical_token = NULL/i.test(c.sql)),
+    'password reset must rotate the calendar feed token'
+  );
 });
 
 test('logout clears connect.sid with production cookie flags when NODE_ENV=production', async () => {

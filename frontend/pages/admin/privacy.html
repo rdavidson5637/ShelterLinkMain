@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#1b5e20" />
+    <meta name="theme-color" content="#0f766e" />
     <link rel="manifest" href="/public/manifest.webmanifest" />
     <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
     <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
@@ -56,8 +56,8 @@
         <article>
           <header><h2>Data retention</h2></header>
           <p>
-            Anonymise volunteer accounts inactive for 3 years (the default retention period).
-            A daily job also runs this automatically.
+            No retention period is set. The daily job skips volunteer accounts until one is configured.
+            This button does the same check and changes nothing while the period is empty.
           </p>
           <button type="button" id="retentionBtn">Run retention now</button>
           <pre id="retentionResult" style="margin-top: 1rem; white-space: pre-wrap;"></pre>

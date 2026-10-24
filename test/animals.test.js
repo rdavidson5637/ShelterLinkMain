@@ -4,6 +4,27 @@ const test = require('node:test');
 const assert = require('node:assert');
 const mock = require('./helpers/mockDb');
 const Animal = require('../models/Animal');
+const { getPhoto, getAnimal } = require('../controllers/animalController');
+
+function makeRes() {
+  const res = { statusCode: 200, body: undefined, headers: {} };
+  res.status = (code) => {
+    res.statusCode = code;
+    return res;
+  };
+  res.json = (body) => {
+    res.body = body;
+    return res;
+  };
+  res.send = (body) => {
+    res.body = body;
+    return res;
+  };
+  res.setHeader = (key, value) => {
+    res.headers[key] = value;
+  };
+  return res;
+}
 
 test('normalizeAnimalIds dedupes and ignores junk', () => {
   assert.deepStrictEqual(Animal.normalizeAnimalIds([1, '2', 1, { id: 3 }, 'x']), [1, 2, 3]);
@@ -138,4 +159,104 @@ test('getPhoto returns buffer and mime when a photo row exists', async () => {
   const photo = await Animal.getPhoto(3);
   assert.strictEqual(photo.buffer.toString(), 'img');
   assert.strictEqual(photo.mimeType, 'image/jpeg');
+});
+
+test('a volunteer with no shift or foster placement cannot fetch an animal photo', async () => {
+  mock.resetCalls();
+  mock.setHandler(async () => [[]]);
+  const res = makeRes();
+  await getPhoto(
+    { session: { userId: 4, role: 'volunteer' }, params: { id: '1' } },
+    res
+  );
+  assert.strictEqual(res.statusCode, 404);
+  assert.strictEqual(res.body.error, 'Not found');
+  assert.ok(!mock.calls.some((call) => /FROM animal_photos/i.test(call.sql)));
+});
+
+test('a volunteer on an accepted shift can fetch that animal photo', async () => {
+  mock.resetCalls();
+  mock.setHandler(async (sql) => {
+    if (/FROM applications/i.test(sql)) return [[{ ok: 1 }]];
+    if (/FROM animal_photos/i.test(sql)) {
+      return [[{ content: Buffer.from('img'), mime_type: 'image/png' }]];
+    }
+    return [[]];
+  });
+  const res = makeRes();
+  await getPhoto(
+    { session: { userId: 4, role: 'volunteer' }, params: { id: '1' } },
+    res
+  );
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(Buffer.isBuffer(res.body) ? res.body.toString() : '', 'img');
+  assert.strictEqual(res.headers['Content-Type'], 'image/png');
+});
+
+test('staff can fetch an animal photo without a personal shift', async () => {
+  mock.resetCalls();
+  mock.setHandler(async (sql) => {
+    if (/FROM animal_photos/i.test(sql)) {
+      return [[{ content: Buffer.from('img'), mime_type: 'image/jpeg' }]];
+    }
+    return [[]];
+  });
+  const res = makeRes();
+  await getPhoto(
+    { session: { userId: 1, role: 'staff' }, params: { id: '1' } },
+    res
+  );
+  assert.strictEqual(res.statusCode, 200);
+  assert.ok(!mock.calls.some((call) => /FROM applications/i.test(call.sql)));
+});
+
+test('a volunteer with no relationship cannot read an animal record', async () => {
+  mock.resetCalls();
+  mock.setHandler(async (sql) => {
+    if (/FROM animals a/i.test(sql)) {
+      return [[{
+        id: 1,
+        name: 'Bella',
+        species: 'dog',
+        kennel_ref: 'K-12',
+        status: 'available',
+        handling_notes: 'Pulls left',
+      }]];
+    }
+    return [[]];
+  });
+  const res = makeRes();
+  await getAnimal(
+    { session: { userId: 4, role: 'volunteer' }, params: { id: '1' } },
+    res
+  );
+  assert.strictEqual(res.statusCode, 404);
+  assert.strictEqual(res.body.kennel_ref, undefined);
+});
+
+test('an active foster carer can read the animal without kennel notes hidden', async () => {
+  mock.resetCalls();
+  mock.setHandler(async (sql) => {
+    if (/FROM animals a/i.test(sql)) {
+      return [[{
+        id: 1,
+        name: 'Bella',
+        species: 'dog',
+        kennel_ref: 'K-12',
+        status: 'foster',
+        handling_notes: 'Pulls left',
+      }]];
+    }
+    if (/FROM foster_placements/i.test(sql)) return [[{ ok: 1 }]];
+    return [[]];
+  });
+  const res = makeRes();
+  await getAnimal(
+    { session: { userId: 4, role: 'volunteer' }, params: { id: '1' } },
+    res
+  );
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.name, 'Bella');
+  assert.strictEqual(res.body.handling_notes, 'Pulls left');
+  assert.strictEqual(res.body.kennel_ref, 'K-12');
 });

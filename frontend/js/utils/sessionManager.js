@@ -91,10 +91,74 @@ function setupActivityListeners() {
   });
 }
 
+const PRIVACY_DISMISS_KEY = 'privacy_notice_dismissed';
+
+async function maybeShowPrivacyNotice() {
+  try {
+    if (sessionStorage.getItem(PRIVACY_DISMISS_KEY) === '1') return;
+  } catch (_) {
+    /* ignore */
+  }
+  if (document.getElementById('privacyNoticeBar')) return;
+
+  const res = await apiRequest('/auth/me', { method: 'GET' });
+  if (!res.ok) return;
+  const user = await res.json().catch(() => null);
+  if (!user || !user.needsPrivacyNotice) return;
+
+  const bar = document.createElement('div');
+  bar.id = 'privacyNoticeBar';
+  bar.className = 'privacy-notice-bar';
+  bar.setAttribute('role', 'region');
+  bar.setAttribute('aria-label', 'Privacy notice');
+
+  const text = document.createElement('p');
+  text.append('Please read the ');
+  const link = document.createElement('a');
+  link.href = '/pages/privacy.html';
+  link.textContent = 'privacy notice';
+  text.append(link);
+  text.append('. It says what we hold about you.');
+
+  const actions = document.createElement('div');
+  actions.className = 'privacy-notice-actions';
+
+  const accept = document.createElement('button');
+  accept.type = 'button';
+  accept.textContent = 'I have read it';
+  accept.addEventListener('click', async () => {
+    accept.disabled = true;
+    const ack = await apiRequest('/auth/privacy-notice', {
+      method: 'POST',
+      body: { accept: true },
+    });
+    if (ack.ok) bar.remove();
+    else accept.disabled = false;
+  });
+
+  const later = document.createElement('button');
+  later.type = 'button';
+  later.className = 'secondary';
+  later.textContent = 'Not now';
+  later.addEventListener('click', () => {
+    try {
+      sessionStorage.setItem(PRIVACY_DISMISS_KEY, '1');
+    } catch (_) {
+      /* ignore */
+    }
+    bar.remove();
+  });
+
+  actions.append(accept, later);
+  bar.append(text, actions);
+  document.body.prepend(bar);
+}
+
 function initSessionManager() {
   setupActivityListeners();
   resetInactivityTimer();
   setInterval(checkSession, CHECK_INTERVAL_MS);
+  maybeShowPrivacyNotice().catch(() => {});
 }
 
 document.addEventListener('DOMContentLoaded', initSessionManager);

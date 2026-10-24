@@ -17,3 +17,14 @@ test('convertToCSV produces header + rows for given fields', () => {
 test('convertToCSV rejects non-array input', () => {
   assert.throws(() => convertToCSV({}, ['a']), /must be an array/);
 });
+
+test('convertToCSV prefixes formula characters so spreadsheets treat them as text', () => {
+  const csv = convertToCSV(
+    [{ name: '=1+1', note: '@SUM(A1)', plain: 'Ada' }],
+    ['name', 'note', 'plain']
+  );
+  assert.match(csv, /'=1\+1/);
+  assert.match(csv, /'@SUM\(A1\)/);
+  assert.match(csv, /Ada/);
+  assert.doesNotMatch(csv, /(^|,)"?=1\+1/);
+});

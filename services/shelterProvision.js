@@ -1,6 +1,7 @@
 'use strict';
 
-const bcrypt = require('bcrypt');
+const { passwordPolicyError, hashPassword } = require('../utils/password');
+const { sniffImage, canonicalMime } = require('../utils/fileSignature');
 const { pool } = require('../config/database');
 const { runWithShelter, runWithoutShelter } = require('../utils/shelterContext');
 const { assertLiveWriteAllowed } = require('../utils/liveDbGuard');
@@ -16,11 +17,9 @@ function fail(status, message) {
   return error;
 }
 
-function assertPassword(password) {
-  const pwd = String(password || '');
-  if (pwd.length < 8 || !/[A-Z]/.test(pwd) || !/[0-9]/.test(pwd)) {
-    throw fail(400, 'Password must be at least 8 characters with one uppercase letter and one number');
-  }
+async function assertPassword(password) {
+  const policyError = await passwordPolicyError(password);
+  if (policyError) throw fail(400, policyError);
 }
 
 function splitName(adminName) {
@@ -55,14 +54,17 @@ async function createShelterWithAdmin({
     throw fail(400, 'Slug must be lowercase letters, numbers, and single hyphens');
   }
   if (!EMAIL_RE.test(email)) throw fail(400, 'Admin email is invalid');
-  assertPassword(adminPassword);
-  if (logo && (!LOGO_TYPES.has(logoMime) || logo.length > MAX_LOGO_BYTES)) {
-    throw fail(400, 'Logo must be a PNG or JPEG under 512KB');
+  await assertPassword(adminPassword);
+  if (logo) {
+    const detected = sniffImage(logo);
+    if (!detected || detected !== canonicalMime(logoMime) || logo.length > MAX_LOGO_BYTES) {
+      throw fail(400, 'Logo must be a PNG or JPEG under 512KB');
+    }
   }
 
   const { first, last, full } = splitName(adminName);
   const [existingEmail] = await runWithoutShelter(() => pool.execute(
-    'SELECT user_id FROM users WHERE email = ? LIMIT 1',
+    'SELECT user_id FROM users WHERE lower(email) = lower(?)',
     [email]
   ));
   if (existingEmail.length) throw fail(409, 'Email already in use');
@@ -73,7 +75,7 @@ async function createShelterWithAdmin({
   ));
   if (existingSlug.length) throw fail(409, 'Slug already in use');
 
-  const passwordHash = await bcrypt.hash(String(adminPassword), 10);
+  const passwordHash = await hashPassword(adminPassword);
   const [created] = await runWithoutShelter(() => pool.execute(
     `INSERT INTO shelters (name, slug, logo, logo_mime)
      VALUES (?, ?, ?, ?)`,
@@ -99,8 +101,11 @@ async function updateShelterBrand({ slug, name, logo = null, logoMime = null } =
   if (shelterName != null && (shelterName.length < 2 || shelterName.length > 255)) {
     throw fail(400, 'Shelter name must be 2 to 255 characters');
   }
-  if (logo && (!LOGO_TYPES.has(logoMime) || logo.length > MAX_LOGO_BYTES)) {
-    throw fail(400, 'Logo must be a PNG or JPEG under 512KB');
+  if (logo) {
+    const detected = sniffImage(logo);
+    if (!detected || detected !== canonicalMime(logoMime) || logo.length > MAX_LOGO_BYTES) {
+      throw fail(400, 'Logo must be a PNG or JPEG under 512KB');
+    }
   }
   if (shelterName == null && !logo) throw fail(400, 'Pass a new name, a logo, or both');
 

@@ -5,6 +5,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const dotenv = require('dotenv');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const { testConnection, pgPool, closePool, pool } = require('./config/database');
@@ -15,7 +16,7 @@ const { errorHandler } = require('./middleware/errorHandler');
 const { validateEnv, logStartupWarnings } = require('./utils/validateEnv');
 const { corsOriginDelegate } = require('./utils/corsOrigins');
 const { sessionCookieOptions } = require('./utils/sessionCookie');
-const { cspDirectives } = require('./utils/csp');
+const { securityHeaders, permissionsPolicy } = require('./utils/securityHeaders');
 const { buildServiceWorker, getSwVersion } = require('./utils/serviceWorker');
 
 dotenv.config();
@@ -23,14 +24,18 @@ validateEnv();
 logStartupWarnings();
 
 const app = express();
+app.use((req, res, next) => {
+  const id = crypto.randomUUID();
+  req.id = id;
+  res.setHeader('X-Request-Id', id);
+  next();
+});
 app.set('etag', false);
 app.set('trust proxy', 1);
+app.disable('x-powered-by');
 
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: cspDirectives(process.env.NODE_ENV === 'production'),
-  },
-}));
+app.use(helmet(securityHeaders(process.env.NODE_ENV === 'production')));
+app.use(permissionsPolicy);
 
 app.use(compression());
 
@@ -123,8 +128,11 @@ const {
   restrictKioskSession,
 } = require('./middleware/auth');
 
+const { boundQueryInput, positiveParam } = require('./middleware/validate');
+
 app.use('/api', restrictKioskSession);
 app.use('/api', bindShelter);
+app.use('/api', boundQueryInput);
 
 // Routes
 const authRoutes = require('./routes/auth');
@@ -185,7 +193,23 @@ app.use('/api/push', pushRoutes);
 app.use('/api/opportunity-templates', templateRoutes);
 app.get('/api/my-shifts.ics', myShiftsIcs);
 app.get('/api/me/ical-feed', isAuthenticated, getMyIcalToken);
-app.get('/api/applications/:id/ics', isAuthenticated, applicationIcs);
+app.get(
+  '/api/applications/:id/ics',
+  (req, res, next) => positiveParam('id')(req, res, next, req.params.id),
+  isAuthenticated,
+  applicationIcs
+);
+
+app.get('/api/health', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT 1 AS ok');
+    if (!rows || !rows.length) throw new Error('empty');
+    return res.status(200).json({ status: 'ok' });
+  } catch {
+    console.error('[health] check failed');
+    return res.status(503).json({ status: 'unavailable' });
+  }
+});
 
 app.get('/healthz', async (req, res) => {
   try {
@@ -270,6 +294,14 @@ function shutdown(signal) {
 
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('unhandledRejection', (reason) => {
+  const message = reason && reason.message ? reason.message : 'unhandled rejection';
+  console.error('[process] unhandledRejection:', String(message).replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[email]'));
+});
+process.on('uncaughtException', (err) => {
+  console.error('[process] uncaughtException:', err && err.message ? err.message : 'uncaught exception');
+  shutdown('uncaughtException');
+});
 
 async function startServer() {
   try {

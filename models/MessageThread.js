@@ -416,9 +416,9 @@ async function getMessages(threadId, { forVolunteer = false, limit = 200 } = {})
       INNER JOIN users u ON u.user_id = m.user_id
       WHERE m.thread_id = ?
       ORDER BY m.created_at ASC
-      LIMIT ${safeLimit}
+      LIMIT ?
     `,
-    [Number(threadId)]
+    [Number(threadId), safeLimit]
   );
   return rows.map((row) => toSafeMessage(row, { forVolunteer }));
 }

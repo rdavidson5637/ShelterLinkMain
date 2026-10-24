@@ -36,7 +36,7 @@ async function listNotes(req, res) {
     if (!staff) {
       const existing = await Application.checkExisting(req.session.userId, opportunityId);
       const status = String(existing?.status || '').toLowerCase();
-      if (!['accepted', 'approved', 'pending', 'waitlisted'].includes(status)) {
+      if (!['accepted', 'approved'].includes(status)) {
         return res.status(403).json({ error: 'Forbidden' });
       }
     }

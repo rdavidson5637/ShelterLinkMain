@@ -86,7 +86,7 @@ async function loadOnboardingChecklist() {
       ['Clear background check', data.has_clear_background_check],
       ['Waivers accepted', data.waivers_complete],
     ];
-    el.innerHTML = `<ul>${items.map(([label, ok]) => `<li>${ok ? '\u2713' : '\u25cb'} ${label}</li>`).join('')}</ul>`;
+    el.innerHTML = `<ul>${items.map(([label, ok]) => `<li>${ok ? '\u2713' : '\u25cb'} ${escapeHtml(label)}</li>`).join('')}</ul>`;
   } catch (error) {
     console.error('[Dashboard] onboarding checklist error:', error);
     el.textContent = 'Unable to load onboarding checklist.';
@@ -99,7 +99,7 @@ function renderBadges(badges = {}) {
     if (!earned.length) {
       badgesListEl.innerHTML = '<p>No badges earned yet — your first shift unlocks First Step.</p>';
     } else {
-      badgesListEl.innerHTML = earned.map((b) => `<span style="display:inline-block;margin:0.25rem 0.35rem 0.25rem 0;padding:0.35rem 0.6rem;background:#e8f5e9;border-radius:4px;">${b.emoji || ''} ${b.label}</span>`).join('');
+      badgesListEl.innerHTML = earned.map((b) => `<span style="display:inline-block;margin:0.25rem 0.35rem 0.25rem 0;padding:0.35rem 0.6rem;background:#e8f5e9;border-radius:4px;">${escapeHtml(b.emoji || '')} ${escapeHtml(b.label)}</span>`).join('');
     }
   }
   if (nextBadgeProgressEl) {
@@ -119,7 +119,7 @@ async function fetchAndDisplayHelpedAnimals() {
       helpedAnimalsDetailsEl.innerHTML = '<p>No animal activity yet. After an accepted shift, log a walk, feed, or socialise from My applications.</p>';
       return;
     }
-    helpedAnimalsDetailsEl.innerHTML = `<ul>${rows.map((r) => `<li><strong>${r.name}</strong> (${r.species}) — ${r.activity_count} log${Number(r.activity_count) === 1 ? '' : 's'}</li>`).join('')}</ul>`;
+    helpedAnimalsDetailsEl.innerHTML = `<ul>${rows.map((r) => `<li><strong>${escapeHtml(r.name)}</strong> (${escapeHtml(r.species)}) — ${escapeHtml(r.activity_count)} log${Number(r.activity_count) === 1 ? '' : 's'}</li>`).join('')}</ul>`;
   } catch {
     helpedAnimalsDetailsEl.textContent = 'Unable to load animals right now.';
   }
@@ -130,16 +130,12 @@ function drawImpactCard(stats) {
   const ctx = impactCanvas.getContext('2d');
   const w = impactCanvas.width;
   const h = impactCanvas.height;
-  const grad = ctx.createLinearGradient(0, 0, w, h);
-  grad.addColorStop(0, '#1b5e20');
-  grad.addColorStop(1, '#43a047');
-  ctx.fillStyle = grad;
+  const styles = getComputedStyle(document.documentElement);
+  const brand = styles.getPropertyValue('--green').trim() || '#0f766e';
+  const ink = styles.getPropertyValue('--on-primary').trim() || '#ffffff';
+  ctx.fillStyle = brand;
   ctx.fillRect(0, 0, w, h);
-  ctx.fillStyle = 'rgba(255,255,255,0.08)';
-  ctx.beginPath();
-  ctx.arc(w - 80, 80, 140, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#ffffff';
+  ctx.fillStyle = ink;
   ctx.font = 'bold 42px Georgia, serif';
   ctx.fillText('ShelterLink', 48, 70);
   ctx.font = '22px Georgia, serif';
@@ -154,8 +150,10 @@ function drawImpactCard(stats) {
   ctx.font = '20px system-ui, sans-serif';
   ctx.fillText(earned.length ? `Badges: ${earned.map((b) => b.label).join(', ')}` : 'Keep going — badges await!', 48, 340);
   ctx.font = '16px system-ui, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.globalAlpha = 0.85;
+  ctx.fillStyle = ink;
   ctx.fillText(shelterLabel || 'ShelterLink', 48, 390);
+  ctx.globalAlpha = 1;
 }
 
 function renderCommunityServiceProgress(profile, approvedHours) {
@@ -369,7 +367,7 @@ async function fetchAndDisplayNextShift() {
     if (start && isSameCalendarDay(start) && next.check_in_code) {
       const code = document.createElement('p');
       code.className = 'next-shift-code';
-      code.innerHTML = `Check-in code: <code>${next.check_in_code}</code>`;
+      code.innerHTML = `Check-in code: <code>${escapeHtml(next.check_in_code)}</code>`;
       nextShiftDetailsEl.appendChild(code);
     }
     nextShiftDetailsEl.appendChild(renderNextShiftActions(next));
@@ -424,7 +422,7 @@ async function fetchAndDisplayQualifications() {
     if (!Array.isArray(rows) || !rows.length) { myQualificationsDetailsEl.textContent = 'No qualifications awarded yet.'; return; }
     myQualificationsDetailsEl.innerHTML = `<ul style="margin:0;padding-left:1.1rem;">${rows.map((q) => {
       const expires = q.expires_at ? `expires ${String(q.expires_at).slice(0, 10)}` : 'never expires';
-      return `<li><strong>${q.name}</strong> — ${expires} (${statusLabel(q.status)})</li>`;
+      return `<li><strong>${escapeHtml(q.name)}</strong> — ${escapeHtml(expires)} (${escapeHtml(statusLabel(q.status))})</li>`;
     }).join('')}</ul>`;
   } catch (error) {
     console.error('[Dashboard] qualifications error:', error);
@@ -447,7 +445,7 @@ async function fetchAndDisplayDocuments() {
     myDocumentsDetailsEl.innerHTML = `<ul style="margin:0;padding-left:1.1rem;">${docs.map((d) => {
       const label = d.label || d.original_name || 'Document';
       const expires = d.expires_at ? ` · expires ${String(d.expires_at).slice(0, 10)}` : '';
-      return `<li><a href="/api/documents/${d.id}/download">${label}</a> (${formatBytes(d.size)}${expires})</li>`;
+      return `<li><a href="/api/documents/${encodeURIComponent(d.id)}/download">${escapeHtml(label)}</a> (${escapeHtml(formatBytes(d.size))}${escapeHtml(expires)})</li>`;
     }).join('')}</ul>`;
   } catch (error) {
     console.error('[Dashboard] documents error:', error);

@@ -2,6 +2,7 @@
 
 const crypto = require('crypto');
 const { pool } = require('../config/database');
+const { todayIso, calendarDay } = require('../utils/shelterTime');
 
 const CHECK_TYPES = new Set([
   'accessni_basic',
@@ -52,7 +53,7 @@ function toSafeReference(row, { includeComments = false } = {}) {
   return base;
 }
 
-function toSafeCheck(row) {
+function mapCheck(row) {
   if (!row) return null;
   return {
     id: Number(row.id),
@@ -66,6 +67,17 @@ function toSafeCheck(row) {
     updated_by: row.updated_by != null ? Number(row.updated_by) : null,
     updated_at: row.updated_at,
   };
+}
+
+function toSafeCheck(row, { includeReference = false, includeNotes = false } = {}) {
+  const full = mapCheck(row);
+  if (!full) return null;
+  if (!includeReference) delete full.reference_number;
+  if (!includeNotes) {
+    delete full.notes;
+    delete full.updated_by;
+  }
+  return full;
 }
 
 function normalizeCheckType(value) {
@@ -242,7 +254,7 @@ async function upsertBackgroundCheck({
       ]
     );
     if (!result.affectedRows) return null;
-    return findBackgroundCheckById(id);
+    return findBackgroundCheckById(id, { full: true });
   }
 
   const [result] = await pool.execute(
@@ -262,18 +274,19 @@ async function upsertBackgroundCheck({
       updatedBy,
     ]
   );
-  return findBackgroundCheckById(result.insertId);
+  return findBackgroundCheckById(result.insertId, { full: true });
 }
 
-async function findBackgroundCheckById(id) {
+async function findBackgroundCheckById(id, { full = false } = {}) {
   const [rows] = await pool.execute(
     `SELECT * FROM background_checks WHERE id = ? LIMIT 1`,
     [id]
   );
-  return toSafeCheck(rows[0] || null);
+  const row = rows[0] || null;
+  return full ? mapCheck(row) : toSafeCheck(row);
 }
 
-async function listBackgroundChecksForUser(userId) {
+async function listBackgroundChecksForUser(userId, options = {}) {
   const [rows] = await pool.execute(
     `
       SELECT *
@@ -283,7 +296,24 @@ async function listBackgroundChecksForUser(userId) {
     `,
     [userId]
   );
-  return rows.map(toSafeCheck);
+  return rows.map((row) => toSafeCheck(row, options));
+}
+
+/**
+ * Calendar day the check must still be valid. A future shift uses its start
+ * date. A missing or past start date uses today in the shelter timezone.
+ */
+function shiftCoverageDay(opportunity, now = new Date()) {
+  const today = todayIso(now);
+  const start = calendarDay(
+    opportunity && (opportunity.start_date || opportunity.startDate)
+  );
+  if (!start || start < today) return today;
+  return start;
+}
+
+function checkLabel(checkType) {
+  return String(checkType || 'background').replace(/_/g, ' ');
 }
 
 /**
@@ -306,6 +336,43 @@ async function hasClearCheck(userId, checkType, now = new Date()) {
     [userId, type, today]
   );
   return rows.length > 0;
+}
+
+/**
+ * Whether a required check is clear on the shift date, not only today.
+ * `ok` is true when the shift does not require a check.
+ */
+async function assessRequiredCheck(userId, opportunity, now = new Date()) {
+  const checkType = normalizeCheckType(
+    opportunity &&
+      (opportunity.required_background_check_type || opportunity.requiredBackgroundCheckType)
+  );
+  if (!checkType) return { ok: true };
+
+  const coverDay = shiftCoverageDay(opportunity, now);
+  const today = todayIso(now);
+  const covers = await hasClearCheck(userId, checkType, new Date(`${coverDay}T12:00:00.000Z`));
+  if (covers) return { ok: true, checkType, coverDay };
+
+  let expiresBeforeShift = false;
+  if (coverDay > today) {
+    expiresBeforeShift = await hasClearCheck(userId, checkType, now);
+  }
+  return { ok: false, checkType, coverDay, expiresBeforeShift };
+}
+
+function requiredCheckMessage(assessment, action = 'apply') {
+  const label = checkLabel(assessment && assessment.checkType);
+  if (assessment && assessment.expiresBeforeShift) {
+    return `This shift is on ${assessment.coverDay}. A clear ${label} check has to still be valid that day.`;
+  }
+  if (action === 'accept') {
+    return `This volunteer needs a clear ${label} background check before they can be accepted.`;
+  }
+  if (action === 'claim') {
+    return `This shift requires a clear ${label} background check before you can claim it.`;
+  }
+  return `This opportunity requires a clear ${label} background check before you can apply.`;
 }
 
 async function markExpiredChecks(now = new Date()) {
@@ -333,7 +400,6 @@ async function findChecksNeedingStaffWarning(now = new Date(), days = STAFF_WARN
     `
       SELECT
         bc.*,
-        u.email,
         u.first_name,
         u.last_name
       FROM background_checks bc
@@ -348,9 +414,55 @@ async function findChecksNeedingStaffWarning(now = new Date(), days = STAFF_WARN
   );
   return rows.map((row) => ({
     ...toSafeCheck(row),
-    email: row.email,
     first_name: row.first_name,
     last_name: row.last_name,
+  }));
+}
+
+/**
+ * Accepted future shifts whose required check is not clear on the shift date.
+ * Names and shift titles only. No reference numbers or notes.
+ */
+async function findRosteredShiftsMissingCheck(now = new Date()) {
+  const today = todayIso(now);
+  const [rows] = await pool.execute(
+    `
+      SELECT
+        u.user_id,
+        u.first_name,
+        u.last_name,
+        o.opportunity_id,
+        o.title,
+        o.start_date,
+        o.required_background_check_type AS check_type
+      FROM applications a
+      INNER JOIN opportunities o ON o.opportunity_id = a.opportunity_id
+      INNER JOIN users u ON u.user_id = a.user_id
+      WHERE a.status IN ('accepted', 'approved')
+        AND o.required_background_check_type IS NOT NULL
+        AND o.start_date::date >= ?::date
+        AND NOT EXISTS (
+          SELECT 1
+          FROM background_checks bc
+          WHERE bc.user_id = a.user_id
+            AND bc.check_type = o.required_background_check_type
+            AND bc.status = 'clear'
+            AND (bc.expires_on IS NULL OR o.start_date::date <= bc.expires_on)
+        )
+      ORDER BY o.start_date ASC, u.last_name ASC, u.user_id ASC
+      LIMIT 50
+    `,
+    [today]
+  );
+  if (!Array.isArray(rows)) return [];
+  return rows.map((row) => ({
+    user_id: row.user_id,
+    first_name: row.first_name,
+    last_name: row.last_name,
+    opportunity_id: row.opportunity_id,
+    title: row.title,
+    start_date: row.start_date,
+    check_type: row.check_type,
   }));
 }
 
@@ -363,7 +475,7 @@ async function getOnboardingChecklist(userId) {
 
   const profile = await VolunteerProfile.findByUserId(userId);
   const references = await listReferencesForUser(userId, { includeComments: false });
-  const checks = await listBackgroundChecksForUser(userId);
+  const checks = await listBackgroundChecksForUser(userId, { includeReference: true });
   const pendingWaivers = await Waiver.findPendingForUser(userId);
 
   const receivedRefs = references.filter((r) => r.status === 'received');
@@ -519,6 +631,7 @@ module.exports = {
   hashToken,
   generateReferenceToken,
   toSafeReference,
+  mapCheck,
   toSafeCheck,
   normalizeCheckType,
   normalizeCheckStatus,
@@ -532,8 +645,12 @@ module.exports = {
   findBackgroundCheckById,
   listBackgroundChecksForUser,
   hasClearCheck,
+  shiftCoverageDay,
+  assessRequiredCheck,
+  requiredCheckMessage,
   markExpiredChecks,
   findChecksNeedingStaffWarning,
+  findRosteredShiftsMissingCheck,
   getOnboardingChecklist,
   classifyOnboardingStage,
   getOnboardingPipeline,

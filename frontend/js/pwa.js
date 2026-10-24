@@ -5,7 +5,19 @@
 
 import { showBanner, hideBanner } from './components/statusBanner.js';
 
-const THEME_COLOR = '#1b5e20';
+const THEME_COLOR_LIGHT = '#0f766e';
+const THEME_COLOR_DARK = '#0f1a19';
+
+function currentThemeColor() {
+  try {
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      return THEME_COLOR_DARK;
+    }
+  } catch {
+    /* matchMedia is missing in some webviews */
+  }
+  return THEME_COLOR_LIGHT;
+}
 const MANIFEST_HREF = '/public/manifest.webmanifest';
 const READY_TIMEOUT_MS = 10000;
 
@@ -18,7 +30,7 @@ export function ensurePwaMeta(doc = document) {
     theme.setAttribute('name', 'theme-color');
     doc.head.appendChild(theme);
   }
-  theme.setAttribute('content', THEME_COLOR);
+  theme.setAttribute('content', currentThemeColor());
 
   let manifest = doc.querySelector('link[rel="manifest"]');
   if (!manifest) {

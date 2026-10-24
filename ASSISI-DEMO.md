@@ -10,9 +10,7 @@ Use this on the call after `DATABASE_URL` is set and `npm run db:reset` + `npm r
 
 1. Supabase session pooler URI on port **5432** in `.env` as `DATABASE_URL`
 2. `npm run db:reset` then `npm run dev`
-3. On the login page (non-prod), use the **Demo accounts** card:
-   - Admin: `admin@shelterlink.org` / `Admin123!`
-   - Volunteer: seed volunteer / `Password1`
+3. On the login page (non-production), use the **Demo accounts** card for the admin and a volunteer. That card is hidden in production.
 4. Optional: `SHELTER_EMERGENCY_PHONE`, Brevo `EMAIL_*`, VAPID keys
 
 ## Demo flow (20–25 minutes)

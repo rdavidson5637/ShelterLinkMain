@@ -1,7 +1,6 @@
 const { pool } = require('../config/database');
 const bcrypt = require('bcrypt');
-
-const SALT_ROUNDS = 10;
+const { hashPassword } = require('../utils/password');
 
 function toSafeUser(row) {
   if (!row) return null;
@@ -27,7 +26,7 @@ async function create(userData) {
 
   // Combine first_name and last_name into name
   const name = [first_name, last_name].filter(Boolean).join(' ').trim() || null;
-  const passwordHash = await bcrypt.hash(String(password), SALT_ROUNDS);
+  const passwordHash = await hashPassword(password);
 
   const sql = `
     INSERT INTO users (name, email, password, role, created_at)
@@ -44,10 +43,14 @@ async function findByEmail(email) {
   const [rows] = await pool.execute(
     `SELECT user_id, name, email, password, role, shelter_id, created_at
      FROM users
-     WHERE email = ?
-     LIMIT 1`,
+     WHERE lower(email) = lower(?)`,
     [email]
   );
+  if (rows.length > 1) {
+    const err = new Error('Ambiguous email');
+    err.code = 'AMBIGUOUS_EMAIL';
+    throw err;
+  }
   return rows[0] || null;
 }
 

@@ -96,9 +96,7 @@ async function run() {
     console.log('  ✓ Shelter tenancy applied.');
 
     if (withSeed) {
-      console.log('\n  Login credentials:');
-      console.log('    Admin      admin@shelterlink.org   /  Admin123!');
-      console.log('    Volunteer  alex.jenkins@example.com /  Password1');
+      console.log('\n  Seeded logins are documented at the top of database/seed.pg.sql.');
     }
 
     console.log('\n✓ Done. Start the app with:  npm run dev');

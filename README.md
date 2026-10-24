@@ -106,15 +106,10 @@ Then open **http://localhost:3000**.
 
 ## Sample login accounts
 
-Loaded by `npm run db:reset` (via `database/seed.pg.sql`):
-
-| Role      | Email                       | Password    |
-|-----------|-----------------------------|-------------|
-| Admin     | `admin@shelterlink.org`     | `Admin123!` |
-| Volunteer | `alex.jenkins@example.com`  | `Password1` |
-
-All seeded volunteer accounts use the password `Password1`. See `database/seed.pg.sql`
-for the full list. **Change or remove these before any real deployment.**
+`npm run db:reset` loads sample accounts from `database/seed.pg.sql`. On a
+development server the login page shows a Demo accounts card with those
+emails and passwords. That card is hidden when `NODE_ENV` is `production`.
+Do not use the sample accounts on a live shelter site.
 
 To create your own admin account instead, set `ADMIN_REGISTRATION_KEY` in `.env`
 and run:

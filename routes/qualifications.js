@@ -11,12 +11,16 @@ const {
   getMyQualifications,
 } = require('../controllers/qualificationController');
 
+const { validateBody, positiveParam } = require('../middleware/validate');
+const { bodies } = require('../validation/bodies');
+
 const router = express.Router();
+router.param('id', positiveParam('id'));
 
 router.get('/', isAuthenticated, listQualifications);
 router.get('/mine', isAuthenticated, getMyQualifications);
-router.post('/', isAuthenticated, requireRole('admin'), auditMutations, createQualification);
-router.put('/:id', isAuthenticated, requireRole('admin'), auditMutations, updateQualification);
+router.post('/', isAuthenticated, requireRole('admin'), auditMutations, validateBody(bodies.qualification), createQualification);
+router.put('/:id', isAuthenticated, requireRole('admin'), auditMutations, validateBody(bodies.qualification), updateQualification);
 router.delete('/:id', isAuthenticated, requireRole('admin'), auditMutations, deleteQualification);
 
 module.exports = router;

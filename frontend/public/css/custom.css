@@ -2,40 +2,53 @@
    ShelterLink design system
    ----------------------------------------------------------------------------
    Rules this file follows (keep them when editing):
-   - One accent: forest green. Used ONLY for interactive/active elements.
-   - Headings and body text are near-black neutrals, never coloured.
-   - Flat surfaces: white cards with 1px borders. No gradients, no blur,
-     no transform animations, no decorative shadows.
+   - One brand colour: teal. Used for interactive and active elements.
+   - One accent: amber, with dark text. Marks and pending status only.
+   - Headings and body text stay ink, never coloured.
+   - Flat surfaces. No gradients, no blur, no transform animations.
    - Spacing on an 8px grid. Radius: 8px cards, 6px controls, 999px pills.
    - Transitions limited to color/background/border, 120ms.
+   - Dark mode follows the system. --green is the brand colour; the name
+     stayed so existing rules keep working.
    ============================================================================ */
 
 :root {
-  /* ShelterLink is a light-only interface. Without this, PicoCSS switches to
-     its dark theme whenever the visitor's OS is in dark mode, which fights
-     these tokens and produces black table rows and unreadable grey text. */
   color-scheme: light;
 
-  /* Accent */
-  --green: #1b5e20;
-  --green-hover: #14501a;
-  --green-tint: #edf4ee;
-  --green-tint-border: #d3e3d5;
+  /* Brand */
+  --green: #0f766e;
+  --green-hover: #115e59;
+  --green-tint: #e7f4f2;
+  --green-tint-border: #c5ddd8;
+  --on-primary: #ffffff;
 
-  /* Neutrals */
-  --page-bg: #f6f7f6;
+  /* Accent. Amber, dark text. */
+  --accent: #f59e0b;
+  --accent-ink: #1f2937;
+  --accent-text: #92400e;
+  --on-danger: #ffffff;
+
+  /* Surfaces */
+  --page-bg: #f8faf9;
   --surface: #ffffff;
-  --border: #e2e6e2;
-  --border-strong: #c9d0c9;
-  --text: #1c211e;
-  --text-secondary: #55605a;
-  --text-muted: #5a635e;
+  --border: #dde5e2;
+  --border-strong: #c5d4cf;
+  --row-stripe: #f1f6f5;
+  --code-bg: #eef3f2;
+  --text: #1f2937;
+  --text-secondary: #5b6670;
+  --text-muted: #5b6670;
+  --selection: rgba(15, 118, 110, 0.18);
 
-  /* Status */
+  /* Status. Warning uses the amber accent. */
   --danger: #b3261e;
   --danger-tint: #fbedeb;
-  --warning-text: #7a5200;
-  --warning-tint: #fdf6e7;
+  --danger-border: #e8c4c0;
+  --warning-text: #1f2937;
+  --warning-tint: #fff4d6;
+  --warning-border: #f0d48a;
+  --unread: #c62828;
+  --on-unread: #ffffff;
 
   /* Shape and motion */
   --radius-card: 8px;
@@ -50,106 +63,131 @@
     "Helvetica Neue", Arial, sans-serif;
 }
 
-/* ----------------------------------------------------------------------------
-   Force PicoCSS to stay light.
-   Pico applies its dark theme via :root:not([data-theme]) inside a
-   prefers-color-scheme media query. Re-declaring the same variables with the
-   same selector later in the cascade (custom.css loads after pico) pins them
-   to the light palette on dark-mode machines.
-   ---------------------------------------------------------------------------- */
+/* Pico's dark sheet uses :root:not([data-theme]). Match that selector so these
+   tokens win, then map them onto Pico below. */
 @media only screen and (prefers-color-scheme: dark) {
-  :root:not([data-theme="dark"]) {
-    color-scheme: light;
+  :root:not([data-theme]) {
+    color-scheme: dark;
 
-    --pico-background-color: #f6f7f6;
-    --pico-color: #1c211e;
-    --pico-h1-color: #1c211e;
-    --pico-h2-color: #1c211e;
-    --pico-h3-color: #1c211e;
-    --pico-h4-color: #1c211e;
-    --pico-h5-color: #1c211e;
-    --pico-h6-color: #1c211e;
-    --pico-muted-color: #55605a;
-    --pico-muted-border-color: #e2e6e2;
-    --pico-text-selection-color: rgba(27, 94, 32, 0.16);
+    --green: #2dd4bf;
+    --green-hover: #5eead4;
+    --green-tint: #163430;
+    --green-tint-border: #2a4a45;
+    --on-primary: #0f1a19;
 
-    --pico-primary: #1b5e20;
-    --pico-primary-background: #1b5e20;
-    --pico-primary-border: #1b5e20;
-    --pico-primary-underline: rgba(27, 94, 32, 0.5);
-    --pico-primary-hover: #14501a;
-    --pico-primary-hover-background: #14501a;
-    --pico-primary-hover-border: #14501a;
-    --pico-primary-focus: rgba(27, 94, 32, 0.25);
-    --pico-primary-inverse: #fff;
+    --page-bg: #0f1a19;
+    --surface: #172624;
+    --border: #2c403c;
+    --border-strong: #3d5550;
+    --row-stripe: #132220;
+    --code-bg: #132220;
+    --text: #e7f2ef;
+    --text-secondary: #a8bdb8;
+    --text-muted: #a8bdb8;
+    --selection: rgba(45, 212, 191, 0.28);
 
-    --pico-secondary: #55605a;
-    --pico-secondary-background: #ffffff;
-    --pico-secondary-border: #c9d0c9;
-    --pico-secondary-hover: #1c211e;
-    --pico-secondary-hover-background: #ffffff;
-    --pico-secondary-hover-border: #1b5e20;
-    --pico-secondary-focus: rgba(85, 96, 90, 0.25);
-    --pico-secondary-inverse: #1c211e;
-
-    --pico-contrast: #1c211e;
-    --pico-contrast-background: #1c211e;
-    --pico-contrast-border: #1c211e;
-    --pico-contrast-hover: #000;
-    --pico-contrast-hover-background: #000;
-    --pico-contrast-inverse: #fff;
-
-    --pico-card-background-color: #ffffff;
-    --pico-card-border-color: #e2e6e2;
-    --pico-card-sectioning-background-color: #ffffff;
-    --pico-card-box-shadow: 0 1px 2px rgba(20, 30, 22, 0.04);
-
-    --pico-form-element-background-color: #ffffff;
-    --pico-form-element-selected-background-color: #edf4ee;
-    --pico-form-element-border-color: #c9d0c9;
-    --pico-form-element-color: #1c211e;
-    --pico-form-element-placeholder-color: #5a635e;
-    --pico-form-element-active-background-color: #ffffff;
-    --pico-form-element-active-border-color: #1b5e20;
-    --pico-form-element-focus-color: #1b5e20;
-    --pico-form-element-disabled-opacity: 0.5;
-
-    --pico-table-border-color: #e2e6e2;
-    --pico-table-row-stripped-background-color: #fafbfa;
-
-    --pico-dropdown-background-color: #ffffff;
-    --pico-dropdown-border-color: #e2e6e2;
-    --pico-dropdown-color: #1c211e;
-    --pico-dropdown-hover-background-color: #edf4ee;
-
-    --pico-code-background-color: #f1f3f1;
-    --pico-code-color: #55605a;
-    --pico-blockquote-border-color: #e2e6e2;
-    --pico-blockquote-footer-color: #5a635e;
-    --pico-mark-background-color: #fdf6e7;
-    --pico-mark-color: #1c211e;
-    --pico-ins-color: #1b5e20;
-    --pico-del-color: #b3261e;
-
-    --pico-modal-overlay-background-color: rgba(20, 30, 22, 0.5);
-    --pico-progress-background-color: #e2e6e2;
-    --pico-progress-color: #1b5e20;
-    --pico-tooltip-background-color: #1c211e;
-    --pico-tooltip-color: #ffffff;
-    --pico-switch-background-color: #c9d0c9;
-    --pico-switch-checked-background-color: #1b5e20;
-    --pico-switch-color: #ffffff;
-    --pico-range-border-color: #e2e6e2;
-    --pico-range-active-border-color: #c9d0c9;
-    --pico-range-thumb-border-color: #ffffff;
-    --pico-range-thumb-color: #1b5e20;
-    --pico-range-thumb-active-color: #14501a;
-
-    --pico-accordion-border-color: #e2e6e2;
-    --pico-accordion-active-summary-color: #1b5e20;
-    --pico-accordion-close-summary-color: #1c211e;
-    --pico-accordion-open-summary-color: #55605a;
+    --danger: #f2b8b5;
+    --danger-tint: #3a1c1a;
+    --danger-border: #6b3030;
+    --warning-text: #1f2937;
+    --warning-tint: #f59e0b;
+    --warning-border: #f59e0b;
+    --accent-text: #f59e0b;
+    --on-danger: #1f2937;
   }
+}
+
+/* Same specificity as Pico's dark rule, later in the cascade. */
+:root,
+:root:not([data-theme]) {
+  --pico-background-color: var(--page-bg);
+  --pico-color: var(--text);
+  --pico-h1-color: var(--text);
+  --pico-h2-color: var(--text);
+  --pico-h3-color: var(--text);
+  --pico-h4-color: var(--text);
+  --pico-h5-color: var(--text);
+  --pico-h6-color: var(--text);
+  --pico-muted-color: var(--text-secondary);
+  --pico-muted-border-color: var(--border);
+  --pico-text-selection-color: var(--selection);
+
+  --pico-primary: var(--green);
+  --pico-primary-background: var(--green);
+  --pico-primary-border: var(--green);
+  --pico-primary-underline: var(--green);
+  --pico-primary-hover: var(--green-hover);
+  --pico-primary-hover-background: var(--green-hover);
+  --pico-primary-hover-border: var(--green-hover);
+  --pico-primary-focus: var(--green-tint-border);
+  --pico-primary-inverse: var(--on-primary);
+
+  --pico-secondary: var(--text-secondary);
+  --pico-secondary-background: var(--surface);
+  --pico-secondary-border: var(--border-strong);
+  --pico-secondary-hover: var(--text);
+  --pico-secondary-hover-background: var(--surface);
+  --pico-secondary-hover-border: var(--green);
+  --pico-secondary-focus: var(--green-tint-border);
+  --pico-secondary-inverse: var(--text);
+
+  --pico-contrast: var(--text);
+  --pico-contrast-background: var(--text);
+  --pico-contrast-border: var(--text);
+  --pico-contrast-hover: var(--text);
+  --pico-contrast-hover-background: var(--text);
+  --pico-contrast-inverse: var(--surface);
+
+  --pico-card-background-color: var(--surface);
+  --pico-card-border-color: var(--border);
+  --pico-card-sectioning-background-color: var(--surface);
+  --pico-card-box-shadow: var(--shadow-card);
+
+  --pico-form-element-background-color: var(--surface);
+  --pico-form-element-selected-background-color: var(--green-tint);
+  --pico-form-element-border-color: var(--border-strong);
+  --pico-form-element-color: var(--text);
+  --pico-form-element-placeholder-color: var(--text-muted);
+  --pico-form-element-active-background-color: var(--surface);
+  --pico-form-element-active-border-color: var(--green);
+  --pico-form-element-focus-color: var(--green);
+  --pico-form-element-disabled-opacity: 0.5;
+
+  --pico-table-border-color: var(--border);
+  --pico-table-row-stripped-background-color: var(--row-stripe);
+
+  --pico-dropdown-background-color: var(--surface);
+  --pico-dropdown-border-color: var(--border);
+  --pico-dropdown-color: var(--text);
+  --pico-dropdown-hover-background-color: var(--green-tint);
+
+  --pico-code-background-color: var(--code-bg);
+  --pico-code-color: var(--text-secondary);
+  --pico-blockquote-border-color: var(--border);
+  --pico-blockquote-footer-color: var(--text-muted);
+  --pico-mark-background-color: var(--accent);
+  --pico-mark-color: var(--accent-ink);
+  --pico-ins-color: var(--green);
+  --pico-del-color: var(--danger);
+
+  --pico-modal-overlay-background-color: rgba(15, 26, 25, 0.55);
+  --pico-progress-background-color: var(--border);
+  --pico-progress-color: var(--green);
+  --pico-tooltip-background-color: var(--text);
+  --pico-tooltip-color: var(--surface);
+  --pico-switch-background-color: var(--border-strong);
+  --pico-switch-checked-background-color: var(--green);
+  --pico-switch-color: var(--on-primary);
+  --pico-range-border-color: var(--border);
+  --pico-range-active-border-color: var(--border-strong);
+  --pico-range-thumb-border-color: var(--surface);
+  --pico-range-thumb-color: var(--green);
+  --pico-range-thumb-active-color: var(--green-hover);
+
+  --pico-accordion-border-color: var(--border);
+  --pico-accordion-active-summary-color: var(--green);
+  --pico-accordion-close-summary-color: var(--text);
+  --pico-accordion-open-summary-color: var(--text-secondary);
 }
 
 body {
@@ -178,11 +216,10 @@ tbody tr {
 }
 
 tbody tr:nth-child(even) {
-  background-color: #fafbfa;
+  background-color: var(--row-stripe);
 }
 
-/* Pico's muted colour is used for every secondary paragraph. In dark mode it
-   resolves near-white, which is invisible on these light surfaces. */
+/* Secondary copy follows the muted token in both schemes. */
 small,
 .muted,
 [role='doc-subtitle'],
@@ -310,7 +347,7 @@ header.site-header {
 
 .site-nav .nav-link[aria-current="page"] {
   background: var(--green);
-  color: #fff !important;
+  color: var(--on-primary) !important;
   font-weight: 600;
 }
 
@@ -546,7 +583,7 @@ section {
 
 .hero a[role='button'] {
   background: var(--green);
-  color: #fff;
+  color: var(--on-primary);
   border: none;
   font-weight: 600;
   padding: 0.8rem 2rem;
@@ -676,7 +713,7 @@ article header strong {
 .cta {
   display: inline-block;
   padding: 0.8rem 1.75rem;
-  color: #fff;
+  color: var(--on-primary);
   border-radius: var(--radius-control);
   text-align: center;
   background: var(--green);
@@ -687,7 +724,7 @@ article header strong {
 
 .cta:hover {
   background: var(--green-hover);
-  color: #fff;
+  color: var(--on-primary);
 }
 
 /* --------------------------------------------------------------------------
@@ -772,7 +809,7 @@ input:focus,
 textarea:focus,
 select:focus {
   border-color: var(--green);
-  box-shadow: 0 0 0 3px rgba(27, 94, 32, 0.12);
+  box-shadow: 0 0 0 3px var(--green-tint-border);
   outline: none;
 }
 
@@ -802,7 +839,7 @@ button:not(.button-secondary):not(.secondary):not(.close),
 [role='button']:not(.button-secondary):not(.secondary):not(.close),
 .button:not(.button-secondary):not(.secondary):not(.close) {
   background: var(--green);
-  color: #fff;
+  color: var(--on-primary);
 }
 
 button:not(.button-secondary):not(.secondary):not(.close):hover,
@@ -839,7 +876,7 @@ button.secondary:hover {
   margin-bottom: 1rem;
   padding: 0.75rem 1rem;
   background: var(--danger-tint);
-  border: 1px solid #efc4c0;
+  border: 1px solid var(--danger-border);
   border-radius: var(--radius-control);
 }
 
@@ -982,6 +1019,13 @@ footer {
   font-size: 0.9rem;
 }
 
+.strip {
+  margin: 0.5rem 0;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--green);
+  background: var(--green-tint);
+}
+
 .badge {
   display: inline-block;
   padding: 0.2rem 0.7rem;
@@ -1003,15 +1047,15 @@ footer {
   font-size: 0.75rem;
   font-weight: 700;
   line-height: 1.2;
-  background: #c62828;
-  color: #fff;
+  background: var(--unread);
+  color: var(--on-unread);
   vertical-align: middle;
 }
 
 .badge--pending {
   background: var(--warning-tint);
   color: var(--warning-text);
-  border-color: #ecd9a8;
+  border-color: var(--warning-border);
 }
 
 .badge--approved,
@@ -1024,9 +1068,9 @@ footer {
 }
 
 .badge--waitlisted {
-  background: #eef2f4;
-  color: #3d4f5c;
-  border-color: #d2dbe1;
+  background: var(--page-bg);
+  color: var(--text-secondary);
+  border-color: var(--border-strong);
 }
 
 .badge--rejected,
@@ -1034,7 +1078,7 @@ footer {
 .badge--no-show {
   background: var(--danger-tint);
   color: var(--danger);
-  border-color: #e8c4c0;
+  border-color: var(--danger-border);
 }
 
 .badge--cancelled,
@@ -1162,7 +1206,7 @@ p {
 
 .sidebar-nav a[aria-current='page'] {
   background: var(--green);
-  color: #fff;
+  color: var(--on-primary);
   font-weight: 600;
 }
 
@@ -1217,7 +1261,7 @@ p {
 
 .status-banner[data-tone='warning'] {
   background: var(--warning-tint);
-  border-color: #ecd9a8;
+  border-color: var(--warning-border);
 }
 
 .status-banner[data-tone='info'],
@@ -1459,7 +1503,7 @@ p {
 .tag-chip[aria-pressed="true"] {
   background: var(--green);
   border-color: var(--green);
-  color: #fff;
+  color: var(--on-primary);
 }
 
 .tag-chip:disabled {
@@ -1532,7 +1576,7 @@ p {
   z-index: 10000;
   padding: 0.5rem 1rem;
   background: var(--green);
-  color: #fff;
+  color: var(--on-primary);
   border-radius: var(--radius-control);
   font-weight: 600;
   text-decoration: none;
@@ -1541,7 +1585,7 @@ p {
 .skip-link:focus,
 .skip-link:focus-visible {
   top: 0.75rem;
-  outline: 2px solid #fff;
+  outline: 2px solid var(--on-primary);
   outline-offset: 2px;
 }
 
@@ -1549,7 +1593,7 @@ p {
   margin: 0 0 1rem;
   padding: 0.85rem 1rem;
   background: var(--danger-tint);
-  border: 1px solid #e8c4c0;
+  border: 1px solid var(--danger-border);
   border-radius: var(--radius-card);
   color: var(--danger);
 }
@@ -1626,7 +1670,7 @@ p {
 .star-rating input:checked + .star-face,
 .star-rating label.is-active .star-face {
   color: var(--warning-text);
-  border-color: #c9a227;
+  border-color: var(--accent);
   background: var(--warning-tint);
 }
 
@@ -1680,4 +1724,35 @@ p {
   object-fit: cover;
   border-radius: 4px;
   flex-shrink: 0;
+}
+
+.privacy-notice-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: var(--green-tint);
+  color: var(--text);
+  border-bottom: 1px solid var(--green-tint-border);
+}
+
+.privacy-notice-bar p {
+  margin: 0;
+  max-width: 65ch;
+}
+
+.privacy-notice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.privacy-notice-actions button {
+  min-height: 2.75rem;
 }

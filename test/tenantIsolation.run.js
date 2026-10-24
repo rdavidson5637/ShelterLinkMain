@@ -1,7 +1,35 @@
 'use strict';
 
 // Local Postgres only. This file refuses to use any other database.
-const LOCAL = 'postgresql://postgres@127.0.0.1:54329/shelterlink_tenant_test';
+// CI sets TENANT_DATABASE_URL to a localhost service container.
+// Otherwise this file starts a temporary cluster with initdb from PATH or PG_BIN.
+function assertLocalTestUrl(connectionString) {
+  let parsed;
+  try {
+    parsed = new URL(connectionString);
+  } catch {
+    console.error('Refusing to run tenant isolation: database URL is not parseable.');
+    process.exit(1);
+  }
+  const host = parsed.hostname;
+  if (host !== '127.0.0.1' && host !== 'localhost') {
+    console.error('Refusing to run tenant isolation against a non-local database.');
+    process.exit(1);
+  }
+  const dbName = decodeURIComponent(parsed.pathname.replace(/^\//, ''));
+  if (dbName !== 'shelterlink_tenant_test') {
+    console.error(`Refusing tenant test database name ${dbName}`);
+    process.exit(1);
+  }
+  return parsed;
+}
+
+const SERVICE_URL = process.env.TENANT_DATABASE_URL || '';
+const USE_SERVICE = Boolean(SERVICE_URL);
+const LOCAL = USE_SERVICE
+  ? SERVICE_URL
+  : 'postgresql://postgres@127.0.0.1:54329/shelterlink_tenant_test';
+assertLocalTestUrl(LOCAL);
 process.env.DATABASE_URL = LOCAL;
 process.env.NODE_ENV = 'test';
 process.env.SESSION_SECRET = 'tenant-isolation-test-secret-value';
@@ -16,7 +44,6 @@ const bcrypt = require('bcrypt');
 const { Client } = require('pg');
 
 const ROOT = path.join(__dirname, '..');
-const PG = '/opt/homebrew/opt/postgresql@16/bin';
 const DATA = '/tmp/shelterlink-tenant-pg';
 const PG_PORT = '54329';
 const DB_NAME = 'shelterlink_tenant_test';
@@ -26,13 +53,22 @@ const ICAL_A = 'b'.repeat(64);
 const RESET_TOKEN = 'marker-a-reset-token';
 const REFERENCE_TOKEN = 'marker-a-reference-token';
 
-if (LOCAL !== process.env.DATABASE_URL || !LOCAL.startsWith('postgresql://postgres@127.0.0.1:54329/')) {
-  console.error('Refusing to run tenant isolation against a non-local database.');
-  process.exit(1);
+let pgBin = '';
+let startedLocalCluster = false;
+
+function resolvePgBin() {
+  if (process.env.PG_BIN) {
+    if (fs.existsSync(path.join(process.env.PG_BIN, 'initdb'))) return process.env.PG_BIN;
+    throw new Error(`PG_BIN does not contain initdb: ${process.env.PG_BIN}`);
+  }
+  const found = spawnSync('sh', ['-c', 'command -v initdb'], { encoding: 'utf8' });
+  const initdb = (found.stdout || '').trim();
+  if (!initdb) return '';
+  return path.dirname(initdb);
 }
 
 function bin(name) {
-  return path.join(PG, name);
+  return path.join(pgBin, name);
 }
 
 function runPg(name, args, { allowFail = false } = {}) {
@@ -45,8 +81,9 @@ function runPg(name, args, { allowFail = false } = {}) {
 }
 
 function startCluster() {
-  if (!fs.existsSync(bin('initdb'))) {
-    throw new Error(`Postgres 16 binaries not found at ${PG}`);
+  pgBin = resolvePgBin();
+  if (!pgBin || !fs.existsSync(bin('initdb'))) {
+    throw new Error('Postgres initdb was not found on PATH. Install Postgres client tools, set PG_BIN, or set TENANT_DATABASE_URL to a local Postgres service.');
   }
   runPg('pg_ctl', ['-D', DATA, 'stop', '-m', 'immediate', '-w'], { allowFail: true });
   fs.rmSync(DATA, { recursive: true, force: true });
@@ -65,11 +102,55 @@ function startCluster() {
     'start',
   ]);
   runPg('createdb', ['-h', '127.0.0.1', '-p', PG_PORT, '-U', 'postgres', DB_NAME]);
+  startedLocalCluster = true;
 }
 
 function stopCluster() {
+  if (!startedLocalCluster) return;
   runPg('pg_ctl', ['-D', DATA, 'stop', '-m', 'immediate', '-w'], { allowFail: true });
   fs.rmSync(DATA, { recursive: true, force: true });
+  startedLocalCluster = false;
+}
+
+function maintenanceUrl() {
+  const url = new URL(LOCAL);
+  url.pathname = '/postgres';
+  return url.toString();
+}
+
+async function withMaintenance(fn) {
+  const client = new Client({ connectionString: maintenanceUrl() });
+  await client.connect();
+  try {
+    return await fn(client);
+  } finally {
+    await client.end();
+  }
+}
+
+async function resetServiceDatabase() {
+  await withMaintenance(async (client) => {
+    await client.query(
+      `SELECT pg_terminate_backend(pid)
+       FROM pg_stat_activity
+       WHERE datname = 'shelterlink_tenant_test' AND pid <> pg_backend_pid()`
+    );
+    await client.query('DROP DATABASE IF EXISTS shelterlink_tenant_test');
+    await client.query('DROP ROLE IF EXISTS shelterlink_tenant');
+    await client.query('CREATE DATABASE shelterlink_tenant_test');
+  });
+}
+
+async function dropServiceDatabase() {
+  await withMaintenance(async (client) => {
+    await client.query(
+      `SELECT pg_terminate_backend(pid)
+       FROM pg_stat_activity
+       WHERE datname = 'shelterlink_tenant_test' AND pid <> pg_backend_pid()`
+    );
+    await client.query('DROP DATABASE IF EXISTS shelterlink_tenant_test');
+    await client.query('DROP ROLE IF EXISTS shelterlink_tenant');
+  });
 }
 
 async function applySchema(admin) {
@@ -384,6 +465,7 @@ function cases(feedbackToken) {
     own('GET', '/api/threads'),
     own('GET', '/api/threads/unread-count'),
     own('GET', '/api/vetting/admin/pipeline'),
+    own('GET', '/api/vetting/admin/expiring'),
     own('GET', '/api/vetting/me/references'),
     own('GET', '/api/opportunity-templates'),
     own('GET', '/api/push/prefs'),
@@ -442,6 +524,7 @@ function cases(feedbackToken) {
       contact_name: 'Pat',
       contact_email: 'pat@example.test',
       size: 1,
+      started_at: Date.now() - 10000,
     }),
     deny('POST', '/api/group-bookings/1/confirm'),
     deny('POST', '/api/group-bookings/1/decline'),
@@ -528,7 +611,8 @@ async function main() {
   let httpServer;
   let closePool;
   try {
-    startCluster();
+    if (USE_SERVICE) await resetServiceDatabase();
+    else startCluster();
     admin = new Client({ connectionString: LOCAL });
     await admin.connect();
     await applySchema(admin);
@@ -650,13 +734,13 @@ async function main() {
       slug: 'north',
       adminName: 'Cora North',
       adminEmail: 'c.admin@example.test',
-      adminPassword: 'Password1',
+      adminPassword: 'NorthShelter1',
       logo,
       logoMime: 'image/png',
     });
     if (created.shelterId < 3) failures.push(`create shelter returned id ${created.shelterId}`);
     const northLogin = await request(port, 'POST', '/api/auth/login', {
-      json: { email: 'c.admin@example.test', password: 'Password1' },
+      json: { email: 'c.admin@example.test', password: 'NorthShelter1' },
     });
     const northCookie = sessionCookie(northLogin.setCookie);
     if (northLogin.status !== 200 || !northCookie) {
@@ -708,6 +792,9 @@ async function main() {
     }
     if (admin) {
       try { await admin.end(); } catch { /* already closed */ }
+    }
+    if (USE_SERVICE) {
+      try { await dropServiceDatabase(); } catch (error) { console.error(error.message); }
     }
     stopCluster();
   }

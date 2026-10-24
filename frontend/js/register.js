@@ -13,14 +13,12 @@ let checklistItems = null;
 function getPasswordChecks(password = '') {
   const value = String(password);
   return {
-    minLength: value.length >= 8,
-    hasUppercase: /[A-Z]/.test(value),
-    hasNumber: /[0-9]/.test(value),
+    minLength: value.length >= 10,
   };
 }
 
 function allPasswordChecksPass(checks) {
-  return checks.minLength && checks.hasUppercase && checks.hasNumber;
+  return checks.minLength;
 }
 
 function updateSubmitState() {
@@ -30,17 +28,15 @@ function updateSubmitState() {
 }
 
 function getStrengthInfo(checks, passwordValue = '') {
-  const metCount = [checks.minLength, checks.hasUppercase, checks.hasNumber].filter(Boolean).length;
-  if (!passwordValue) return { label: 'Weak', color: '#c62828' };
-  if (metCount <= 1) return { label: 'Weak', color: '#c62828' };
-  if (metCount === 2) return { label: 'Fair', color: '#e65100' };
-  return { label: 'Strong', color: '#2e7d32' };
+  if (!passwordValue || !checks.minLength) return { label: 'Too short', color: 'var(--danger)' };
+  if (passwordValue.length < 14) return { label: 'Long enough', color: 'var(--accent-text)' };
+  return { label: 'Long', color: 'var(--green)' };
 }
 
 function renderChecklistItem(li, passed, text) {
   if (!li) return;
   li.textContent = `${passed ? '✓' : '✗'} ${text}`;
-  li.style.color = passed ? '#2e7d32' : '#c62828';
+  li.style.color = passed ? 'var(--green)' : 'var(--danger)';
 }
 
 function updatePasswordFeedback() {
@@ -51,9 +47,7 @@ function updatePasswordFeedback() {
   meterTextEl.textContent = `Strength: ${strength.label}`;
   meterTextEl.style.color = strength.color;
 
-  renderChecklistItem(checklistItems.minLength, checks.minLength, 'At least 8 characters');
-  renderChecklistItem(checklistItems.hasUppercase, checks.hasUppercase, 'At least one uppercase letter');
-  renderChecklistItem(checklistItems.hasNumber, checks.hasNumber, 'At least one number');
+  renderChecklistItem(checklistItems.minLength, checks.minLength, 'At least 10 characters');
 
   updateSubmitState();
 }
@@ -65,9 +59,9 @@ function setupPasswordFeedback() {
   wrapper.id = 'passwordFeedback';
   wrapper.style.marginTop = '0.5rem';
   wrapper.style.padding = '0.75rem';
-  wrapper.style.border = '1px solid rgba(46, 125, 50, 0.2)';
+  wrapper.style.border = '1px solid var(--border)';
   wrapper.style.borderRadius = '8px';
-  wrapper.style.background = 'rgba(255, 255, 255, 0.9)';
+  wrapper.style.background = 'var(--surface)';
 
   meterTextEl = document.createElement('p');
   meterTextEl.style.margin = '0 0 0.5rem';
@@ -79,17 +73,11 @@ function setupPasswordFeedback() {
   checklist.style.paddingLeft = '1.25rem';
 
   const minLengthItem = document.createElement('li');
-  const uppercaseItem = document.createElement('li');
-  const numberItem = document.createElement('li');
   checklist.appendChild(minLengthItem);
-  checklist.appendChild(uppercaseItem);
-  checklist.appendChild(numberItem);
   wrapper.appendChild(checklist);
 
   checklistItems = {
     minLength: minLengthItem,
-    hasUppercase: uppercaseItem,
-    hasNumber: numberItem,
   };
 
   const passwordLabel = passwordInput.closest('label');
@@ -117,7 +105,7 @@ async function handleRegister(event) {
     showFormErrors(form, [
       {
         field: 'password',
-        message: 'Password must be at least 8 characters with one uppercase letter and one number.',
+        message: 'Password must be at least 10 characters.',
       },
     ]);
     return;
@@ -137,12 +125,22 @@ async function handleRegister(event) {
     return;
   }
 
+  const privacyBox = document.getElementById('privacy_notice');
+  if (!privacyBox || !privacyBox.checked) {
+    showFormErrors(form, [
+      { field: 'privacy_notice', message: 'Please confirm you have read the privacy notice.' },
+    ]);
+    if (submitButton) submitButton.removeAttribute('disabled');
+    return;
+  }
+
   const data = {
     first_name: payload.first_name,
     last_name: payload.last_name,
     email: payload.email,
     phone: payload.phone,
     password: payload.password,
+    privacy_notice: true,
   };
 
   try {

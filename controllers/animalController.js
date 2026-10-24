@@ -4,8 +4,8 @@ const crypto = require('crypto');
 const multer = require('multer');
 const Animal = require('../models/Animal');
 const UserDocument = require('../models/UserDocument');
-const Application = require('../models/Application');
 const { isStaffOrAdmin } = require('../middleware/auth');
+const { canonicalMime, sniffImage } = require('../utils/fileSignature');
 
 const IMAGE_MIME = new Set(['image/jpeg', 'image/png']);
 
@@ -107,22 +107,10 @@ async function getAnimal(req, res) {
       return res.status(200).json({ ...animal, activity, incidents });
     }
 
-    // Volunteers see public fields + handling notes only when they have an
-    // accepted shift that includes this animal.
-    const apps = await Application.findByUserId(req.session.userId);
-    const acceptedOppIds = (apps || [])
-      .filter((a) => ['accepted', 'approved'].includes(a.status))
-      .map((a) => Number(a.opportunity_id));
-    let includeHandling = false;
-    for (const oppId of acceptedOppIds) {
-      const animals = await Animal.findForOpportunity(oppId);
-      if (animals.some((a) => Number(a.id) === Number(animal.id))) {
-        includeHandling = true;
-        break;
-      }
-    }
+    const allowed = await Animal.userHasAnimalAccess(req.session.userId, animal.id);
+    if (!allowed) return res.status(404).json({ error: 'Not found' });
 
-    return res.status(200).json(toPublicAnimal(animal, { includeHandling }));
+    return res.status(200).json(toPublicAnimal(animal, { includeHandling: true }));
   } catch (error) {
     console.error('[Animal] get error:', error.message);
     if (error.status === 404) return res.status(404).json({ error: 'Not found' });
@@ -169,9 +157,14 @@ async function uploadPhoto(req, res) {
       return res.status(404).json({ error: 'Animal not found' });
     }
 
+    const detected = sniffImage(req.file.buffer);
+    if (!detected || detected !== canonicalMime(req.file.mimetype)) {
+      return res.status(400).json({ error: 'File contents do not match the declared type' });
+    }
+
     await Animal.setPhoto(req.params.id, {
       content: req.file.buffer,
-      mimeType: String(req.file.mimetype || 'image/jpeg').toLowerCase(),
+      mimeType: detected,
     });
 
     // photo_filename is now just a "has photo" marker and cache-buster for the
@@ -190,6 +183,10 @@ async function uploadPhoto(req, res) {
 async function getPhoto(req, res) {
   try {
     if (!ensureAuth(req, res)) return;
+    if (!isStaffOrAdmin(req)) {
+      const allowed = await Animal.userHasAnimalAccess(req.session.userId, req.params.id);
+      if (!allowed) return res.status(404).json({ error: 'Not found' });
+    }
     const photo = await Animal.getPhoto(req.params.id);
     if (!photo) {
       return res.status(404).json({ error: 'Photo not found' });

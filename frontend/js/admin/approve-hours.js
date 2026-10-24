@@ -48,8 +48,8 @@ function showToast(message, type = 'success') {
     top: 1rem;
     right: 1rem;
     padding: 1rem;
-    background: ${type === 'success' ? '#4caf50' : '#f44336'};
-    color: white;
+    background: ${type === 'success' ? 'var(--green)' : 'var(--danger)'};
+    color: ${type === 'success' ? 'var(--on-primary)' : 'var(--on-danger)'};
     border-radius: 4px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     z-index: 10000;

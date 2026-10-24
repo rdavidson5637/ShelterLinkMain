@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Allow: /pages/opportunities.html
+Allow: /pages/group-booking.html
+Allow: /pages/privacy.html
+Disallow: /api/
+Disallow: /pages/admin/
+Disallow: /pages/volunteer/
+Disallow: /kiosk
+Disallow: /login.html
+Disallow: /register.html

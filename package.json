@@ -17,9 +17,11 @@
     "db:clean-demo": "node scripts/clean-demo.js",
     "create-admin": "node create-admin.js",
     "test": "node --test --test-concurrency=1 test/*.test.js",
+    "test:security": "node --test --test-concurrency=1 test/authForgot.test.js test/authRegister.test.js test/authReset.test.js test/passwordPolicy.test.js test/loginSession.test.js test/rateLimiter.test.js test/groupBooking.test.js test/rolesAuditGdpr.test.js test/animals.test.js test/shiftNotes.test.js test/headers.test.js test/csp.test.js test/errorHandler.test.js test/retention.test.js test/validateRequest.test.js",
     "migrate": "node scripts/migrate.js",
     "smoke": "node scripts/smoke-test.js",
     "backup": "node scripts/backup.js",
+    "retention:sweep": "node scripts/retention-sweep.js",
     "icons": "node scripts/generate-icons.js",
     "pwa:check": "node scripts/pwa-check.js",
     "postinstall": "node scripts/ensure-vendor.js"
@@ -36,14 +38,18 @@
     "helmet": "^8.1.0",
     "json2csv": "^6.0.0-alpha.2",
     "multer": "^2.2.0",
-    "nodemailer": "^9.0.5",
+    "nodemailer": "^10.2.0",
     "pg": "^8.23.0",
     "validator": "^13.15.26",
     "web-push": "^3.6.7",
-    "xss": "^1.0.15"
+    "xss": "^1.0.15",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "nodemon": "^3.1.10",
-    "sharp": "^0.34.5"
+    "sharp": "^0.35.5"
+  },
+  "overrides": {
+    "qs": "6.16.1"
   }
 }

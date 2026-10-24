@@ -222,6 +222,7 @@ test('public group booking is rejected when the shift is full', async () => {
         contact_name: 'Pat',
         contact_email: 'pat@example.com',
         size: 2,
+        started_at: Date.now() - 10000,
       },
     },
     res

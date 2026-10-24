@@ -2,6 +2,7 @@ import { apiRequest, API_URL } from '../config.js';
 import { requireAuth, checkAuth, logout, isStaffOrAdminRole, isAdminRole, applyRoleVisibility} from '../auth.js';
 import { createStatusBadge } from '../components/statusBadge.js';
 import { createOverflowMenu, createIdentityCell } from '../components/overflowMenu.js';
+import { escapeHtml } from '../utils/escapeHtml.js';
 
 const logoutButton = document.getElementById('logoutButton');
 const searchInput = document.getElementById('searchInput');
@@ -35,7 +36,7 @@ function setMessage(text, tone = 'neutral') {
     return;
   }
   const cls = tone === 'error' ? 'error' : tone === 'success' ? 'success' : '';
-  messageEl.innerHTML = `<p class="${cls}">${text}</p>`;
+  messageEl.innerHTML = `<p class="${cls}">${escapeHtml(text)}</p>`;
 }
 
 function formatNumber(num) {
@@ -201,6 +202,16 @@ function renderTable() {
   });
 }
 
+function checkTypeLabel(value) {
+  const labels = {
+    accessni_basic: 'AccessNI Basic',
+    accessni_standard: 'AccessNI Standard',
+    accessni_enhanced: 'AccessNI Enhanced',
+    other: 'Other check',
+  };
+  return labels[value] || 'Background check';
+}
+
 async function loadVettingSection(userId) {
   const checksEl = document.getElementById('vettingChecksList');
   const refsEl = document.getElementById('vettingRefsList');
@@ -210,20 +221,39 @@ async function loadVettingSection(userId) {
     });
     if (checksRes.ok) {
       const checks = await checksRes.json();
-      checksEl.innerHTML = checks.length
-        ? `<ul>${checks
-            .map(
-              (c) =>
-                `<li><strong>${c.check_type}</strong> — ${c.status}${
-                  c.expires_on ? ` · expires ${String(c.expires_on).slice(0, 10)}` : ''
-                }${c.reference_number ? ` · ref ${c.reference_number}` : ''}${
-                  c.notes ? `<br/><em>${c.notes}</em>` : ''
-                }</li>`
-            )
-            .join('')}</ul>`
-        : '<p>No background checks recorded.</p>';
+      checksEl.replaceChildren();
+      if (!checks.length) {
+        const empty = document.createElement('p');
+        empty.textContent = 'No background checks recorded.';
+        checksEl.appendChild(empty);
+      } else {
+        const list = document.createElement('ul');
+        checks.forEach((c) => {
+          const item = document.createElement('li');
+          const title = document.createElement('strong');
+          title.textContent = checkTypeLabel(c.check_type);
+          item.appendChild(title);
+          const expiry = c.expires_on ? ` · expires ${String(c.expires_on).slice(0, 10)}` : '';
+          const reference = isAdminRole(currentUser) && c.reference_number
+            ? ` · ref ${c.reference_number}`
+            : '';
+          const detail = document.createElement('span');
+          detail.textContent = ` - ${c.status}${expiry}${reference}`;
+          item.appendChild(detail);
+          if (isAdminRole(currentUser) && c.notes) {
+            const note = document.createElement('div');
+            note.textContent = c.notes;
+            item.appendChild(note);
+          }
+          list.appendChild(item);
+        });
+        checksEl.appendChild(list);
+      }
     } else {
-      checksEl.innerHTML = '<p>Unable to load background checks.</p>';
+      checksEl.replaceChildren();
+      const failed = document.createElement('p');
+      failed.textContent = 'Unable to load background checks.';
+      checksEl.appendChild(failed);
     }
   } catch {
     if (checksEl) checksEl.innerHTML = '<p>Unable to load background checks.</p>';
@@ -233,18 +263,36 @@ async function loadVettingSection(userId) {
     const refsRes = await apiRequest(`/vetting/volunteers/${userId}/references`, { method: 'GET' });
     if (refsRes.ok) {
       const refs = await refsRes.json();
-      refsEl.innerHTML = refs.length
-        ? `<ul>${refs
-            .map(
-              (r) =>
-                `<li><strong>${r.referee_name}</strong> (${r.referee_email}) — ${r.status}${
-                  r.is_suitable != null ? ` · suitable: ${r.is_suitable ? 'yes' : 'no'}` : ''
-                }${r.comments ? `<br/><em>Comments: ${r.comments}</em>` : ''}</li>`
-            )
-            .join('')}</ul>`
-        : '<p>No references requested yet.</p>';
+      refsEl.replaceChildren();
+      if (!refs.length) {
+        const empty = document.createElement('p');
+        empty.textContent = 'No references requested yet.';
+        refsEl.appendChild(empty);
+      } else {
+        const list = document.createElement('ul');
+        refs.forEach((r) => {
+          const item = document.createElement('li');
+          const title = document.createElement('strong');
+          title.textContent = r.referee_name || 'Referee';
+          item.appendChild(title);
+          const suitable = r.is_suitable != null ? ` · suitable: ${r.is_suitable ? 'yes' : 'no'}` : '';
+          const detail = document.createElement('span');
+          detail.textContent = ` (${r.referee_email || 'no email'}) - ${r.status}${suitable}`;
+          item.appendChild(detail);
+          if (r.comments) {
+            const note = document.createElement('div');
+            note.textContent = `Comments: ${r.comments}`;
+            item.appendChild(note);
+          }
+          list.appendChild(item);
+        });
+        refsEl.appendChild(list);
+      }
     } else {
-      refsEl.innerHTML = '<p>Unable to load references.</p>';
+      refsEl.replaceChildren();
+      const failed = document.createElement('p');
+      failed.textContent = 'Unable to load references.';
+      refsEl.appendChild(failed);
     }
   } catch {
     if (refsEl) refsEl.innerHTML = '<p>Unable to load references.</p>';
@@ -340,7 +388,7 @@ async function viewProfile(userId) {
               const expires = q.expires_at
                 ? `expires ${String(q.expires_at).slice(0, 10)}`
                 : 'never expires';
-              return `<li><strong>${q.name}</strong> — awarded ${String(q.awarded_at).slice(0, 10)}, ${expires}</li>`;
+              return `<li><strong>${escapeHtml(q.name)}</strong> — awarded ${escapeHtml(String(q.awarded_at).slice(0, 10))}, ${escapeHtml(expires)}</li>`;
             })
             .join('')}</ul>`;
         }
@@ -366,7 +414,7 @@ async function viewProfile(userId) {
               const accepted = w.accepted_at
                 ? ` · accepted ${String(w.accepted_at).slice(0, 10)} (v${w.accepted_version})`
                 : '';
-              return `<li><strong>${w.title}</strong> — ${statusLabel} (current v${w.current_version})${accepted}</li>`;
+              return `<li><strong>${escapeHtml(w.title)}</strong> — ${escapeHtml(statusLabel)} (current v${escapeHtml(w.current_version)})${escapeHtml(accepted)}</li>`;
             })
             .join('')}</ul>`;
         }
@@ -376,7 +424,10 @@ async function viewProfile(userId) {
     }
 
     let docsHtml = '<p>No documents uploaded.</p>';
-    try {
+    if (!isAdminRole(currentUser)) {
+      docsHtml = '<p>Uploaded files are visible to admins only. Record the check status and dates. Reference numbers and notes are recorded by an admin. Do not upload disclosure certificates.</p>';
+    } else {
+      try {
       const docsRes = await apiRequest(`/admin/volunteers/${userId}/documents`, { method: 'GET' });
       if (docsRes.ok) {
         const docs = await docsRes.json();
@@ -386,16 +437,17 @@ async function viewProfile(userId) {
               const label = d.label || d.original_name || 'Document';
               const expires = d.expires_at ? ` · expires ${String(d.expires_at).slice(0, 10)}` : '';
               return `<li>
-                <a href="/api/documents/${d.id}/download">${label}</a>
-                (${d.mime_type}${expires})
-                <button type="button" class="secondary button-small doc-meta-btn" data-doc-id="${d.id}" data-label="${(d.label || '').replace(/"/g, '&quot;')}" data-expires="${d.expires_at ? String(d.expires_at).slice(0, 10) : ''}">Edit label/expiry</button>
+                <a href="/api/documents/${encodeURIComponent(d.id)}/download">${escapeHtml(label)}</a>
+                (${escapeHtml(d.mime_type)}${escapeHtml(expires)})
+                <button type="button" class="secondary button-small doc-meta-btn" data-doc-id="${escapeHtml(d.id)}" data-label="${escapeHtml(d.label || '')}" data-expires="${escapeHtml(d.expires_at ? String(d.expires_at).slice(0, 10) : '')}">Edit label/expiry</button>
               </li>`;
             })
             .join('')}</ul>`;
         }
       }
-    } catch {
-      docsHtml = '<p>Unable to load documents.</p>';
+      } catch {
+        docsHtml = '<p>Unable to load documents.</p>';
+      }
     }
 
     let customHtml = '<p>No custom field answers.</p>';
@@ -415,7 +467,7 @@ async function viewProfile(userId) {
           if (row.field_type === 'checkbox') {
             display = row.value === '1' || row.value === 1 || row.value === true ? 'Yes' : 'No';
           }
-          return `<li><strong>${label}:</strong> ${display == null || display === '' ? '—' : display}</li>`;
+          return `<li><strong>${escapeHtml(label)}:</strong> ${display == null || display === '' ? '—' : escapeHtml(display)}</li>`;
         })
         .join('')}</ul>`;
     }
@@ -424,35 +476,35 @@ async function viewProfile(userId) {
     const profileHtml = `
       <div style="display: grid; gap: 1rem;">
         <div>
-          <strong>Name:</strong> ${profile.user_name || `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'N/A'}
+          <strong>Name:</strong> ${escapeHtml(profile.user_name || `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'N/A')}
         </div>
         <div>
-          <strong>Email:</strong> ${profile.user_email || profile.email || 'N/A'}
+          <strong>Email:</strong> ${escapeHtml(profile.user_email || profile.email || 'N/A')}
         </div>
         <div>
-          <strong>Phone:</strong> ${profile.phone || 'N/A'}
+          <strong>Phone:</strong> ${escapeHtml(profile.phone || 'N/A')}
         </div>
         <div>
-          <strong>Date of Birth:</strong> ${profile.date_of_birth || 'N/A'}
+          <strong>Date of Birth:</strong> ${escapeHtml(profile.date_of_birth || 'N/A')}
         </div>
         <div>
-          <strong>Address:</strong> ${profile.address || 'N/A'}
+          <strong>Address:</strong> ${escapeHtml(profile.address || 'N/A')}
         </div>
         <div>
-          <strong>Emergency Contact:</strong> ${profile.emergency_contact || 'N/A'}
+          <strong>Emergency Contact:</strong> ${escapeHtml(profile.emergency_contact || 'N/A')}
         </div>
         <div>
-          <strong>Availability:</strong> ${profile.availability || 'N/A'}
+          <strong>Availability:</strong> ${escapeHtml(profile.availability || 'N/A')}
         </div>
         <div>
           <strong>Status:</strong> 
-          <span style="padding: 0.25rem 0.5rem; border-radius: 999px; font-size: 0.875rem; font-weight: 600; ${profile.approved ? 'background: #edf4ee; color: #1b5e20; border: 1px solid #d3e3d5;' : 'background: #fdf6e7; color: #7a5200; border: 1px solid #ecd9a8;'}">
+          <span class="badge ${profile.approved ? 'badge--approved' : 'badge--pending'}">
             ${profile.approved ? 'Approved' : 'Pending'}
           </span>
         </div>
         <div>
           <strong>Foster approved:</strong>
-          <span style="padding: 0.25rem 0.5rem; border-radius: 999px; font-size: 0.875rem; font-weight: 600; ${profile.foster_approved ? 'background: #edf4ee; color: #1b5e20; border: 1px solid #d3e3d5;' : 'background: #f5f5f5; color: #555; border: 1px solid #ddd;'}">
+          <span class="badge ${profile.foster_approved ? 'badge--approved' : 'badge--neutral'}">
             ${profile.foster_approved ? 'Yes' : 'No'}
           </span>
           <button type="button" class="secondary button-small" id="toggleFosterApprovedBtn" style="margin-left:0.5rem;">
@@ -462,17 +514,17 @@ async function viewProfile(userId) {
         <div>
           <strong>Foster home:</strong>
           <ul style="margin:0.25rem 0 0; padding-left:1.25rem;">
-            <li>Type: ${profile.home_type || '—'}</li>
-            <li>Max size: ${profile.max_foster_size || '—'}</li>
+            <li>Type: ${escapeHtml(profile.home_type || '—')}</li>
+            <li>Max size: ${escapeHtml(profile.max_foster_size || '—')}</li>
             <li>Garden: ${profile.has_garden ? 'Yes' : 'No'}${profile.garden_secure ? ' (secure)' : ''}</li>
             <li>Other dogs/cats: ${profile.has_other_dogs ? 'dogs' : 'no dogs'} / ${profile.has_other_cats ? 'cats' : 'no cats'}</li>
             <li>Children under 16: ${profile.has_children_under_16 ? 'Yes' : 'No'}</li>
             <li>Can medicate: ${profile.can_medicate ? 'Yes' : 'No'}</li>
-            <li>Notes: ${profile.foster_notes || '—'}</li>
+            <li>Notes: ${escapeHtml(profile.foster_notes || '—')}</li>
           </ul>
         </div>
         <div>
-          <strong>Volunteer type:</strong> ${profile.volunteer_type || 'regular'}
+          <strong>Volunteer type:</strong> ${escapeHtml(profile.volunteer_type || 'regular')}
           ${
             profile.volunteer_type === 'community_service' && profile.required_hours != null
               ? ` · target ${profile.required_hours} hours`
@@ -493,7 +545,7 @@ async function viewProfile(userId) {
             <label>
               Required hours (community service)
               <input type="number" id="serviceRequiredHours" name="required_hours" min="0" step="0.25"
-                value="${profile.required_hours != null ? profile.required_hours : ''}" />
+                value="${escapeHtml(profile.required_hours != null ? profile.required_hours : '')}" />
             </label>
             <button type="submit" class="button-small">Save service settings</button>
           </form>
@@ -538,10 +590,10 @@ async function viewProfile(userId) {
                 <option value="expired">Expired</option>
               </select>
             </label>
-            <label>Reference number <input type="text" id="bgRefNumber" /></label>
+            ${isAdminRole(currentUser) ? `<label>Reference number <input type="text" id="bgRefNumber" maxlength="100" /></label>` : '<p>Reference numbers and notes are recorded by an admin.</p>'}
             <label>Issued on <input type="date" id="bgIssuedOn" /></label>
             <label>Expires on <input type="date" id="bgExpiresOn" /></label>
-            <label>Notes <textarea id="bgNotes" rows="2"></textarea></label>
+            ${isAdminRole(currentUser) ? `<label>Notes <textarea id="bgNotes" rows="2" maxlength="2000" placeholder="Operational notes only. Do not record offence detail."></textarea></label>` : ''}
             <button type="submit" class="button-small">Save background check</button>
           </form>
         </div>
@@ -558,8 +610,8 @@ async function viewProfile(userId) {
         ${
           isAdminRole(currentUser)
             ? `<div data-admin-only style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
-          <button type="button" class="secondary button-small" id="gdprExportBtn" data-user-id="${userId}">Export GDPR JSON</button>
-          <button type="button" class="contrast button-small" id="gdprEraseBtn" data-user-id="${userId}">Erase account</button>
+          <button type="button" class="secondary button-small" id="gdprExportBtn" data-user-id="${escapeHtml(userId)}">Export GDPR JSON</button>
+          <button type="button" class="contrast button-small" id="gdprEraseBtn" data-user-id="${escapeHtml(userId)}">Erase account</button>
         </div>`
             : ''
         }

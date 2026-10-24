@@ -6,6 +6,7 @@ const VolunteerProfile = require('../models/VolunteerProfile');
 const Qualification = require('../models/Qualification');
 const Waiver = require('../models/Waiver');
 const SwapRequest = require('../models/SwapRequest');
+const Vetting = require('../models/Vetting');
 const {
   sendSwapOpened,
   sendSwapWaitlistOffer,
@@ -133,11 +134,19 @@ async function listAvailableSwaps(req, res) {
       if (Number(swap.original_user_id) === Number(userId)) continue;
 
       const missing = await Qualification.findMissingForUser(userId, swap.opportunity_id);
+      const opportunity = await Opportunity.findById(swap.opportunity_id);
+      const checkAssessment = opportunity
+        ? await Vetting.assessRequiredCheck(userId, opportunity)
+        : { ok: true };
+      const claimBlock = checkAssessment.ok
+        ? null
+        : Vetting.requiredCheckMessage(checkAssessment, 'claim');
       enriched.push(
         toVolunteerSafeSwap({
           ...swap,
           missing_qualifications: missing,
-          can_claim: missing.length === 0,
+          can_claim: missing.length === 0 && checkAssessment.ok,
+          claim_block: claimBlock,
         })
       );
     }
@@ -193,6 +202,19 @@ async function assertClaimerEligible(userId, opportunityId) {
       status: 403,
       missing_animal_qualifications: missingAnimalQuals,
     };
+  }
+
+  const opportunity = await Opportunity.findById(opportunityId);
+  if (opportunity) {
+    const checkAssessment = await Vetting.assessRequiredCheck(userId, opportunity);
+    if (!checkAssessment.ok) {
+      return {
+        error: Vetting.requiredCheckMessage(checkAssessment, 'claim'),
+        status: 403,
+        required_background_check_type: checkAssessment.checkType,
+        check_expires_before_shift: Boolean(checkAssessment.expiresBeforeShift),
+      };
+    }
   }
 
   return { ok: true };
@@ -262,6 +284,8 @@ async function claimSwap(req, res) {
         error: eligibility.error,
         missing_qualifications: eligibility.missing_qualifications,
         pending_waivers: eligibility.pending_waivers,
+        required_background_check_type: eligibility.required_background_check_type,
+        check_expires_before_shift: eligibility.check_expires_before_shift,
       });
     }
 
@@ -303,6 +327,8 @@ async function claimSwapByToken(req, res) {
         error: eligibility.error,
         missing_qualifications: eligibility.missing_qualifications,
         pending_waivers: eligibility.pending_waivers,
+        required_background_check_type: eligibility.required_background_check_type,
+        check_expires_before_shift: eligibility.check_expires_before_shift,
       });
     }
 

@@ -71,8 +71,8 @@ async function findAll(filters = {}) {
      LEFT JOIN users u ON u.user_id = a.user_id
      ${whereSql}
      ORDER BY a.created_at DESC, a.id DESC
-     LIMIT ${limit} OFFSET ${offset}`,
-    params
+     LIMIT ? OFFSET ?`,
+    [...params, limit, offset]
   );
 
   return rows.map((row) => {

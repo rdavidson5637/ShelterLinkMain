@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#1b5e20" />
+    <meta name="theme-color" content="#0f766e" />
     <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
     <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-title" content="ShelterLink" />
@@ -17,12 +17,11 @@
     <link rel="stylesheet" href="/public/css/opportunity-modal.css" />
     <style>
       .browse-filters {
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 12px;
+        background: var(--surface);
+        border-radius: var(--radius-card);
         padding: 1.25rem;
         margin-bottom: 1.25rem;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-        border: 1px solid rgba(46, 125, 50, 0.1);
+        border: 1px solid var(--border);
       }
       .browse-filters .search-input {
         font-size: 1.125rem;
@@ -38,7 +37,7 @@
         text-align: center;
         padding: 3rem 2rem;
         font-size: 1.25rem;
-        color: #666;
+        color: var(--text-muted);
       }
       .browse-empty-state button {
         margin-top: 1rem;
@@ -91,7 +90,7 @@
         gap: 1rem;
         flex-wrap: wrap;
         font-size: 0.85rem;
-        color: #666;
+        color: var(--text-muted);
         margin: 0.5rem 0;
       }
 

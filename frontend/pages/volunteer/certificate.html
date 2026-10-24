@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#1b5e20" />
+    <meta name="theme-color" content="#0f766e" />
     <link rel="manifest" href="/public/manifest.webmanifest" />
     <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
     <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
@@ -22,8 +22,12 @@
         margin: 1rem 0 1.5rem;
       }
       .certificate-sheet {
-        background: #fff;
-        border: 2px solid #1b5e20;
+        --green: #0f766e;
+        --text: #1f2937;
+        --text-secondary: #5b6670;
+        background: #ffffff;
+        color: var(--text);
+        border: 2px solid var(--green);
         padding: 2rem 2.5rem;
         max-width: 297mm;
         margin: 0 auto;
@@ -31,12 +35,12 @@
       }
       .certificate-sheet .brand {
         font-size: 1.75rem;
-        color: #1b5e20;
+        color: var(--green);
         letter-spacing: 0.02em;
         margin: 0;
       }
       .certificate-sheet .subtitle {
-        color: #55605a;
+        color: var(--text-secondary);
         margin: 0.25rem 0 1.5rem;
       }
       .certificate-sheet h1 {
@@ -57,12 +61,12 @@
       .certificate-sheet .stat strong {
         display: block;
         font-size: 1.75rem;
-        color: #1b5e20;
+        color: var(--green);
       }
       .certificate-sheet .verify {
         margin-top: 1.5rem;
         font-size: 0.9rem;
-        color: #55605a;
+        color: var(--text-secondary);
       }
       .certificate-sheet .badges {
         margin-top: 1rem;

@@ -17,6 +17,14 @@ test('toSafeUser handles single-word and empty names', () => {
   assert.strictEqual(User._toSafeUser(null), null);
 });
 
+test('findByEmail refuses when more than one row matches', async () => {
+  mock.setHandler(async () => [[
+    { user_id: 5, email: 'x@y.z', password: 'hash', role: 'volunteer' },
+    { user_id: 6, email: 'X@y.z', password: 'hash', role: 'admin' },
+  ]]);
+  await assert.rejects(() => User.findByEmail('x@y.z'), (error) => error.code === 'AMBIGUOUS_EMAIL');
+});
+
 test('findByEmail returns the raw row including password (for auth compare)', async () => {
   mock.setHandler(async () => [[{ user_id: 5, email: 'x@y.z', password: 'hash', role: 'volunteer' }]]);
   const row = await User.findByEmail('x@y.z');

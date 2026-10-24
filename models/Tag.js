@@ -200,7 +200,7 @@ async function findRecommendedForUser(userId, limit = 5) {
         ELSE 0
       END AS availability_match,
       (
-        COALESCE(overlap.tag_overlap, 0) * ${TAG_OVERLAP_WEIGHT}
+        COALESCE(overlap.tag_overlap, 0) * ?
         + (
           CASE
             WHEN LOWER(TRIM(vp.availability)) = 'flexible' THEN 1
@@ -212,7 +212,7 @@ async function findRecommendedForUser(userId, limit = 5) {
               AND EXTRACT(HOUR FROM o.start_date) >= 17 THEN 1
             ELSE 0
           END
-        ) * ${AVAILABILITY_MATCH_WEIGHT}
+        ) * ?
       ) AS score
     FROM opportunities o
     INNER JOIN volunteer_profiles vp ON vp.user_id = ?
@@ -242,10 +242,17 @@ async function findRecommendedForUser(userId, limit = 5) {
         )
       )
     ORDER BY score DESC, o.start_date ASC
-    LIMIT ${Math.max(1, Math.min(Number(limit) || 5, 50))}
+    LIMIT ?
   `;
 
-  const [rows] = await pool.execute(sql, [userId, userId]);
+  const safeLimit = Math.max(1, Math.min(Number(limit) || 5, 50));
+  const [rows] = await pool.execute(sql, [
+    TAG_OVERLAP_WEIGHT,
+    AVAILABILITY_MATCH_WEIGHT,
+    userId,
+    userId,
+    safeLimit,
+  ]);
   const mapped = rows.map((row) => {
     row.id = row.opportunity_id;
     row.tag_overlap = Number(row.tag_overlap) || 0;

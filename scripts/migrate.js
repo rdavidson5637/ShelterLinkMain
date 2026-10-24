@@ -61,7 +61,10 @@ async function run() {
     }
 
     console.log(`${pending.length} pending migration(s):`);
-    pending.forEach((f) => console.log(`  - ${f}`));
+    pending.forEach((f) => {
+      const gate = f.startsWith('034_') ? ' (needs BACKUP_CONFIRMED=yes)' : '';
+      console.log(`  - ${f}${gate}`);
+    });
 
     if (dryRun) {
       console.log('\nDry run: no changes made.');
@@ -69,6 +72,10 @@ async function run() {
     }
 
     for (const file of pending) {
+      if (file.startsWith('034_') && process.env.BACKUP_CONFIRMED !== 'yes') {
+        console.log(`→ Skipping ${file}: back up first, then re-run with BACKUP_CONFIRMED=yes`);
+        continue;
+      }
       const sql = fs.readFileSync(path.join(dir, file), 'utf8').trim();
       process.stdout.write(`→ Applying ${file}... `);
       try {

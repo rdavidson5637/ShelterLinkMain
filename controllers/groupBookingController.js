@@ -12,6 +12,27 @@ const { currentShelterId, runWithShelter } = require('../utils/shelterContext');
 const { assisiShelterId } = require('../middleware/shelter');
 
 const MAX_GROUP_SIZE = 40;
+const MAX_NAME_LENGTH = 120;
+const MAX_NOTES_LENGTH = 1000;
+const MIN_SUBMIT_MS = 3000;
+const MAX_FORM_AGE_MS = 12 * 60 * 60 * 1000;
+
+function stripControls(value) {
+  return String(value || '').replace(/[\u0000-\u001F\u007F]/g, '').trim();
+}
+
+function honeypotTripped(body) {
+  return stripControls(body.fax_extension || '').length > 0;
+}
+
+function formTimingError(body) {
+  const started = Number(body.started_at);
+  if (!Number.isFinite(started)) return 'Reload the page and try again.';
+  const elapsed = Date.now() - started;
+  if (elapsed < MIN_SUBMIT_MS) return 'Please wait a moment and try again.';
+  if (elapsed > MAX_FORM_AGE_MS) return 'This form has expired. Reload the page and try again.';
+  return null;
+}
 
 function ensureStaff(req, res) {
   if (!req.session || !req.session.userId) {
@@ -59,9 +80,31 @@ async function createGroupBooking(req, res) {
       return res.status(400).json({ error: `size cannot exceed ${MAX_GROUP_SIZE}` });
     }
 
-    if (!isValidEmail(contactEmail)) {
+    if (/[\u0000-\u001F\u007F]/.test(String(contactEmail)) || !isValidEmail(stripControls(contactEmail))) {
       return res.status(400).json({ error: 'contact_email is invalid' });
     }
+
+    const cleanGroup = stripControls(groupName);
+    const cleanContact = stripControls(contactName);
+    const cleanEmail = stripControls(contactEmail).toLowerCase();
+    const cleanNotes = notes == null ? '' : stripControls(notes);
+    if (!cleanGroup || !cleanContact || !cleanEmail) {
+      return res.status(400).json({
+        error: 'opportunity_id, group_name, contact_name, contact_email, and size are required',
+      });
+    }
+    if (cleanGroup.length > MAX_NAME_LENGTH || cleanContact.length > MAX_NAME_LENGTH) {
+      return res.status(400).json({ error: 'Name is too long' });
+    }
+    if (cleanNotes.length > MAX_NOTES_LENGTH) {
+      return res.status(400).json({ error: 'Notes are too long' });
+    }
+
+    if (honeypotTripped(req.body || {})) {
+      return res.status(400).json({ error: 'Unable to submit this request.' });
+    }
+    const timingError = formTimingError(req.body || {});
+    if (timingError) return res.status(400).json({ error: timingError });
 
     const opportunity = await Opportunity.findById(opportunityId);
     if (!opportunity || opportunity.status !== 'open') {
@@ -83,11 +126,11 @@ async function createGroupBooking(req, res) {
 
     const booking = await GroupBooking.create({
       opportunityId: Number(opportunityId),
-      groupName: String(groupName).trim(),
-      contactName: String(contactName).trim(),
-      contactEmail: String(contactEmail).trim().toLowerCase(),
+      groupName: cleanGroup,
+      contactName: cleanContact,
+      contactEmail: cleanEmail,
       size: groupSize,
-      notes: notes ? String(notes).trim() : null,
+      notes: cleanNotes || null,
     });
 
     try {

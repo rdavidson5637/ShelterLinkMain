@@ -98,7 +98,11 @@ async function eraseVolunteer(req, res) {
       action: 'gdpr.erase',
       entityType: 'volunteer',
       entityId: userId,
-      detail: outcome,
+      detail: {
+        user_id: outcome.user_id,
+        hours_preserved: outcome.hours_preserved,
+        already_anonymised: Boolean(outcome.already_anonymised),
+      },
     });
 
     return res.status(200).json({

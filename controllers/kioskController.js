@@ -1,6 +1,7 @@
 'use strict';
 
 const bcrypt = require('bcrypt');
+const { DUMMY_PASSWORD_HASH } = require('../utils/password');
 const { pool } = require('../config/database');
 const { clearSessionCookie, regenerateSession } = require('../utils/sessionCookie');
 const Application = require('../models/Application');
@@ -55,17 +56,20 @@ async function unlockKiosk(req, res) {
     const [rows] = await pool.execute(
       `SELECT user_id, first_name, last_name, name, email, password, role, shelter_id, created_at
        FROM users
-       WHERE email = ?
-       LIMIT 1`,
+       WHERE lower(email) = lower(?)`,
       [email]
     );
-    const user = rows[0];
-    if (!user) {
+    if (rows.length !== 1) {
+      await bcrypt.compare(String(password), DUMMY_PASSWORD_HASH);
+      if (rows.length > 1) console.error('[Kiosk] ambiguous email match', rows.length);
+      console.warn('[Kiosk] failed unlock', req.ip || '');
       return res.status(401).json({ error: 'Invalid credentials' });
     }
+    const user = rows[0];
 
     const match = await bcrypt.compare(String(password), String(user.password));
     if (!match) {
+      console.warn('[Kiosk] failed unlock', req.ip || '');
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
