@@ -734,13 +734,13 @@ async function main() {
       slug: 'north',
       adminName: 'Cora North',
       adminEmail: 'c.admin@example.test',
-      adminPassword: 'Password1',
+      adminPassword: 'NorthShelter1',
       logo,
       logoMime: 'image/png',
     });
     if (created.shelterId < 3) failures.push(`create shelter returned id ${created.shelterId}`);
     const northLogin = await request(port, 'POST', '/api/auth/login', {
-      json: { email: 'c.admin@example.test', password: 'Password1' },
+      json: { email: 'c.admin@example.test', password: 'NorthShelter1' },
     });
     const northCookie = sessionCookie(northLogin.setCookie);
     if (northLogin.status !== 200 || !northCookie) {
