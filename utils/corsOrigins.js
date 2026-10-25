@@ -13,11 +13,26 @@ function extraOriginsFromEnv() {
     .filter(Boolean);
 }
 
+function httpsOrigin(value) {
+  const normalized = normalizeOrigin(value);
+  if (!/^https:\/\//i.test(normalized)) return '';
+  try {
+    const url = new URL(normalized);
+    if (url.protocol !== 'https:') return '';
+    return url.origin;
+  } catch {
+    return '';
+  }
+}
+
 function productionAllowlist() {
   const allowed = new Set([PRODUCTION_ORIGIN]);
-  const appUrl = normalizeOrigin(process.env.APP_URL);
+  const appUrl = httpsOrigin(process.env.APP_URL);
   if (appUrl) allowed.add(appUrl);
-  extraOriginsFromEnv().forEach((origin) => allowed.add(origin));
+  extraOriginsFromEnv().forEach((origin) => {
+    const safe = httpsOrigin(origin);
+    if (safe) allowed.add(safe);
+  });
   return allowed;
 }
 

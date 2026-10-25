@@ -8,4 +8,7 @@ Disallow: /pages/admin/
 Disallow: /pages/volunteer/
 Disallow: /kiosk
 Disallow: /login.html
-Disallow: /register.html
+Disallow: /forgot-password.html
+Disallow: /reset-password.html
+Disallow: /pages/feedback.html
+Disallow: /pages/public/

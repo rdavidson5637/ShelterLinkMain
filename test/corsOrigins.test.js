@@ -34,6 +34,18 @@ test('production allowlists shelterlink.online and rejects others', () => {
   });
 });
 
+test('production ignores http origins even when they are listed', () => {
+  withEnv({
+    NODE_ENV: 'production',
+    APP_URL: 'http://shelterlink.online',
+    CORS_ORIGINS: 'http://staff.example,https://staff.shelterlink.online',
+  }, () => {
+    assert.strictEqual(isAllowedCorsOrigin('http://shelterlink.online'), false);
+    assert.strictEqual(isAllowedCorsOrigin('http://staff.example'), false);
+    assert.strictEqual(isAllowedCorsOrigin('https://staff.shelterlink.online'), true);
+  });
+});
+
 test('non-production allows localhost and not arbitrary origins', () => {
   withEnv({
     NODE_ENV: 'development',
