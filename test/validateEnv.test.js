@@ -43,6 +43,15 @@ test('production collectProblems flags missing SESSION_SECRET and ADMIN_REGISTRA
     assert.ok(missing.includes('APP_URL'));
     assert.ok(missing.includes('DATABASE_URL'));
   });
+  withEnv({
+    NODE_ENV: 'production',
+    SESSION_SECRET: 'x'.repeat(40),
+    ADMIN_REGISTRATION_KEY: 'y'.repeat(24),
+    APP_URL: 'http://shelterlink.online',
+    DATABASE_URL: 'postgresql://db.example.test:5432/shelterlink',
+  }, () => {
+    assert.ok(collectProductionProblems().includes('APP_URL'));
+  });
 });
 
 test('production passes with strong secrets and public APP_URL', () => {

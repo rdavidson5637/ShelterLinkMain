@@ -13,9 +13,9 @@ Set these in the environment when the periods are agreed. Leave them unset until
 | Hours | `RETENTION_HOURS_YEARS` | Reported only. Hour rows are not deleted. |
 | Audit log | `RETENTION_AUDIT_LOG_YEARS` | Delete audit rows older than the period. |
 | Group booking requests | `RETENTION_GROUP_BOOKING_YEARS` | Delete booking rows older than the period. |
-| Password reset tokens | `RETENTION_RESET_TOKEN_HOURS` | Clear tokens that expired more than that many hours ago. |
+| Password reset tokens | none | Links expire after one hour. The hourly `resetTokenCleanup` job clears them once `reset_token_expires` has passed. `RETENTION_RESET_TOKEN_HOURS` is only an extra wait used by the manual sweep. Leave it unset. |
 
-The nightly job uses the inactive-volunteer period only. While that value is empty, the job scans nothing and anonymises nothing.
+The nightly job uses the inactive-volunteer period only. While that value is empty, the job scans nothing and anonymises nothing. The reset-token job does not wait for a retention period.
 
 ## Dry run
 

@@ -14,7 +14,7 @@ function createResetToken() {
 function productionResetBaseUrl() {
   const appUrl = String(process.env.APP_URL || '').trim().replace(/\/$/, '');
   if (process.env.NODE_ENV === 'production') {
-    if (!appUrl || /localhost|127\.0\.0\.1/i.test(appUrl)) return null;
+    if (!appUrl || /localhost|127\.0\.0\.1/i.test(appUrl) || !/^https:\/\//i.test(appUrl)) return null;
     return appUrl;
   }
   return appUrl || `http://localhost:${process.env.PORT || 3000}`;

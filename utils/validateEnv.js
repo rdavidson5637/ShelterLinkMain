@@ -20,6 +20,7 @@ function isWeakAppUrl(value) {
   const trimmed = value.trim();
   if (WEAK_PATTERN.test(trimmed)) return true;
   if (/localhost|127\.0\.0\.1/i.test(trimmed)) return true;
+  if (!/^https:\/\//i.test(trimmed)) return true;
   return false;
 }
 
@@ -60,6 +61,12 @@ function collectProductionWarnings() {
   }
   if (isBlank(process.env.SHELTER_EMERGENCY_PHONE)) {
     warnings.push('SHELTER_EMERGENCY_PHONE is not set: foster emergency phone will not be shown');
+  }
+  if (isWeakSecret(process.env.BACKUP_ENCRYPTION_KEY, { minLength: 16 })) {
+    warnings.push('BACKUP_ENCRYPTION_KEY is missing or shorter than 16 characters: npm run backup will refuse to run');
+  }
+  if (isBlank(process.env.SHELTER_TIMEZONE)) {
+    warnings.push('SHELTER_TIMEZONE is not set: scheduled jobs use Europe/London');
   }
   return warnings;
 }

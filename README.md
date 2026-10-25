@@ -114,8 +114,10 @@ Do not use the sample accounts on a live shelter site.
 To create your own admin account instead, set `ADMIN_REGISTRATION_KEY` in `.env`
 and run:
 ```bash
-npm run create-admin
+ADMIN_INITIAL_PASSWORD='a-long-password' npm run create-admin -- "Your Name" you@example.com
 ```
+The account is attached to the only shelter in the database. On a Supabase
+database, also set `CONFIRM_LIVE_SHELTER=yes`.
 
 ## Testing
 

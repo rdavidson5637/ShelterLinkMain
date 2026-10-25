@@ -30,18 +30,73 @@ function matchesField(field, value) {
  * Match a 5-field cron expression: minute hour dayMonth month dayWeek
  * dayWeek: 0-6 (Sun-Sat), same as node-cron default.
  */
+const WEEKDAYS = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+
+function shelterTimeZone() {
+  const zone = String(process.env.SHELTER_TIMEZONE || '').trim();
+  if (zone) return zone;
+  if (process.env.NODE_ENV === 'production') return 'Europe/London';
+  return '';
+}
+
+function localClock(date) {
+  return {
+    minute: date.getMinutes(),
+    hour: date.getHours(),
+    day: date.getDate(),
+    month: date.getMonth() + 1,
+    year: date.getFullYear(),
+    dayOfWeek: date.getDay(),
+  };
+}
+
+function clockParts(date) {
+  const zone = shelterTimeZone();
+  if (!zone) return localClock(date);
+  try {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: zone,
+      hour: '2-digit',
+      minute: '2-digit',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      weekday: 'short',
+      hourCycle: 'h23',
+    }).formatToParts(date);
+    const map = {};
+    for (const part of parts) {
+      if (part.type !== 'literal') map[part.type] = part.value;
+    }
+    const dayOfWeek = WEEKDAYS[map.weekday];
+    if (!Number.isFinite(dayOfWeek)) return localClock(date);
+    const hour = Number(map.hour) === 24 ? 0 : Number(map.hour);
+    return {
+      minute: Number(map.minute),
+      hour,
+      day: Number(map.day),
+      month: Number(map.month),
+      year: Number(map.year),
+      dayOfWeek,
+    };
+  } catch {
+    return localClock(date);
+  }
+}
+
 function matchesCron(expression, date = new Date()) {
   const fields = String(expression || '').trim().split(/\s+/);
   if (fields.length !== 5) {
     throw new Error(`Invalid cron expression: ${expression}`);
   }
   const [minute, hour, dayMonth, month, dayWeek] = fields;
+  const clock = clockParts(date);
   return (
-    matchesField(minute, date.getMinutes()) &&
-    matchesField(hour, date.getHours()) &&
-    matchesField(dayMonth, date.getDate()) &&
-    matchesField(month, date.getMonth() + 1) &&
-    matchesField(dayWeek, date.getDay())
+    matchesField(minute, clock.minute) &&
+    matchesField(hour, clock.hour) &&
+    matchesField(dayMonth, clock.day) &&
+    matchesField(month, clock.month) &&
+    matchesField(dayWeek, clock.dayOfWeek)
   );
 }
 
@@ -78,7 +133,8 @@ async function runJob(job, detailExtra = null) {
 }
 
 async function tick(now = new Date()) {
-  const minuteKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}-${now.getMinutes()}`;
+  const clock = clockParts(now);
+  const minuteKey = `${clock.year}-${clock.month}-${clock.day}-${clock.hour}-${clock.minute}`;
   for (const job of jobs.values()) {
     try {
       if (!matchesCron(job.cronExpression, now)) continue;

@@ -87,7 +87,7 @@ async function sendBulkMessage(req, res) {
         sent += 1;
       } catch (error) {
         failed += 1;
-        console.error('[AdminMessages] send failed for', recipient.email, error.message);
+        console.error('[AdminMessages] send failed', error.message);
       }
       // Small delay to protect SMTP accounts
       await sleep(100);

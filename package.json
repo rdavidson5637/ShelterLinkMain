@@ -24,6 +24,7 @@
     "retention:sweep": "node scripts/retention-sweep.js",
     "icons": "node scripts/generate-icons.js",
     "pwa:check": "node scripts/pwa-check.js",
+    "check-prod": "node scripts/check-production.js",
     "postinstall": "node scripts/ensure-vendor.js"
   },
   "dependencies": {
