@@ -22,7 +22,10 @@ function setMessage(type, text) {
     messageEl.innerHTML = '';
     return;
   }
-  messageEl.innerHTML = `<p class="${type === 'error' ? 'error' : 'success'}">${text}</p>`;
+  const note = document.createElement('p');
+  note.className = type === 'error' ? 'error' : 'success';
+  note.textContent = text;
+  messageEl.replaceChildren(note);
 }
 
 function volunteerName(v) {

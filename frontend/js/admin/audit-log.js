@@ -14,7 +14,10 @@ function setMessage(text, tone = 'neutral') {
     return;
   }
   const cls = tone === 'error' ? 'error' : tone === 'success' ? 'success' : '';
-  messageEl.innerHTML = `<p class="${cls}">${text}</p>`;
+  const note = document.createElement('p');
+  if (cls) note.className = cls;
+  note.textContent = text;
+  messageEl.replaceChildren(note);
 }
 
 function formatWhen(value) {
@@ -63,13 +66,18 @@ async function loadAudit() {
           : typeof row.detail_json === 'string'
             ? row.detail_json
             : JSON.stringify(row.detail_json);
-      tr.innerHTML = `
-        <td>${formatWhen(row.created_at)}</td>
-        <td>${actorLabel(row)}</td>
-        <td><code>${row.action || ''}</code></td>
-        <td>${[row.entity_type, row.entity_id].filter(Boolean).join(' #')}</td>
-        <td><small>${detail.slice(0, 240)}</small></td>
-      `;
+      const cells = [
+        formatWhen(row.created_at),
+        actorLabel(row),
+        row.action || '',
+        [row.entity_type, row.entity_id].filter(Boolean).join(' #'),
+        detail.slice(0, 240),
+      ];
+      cells.forEach((value) => {
+        const td = document.createElement('td');
+        td.textContent = value;
+        tr.appendChild(td);
+      });
       auditTableBody.appendChild(tr);
     });
   } catch (err) {

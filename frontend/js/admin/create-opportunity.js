@@ -44,7 +44,10 @@ function setMessage(type, text) {
     return;
   }
   const tone = type === 'error' ? 'error' : 'success';
-  messageEl.innerHTML = `<p class="${tone}">${text}</p>`;
+  const note = document.createElement('p');
+  note.className = tone;
+  note.textContent = text;
+  messageEl.replaceChildren(note);
 }
 
 function syncRecurrenceFields() {

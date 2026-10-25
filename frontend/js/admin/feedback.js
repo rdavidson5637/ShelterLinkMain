@@ -22,7 +22,10 @@ function setMessage(text, tone = 'neutral') {
     return;
   }
   const cls = tone === 'error' ? 'error' : tone === 'success' ? 'success' : '';
-  messageEl.innerHTML = `<p class="${cls}">${text}</p>`;
+  const note = document.createElement('p');
+  if (cls) note.className = cls;
+  note.textContent = text;
+  messageEl.replaceChildren(note);
 }
 
 function formatDate(value) {
@@ -53,12 +56,18 @@ function renderAverages(averages) {
     byOpportunityList.innerHTML = '<li>No ratings yet</li>';
     return;
   }
-  byOpportunityList.innerHTML = rows
-    .map(
-      (r) =>
-        `<li><span>${r.opportunity_title}</span><strong>${Number(r.average).toFixed(2)} (${r.count})</strong></li>`
-    )
-    .join('');
+  byOpportunityList.replaceChildren();
+  rows.forEach((row) => {
+    const li = document.createElement('li');
+    const title = document.createElement('span');
+    title.textContent = row.opportunity_title || 'Shift';
+    const score = document.createElement('strong');
+    const count = Number(row.count) || 0;
+    const average = Number(row.average);
+    score.textContent = `${Number.isFinite(average) ? average.toFixed(2) : '-'} (${count})`;
+    li.append(title, score);
+    byOpportunityList.appendChild(li);
+  });
 }
 
 function renderTable(items) {
@@ -80,17 +89,21 @@ function renderTable(items) {
         ? 'Handled'
         : 'Needs attention';
 
-    tr.innerHTML = `
-      <td>${formatDate(item.created_at)}</td>
-      <td>${item.volunteer_name || item.volunteer_email || '—'}</td>
-      <td>${item.opportunity_title || `#${item.opportunity_id}`}</td>
-      <td>${item.rating}/5</td>
-      <td>${item.comment ? String(item.comment) : '—'}</td>
-      <td>${concernLabel}</td>
-      <td></td>
-    `;
-
-    const actionsTd = tr.lastElementChild;
+    const cells = [
+      formatDate(item.created_at),
+      item.volunteer_name || item.volunteer_email || '-',
+      item.opportunity_title || (item.opportunity_id ? `#${item.opportunity_id}` : 'Shift'),
+      Number.isFinite(Number(item.rating)) ? `${item.rating}/5` : '-',
+      item.comment ? String(item.comment) : '-',
+      concernLabel,
+    ];
+    cells.forEach((value) => {
+      const td = document.createElement('td');
+      td.textContent = value;
+      tr.appendChild(td);
+    });
+    const actionsTd = document.createElement('td');
+    tr.appendChild(actionsTd);
     if (openConcern) {
       const btn = document.createElement('button');
       btn.type = 'button';

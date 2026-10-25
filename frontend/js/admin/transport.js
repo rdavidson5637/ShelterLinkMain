@@ -16,7 +16,10 @@ function setMessage(type, text) {
     messageEl.innerHTML = '';
     return;
   }
-  messageEl.innerHTML = `<p class="${type === 'error' ? 'error' : 'success'}">${text}</p>`;
+  const note = document.createElement('p');
+  note.className = type === 'error' ? 'error' : 'success';
+  note.textContent = text;
+  messageEl.replaceChildren(note);
 }
 
 function addLegRow(defaults = {}) {
@@ -24,16 +27,21 @@ function addLegRow(defaults = {}) {
   row.className = 'form-grid leg-row';
   row.innerHTML = `
     <label>From
-      <input type="text" class="leg-from" required value="${defaults.from || ''}" />
+      <input type="text" class="leg-from" required />
     </label>
     <label>To
-      <input type="text" class="leg-to" required value="${defaults.to || ''}" />
+      <input type="text" class="leg-to" required />
     </label>
     <label>Miles
-      <input type="number" class="leg-miles" min="0" step="0.1" value="${defaults.miles || ''}" />
+      <input type="number" class="leg-miles" min="0" step="0.1" />
     </label>
     <button type="button" class="secondary remove-leg">Remove</button>
   `;
+  row.querySelector('.leg-from').value = defaults.from || '';
+  row.querySelector('.leg-to').value = defaults.to || '';
+  if (defaults.miles != null && defaults.miles !== '') {
+    row.querySelector('.leg-miles').value = String(defaults.miles);
+  }
   row.querySelector('.remove-leg').addEventListener('click', () => {
     if (legsEditor.querySelectorAll('.leg-row').length > 1) row.remove();
   });
@@ -76,23 +84,30 @@ async function loadRuns() {
   }
   runsList.innerHTML = '';
   for (const run of runs) {
+    const runId = Number(run.id);
+    if (!Number.isInteger(runId) || runId <= 0) continue;
     const article = document.createElement('article');
     article.innerHTML = `
-      <header>
-        <strong>${run.title}</strong>
-        · ${String(run.run_date || '').slice(0, 10)}
-        · ${run.status}
-        · ${run.claimed_count || 0}/${run.leg_count || 0} legs claimed
-        ${run.animal_name ? `· ${run.animal_name}` : ''}
-      </header>
-      <div class="run-detail" data-run-id="${run.id}">Loading legs…</div>
+      <header><strong></strong></header>
+      <div class="run-detail">Loading legs…</div>
       <p>
-        <button type="button" class="secondary chase-btn" data-run-id="${run.id}">Chase for cover</button>
-        <button type="button" class="secondary cancel-btn" data-run-id="${run.id}">Cancel run</button>
+        <button type="button" class="secondary chase-btn">Chase for cover</button>
+        <button type="button" class="secondary cancel-btn">Cancel run</button>
       </p>
     `;
+    const bits = [
+      run.title || 'Transport',
+      String(run.run_date || '').slice(0, 10),
+      run.status || '',
+      `${run.claimed_count || 0}/${run.leg_count || 0} legs claimed`,
+    ];
+    if (run.animal_name) bits.push(run.animal_name);
+    article.querySelector('strong').textContent = bits.filter(Boolean).join(' · ');
+    const id = String(runId);
+    article.querySelector('.chase-btn').dataset.runId = id;
+    article.querySelector('.cancel-btn').dataset.runId = id;
     runsList.appendChild(article);
-    loadRunDetail(run.id, article.querySelector('.run-detail'));
+    loadRunDetail(runId, article.querySelector('.run-detail'));
   }
 
   runsList.querySelectorAll('.chase-btn').forEach((btn) => {

@@ -13,7 +13,12 @@ const declineButton = document.getElementById('declineButton');
 
 function setMessage(text, tone = 'error') {
   if (!messageEl) return;
-  messageEl.innerHTML = text ? `<p class="${tone}">${text}</p>` : '';
+  messageEl.replaceChildren();
+  if (!text) return;
+  const p = document.createElement('p');
+  p.className = tone;
+  p.textContent = text;
+  messageEl.appendChild(p);
 }
 
 async function loadRequest() {

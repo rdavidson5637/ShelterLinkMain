@@ -30,21 +30,35 @@ async function unsubscribePushBestEffort() {
   }
 }
 
-export async function logout() {
+async function endClientSession() {
   await Promise.race([
     unsubscribePushBestEffort(),
     new Promise((resolve) => setTimeout(resolve, 3000)),
   ]).catch(() => {});
   await clearUserCache();
   try {
+    sessionStorage.clear();
+  } catch (_) {}
+}
+
+export async function logout() {
+  await endClientSession();
+  try {
     await apiRequest('/auth/logout', { method: 'POST' });
   } catch (_) {
     // ignore network errors; proceed with client-side cleanup
   }
-  try {
-    sessionStorage.clear();
-  } catch (_) {}
   window.location.href = '/index.html';
+}
+
+export async function logoutEverywhere() {
+  await endClientSession();
+  try {
+    await apiRequest('/auth/logout-all', { method: 'POST' });
+  } catch (_) {
+    // The local session is already cleared. Other devices end when this call succeeds.
+  }
+  window.location.href = '/login.html';
 }
 
 export async function hasPendingWaivers() {

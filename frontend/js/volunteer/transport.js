@@ -1,5 +1,5 @@
 import { apiRequest } from '../config.js';
-import { requireAuth, checkAuth, logout } from '../auth.js';
+import { requireAuth, checkAuth } from '../auth.js';
 
 const messageEl = document.getElementById('message');
 const openLegsList = document.getElementById('openLegsList');
@@ -7,11 +7,12 @@ const myLegsList = document.getElementById('myLegsList');
 
 function setMessage(type, text) {
   if (!messageEl) return;
-  if (!text) {
-    messageEl.innerHTML = '';
-    return;
-  }
-  messageEl.innerHTML = `<p class="${type === 'error' ? 'error' : 'success'}">${text}</p>`;
+  messageEl.replaceChildren();
+  if (!text) return;
+  const p = document.createElement('p');
+  p.className = type === 'error' ? 'error' : 'success';
+  p.textContent = text;
+  messageEl.appendChild(p);
 }
 
 function formatLeg(leg) {

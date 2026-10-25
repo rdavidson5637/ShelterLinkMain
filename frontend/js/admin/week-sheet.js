@@ -30,7 +30,10 @@ function setMessage(type, text) {
     return;
   }
   const css = type === 'error' ? 'error-message' : 'success-message';
-  messageEl.innerHTML = `<p class="${css}">${text}</p>`;
+  const note = document.createElement('p');
+  note.className = css;
+  note.textContent = text;
+  messageEl.replaceChildren(note);
 }
 
 function escapeHtml(value) {
