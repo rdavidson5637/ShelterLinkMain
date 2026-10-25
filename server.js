@@ -319,7 +319,8 @@ async function startServer() {
     httpServer = app.listen(PORT, () => {
       console.log(`✓ Server running on port ${PORT}`);
       console.log(`✓ Frontend files served from: ${path.join(__dirname, 'frontend')}`);
-      console.log(`✓ Access your app at: http://localhost:${PORT}`);
+      const publicUrl = process.env.APP_URL || `http://localhost:${PORT}`;
+      console.log(`✓ Access your app at: ${publicUrl}`);
     });
   } catch (error) {
     console.error('✗ Failed to connect to database:', error.message);

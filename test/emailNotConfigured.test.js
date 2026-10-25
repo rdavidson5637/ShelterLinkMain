@@ -153,13 +153,17 @@ test('production startup warnings list missing optional integrations', () => {
       VAPID_PUBLIC_KEY: undefined,
       VAPID_PRIVATE_KEY: undefined,
       SHELTER_EMERGENCY_PHONE: undefined,
+      BACKUP_ENCRYPTION_KEY: undefined,
+      SHELTER_TIMEZONE: undefined,
     },
     () => {
       const warnings = collectProductionWarnings();
-      assert.equal(warnings.length, 3);
+      assert.equal(warnings.length, 5);
       assert.match(warnings[0], /Email is not configured/);
       assert.match(warnings[1], /Web push is not configured/);
       assert.match(warnings[2], /SHELTER_EMERGENCY_PHONE/);
+      assert.match(warnings[3], /BACKUP_ENCRYPTION_KEY/);
+      assert.match(warnings[4], /SHELTER_TIMEZONE/);
     }
   );
 });
@@ -173,6 +177,8 @@ test('production startup warnings are empty when everything is set, and silent o
       WEB_PUSH_VAPID_PUBLIC_KEY: 'pub',
       WEB_PUSH_VAPID_PRIVATE_KEY: 'priv',
       SHELTER_EMERGENCY_PHONE: '028 0000 0000',
+      BACKUP_ENCRYPTION_KEY: 'backup-key-at-least-16',
+      SHELTER_TIMEZONE: 'Europe/London',
     },
     () => assert.deepEqual(collectProductionWarnings(), [])
   );

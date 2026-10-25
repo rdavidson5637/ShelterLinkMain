@@ -2,7 +2,7 @@
 
 Direction: production platform for Assisi. See `DEPLOY.md` and `ASSISI-DEMO.md`.
 
-Product surface for the shelter call is complete. `npm test` — **381** green (PWA, push, CSP, dates, tenant isolation).
+Product surface for the shelter call is complete. `npm test` — **424** green (PWA, push, CSP, dates, tenant isolation).
 Live prove-out still needs your `DATABASE_URL`.
 
 ## 1. Point the app at Postgres (you) — blocking for demo
@@ -25,8 +25,14 @@ PWA (root service worker, install prompt, offline shifts, push on dashboard), pr
 - Deeper analytics / delivery stats
 - Tweaks from coordinator feedback
 
-## 4. Go-live
+## 4. Go-live (you)
 
-Brevo SMTP, `DEPLOY.md`, privacy notice reviewed by them, seed accounts off in prod,
-one backup restore drill (see `docs/BACKUP-RESTORE.md`; the drill has not been run).
+`npm run check-prod` lists missing names only. Then, on the host: HTTPS `APP_URL`,
+session secret, admin key, session-pooler `DATABASE_URL` (`postgres.<project-ref>`, port 5432),
+Brevo SMTP, backup key, and `CONFIRM_LIVE_SHELTER=yes ADMIN_INITIAL_PASSWORD='...' npm run create-admin`.
+That admin is attached to the only shelter. Leave `DATA_RETENTION_YEARS` blank until Assisi sets it. Fresh database:
+`node scripts/setup-db.js --no-seed` (add `--force` only for that first empty build).
+Existing database: `npm run migrate`, and `BACKUP_CONFIRMED=yes` only after an encrypted backup
+if `034_` is still pending. One restore drill is still not done (`docs/BACKUP-RESTORE.md`).
 Article 10 still needs a DPIA and a written controller/processor arrangement (`docs/VETTING-DATA.md`).
+Privacy notice gaps stay marked until Assisi fills them. Do not invent those sentences.

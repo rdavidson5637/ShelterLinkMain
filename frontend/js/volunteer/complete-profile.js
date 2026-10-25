@@ -1,5 +1,5 @@
 import { apiRequest } from '../config.js';
-import { requireAuth } from '../auth.js';
+import { requireAuth, logoutEverywhere } from '../auth.js';
 import { renderTagChips, getSelectedTagIds } from '../components/tagChips.js';
 import { showFormErrors, clearFormErrors } from '../utils/formErrors.js';
 import { mountPushToggle } from '../components/pushToggle.js';
@@ -41,12 +41,12 @@ function setDateBounds() {
 
 function setMessage(type, text) {
   if (!messageEl) return;
-  if (!text) {
-    messageEl.innerHTML = '';
-    return;
-  }
-  const tone = type === 'error' ? 'error' : 'success';
-  messageEl.innerHTML = `<p class="${tone}">${text}</p>`;
+  messageEl.replaceChildren();
+  if (!text) return;
+  const p = document.createElement('p');
+  p.className = type === 'error' ? 'error' : 'success';
+  p.textContent = text;
+  messageEl.appendChild(p);
 }
 
 function collectFosterFields(formElement) {
@@ -508,10 +508,7 @@ async function init() {
       body: 'This ends every signed-in session, including this one.',
       confirmText: 'Sign out everywhere',
       cancelText: 'Stay signed in',
-      onConfirm: async () => {
-        await apiRequest('/auth/logout-all', { method: 'POST' });
-        window.location.href = '/login.html';
-      },
+      onConfirm: () => logoutEverywhere(),
     });
   });
   await mountPushToggle(document.getElementById('pushToggle'));

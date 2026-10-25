@@ -16,7 +16,10 @@ function setMessage(text, tone = 'neutral') {
     return;
   }
   const cls = tone === 'error' ? 'error' : tone === 'success' ? 'success' : '';
-  messageEl.innerHTML = `<p class="${cls}">${text}</p>`;
+  const note = document.createElement('p');
+  if (cls) note.className = cls;
+  note.textContent = text;
+  messageEl.replaceChildren(note);
 }
 
 function readUserId() {

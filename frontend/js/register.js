@@ -165,7 +165,7 @@ async function handleRegister(event) {
     console.error('[Register] Network error:', error);
     showFormErrors(form, [
       {
-        message: `Network error: ${error.message || 'Could not connect to server. Make sure the backend is running on port 3000.'}`,
+        message: 'Network error. Check your connection and try again.',
       },
     ]);
   } finally {

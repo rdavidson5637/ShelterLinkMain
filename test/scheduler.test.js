@@ -48,3 +48,18 @@ test('matchesCron understands hourly and daily expressions', () => {
   assert.strictEqual(scheduler.matchesCron('0 0 * * *', midnight), true);
   assert.strictEqual(scheduler.matchesCron('0 0 * * *', topOfHour), false);
 });
+
+test('matchesCron uses SHELTER_TIMEZONE when it is set', () => {
+  const previous = process.env.SHELTER_TIMEZONE;
+  process.env.SHELTER_TIMEZONE = 'Europe/London';
+  try {
+    const eightAmLondonInSummer = new Date(Date.UTC(2026, 7, 11, 7, 0, 0));
+    assert.strictEqual(scheduler.matchesCron('0 8 * * *', eightAmLondonInSummer), true);
+    assert.strictEqual(scheduler.matchesCron('0 7 * * *', eightAmLondonInSummer), false);
+    const mondayMorning = new Date(Date.UTC(2026, 0, 12, 7, 0, 0));
+    assert.strictEqual(scheduler.matchesCron('0 7 * * 1', mondayMorning), true);
+  } finally {
+    if (previous === undefined) delete process.env.SHELTER_TIMEZONE;
+    else process.env.SHELTER_TIMEZONE = previous;
+  }
+});

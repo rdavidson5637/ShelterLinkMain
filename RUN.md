@@ -68,7 +68,7 @@ confirm kiosk sessions cannot hit admin APIs (403).
 ## Creating your own admin
 
 ```bash
-npm run create-admin -- "Name" you@example.com 'a-strong-password'
+ADMIN_INITIAL_PASSWORD='a-long-password' npm run create-admin -- "Name" you@example.com
 ```
 
 ## Deploy

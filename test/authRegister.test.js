@@ -6,6 +6,7 @@ const assert = require('node:assert/strict');
 process.env.NODE_ENV = 'test';
 
 const mock = require('./helpers/mockDb');
+const { PRIVACY_NOTICE_VERSION } = require('../config/privacyNotice');
 delete require.cache[require.resolve('../controllers/authController')];
 const auth = require('../controllers/authController');
 
@@ -62,7 +63,7 @@ test('register still creates an account for a new email', async () => {
   assert.strictEqual(res.body.message, 'Registration successful');
   const insert = mock.calls.find((call) => /INSERT INTO users/i.test(call.sql));
   assert.ok(insert);
-  assert.ok(insert.params.includes('2026-10-22'));
+  assert.ok(insert.params.includes(PRIVACY_NOTICE_VERSION));
 });
 
 test('register without the privacy confirmation is rejected', async () => {
@@ -88,6 +89,6 @@ test('acknowledging the notice stores the current version', async () => {
   assert.strictEqual(res.body.needsPrivacyNotice, false);
   const update = mock.calls.find((call) => /privacy_notice_version/i.test(call.sql));
   assert.ok(update);
-  assert.strictEqual(update.params[0], '2026-10-22');
+  assert.strictEqual(update.params[0], PRIVACY_NOTICE_VERSION);
   assert.strictEqual(update.params[1], 4);
 });

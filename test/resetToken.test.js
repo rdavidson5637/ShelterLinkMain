@@ -17,6 +17,8 @@ test('productionResetBaseUrl refuses localhost when NODE_ENV=production', () => 
   process.env.NODE_ENV = 'production';
   process.env.APP_URL = 'http://localhost:3000';
   assert.strictEqual(productionResetBaseUrl(), null);
+  process.env.APP_URL = 'http://shelterlink.online';
+  assert.strictEqual(productionResetBaseUrl(), null);
   process.env.APP_URL = 'https://shelterlink.online';
   assert.strictEqual(productionResetBaseUrl(), 'https://shelterlink.online');
   process.env.NODE_ENV = prevEnv;

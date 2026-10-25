@@ -23,12 +23,12 @@ let resetTimer = null;
 
 function setMessage(text, tone = 'neutral') {
   if (!messageEl) return;
-  if (!text) {
-    messageEl.innerHTML = '';
-    return;
-  }
-  const cls = tone === 'error' ? 'error' : tone === 'success' ? 'success' : '';
-  messageEl.innerHTML = `<p class="${cls}">${text}</p>`;
+  messageEl.replaceChildren();
+  if (!text) return;
+  const p = document.createElement('p');
+  if (tone === 'error' || tone === 'success') p.className = tone;
+  p.textContent = text;
+  messageEl.appendChild(p);
 }
 
 function show(panel) {

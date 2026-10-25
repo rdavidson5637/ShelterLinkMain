@@ -1,63 +1,98 @@
+'use strict';
+
 /**
- * Script to create an admin user
- * 
- * Usage: node create-admin.js <name> <email> <password>
- * Example: node create-admin.js "Admin User" admin@example.com admin123
+ * Create an admin on an existing shelter.
+ *
+ *   CONFIRM_LIVE_SHELTER=yes ADMIN_INITIAL_PASSWORD='...' \
+ *     node create-admin.js "Ada Lovelace" ada@example.com
+ *
+ *   node create-admin.js "Ada Lovelace" ada@example.com 'a-long-password' --shelter assisi
+ *
+ * With one shelter in the database, --shelter can be omitted.
+ * On a Supabase host, set CONFIRM_LIVE_SHELTER=yes.
+ * Pass the password in ADMIN_INITIAL_PASSWORD, or as the third argument, not both.
  */
 
-const { hashPassword, passwordPolicyError } = require('./utils/password');
-const { pool, closePool } = require('./config/database');
+require('dotenv').config();
+const { assertLiveWriteAllowed } = require('./utils/liveDbGuard');
+const { closePool } = require('./config/database');
+const { createAdminAccount } = require('./services/adminAccount');
 
-async function createAdmin() {
-  const args = process.argv.slice(2);
-  
-  if (args.length < 3) {
-    console.error('Usage: node create-admin.js <name> <email> <password>');
-    console.error('Example: node create-admin.js "Admin User" admin@example.com admin123');
+function usage() {
+  console.error('Usage: node create-admin.js <name> <email> [password] [--shelter slug]');
+  console.error('Prefer ADMIN_INITIAL_PASSWORD so the password is not stored in shell history.');
+  console.error('With one shelter, the admin is attached to it. Otherwise pass --shelter.');
+  console.error('On the live Supabase database, set CONFIRM_LIVE_SHELTER=yes.');
+}
+
+function readArgs(argv) {
+  const positional = [];
+  let shelter = '';
+  for (let i = 0; i < argv.length; i += 1) {
+    if (argv[i] === '--shelter') {
+      const value = argv[i + 1];
+      if (!value || value.startsWith('--')) throw new Error('Missing value for --shelter');
+      shelter = value;
+      i += 1;
+      continue;
+    }
+    positional.push(argv[i]);
+  }
+  return {
+    name: positional[0],
+    email: positional[1],
+    password: positional[2] || '',
+    shelter,
+    extra: positional.length > 3,
+  };
+}
+
+async function main() {
+  let args;
+  try {
+    args = readArgs(process.argv.slice(2));
+  } catch (error) {
+    console.error(error.message);
+    usage();
     process.exit(1);
   }
 
-  const [name, email, password] = args;
-  const normalizedEmail = String(email).trim().toLowerCase();
-  const policyError = await passwordPolicyError(password);
-  if (policyError) {
-    console.error(policyError);
-    await closePool();
+  if (!args.name || !args.email || args.extra) {
+    usage();
+    process.exit(1);
+  }
+
+  const fromEnv = process.env.ADMIN_INITIAL_PASSWORD || '';
+  if (fromEnv && args.password) {
+    console.error('Pass the password in ADMIN_INITIAL_PASSWORD or as an argument, not both.');
+    process.exit(1);
+  }
+  const password = fromEnv || args.password;
+  if (!password) {
+    usage();
     process.exit(1);
   }
 
   try {
-    const [existing] = await pool.execute(
-      'SELECT user_id FROM users WHERE lower(email) = lower(?)',
-      [normalizedEmail]
-    );
-
-    if (existing.length > 0) {
-      console.error(`User with email ${normalizedEmail} already exists!`);
-      process.exitCode = 1;
-      return;
-    }
-
-    // Hash password
-    const passwordHash = await hashPassword(password);
-
-    const [result] = await pool.execute(
-      "INSERT INTO users (name, email, password, role, created_at) VALUES (?, ?, ?, 'admin', NOW())",
-      [name, normalizedEmail, passwordHash]
-    );
-
-    console.log('✓ Admin user created successfully!');
-    console.log(`  Name: ${name}`);
-    console.log(`  Email: ${normalizedEmail}`);
-    console.log(`  Role: admin`);
-    console.log(`  User ID: ${result.insertId}`);
-    console.log('\nYou can now login with these credentials.');
+    assertLiveWriteAllowed(process.env.DATABASE_URL, process.env.CONFIRM_LIVE_SHELTER);
+    const created = await createAdminAccount({
+      name: args.name,
+      email: args.email,
+      password,
+      shelterSlug: args.shelter,
+    });
+    console.log('Admin user created.');
+    console.log(`  Shelter: ${created.slug}`);
+    console.log(`  Email: ${created.email}`);
+    console.log(`  User ID: ${created.userId}`);
   } catch (error) {
-    console.error('Error creating admin user:', error.message);
+    console.error(error.message);
     process.exitCode = 1;
   } finally {
     await closePool();
   }
 }
 
-createAdmin();
+if (require.main === module) {
+  main();
+}

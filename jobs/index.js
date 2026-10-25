@@ -10,6 +10,7 @@ const { runFeedbackRequests } = require('./feedbackRequests');
 const { runDbKeepAlive } = require('./dbKeepAlive');
 const { runMessageDigest } = require('./messageDigest');
 const { runBackgroundCheckExpiry } = require('./backgroundCheckExpiry');
+const { runResetTokenCleanup } = require('./resetTokenCleanup');
 const { runWeeklyDigest } = require('./weeklyDigest');
 const { forEachShelter } = require('../middleware/shelter');
 
@@ -36,7 +37,9 @@ function registerAllJobs() {
   scheduler.registerJob('backgroundCheckExpiry', '0 7 * * *', () => forEachShelter(() => runBackgroundCheckExpiry()));
   // Monday 07:00: weekly volunteer digest (shifts, open matches, fosters, unread).
   scheduler.registerJob('weeklyDigest', '0 7 * * 1', () => forEachShelter(() => runWeeklyDigest()));
-  // Daily: anonymise volunteer accounts inactive beyond DATA_RETENTION_YEARS (default 3).
+  // Hourly: drop password-reset tokens whose one-hour expiry has passed.
+  scheduler.registerJob('resetTokenCleanup', '40 * * * *', () => forEachShelter(() => runResetTokenCleanup()));
+  // Daily: anonymise inactive volunteers only when a retention period is set. Blank means skip.
   scheduler.registerJob('dataRetention', '30 3 * * *', () => forEachShelter(() => runDataRetentionJob()));
   // Daily: keep a paused-after-inactivity Supabase project awake (app host must be always-on).
   scheduler.registerJob('dbKeepAlive', '0 6 * * *', () => runDbKeepAlive());
