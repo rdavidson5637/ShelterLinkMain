@@ -44,7 +44,7 @@ function setMessage(type, text) {
   messageEl.replaceChildren();
   if (!text) return;
   const p = document.createElement('p');
-  p.className = type === 'error' ? 'error' : 'success';
+  p.className = type === 'error' ? 'error-message' : 'success-message';
   p.textContent = text;
   messageEl.appendChild(p);
 }

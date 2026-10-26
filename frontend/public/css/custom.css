@@ -2514,6 +2514,59 @@ main .stat-value {
   border-radius: 0;
 }
 
+/* Item articles that pages render inside a panel body read as ruled
+   entries, not boxes inside boxes. */
+main .ruled-panel-body > article {
+  margin: 0;
+  padding: var(--space-2) 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  border-radius: 0;
+}
+
+main .ruled-panel-body > article:first-child {
+  padding-top: 0;
+}
+
+main .ruled-panel-body > article:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+main .ruled-panel-body > article h3 {
+  margin: 0 0 0.25rem;
+  font-size: var(--step-1);
+}
+
+main .ruled-panel-body > article p {
+  margin: 0.25rem 0 0;
+}
+
+.page-header .status-banner {
+  margin-top: var(--space-2);
+}
+
+/* Fieldsets in long forms are ruled sections, not boxes. */
+main form fieldset {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-2) 0 0;
+  border: 0;
+  border-top: 1px solid var(--rule);
+}
+
+main form fieldset legend {
+  padding: 0;
+  font-size: var(--step-1);
+  font-weight: 700;
+}
+
+#recent-hours .table-wrapper,
+#recent-hours > table {
+  border: 0;
+  border-radius: 0;
+}
+
 /* Calendar */
 main .calendar-banner {
   padding: 0.75rem var(--space-2);

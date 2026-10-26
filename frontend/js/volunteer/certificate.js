@@ -16,7 +16,7 @@ function setMessage(type, text) {
     messageEl.innerHTML = '';
     return;
   }
-  const css = type === 'error' ? 'error' : 'success';
+  const css = type === 'error' ? 'error-message' : 'success-message';
   messageEl.innerHTML = `<p class="${css}">${escapeHtml(text)}</p>`;
 }
 

@@ -10,7 +10,7 @@ function setMessage(type, text) {
   messageEl.replaceChildren();
   if (!text) return;
   const p = document.createElement('p');
-  p.className = type === 'error' ? 'error' : 'success';
+  p.className = type === 'error' ? 'error-message' : 'success-message';
   p.textContent = text;
   messageEl.appendChild(p);
 }
@@ -41,7 +41,7 @@ async function openTransportThread(contextId, subject) {
 async function loadOpenLegs() {
   const res = await apiRequest('/transport/legs/open');
   if (!res.ok) {
-    openLegsList.innerHTML = '<p class="error">Unable to load open legs. Approved volunteers only.</p>';
+    openLegsList.innerHTML = '<p class="error-message">Unable to load open legs. Approved volunteers only.</p>';
     return;
   }
   const data = await res.json();
@@ -91,7 +91,7 @@ async function loadOpenLegs() {
 async function loadMyLegs() {
   const res = await apiRequest('/transport/legs/mine');
   if (!res.ok) {
-    myLegsList.innerHTML = '<p class="error">Unable to load your legs.</p>';
+    myLegsList.innerHTML = '<p class="error-message">Unable to load your legs.</p>';
     return;
   }
   const data = await res.json();

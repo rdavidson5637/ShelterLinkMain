@@ -14,7 +14,7 @@ function setMessage(type, text) {
     messageEl.innerHTML = '';
     return;
   }
-  messageEl.innerHTML = `<p class="${type === 'error' ? 'error' : 'success'}">${escapeHtml(text)}</p>`;
+  messageEl.innerHTML = `<p class="${type === 'error' ? 'error-message' : 'success-message'}">${escapeHtml(text)}</p>`;
 }
 
 function showEmergency(phone) {
@@ -85,7 +85,7 @@ async function loadMatching() {
 async function loadPlacements() {
   const res = await apiRequest('/fosters/my-placements');
   if (!res.ok) {
-    placementsList.innerHTML = '<p class="error">Unable to load placements.</p>';
+    placementsList.innerHTML = '<p class="error-message">Unable to load placements.</p>';
     return;
   }
   const data = await res.json();

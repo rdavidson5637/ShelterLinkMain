@@ -52,23 +52,21 @@
     </header>
 
     <main class="container">
-      <section>
+      <header class="page-header">
         <h1>Foster</h1>
-        <p>Matched foster requests and your placements. Complete foster home details on your profile if you want to help.</p>
+        <p class="lead">Foster requests that match your home, and animals staying with you. Fill in your foster home details on <a href="/pages/volunteer/complete-profile.html">your profile</a> to be matched.</p>
         <div id="message" role="status" aria-live="polite"></div>
-        <article id="emergencyBanner" class="status-banner" hidden>
-          <p><strong>Shelter emergency phone:</strong> <span id="emergencyPhone"></span></p>
-        </article>
+        <p id="emergencyBanner" class="info-message status-banner" hidden><strong>Shelter emergency phone:</strong> <span id="emergencyPhone" class="num"></span></p>
+      </header>
+
+      <section class="ruled-panel" aria-labelledby="matchingTitle">
+        <header class="ruled-panel-head"><h2 id="matchingTitle">Requests that match your home</h2></header>
+        <div class="ruled-panel-body" id="matchingList"><span class="skeleton" aria-hidden="true"></span></div>
       </section>
 
-      <section>
-        <h2>Matching requests</h2>
-        <div id="matchingList"><span class="skeleton" aria-hidden="true"></span></div>
-      </section>
-
-      <section>
-        <h2>My placements</h2>
-        <div id="placementsList"><span class="skeleton" aria-hidden="true"></span></div>
+      <section class="ruled-panel" aria-labelledby="placementsTitle">
+        <header class="ruled-panel-head"><h2 id="placementsTitle">Animals staying with you</h2></header>
+        <div class="ruled-panel-body" id="placementsList"><span class="skeleton" aria-hidden="true"></span></div>
       </section>
     </main>
 

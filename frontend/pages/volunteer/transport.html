@@ -51,23 +51,21 @@
     </header>
 
     <main class="container">
-      <section>
+      <header class="page-header">
         <h1>Transport</h1>
-        <p>Claim open legs on animal transport relays. Handovers are arranged through the shelter. Do not contact other drivers directly.</p>
+        <p class="lead">Pick up a leg of an animal transport run. Handovers are arranged through the shelter.</p>
         <div id="message" role="status" aria-live="polite"></div>
-        <article class="status-banner">
-          <p><strong>Coordination:</strong> Use the transport message thread or contact the shelter office. Other drivers’ phone numbers and emails are never shared.</p>
-        </article>
+        <p class="info-message status-banner">Do not contact other drivers directly. Use the transport message thread or ring the shelter office. Other drivers&rsquo; numbers and emails are never shared.</p>
+      </header>
+
+      <section class="ruled-panel" aria-labelledby="openLegsTitle">
+        <header class="ruled-panel-head"><h2 id="openLegsTitle">Legs that need a driver</h2></header>
+        <div class="ruled-panel-body" id="openLegsList"><span class="skeleton" aria-hidden="true"></span></div>
       </section>
 
-      <section>
-        <h2>Open legs</h2>
-        <div id="openLegsList"><span class="skeleton" aria-hidden="true"></span></div>
-      </section>
-
-      <section>
-        <h2>My claimed legs</h2>
-        <div id="myLegsList"><span class="skeleton" aria-hidden="true"></span></div>
+      <section class="ruled-panel" aria-labelledby="myLegsTitle">
+        <header class="ruled-panel-head"><h2 id="myLegsTitle">Legs you are driving</h2></header>
+        <div class="ruled-panel-body" id="myLegsList"><span class="skeleton" aria-hidden="true"></span></div>
       </section>
     </main>
 

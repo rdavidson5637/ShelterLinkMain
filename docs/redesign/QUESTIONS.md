@@ -37,3 +37,11 @@ two pages' `minlength` should change to match. That is a validation change, so i
 When the kiosk is locked, `/api/kiosk/status` returns 401 and the browser logs it as a console error.
 It is expected (the tablet is not unlocked yet) but it fails the "no console errors" bar. A 200 with
 `{ unlocked: false }` would fix it. That is an API change, so it is yours to decide.
+
+## C5 (Claude Code) - logged-out 401 costs every page a Lighthouse point
+
+Public pages call `/api/auth/me` to send signed-in people to their dashboard. Logged out, it returns 401
+and Chrome logs a console error, which is the only thing keeping Best practices at 96 instead of 100 on
+the home page and the sign-in page. A `200` with `null` for "not signed in" (on that route, or a new
+`/api/auth/session` for this check only) would clear it. Same family as the kiosk 401 above. API change,
+so yours to decide.
