@@ -5,18 +5,10 @@
 
 import { showBanner, hideBanner } from './components/statusBanner.js';
 
-const THEME_COLOR_LIGHT = '#0f766e';
-const THEME_COLOR_DARK = '#0f1a19';
+const THEME_COLOR = '#1F5C45';
 
 function currentThemeColor() {
-  try {
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return THEME_COLOR_DARK;
-    }
-  } catch {
-    /* matchMedia is missing in some webviews */
-  }
-  return THEME_COLOR_LIGHT;
+  return THEME_COLOR;
 }
 const MANIFEST_HREF = '/public/manifest.webmanifest';
 const READY_TIMEOUT_MS = 10000;
