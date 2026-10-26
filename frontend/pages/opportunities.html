@@ -22,6 +22,7 @@
     <link rel="modulepreload" href="/js/brandCache.js">
     <link rel="modulepreload" href="/js/components/icons.js">
     <link rel="modulepreload" href="/js/components/publicNav.js">
+    <link rel="modulepreload" href="/js/components/rows.js">
     <link rel="modulepreload" href="/js/components/statusBanner.js">
     <link rel="modulepreload" href="/js/public/opportunities.js">
     <link rel="modulepreload" href="/js/public/publicBoard.js">
@@ -33,32 +34,36 @@
   </head>
   <body>
     <header class="site-header">
-      <nav class="site-nav container" aria-label="Public navigation">
+      <nav class="site-nav container" aria-label="Main navigation">
         <a class="site-brand" href="/index.html">
           <span class="brand-mark" aria-hidden="true"></span>
           <strong>ShelterLink</strong>
         </a>
-        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">Menu</button>
         <ul class="nav-menu" id="navMenu">
           <li><a class="nav-link" href="/pages/opportunities.html" aria-current="page">Open shifts</a></li>
-          <li><a class="nav-link" href="/login.html">Log in</a></li>
+          <li><a class="nav-link" href="/login.html">Sign in</a></li>
           <li><a class="nav-link" href="/register.html">Register</a></li>
         </ul>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu">Menu</button>
       </nav>
     </header>
 
     <main class="container">
-      <section>
-        <h1>Open volunteer shifts</h1>
-        <p>Browse upcoming opportunities at <span data-shelter-name>Assisi Animal Sanctuary</span>. Create an account to apply.</p>
-        <p>
-          <a href="/api/public/opportunities.ics">Subscribe via calendar (.ics)</a>
-          ·
-          <a href="/pages/group-booking.html">Request a group visit</a>
+      <header class="page-header">
+        <h1>Open shifts</h1>
+        <p class="lead">Shifts coming up at <span data-shelter-name>Assisi Animal Sanctuary</span>. Create an account to apply.</p>
+        <p class="actions">
+          <a href="/api/public/opportunities.ics">Add these shifts to your calendar</a>
+          <a href="/pages/group-booking.html">Ask about a group visit</a>
         </p>
-      </section>
-      <section id="opportunitiesList">
-        <p>Loading open shifts...</p>
+      </header>
+      <section id="opportunitiesList" class="ruled-panel" aria-label="Open shifts" aria-busy="true">
+        <p class="visually-hidden">Loading open shifts</p>
+        <ul class="ruled-rows">
+          <li class="ruled-row is-loading" aria-hidden="true"><span class="ruled-row-lead skeleton skeleton-block"></span><span class="ruled-row-main"><span class="skeleton"></span><span class="skeleton skeleton-detail"></span></span></li>
+          <li class="ruled-row is-loading" aria-hidden="true"><span class="ruled-row-lead skeleton skeleton-block"></span><span class="ruled-row-main"><span class="skeleton"></span><span class="skeleton skeleton-detail"></span></span></li>
+          <li class="ruled-row is-loading" aria-hidden="true"><span class="ruled-row-lead skeleton skeleton-block"></span><span class="ruled-row-main"><span class="skeleton"></span><span class="skeleton skeleton-detail"></span></span></li>
+        </ul>
       </section>
     </main>
 

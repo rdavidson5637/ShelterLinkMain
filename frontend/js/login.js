@@ -144,13 +144,8 @@ async function loadDemoHints() {
 document.addEventListener('DOMContentLoaded', () => {
   const expired = sessionStorage.getItem(SESSION_FLAG_KEY);
   if (expired) {
-    showMessage(
-      'Your session expired after 60 minutes of inactivity. Please log in again.',
-      'error'
-    );
-    messageEl.style.background = '#ffecb3';
-    messageEl.style.borderLeft = '4px solid #ffb300';
-    messageEl.style.color = '#7a4f01';
+    showMessage('You were signed out after 60 minutes with no activity. Sign in again to carry on.');
+    messageEl.className = 'info-message';
     sessionStorage.removeItem(SESSION_FLAG_KEY);
   }
 

@@ -12,10 +12,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btn = document.getElementById('goButton');
   const user = await checkAuth();
   if (user) {
-    btn.textContent = 'Go to Dashboard';
+    btn.textContent = 'Go to your home page';
     btn.addEventListener('click', () => goToDashboard(user));
   } else {
-    btn.textContent = 'Go to Home Page';
+    btn.textContent = 'Go to the start page';
     btn.addEventListener('click', () => {
       window.location.href = '/index.html';
     });

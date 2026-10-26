@@ -31,12 +31,21 @@
     <!-- preload:end -->
   </head>
   <body>
-    <main class="container">
-      <article class="auth-card" style="max-width: 680px; margin-top: 2rem;">
-        <p><a href="/launch">Back to ShelterLink</a></p>
-        <h1>You do not have permission to view this page.</h1>
-        <button id="dashboardButton" type="button">Return to Dashboard</button>
-      </article>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Main navigation">
+        <a class="site-brand" href="/launch">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+      </nav>
+    </header>
+
+    <main class="container auth-card error-page">
+      <h1>This page is for other staff</h1>
+      <p class="lead">Your account cannot open it. If you think you need it, ask the shelter coordinator.</p>
+      <p class="actions">
+        <button id="dashboardButton" type="button">Go to your home page</button>
+      </p>
     </main>
 
     <footer class="container">

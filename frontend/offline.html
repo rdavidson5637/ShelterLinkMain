@@ -38,10 +38,19 @@
     <!-- preload:end -->
   </head>
   <body>
-    <main>
-      <h1>You're offline</h1>
-      <p>This page isn't saved on this phone yet. Pages you've opened recently, like your dashboard, still work.</p>
-      <p><button type="button">Try again</button></p>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Main navigation">
+        <a class="site-brand" href="/launch">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+      </nav>
+    </header>
+
+    <main class="container auth-card error-page">
+      <h1>You are offline</h1>
+      <p class="lead">This page is not saved on this phone yet. Pages you opened recently, like your home page, still work.</p>
+      <p class="actions"><button type="button">Try again</button></p>
     </main>
     <script type="module" src="/js/offlinePage.js"></script>
   </body>

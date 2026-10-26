@@ -21,12 +21,14 @@ const AUTO_RESET_MS = 10000;
 let selected = null;
 let resetTimer = null;
 
+const STATE_WORDS = { checked_in: 'Checked in', checked_out: 'Done for today' };
+
 function setMessage(text, tone = 'neutral') {
   if (!messageEl) return;
   messageEl.replaceChildren();
   if (!text) return;
   const p = document.createElement('p');
-  if (tone === 'error' || tone === 'success') p.className = tone;
+  p.className = tone === 'error' ? 'error-message' : tone === 'success' ? 'success-message' : 'info-message';
   p.textContent = text;
   messageEl.appendChild(p);
 }
@@ -121,7 +123,7 @@ async function loadShifts() {
     }
     shiftsList.replaceChildren();
     const err = document.createElement('p');
-    err.className = 'error';
+    err.className = 'error-message';
     err.textContent = body.error || 'Unable to load shifts';
     shiftsList.appendChild(err);
     return;
@@ -153,7 +155,19 @@ async function loadShifts() {
         btn.type = 'button';
         btn.className = 'volunteer-btn';
         btn.dataset.state = vol.state || 'ready';
-        btn.textContent = vol.display_name;
+        const name = document.createElement('span');
+        name.className = 'volunteer-btn-name';
+        name.textContent = vol.display_name;
+        btn.appendChild(name);
+        // The state is said in words, not only by colour.
+        const stateWord = STATE_WORDS[vol.state];
+        if (stateWord) {
+          const label = document.createElement('span');
+          label.className = 'status-label';
+          label.dataset.tone = vol.state === 'checked_in' ? 'ok' : 'neutral';
+          label.textContent = stateWord;
+          btn.appendChild(label);
+        }
         btn.addEventListener('click', () => openCheck(shift, vol));
         grid.appendChild(btn);
       });

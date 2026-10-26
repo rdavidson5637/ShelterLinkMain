@@ -10,7 +10,7 @@ function setMessage(text, tone = 'neutral') {
   messageEl.replaceChildren();
   if (!text) return;
   const p = document.createElement('p');
-  if (tone === 'error' || tone === 'success') p.className = tone;
+  p.className = tone === 'error' ? 'error-message' : tone === 'success' ? 'success-message' : 'info-message';
   p.textContent = text;
   messageEl.appendChild(p);
 }

@@ -43,78 +43,70 @@
           <span class="brand-mark" aria-hidden="true"></span>
           <strong>ShelterLink</strong>
         </a>
-        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">☰</button>
         <ul class="nav-menu" id="navMenu">
-          <li><a class="nav-link" href="/login.html"><span class="nav-icon" aria-hidden="true">&#128274;</span><span>Login</span></a></li>
+          <li><a class="nav-link" href="/pages/opportunities.html">Open shifts</a></li>
+          <li><a class="nav-link" href="/login.html">Sign in</a></li>
         </ul>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu">Menu</button>
       </nav>
     </header>
 
     <main class="container">
-      <article class="auth-card">
-        <h1>Create an Account</h1>
-        <p>Join ShelterLink to connect with shelter opportunities.</p>
+      <div class="auth-card auth-card--wide">
+        <h1>Create an account</h1>
+        <p class="lead">Make an account to apply for shifts at <span data-shelter-name>Assisi Animal Sanctuary</span>. Staff check every new volunteer before their first shift.</p>
 
-        <div id="message"></div>
+        <div id="message" role="status" aria-live="polite"></div>
 
         <form id="registerForm">
-          <div class="form-grid">
-            <div class="form-section">
-              <div class="form-grid">
-                <label for="first_name">
-                  First Name
-                  <input type="text" id="first_name" name="first_name" required />
-                </label>
+          <div class="field-pair">
+            <label for="first_name">
+              First name
+              <input type="text" id="first_name" name="first_name" required autocomplete="given-name" />
+            </label>
 
-                <label for="last_name">
-                  Last Name
-                  <input type="text" id="last_name" name="last_name" required />
-                </label>
-              </div>
-            </div>
-
-            <div class="form-section">
-              <div class="form-grid">
-                <label for="email">
-                  Email Address
-                  <input type="email" id="email" name="email" required />
-                </label>
-
-                <label for="phone">
-                  Phone Number
-                  <input type="tel" id="phone" name="phone" required />
-                </label>
-              </div>
-            </div>
-
-            <div class="form-section form-full-width">
-              <div class="form-grid">
-                <label for="password">
-                  Password
-                  <input type="password" id="password" name="password" required minlength="8" />
-                </label>
-
-                <label for="confirm_password">
-                  Confirm Password
-                  <input type="password" id="confirm_password" name="confirm_password" required minlength="8" />
-                </label>
-              </div>
-            </div>
+            <label for="last_name">
+              Last name
+              <input type="text" id="last_name" name="last_name" required autocomplete="family-name" />
+            </label>
           </div>
 
-          <label for="privacy_notice">
+          <div class="field-pair">
+            <label for="email">
+              Email address
+              <input type="email" id="email" name="email" required autocomplete="email" />
+            </label>
+
+            <label for="phone">
+              Phone number
+              <input type="tel" id="phone" name="phone" required autocomplete="tel" />
+            </label>
+          </div>
+
+          <div class="field-pair">
+            <label for="password">
+              Password
+              <input type="password" id="password" name="password" required minlength="8" autocomplete="new-password" />
+            </label>
+
+            <label for="confirm_password">
+              Confirm password
+              <input type="password" id="confirm_password" name="confirm_password" required minlength="8" autocomplete="new-password" />
+            </label>
+          </div>
+
+          <label for="privacy_notice" class="check">
             <input type="checkbox" id="privacy_notice" name="privacy_notice" />
             I have read the <a href="/pages/privacy.html">privacy notice</a>
           </label>
 
-          <button type="submit">Create Account</button>
+          <button type="submit">Create account</button>
         </form>
 
-        <p class="auth-links">
+        <p class="auth-links muted">
           Already registered? <a href="/login.html">Sign in</a>
-          · <a href="/pages/privacy.html">Privacy</a>
         </p>
-      </article>
+      </div>
     </main>
 
     <footer class="container">

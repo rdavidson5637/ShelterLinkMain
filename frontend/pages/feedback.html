@@ -30,10 +30,10 @@
     <!-- preload:end -->
   </head>
   <body>
-    <main class="container" style="max-width: 560px; margin: 2rem auto;">
+    <main class="container auth-card">
       <p><a href="/launch">Back to ShelterLink</a></p>
       <h1>How was your shift?</h1>
-      <p id="shiftSummary">Loading…</p>
+      <p id="shiftSummary" class="lead"><span class="skeleton" aria-hidden="true"></span><span class="visually-hidden">Loading your shift</span></p>
       <div id="message" role="status" aria-live="polite"></div>
 
       <form id="feedbackForm" hidden>

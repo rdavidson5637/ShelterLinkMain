@@ -33,31 +33,26 @@
   </head>
   <body>
     <header class="site-header">
-      <nav class="site-nav container" aria-label="Public navigation">
+      <nav class="site-nav container" aria-label="Main navigation">
         <a class="site-brand" href="/index.html">
           <span class="brand-mark" aria-hidden="true"></span>
           <strong>ShelterLink</strong>
         </a>
-        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">Menu</button>
         <ul class="nav-menu" id="navMenu">
           <li><a class="nav-link" href="/pages/opportunities.html">Open shifts</a></li>
-          <li><a class="nav-link" href="/pages/group-booking.html" aria-current="page">Group booking</a></li>
-          <li><a class="nav-link" href="/login.html">Log in</a></li>
+          <li><a class="nav-link" href="/login.html">Sign in</a></li>
+          <li><a class="nav-link" href="/register.html">Register</a></li>
         </ul>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu">Menu</button>
       </nav>
     </header>
 
     <main class="container">
-      <section>
-        <h1>Request a group visit</h1>
-        <p>
-          Companies and schools can request a group slot on an open opportunity.
-          Your group size is reserved only after an administrator confirms.
-        </p>
+      <div class="auth-card auth-card--wide">
+        <h1>Ask about a group visit</h1>
+        <p class="lead">Companies and schools can ask for a group slot on an open shift. The places are only held once a member of staff confirms.</p>
         <div id="message" role="status" aria-live="polite"></div>
-      </section>
 
-      <section>
         <form id="groupBookingForm">
           <div class="visually-hidden" aria-hidden="true">
             <label for="faxExtension">
@@ -67,34 +62,36 @@
           </div>
           <input type="hidden" id="startedAt" name="started_at" />
           <label for="opportunityId">
-            Opportunity
+            Shift
             <select id="opportunityId" name="opportunity_id" required>
-              <option value="">Loading opportunities…</option>
+              <option value="">Loading shifts</option>
             </select>
           </label>
           <label for="groupName">
-            Group / organisation name
-            <input type="text" id="groupName" name="group_name" required maxlength="255" />
+            Group or organisation name
+            <input type="text" id="groupName" name="group_name" required maxlength="255" autocomplete="organization" />
           </label>
-          <label for="contactName">
-            Contact name
-            <input type="text" id="contactName" name="contact_name" required maxlength="255" />
-          </label>
-          <label for="contactEmail">
-            Contact email
-            <input type="email" id="contactEmail" name="contact_email" required maxlength="255" />
-          </label>
-          <label for="groupSize">
-            Group size
-            <input type="number" id="groupSize" name="size" min="1" step="1" required />
+          <div class="field-pair">
+            <label for="contactName">
+              Contact name
+              <input type="text" id="contactName" name="contact_name" required maxlength="255" autocomplete="name" />
+            </label>
+            <label for="contactEmail">
+              Contact email
+              <input type="email" id="contactEmail" name="contact_email" required maxlength="255" autocomplete="email" />
+            </label>
+          </div>
+          <label for="groupSize" class="field-narrow">
+            How many people
+            <input type="number" id="groupSize" name="size" min="1" step="1" required inputmode="numeric" />
           </label>
           <label for="notes">
-            Notes (optional)
+            Anything staff should know (optional)
             <textarea id="notes" name="notes" rows="3"></textarea>
           </label>
-          <button type="submit">Submit request</button>
+          <button type="submit">Send request</button>
         </form>
-      </section>
+      </div>
     </main>
 
     <footer class="container">

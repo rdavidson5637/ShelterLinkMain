@@ -26,12 +26,21 @@
     <!-- preload:end -->
   </head>
   <body>
-    <main class="container">
-      <article class="auth-card" style="max-width: 680px; margin-top: 2rem;">
-        <p><a href="/launch">Back to ShelterLink</a></p>
-        <h1>Something went wrong.</h1>
-        <p>Please try again in a moment. If this keeps happening, contact the shelter admin.</p>
-      </article>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Main navigation">
+        <a class="site-brand" href="/launch">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+      </nav>
+    </header>
+
+    <main class="container auth-card error-page">
+      <h1>Something went wrong on our side</h1>
+      <p class="lead">Try again in a minute. If it keeps happening, tell the shelter coordinator.</p>
+      <p class="actions">
+        <a href="/launch" role="button">Back to ShelterLink</a>
+      </p>
     </main>
 
     <footer class="container">

@@ -43,61 +43,60 @@
           <span class="brand-mark" aria-hidden="true"></span>
           <strong>ShelterLink</strong>
         </a>
-        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">☰</button>
         <ul class="nav-menu" id="navMenu">
-          <li><a class="nav-link" href="/pages/opportunities.html"><span class="nav-icon" aria-hidden="true">&#128197;</span><span>Open shifts</span></a></li>
-          <li><a class="nav-link" href="/register.html"><span class="nav-icon" aria-hidden="true">&#9998;</span><span>Register</span></a></li>
+          <li><a class="nav-link" href="/pages/opportunities.html">Open shifts</a></li>
+          <li><a class="nav-link" href="/register.html">Register</a></li>
         </ul>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu">Menu</button>
       </nav>
     </header>
 
     <main class="container">
-      <article class="auth-card">
-        <h1>Sign In</h1>
-        <p>Access your ShelterLink account to manage volunteer activities.</p>
+      <div class="auth-card">
+        <h1>Sign in</h1>
+        <p class="lead">See your shifts, messages and hours.</p>
 
-        <div id="message"></div>
+        <div id="message" role="status" aria-live="polite"></div>
 
         <form id="loginForm">
-          <div class="form-grid">
-            <div class="form-section form-full-width">
-              <div class="form-grid">
-                <label for="email">
-                  Email Address
-                  <input type="email" id="email" name="email" required autocomplete="email" />
-                </label>
+          <label for="email">
+            Email address
+            <input type="email" id="email" name="email" required autocomplete="email" />
+          </label>
 
-                <label for="password">
-                  Password
-                  <input type="password" id="password" name="password" required autocomplete="current-password" />
-                </label>
-                <label for="rememberMe">
-                  <input type="checkbox" id="rememberMe" name="rememberMe" />
-                  Keep me signed in on this device
-                </label>
-                <small>Don't tick this on a shared or shelter computer.</small>
-              </div>
-            </div>
-          </div>
+          <label for="password">
+            Password
+            <input type="password" id="password" name="password" required autocomplete="current-password" />
+          </label>
 
-          <button type="submit">Sign In</button>
+          <label for="rememberMe" class="check">
+            <input type="checkbox" id="rememberMe" name="rememberMe" aria-describedby="rememberHint" />
+            Keep me signed in on this device
+          </label>
+          <small id="rememberHint" class="hint">Leave this off on a shared or shelter computer.</small>
+
+          <button type="submit">Sign in</button>
         </form>
 
         <p class="auth-links">
-          Don't have an account? <a href="/register.html">Register</a>
-          · <a href="/pages/opportunities.html">Browse open shifts</a>
-          · <a href="/pages/privacy.html">Privacy</a>
-        </p>
-        <p class="auth-links">
           <a href="/forgot-password.html">Forgot your password?</a>
         </p>
-      </article>
+        <p class="auth-links muted">
+          New here? <a href="/register.html">Create an account</a>
+          or <a href="/pages/opportunities.html">look at open shifts</a> first.
+          <a href="/pages/privacy.html">Privacy</a>
+        </p>
+      </div>
 
-      <article id="demoAccountsCard" class="auth-card" hidden>
-        <h2>Demo accounts (dev only)</h2>
-        <p>Seed logins for local development. Not shown in production.</p>
-        <div id="demoAccountsList"></div>
-      </article>
+      <section id="demoAccountsCard" class="ruled-panel auth-card auth-demo" hidden>
+        <header class="ruled-panel-head">
+          <h2>Demo accounts (dev only)</h2>
+        </header>
+        <div class="ruled-panel-body">
+          <p class="muted">Seed logins for local development. Not shown in production.</p>
+          <div id="demoAccountsList"></div>
+        </div>
+      </section>
     </main>
 
     <footer class="container">

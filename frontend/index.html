@@ -40,76 +40,80 @@
           <span class="brand-mark" aria-hidden="true"></span>
           <strong>ShelterLink</strong>
         </a>
-        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">☰</button>
         <ul class="nav-menu" id="navMenu">
           <li><a class="nav-link" href="/pages/opportunities.html">Open shifts</a></li>
           <li><a class="nav-link" href="/register.html">Register</a></li>
           <li><a class="nav-link" href="/login.html">Sign in</a></li>
         </ul>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu">Menu</button>
       </nav>
     </header>
 
     <main class="container">
-      <section class="hero">
-        <h1>Volunteer at <span data-shelter-name>Assisi Animal Sanctuary</span></h1>
-        <p>Browse open shifts in Belfast, apply to help, and log your hours in one place.</p>
-        <div class="hero-actions">
-          <a href="/register.html" class="cta">Become a volunteer</a>
-          <a href="/pages/opportunities.html" class="text-link">See open shifts</a>
-        </div>
-      </section>
+      <div class="home">
+        <section class="home-intro" aria-labelledby="homeTitle">
+          <h1 id="homeTitle" class="display">Volunteer at <span data-shelter-name>Assisi Animal Sanctuary</span></h1>
+          <p class="lead">Browse open shifts in Belfast, apply to help, and log your hours in one place.</p>
+          <p class="actions">
+            <a href="/register.html" role="button">Become a volunteer</a>
+            <a href="/pages/opportunities.html" class="text-link">See open shifts first</a>
+          </p>
+          <p class="muted">Already volunteering? <a href="/login.html">Sign in</a></p>
+        </section>
 
-      <section class="how-it-works">
-        <h2>How it works</h2>
-        <p>Four steps from signing up to logging your first hours.</p>
-        <ol>
-          <li>
-            <div>
-              <strong>Register</strong>
-              Create an account with your name and contact details.
-            </div>
-          </li>
-          <li>
-            <div>
-              <strong>Get approved</strong>
-              Complete your profile. Staff review it before you can take shifts.
-            </div>
-          </li>
-          <li>
-            <div>
-              <strong>Pick shifts</strong>
-              Browse open shifts, apply, and wait for a confirmation.
-            </div>
-          </li>
-          <li>
-            <div>
-              <strong>Log hours</strong>
-              After each shift, record your hours and track your impact.
-            </div>
-          </li>
-        </ol>
-      </section>
+        <section class="ruled-panel" aria-labelledby="stepsTitle">
+          <header class="ruled-panel-head">
+            <h2 id="stepsTitle">From signing up to your first shift</h2>
+          </header>
+          <ol class="ruled-rows">
+            <li class="ruled-row">
+              <span class="ruled-row-lead step-num" aria-hidden="true">1</span>
+              <div class="ruled-row-main">
+                <strong class="ruled-row-title">Register</strong>
+                <span class="ruled-row-detail">Create an account with your name and contact details.</span>
+              </div>
+            </li>
+            <li class="ruled-row">
+              <span class="ruled-row-lead step-num" aria-hidden="true">2</span>
+              <div class="ruled-row-main">
+                <strong class="ruled-row-title">Get approved</strong>
+                <span class="ruled-row-detail">Complete your profile. Staff review it before you can take shifts.</span>
+              </div>
+            </li>
+            <li class="ruled-row">
+              <span class="ruled-row-lead step-num" aria-hidden="true">3</span>
+              <div class="ruled-row-main">
+                <strong class="ruled-row-title">Pick shifts</strong>
+                <span class="ruled-row-detail">Browse open shifts, apply, and wait for a confirmation.</span>
+              </div>
+            </li>
+            <li class="ruled-row">
+              <span class="ruled-row-lead step-num" aria-hidden="true">4</span>
+              <div class="ruled-row-main">
+                <strong class="ruled-row-title">Log hours</strong>
+                <span class="ruled-row-detail">After each shift, record the hours you did.</span>
+              </div>
+            </li>
+          </ol>
+        </section>
+      </div>
 
-      <section class="how-it-works">
-        <h2>If you are not signing up yourself</h2>
-        <ul class="choice-list">
-          <li>
-            <a href="/pages/opportunities.html">
-              <span>
-                <strong>Open shifts</strong>
-                See what is available before you create an account.
-              </span>
-              <span class="choice-arrow" aria-hidden="true">→</span>
-            </a>
+      <section class="ruled-panel" aria-labelledby="otherTitle">
+        <header class="ruled-panel-head">
+          <h2 id="otherTitle">Not signing up yourself?</h2>
+        </header>
+        <ul class="ruled-rows">
+          <li class="ruled-row">
+            <div class="ruled-row-main">
+              <a class="ruled-row-title" href="/pages/opportunities.html">Look at open shifts</a>
+              <span class="ruled-row-detail">See what is on before you create an account.</span>
+            </div>
           </li>
-          <li>
-            <a href="/pages/group-booking.html">
-              <span>
-                <strong>Group visit</strong>
-                Companies and schools can ask for a slot. Staff confirm it.
-              </span>
-              <span class="choice-arrow" aria-hidden="true">→</span>
-            </a>
+          <li class="ruled-row">
+            <div class="ruled-row-main">
+              <a class="ruled-row-title" href="/pages/group-booking.html">Ask about a group visit</a>
+              <span class="ruled-row-detail">Companies and schools can ask for a slot. Staff confirm it.</span>
+            </div>
           </li>
         </ul>
       </section>

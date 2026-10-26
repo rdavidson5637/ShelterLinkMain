@@ -16,7 +16,7 @@ function setMessage(text, tone = 'error') {
   messageEl.replaceChildren();
   if (!text) return;
   const p = document.createElement('p');
-  p.className = tone;
+  p.className = tone === 'success' ? 'success-message' : tone === 'error' ? 'error-message' : 'info-message';
   p.textContent = text;
   messageEl.appendChild(p);
 }

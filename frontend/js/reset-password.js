@@ -6,10 +6,11 @@ const messageEl = document.getElementById('message');
 const submitButton = document.getElementById('submitButton');
 const loginLink = document.getElementById('loginLink');
 
+const MESSAGE_CLASS = { error: 'error-message', success: 'success-message', info: 'info-message' };
+
 function showMessage(text, type = 'info') {
-  const color = type === 'error' ? '#d93025' : type === 'success' ? '#0f9d58' : '#1a73e8';
   const p = document.createElement('p');
-  p.style.cssText = `color:${color};padding:0.75rem;border-radius:6px;background:${color}18;`;
+  p.className = MESSAGE_CLASS[type] || MESSAGE_CLASS.info;
   p.textContent = text;
   messageEl.replaceChildren(p);
 }
@@ -19,21 +20,21 @@ const token = params.get('token');
 
 if (!token) {
   showMessage('Invalid reset link. Please request a new password reset.', 'error');
-  form.style.display = 'none';
-  loginLink.style.display = 'block';
+  form.hidden = true;
+  loginLink.hidden = false;
 } else {
   try {
     const check = await apiRequest(`/auth/reset-password/${encodeURIComponent(token)}`);
     const checkData = await check.json().catch(() => ({ valid: false }));
     if (!checkData.valid) {
       showMessage('Invalid or expired reset link. Please request a new password reset.', 'error');
-      form.style.display = 'none';
-      loginLink.style.display = 'block';
+      form.hidden = true;
+      loginLink.hidden = false;
     }
   } catch {
     showMessage('Unable to verify this reset link. Please try again.', 'error');
-    form.style.display = 'none';
-    loginLink.style.display = 'block';
+    form.hidden = true;
+    loginLink.hidden = false;
   }
 }
 
@@ -63,8 +64,8 @@ form.addEventListener('submit', async (e) => {
 
     if (res.ok) {
       showMessage('Password updated successfully! Redirecting to sign in…', 'success');
-      form.style.display = 'none';
-      loginLink.style.display = 'block';
+      form.hidden = true;
+      loginLink.hidden = false;
       setTimeout(() => {
         window.location.href = '/login.html';
       }, 2500);

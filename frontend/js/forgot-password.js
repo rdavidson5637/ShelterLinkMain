@@ -6,10 +6,11 @@ const form = document.getElementById('forgotForm');
 const messageEl = document.getElementById('message');
 const submitButton = document.getElementById('submitButton');
 
+const MESSAGE_CLASS = { error: 'error-message', success: 'success-message', info: 'info-message' };
+
 function showMessage(text, type = 'info') {
-  const color = type === 'error' ? '#d93025' : type === 'success' ? '#0f9d58' : '#1a73e8';
   const p = document.createElement('p');
-  p.style.cssText = `color:${color};padding:0.75rem;border-radius:6px;background:${color}18;`;
+  p.className = MESSAGE_CLASS[type] || MESSAGE_CLASS.info;
   p.textContent = text;
   messageEl.replaceChildren(p);
 }
@@ -37,7 +38,7 @@ form.addEventListener('submit', async (e) => {
     const feedback = forgotPasswordFeedback(res, data);
     showMessage(feedback.text, feedback.type);
     if (feedback.hideForm) {
-      form.style.display = 'none';
+      form.hidden = true;
     } else {
       submitButton.disabled = false;
       submitButton.textContent = 'Send Reset Link';

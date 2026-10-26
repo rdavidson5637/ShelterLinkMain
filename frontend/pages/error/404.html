@@ -31,13 +31,21 @@
     <!-- preload:end -->
   </head>
   <body>
-    <main class="container">
-      <article class="auth-card" style="max-width: 680px; margin-top: 2rem;">
-        <p><a href="/launch">Back to ShelterLink</a></p>
-        <h1>Oops! We could not find that page.</h1>
-        <p>The page you were looking for has moved or does not exist.</p>
-        <button id="goButton" type="button">Go to Dashboard</button>
-      </article>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Main navigation">
+        <a class="site-brand" href="/launch">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+      </nav>
+    </header>
+
+    <main class="container auth-card error-page">
+      <h1>We could not find that page</h1>
+      <p class="lead">It may have moved, or the link may have a typo in it.</p>
+      <p class="actions">
+        <button id="goButton" type="button">Go to the start page</button>
+      </p>
     </main>
 
     <footer class="container">

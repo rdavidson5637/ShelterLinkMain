@@ -25,3 +25,15 @@ Two server changes would cut the Atlantic wait further, after the Railway region
 
 The login page shows no demo accounts, so C1 was checked on public pages and a scratch fixture of the
 new components only. If there are demo logins agents may use, please add them here.
+
+## C3 (Claude Code) - reset password length
+
+`reset-password.html` says "At least 10 characters" but its inputs use `minlength="8"` (register uses 8 too).
+The server is the real check, so I left the attributes alone. Which minimum is right? If it is 10, the
+two pages' `minlength` should change to match. That is a validation change, so it needs your yes.
+
+## C3 (Claude Code) - kiosk status 401 in the console
+
+When the kiosk is locked, `/api/kiosk/status` returns 401 and the browser logs it as a console error.
+It is expected (the tablet is not unlocked yet) but it fails the "no console errors" bar. A 200 with
+`{ unlocked: false }` would fix it. That is an API change, so it is yours to decide.
