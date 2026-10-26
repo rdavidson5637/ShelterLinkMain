@@ -1,20 +1,13 @@
 import { API_URL, apiRequest } from '../config.js';
-import { requireAuth, checkAuth, logout, isStaffOrAdminRole, applyRoleVisibility} from '../auth.js';
+import { requireAuth, checkAuth, logout, isStaffOrAdminRole, applyRoleVisibility } from '../auth.js';
 import { formatDateOnly } from '../utils/dateFormat.js';
 import { createStatusBadge } from '../components/statusBadge.js';
-import { renderStatCards } from '../components/statCard.js';
+import { createDateBlock, createEmptyState, createRuledRow } from '../components/rows.js';
 import { mountInstallPrompt } from '../components/installPrompt.js';
 
 const logoutButton = document.getElementById('logoutButton');
 const statsGrid = document.getElementById('statsGrid');
-renderStatCards(statsGrid, [
-  { label: 'Total Volunteers', valueId: 'totalVolunteers', value: '-' },
-  { label: 'Approved Volunteers', valueId: 'approvedVolunteers', value: '-' },
-  { label: 'Pending Applications', valueId: 'pendingApplications', value: '-' },
-  { label: 'Active Opportunities', valueId: 'activeOpportunities', value: '-' },
-  { label: 'Hours This Month', valueId: 'hoursThisMonth', value: '-' },
-  { label: 'Total Hours All Time', valueId: 'totalHoursAllTime', value: '-' },
-]);
+const statsError = document.getElementById('statsError');
 const totalVolunteersEl = document.getElementById('totalVolunteers');
 const approvedVolunteersEl = document.getElementById('approvedVolunteers');
 const pendingApplicationsEl = document.getElementById('pendingApplications');
@@ -23,6 +16,7 @@ const hoursThisMonthEl = document.getElementById('hoursThisMonth');
 const totalHoursAllTimeEl = document.getElementById('totalHoursAllTime');
 const recentApplicationsTable = document.getElementById('recentApplicationsTable');
 const recentHoursTable = document.getElementById('recentHoursTable');
+const needsYouList = document.getElementById('needsYouList');
 const quickActionsContainer = document.getElementById('quickActions');
 const exportVolunteersButton = document.getElementById('exportVolunteersButton');
 const exportHoursButton = document.getElementById('exportHoursButton');
@@ -30,140 +24,124 @@ const hoursExportStartDate = document.getElementById('hoursExportStartDate');
 const hoursExportEndDate = document.getElementById('hoursExportEndDate');
 
 function formatNumber(num) {
-  if (num === null || num === undefined) return '-';
+  if (num === null || num === undefined || Number.isNaN(Number(num))) return '';
   return Number(num).toLocaleString();
+}
+
+function personName(row) {
+  return `${row.first_name || ''} ${row.last_name || ''}`.trim() || row.email || 'Volunteer';
+}
+
+function setFigure(el, value) {
+  if (el) el.textContent = formatNumber(value);
+}
+
+function showStatsError(failed) {
+  if (statsGrid) statsGrid.hidden = failed;
+  if (statsError) statsError.hidden = !failed;
 }
 
 async function loadStats() {
   try {
     const res = await apiRequest('/admin/stats', { method: 'GET' });
     if (!res.ok) {
-      console.error('[Dashboard] Failed to load stats');
-      return;
+      showStatsError(true);
+      return null;
     }
 
     const stats = await res.json();
-
-    // Update stat cards
-    if (totalVolunteersEl) {
-      totalVolunteersEl.textContent = formatNumber(stats.totalVolunteers);
-    }
-    if (approvedVolunteersEl) {
-      approvedVolunteersEl.textContent = formatNumber(stats.totalApprovedVolunteers);
-    }
-    if (pendingApplicationsEl) {
-      pendingApplicationsEl.textContent = formatNumber(stats.pendingApplications);
-    }
-    if (activeOpportunitiesEl) {
-      activeOpportunitiesEl.textContent = formatNumber(stats.activeOpportunities);
-    }
-    if (hoursThisMonthEl) {
-      hoursThisMonthEl.textContent = formatNumber(stats.totalHoursThisMonth);
-    }
-    if (totalHoursAllTimeEl) {
-      totalHoursAllTimeEl.textContent = formatNumber(stats.totalHoursAllTime);
-    }
+    showStatsError(false);
+    setFigure(totalVolunteersEl, stats.totalVolunteers);
+    setFigure(approvedVolunteersEl, stats.totalApprovedVolunteers);
+    setFigure(pendingApplicationsEl, stats.pendingApplications);
+    setFigure(activeOpportunitiesEl, stats.activeOpportunities);
+    setFigure(hoursThisMonthEl, stats.totalHoursThisMonth);
+    setFigure(totalHoursAllTimeEl, stats.totalHoursAllTime);
+    return stats;
   } catch (error) {
     console.error('[Dashboard] loadStats error:', error);
+    showStatsError(true);
+    return null;
   }
 }
 
+function fillList(host, rows, emptySentence, action) {
+  if (!host) return;
+  host.replaceChildren();
+  if (!rows.length) {
+    const item = document.createElement('li');
+    item.className = 'ruled-row';
+    item.appendChild(createEmptyState(emptySentence, action));
+    host.appendChild(item);
+    return;
+  }
+  rows.forEach((row) => host.appendChild(row));
+}
+
 async function loadRecentApplications() {
-  if (!recentApplicationsTable) return;
+  if (!recentApplicationsTable) return 0;
 
   try {
     const res = await apiRequest('/applications?limit=5', { method: 'GET' });
     if (!res.ok) {
-      recentApplicationsTable.innerHTML = '<tr><td colspan="4">Failed to load applications</td></tr>';
-      return;
+      fillList(recentApplicationsTable, [], 'Could not load applications.');
+      return 0;
     }
 
     const applications = await res.json();
-    const recent = applications.slice(0, 5);
-
-    if (!recent.length) {
-      recentApplicationsTable.innerHTML = '<tr><td colspan="4">No applications yet</td></tr>';
-      return;
-    }
-
-    recentApplicationsTable.innerHTML = '';
-
-    recent.forEach((app) => {
-      const tr = document.createElement('tr');
-      
-      const volunteerTd = document.createElement('td');
-      const fullName = `${app.first_name || ''} ${app.last_name || ''}`.trim() || app.email || 'N/A';
-      volunteerTd.textContent = fullName;
-
-      const opportunityTd = document.createElement('td');
-      opportunityTd.textContent = app.opportunity_title || 'N/A';
-
-      const dateTd = document.createElement('td');
-      dateTd.textContent = formatDateOnly(app.created_at) || 'N/A';
-
-      const statusTd = document.createElement('td');
-      statusTd.appendChild(createStatusBadge(app.status));
-
-      tr.appendChild(volunteerTd);
-      tr.appendChild(opportunityTd);
-      tr.appendChild(dateTd);
-      tr.appendChild(statusTd);
-
-      recentApplicationsTable.appendChild(tr);
-    });
+    const recent = Array.isArray(applications) ? applications.slice(0, 5) : [];
+    fillList(
+      recentApplicationsTable,
+      recent.map((app) => createRuledRow({
+        lead: createDateBlock(app.created_at),
+        title: personName(app),
+        titleHref: '/pages/admin/review-applications.html',
+        details: [app.opportunity_title || 'Opportunity', formatDateOnly(app.created_at) || ''],
+        end: [createStatusBadge(app.status)],
+      })),
+      'No applications yet.',
+      { href: '/pages/admin/opportunities.html', label: 'Open shifts' }
+    );
+    return recent.length;
   } catch (error) {
     console.error('[Dashboard] loadRecentApplications error:', error);
-    recentApplicationsTable.innerHTML = '<tr><td colspan="4">Error loading applications</td></tr>';
+    fillList(recentApplicationsTable, [], 'Could not load applications.');
+    return 0;
   }
 }
 
 async function loadRecentHours() {
-  if (!recentHoursTable) return;
+  if (!recentHoursTable) return 0;
 
   try {
     const res = await apiRequest('/hours/pending?limit=5', { method: 'GET' });
     if (!res.ok) {
-      recentHoursTable.innerHTML = '<tr><td colspan="4">Failed to load hours</td></tr>';
-      return;
+      fillList(recentHoursTable, [], 'Could not load hours.');
+      return 0;
     }
 
     const hours = await res.json();
-    // Reverse to get most recent first (since they're sorted ASC by created_at)
-    const recent = hours.slice(-5).reverse();
-
-    if (!recent.length) {
-      recentHoursTable.innerHTML = '<tr><td colspan="4">No recent hour submissions</td></tr>';
-      return;
-    }
-
-    recentHoursTable.innerHTML = '';
-
-    recent.forEach((entry) => {
-      const tr = document.createElement('tr');
-      
-      const volunteerTd = document.createElement('td');
-      const fullName = `${entry.first_name || ''} ${entry.last_name || ''}`.trim() || entry.email || 'N/A';
-      volunteerTd.textContent = fullName;
-
-      const opportunityTd = document.createElement('td');
-      opportunityTd.textContent = entry.opportunity_title || 'N/A';
-
-      const dateTd = document.createElement('td');
-      dateTd.textContent = formatDateOnly(entry.date || entry.created_at) || 'N/A';
-
-      const hoursTd = document.createElement('td');
-      hoursTd.textContent = entry.hours || 0;
-
-      tr.appendChild(volunteerTd);
-      tr.appendChild(opportunityTd);
-      tr.appendChild(dateTd);
-      tr.appendChild(hoursTd);
-
-      recentHoursTable.appendChild(tr);
-    });
+    const list = Array.isArray(hours) ? hours : [];
+    const recent = list.slice(-5).reverse();
+    fillList(
+      recentHoursTable,
+      recent.map((entry) => createRuledRow({
+        lead: createDateBlock(entry.date || entry.created_at),
+        title: personName(entry),
+        titleHref: '/pages/admin/approve-hours.html',
+        details: [
+          entry.opportunity_title || 'Opportunity',
+          `${entry.hours || 0} hours on ${formatDateOnly(entry.date || entry.created_at) || 'an unknown date'}`,
+        ],
+      })),
+      'No hour logs are waiting.',
+      { href: '/pages/admin/approve-hours.html', label: 'Approve hours' }
+    );
+    return list.length;
   } catch (error) {
     console.error('[Dashboard] loadRecentHours error:', error);
-    recentHoursTable.innerHTML = '<tr><td colspan="4">Error loading hours</td></tr>';
+    fillList(recentHoursTable, [], 'Could not load hours.');
+    return 0;
   }
 }
 
@@ -179,41 +157,81 @@ function checkTypeLabel(value) {
 
 async function loadExpiringChecks() {
   const host = document.getElementById('expiringChecks');
-  if (!host) return;
+  if (!host) return 0;
   try {
     const res = await apiRequest('/vetting/admin/expiring', { method: 'GET' });
     if (!res.ok) {
       host.replaceChildren();
-      const message = document.createElement('p');
-      message.textContent = 'Could not load expiring checks.';
-      host.appendChild(message);
-      return;
+      host.appendChild(createEmptyState('Could not load expiring checks.'));
+      return 0;
     }
     const rows = await res.json();
     host.replaceChildren();
     if (!Array.isArray(rows) || !rows.length) {
-      const message = document.createElement('p');
-      message.textContent = 'No clear checks expire in the next 60 days.';
-      host.appendChild(message);
-      return;
+      host.appendChild(createEmptyState('No clear checks expire in the next 60 days.'));
+      return 0;
     }
     const list = document.createElement('ul');
+    list.className = 'ruled-rows';
     rows.forEach((row) => {
-      const item = document.createElement('li');
-      const link = document.createElement('a');
-      const name = `${row.first_name || ''} ${row.last_name || ''}`.trim() || 'Volunteer';
-      link.href = `/pages/admin/volunteers.html?user=${encodeURIComponent(row.user_id)}`;
-      link.textContent = name;
-      item.appendChild(link);
-      const detail = document.createElement('span');
-      detail.textContent = ` · ${checkTypeLabel(row.check_type)} · ${row.status || 'clear'} · expires ${formatDateOnly(row.expires_on) || 'unknown'}`;
-      item.appendChild(detail);
-      list.appendChild(item);
+      list.appendChild(createRuledRow({
+        lead: createDateBlock(row.expires_on),
+        title: personName(row),
+        titleHref: `/pages/admin/volunteers.html?user=${encodeURIComponent(row.user_id)}`,
+        details: [
+          `${checkTypeLabel(row.check_type)}, ${row.status || 'clear'}`,
+          `Expires ${formatDateOnly(row.expires_on) || 'on an unknown date'}`,
+        ],
+        needsYou: true,
+      }));
     });
     host.appendChild(list);
+    return rows.length;
   } catch (error) {
     console.error('[Dashboard] loadExpiringChecks error:', error);
+    return 0;
   }
+}
+
+function renderNeedsYou({ pending, hoursWaiting, checks }) {
+  if (!needsYouList) return;
+  const items = [];
+  if (pending > 0) {
+    const noun = pending === 1 ? 'application is' : 'applications are';
+    items.push(createRuledRow({
+      title: `${pending} ${noun} waiting`,
+      titleHref: '/pages/admin/review-applications.html',
+      details: ['Review who has applied.'],
+      needsYou: true,
+    }));
+  }
+  if (hoursWaiting > 0) {
+    const noun = hoursWaiting === 1 ? 'hour log needs' : 'hour logs need';
+    items.push(createRuledRow({
+      title: `${hoursWaiting} ${noun} approval`,
+      titleHref: '/pages/admin/approve-hours.html',
+      details: ['Check the hours before they are counted.'],
+      needsYou: true,
+    }));
+  }
+  if (checks > 0) {
+    const noun = checks === 1 ? 'check expires' : 'checks expire';
+    items.push(createRuledRow({
+      title: `${checks} ${noun} in the next 60 days`,
+      titleHref: '#expiringChecksHeading',
+      details: ['Look at the list on this page.'],
+      needsYou: true,
+    }));
+  }
+  needsYouList.replaceChildren();
+  if (!items.length) {
+    const item = document.createElement('li');
+    item.className = 'ruled-row';
+    item.appendChild(createEmptyState('Nothing needs you right now.'));
+    needsYouList.appendChild(item);
+    return;
+  }
+  items.forEach((item) => needsYouList.appendChild(item));
 }
 
 async function enforceAdmin() {
@@ -228,8 +246,7 @@ async function enforceAdmin() {
 
 function attachQuickActionHandlers() {
   if (!quickActionsContainer) return;
-  const links = quickActionsContainer.querySelectorAll('a[role="button"]');
-  links.forEach((link) => {
+  quickActionsContainer.querySelectorAll('a').forEach((link) => {
     link.addEventListener('click', (event) => {
       event.preventDefault();
       if (link.href) {
@@ -274,21 +291,31 @@ async function init() {
     });
   }
 
-  // Attach handlers
   attachQuickActionHandlers();
   attachExportHandlers();
 
-  // Load all data initially
-  await Promise.all([
+  const [stats, , hoursWaiting, checks] = await Promise.all([
     loadStats(),
     loadRecentApplications(),
     loadRecentHours(),
     loadExpiringChecks(),
   ]);
 
-  // Optionally auto-refresh stats every 60 seconds
-  setInterval(loadStats, 60000);
+  renderNeedsYou({
+    pending: Number(stats?.pendingApplications) || 0,
+    hoursWaiting,
+    checks,
+  });
+
+  setInterval(async () => {
+    const next = await loadStats();
+    if (!next) return;
+    renderNeedsYou({
+      pending: Number(next.pendingApplications) || 0,
+      hoursWaiting,
+      checks,
+    });
+  }, 60000);
 }
 
 document.addEventListener('DOMContentLoaded', init);
-

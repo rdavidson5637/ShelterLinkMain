@@ -39,7 +39,7 @@ function renderAnimal(a) {
     ? `<img class="animal-thumb" src="/api/animals/${Number(a.id)}/photo" alt="" width="48" height="48" />`
     : '';
   const handling = a.handling_notes
-    ? ` — <span class="handling-warn">${escapeHtml(a.handling_notes)}</span>`
+    ? `: <span class="handling-warn">${escapeHtml(a.handling_notes)}</span>`
     : '';
   return `<li class="day-sheet-animal">${photo}<span><strong>${escapeHtml(a.name)}</strong> (${escapeHtml(a.species)})${
     a.kennel_ref ? ` · ${escapeHtml(a.kennel_ref)}` : ''

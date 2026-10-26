@@ -14,6 +14,7 @@
     <title>Admin dashboard - ShelterLink</title>
     <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" />
     <link rel="stylesheet" href="/public/css/custom.css" />
+    <link rel="stylesheet" href="/public/css/admin.css" />
     <!-- preload:start -->
     <link rel="preload" href="/public/fonts/atkinson-hyperlegible-next-400.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/public/fonts/young-serif-400.woff2" as="font" type="font/woff2" crossorigin>
@@ -27,7 +28,7 @@
     <link rel="modulepreload" href="/js/components/icons.js">
     <link rel="modulepreload" href="/js/components/installPrompt.js">
     <link rel="modulepreload" href="/js/components/navConfig.js">
-    <link rel="modulepreload" href="/js/components/statCard.js">
+    <link rel="modulepreload" href="/js/components/rows.js">
     <link rel="modulepreload" href="/js/components/statusBadge.js">
     <link rel="modulepreload" href="/js/components/statusBanner.js">
     <link rel="modulepreload" href="/js/config.js">
@@ -59,110 +60,104 @@
       <aside id="admin-nav" class="sidebar-nav"></aside>
 
       <div class="dashboard-main">
-        <section>
-          <h1>Admin Dashboard</h1>
-        </section>
+        <h1 data-shelter-title="Today at {name}">Today</h1>
 
-        <section>
-          <div class="stats-grid" id="statsGrid"></div>
-        </section>
-
-        <section>
-          <div class="grid" style="grid-template-columns: 1fr 1fr;">
-            <article>
-              <header>
-                <h3>Recent Applications</h3>
-              </header>
-              <div class="table-wrapper">
-                <table>
-            <caption>Recent applications</caption>
-                  <thead>
-                    <tr>
-                      <th scope="col">Volunteer</th>
-                      <th scope="col">Opportunity</th>
-                      <th scope="col">Date</th>
-                      <th scope="col">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody id="recentApplicationsTable">
-                    <tr><td colspan="4">Loading...</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </article>
-            <article>
-              <header>
-                <h3>Recent Hour Submissions</h3>
-              </header>
-              <div class="table-wrapper">
-                <table>
-            <caption>Recent hour submissions</caption>
-                  <thead>
-                    <tr>
-                      <th scope="col">Volunteer</th>
-                      <th scope="col">Opportunity</th>
-                      <th scope="col">Date</th>
-                      <th scope="col">Hours</th>
-                    </tr>
-                  </thead>
-                  <tbody id="recentHoursTable">
-                    <tr><td colspan="4">Loading...</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <section data-admin-only>
-          <article>
-            <header>
-              <h3>Export Reports</h3>
-            </header>
-            <div class="grid" style="grid-template-columns: 1fr 1fr;">
-              <div>
-                <button id="exportVolunteersButton">Export All Volunteers</button>
-              </div>
-              <div>
-                <button id="exportHoursButton" class="secondary">Export All Hours</button>
-              </div>
-            </div>
-            <div class="grid" style="grid-template-columns: 1fr 1fr; margin-top: 0.75rem;">
-              <label for="hoursExportStartDate">
-                Start Date
-                <input type="date" id="hoursExportStartDate" name="hoursExportStartDate" />
-              </label>
-              <label for="hoursExportEndDate">
-                End Date
-                <input type="date" id="hoursExportEndDate" name="hoursExportEndDate" />
-              </label>
-            </div>
-          </article>
-        </section>
-
-        <section aria-labelledby="expiringChecksHeading">
-          <h2 id="expiringChecksHeading">Checks expiring in the next 60 days</h2>
-          <div id="expiringChecks"><p>Loading...</p></div>
-        </section>
-
-        <section>
-          <header>
-            <h2>Quick Actions</h2>
+        <section class="ruled-panel needs-you" aria-labelledby="needsYouTitle">
+          <header class="ruled-panel-head">
+            <h2 id="needsYouTitle">Needs you</h2>
           </header>
-          <div id="quickActions" style="display: flex; gap: 1rem; flex-wrap: wrap;">
-            <a href="/pages/admin/day-sheet.html" role="button" class="contrast">Today's day sheet</a>
-            <a href="/pages/admin/week-sheet.html" role="button" class="contrast">This week sheet</a>
-            <a href="/pages/admin/staff-guide.html" role="button" class="contrast">Morning staff guide</a>
-            <a href="/pages/admin/opportunities.html" role="button" class="contrast">Manage Opportunities</a>
-            <a href="/pages/admin/create-opportunity.html" role="button" class="contrast">Create Opportunity</a>
-            <a href="/pages/admin/review-applications.html" role="button" class="contrast">Review Applications</a>
-            <a href="/pages/admin/approve-hours.html" role="button" class="contrast">Approve Hours</a>
-            <a href="/pages/admin/volunteers.html" role="button" class="contrast">Manage Volunteers</a>
-            <a data-admin-only href="/pages/admin/reports.html" role="button" class="contrast">Open Reports</a>
-            <a data-admin-only href="/pages/admin/audit-log.html" role="button" class="contrast">Audit Log</a>
-            <a data-admin-only href="/pages/admin/privacy.html" role="button" class="contrast">Privacy / GDPR</a>
-          </div>
+          <ul class="ruled-rows" id="needsYouList">
+            <li class="ruled-row is-loading" aria-hidden="true">
+              <span class="ruled-row-main"><span class="skeleton"></span><span class="skeleton skeleton-detail"></span></span>
+            </li>
+          </ul>
         </section>
+
+        <p class="figures-strip" id="statsGrid">
+          <a href="/pages/admin/volunteers.html"><strong id="totalVolunteers"><span class="skeleton skeleton-figure" aria-hidden="true"></span></strong> volunteers</a>
+          <a href="/pages/admin/volunteers.html"><strong id="approvedVolunteers"><span class="skeleton skeleton-figure" aria-hidden="true"></span></strong> approved</a>
+          <a href="/pages/admin/review-applications.html"><strong id="pendingApplications"><span class="skeleton skeleton-figure" aria-hidden="true"></span></strong> applications waiting</a>
+          <a href="/pages/admin/opportunities.html"><strong id="activeOpportunities"><span class="skeleton skeleton-figure" aria-hidden="true"></span></strong> open shifts</a>
+          <a href="/pages/admin/approve-hours.html"><strong id="hoursThisMonth"><span class="skeleton skeleton-figure" aria-hidden="true"></span></strong> hours this month</a>
+          <a href="/pages/admin/reports.html"><strong id="totalHoursAllTime"><span class="skeleton skeleton-figure" aria-hidden="true"></span></strong> hours logged</a>
+        </p>
+        <p id="statsError" role="status" hidden>Could not load today's figures.</p>
+
+        <div class="dash">
+          <div class="dash-main">
+            <section class="ruled-panel" aria-labelledby="recentApplicationsHeading">
+              <header class="ruled-panel-head">
+                <h2 id="recentApplicationsHeading">Recent applications</h2>
+                <a href="/pages/admin/review-applications.html">Review</a>
+              </header>
+              <ul class="ruled-rows" id="recentApplicationsTable">
+                <li class="ruled-row is-loading" aria-hidden="true"><span class="ruled-row-main"><span class="skeleton"></span></span></li>
+              </ul>
+            </section>
+
+            <section class="ruled-panel" aria-labelledby="recentHoursHeading">
+              <header class="ruled-panel-head">
+                <h2 id="recentHoursHeading">Hours to approve</h2>
+                <a href="/pages/admin/approve-hours.html">Approve</a>
+              </header>
+              <ul class="ruled-rows" id="recentHoursTable">
+                <li class="ruled-row is-loading" aria-hidden="true"><span class="ruled-row-main"><span class="skeleton"></span></span></li>
+              </ul>
+            </section>
+          </div>
+
+          <aside class="dash-side" aria-label="Today">
+            <section class="ruled-panel" aria-labelledby="expiringChecksHeading">
+              <header class="ruled-panel-head">
+                <h2 id="expiringChecksHeading">Checks expiring in 60 days</h2>
+              </header>
+              <div class="ruled-panel-body" id="expiringChecks">
+                <p class="skeleton" aria-hidden="true"></p>
+              </div>
+            </section>
+
+            <section class="ruled-panel" data-admin-only aria-labelledby="exportHeading">
+              <header class="ruled-panel-head">
+                <h2 id="exportHeading">Export</h2>
+              </header>
+              <div class="ruled-panel-body">
+                <div class="admin-actions">
+                  <button id="exportVolunteersButton" type="button">Export volunteers</button>
+                  <button id="exportHoursButton" class="secondary" type="button">Export hours</button>
+                </div>
+                <div class="admin-export-dates">
+                  <label for="hoursExportStartDate">
+                    Start date
+                    <input type="date" id="hoursExportStartDate" name="hoursExportStartDate" />
+                  </label>
+                  <label for="hoursExportEndDate">
+                    End date
+                    <input type="date" id="hoursExportEndDate" name="hoursExportEndDate" />
+                  </label>
+                </div>
+              </div>
+            </section>
+
+            <section class="ruled-panel" aria-labelledby="quickActionsHeading">
+              <header class="ruled-panel-head">
+                <h2 id="quickActionsHeading">Next</h2>
+              </header>
+              <div class="ruled-panel-body admin-actions" id="quickActions">
+                <a href="/pages/admin/day-sheet.html">Today's day sheet</a>
+                <a href="/pages/admin/week-sheet.html">This week's sheet</a>
+                <a href="/pages/admin/staff-guide.html">Morning staff guide</a>
+                <a href="/pages/admin/opportunities.html">Opportunities</a>
+                <a href="/pages/admin/create-opportunity.html">New opportunity</a>
+                <a href="/pages/admin/review-applications.html">Review applications</a>
+                <a href="/pages/admin/approve-hours.html">Approve hours</a>
+                <a href="/pages/admin/volunteers.html">Volunteers</a>
+                <a data-admin-only href="/pages/admin/reports.html">Reports</a>
+                <a data-admin-only href="/pages/admin/audit-log.html">Audit log</a>
+                <a data-admin-only href="/pages/admin/privacy.html">Privacy</a>
+              </div>
+            </section>
+          </aside>
+        </div>
       </div>
     </main>
 

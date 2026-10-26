@@ -1,0 +1,168 @@
+/*
+ * Admin pages only. Shared colour, type and ruled-row rules stay in custom.css.
+ * Linked from admin HTML, not from public or volunteer pages.
+ */
+
+.sheet-toolbar,
+.day-sheet-toolbar,
+.week-sheet-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: end;
+  margin-bottom: var(--section-gap);
+}
+
+.day-sheet-shift {
+  break-inside: avoid;
+  page-break-inside: avoid;
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--rule);
+}
+
+.day-sheet-shift h2 {
+  margin-bottom: var(--space-1);
+}
+
+.day-sheet-meta,
+.week-sheet-meta {
+  color: var(--ink-2);
+  margin-bottom: var(--space-2);
+}
+
+.day-sheet-notes {
+  min-height: 4.5rem;
+  margin-top: var(--space-2);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  background: repeating-linear-gradient(
+    transparent,
+    transparent 1.35rem,
+    var(--rule) 1.35rem,
+    var(--rule) calc(1.35rem + 1px)
+  );
+}
+
+.handling-warn {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.day-sheet-animals,
+.week-sheet-animals {
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.day-sheet-animals {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.week-sheet-animals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.day-sheet-animal,
+.week-sheet-animals li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.animal-thumb {
+  flex-shrink: 0;
+  width: 3rem;
+  height: 3rem;
+  object-fit: cover;
+  border-radius: var(--radius);
+}
+
+.week-sheet-animals .animal-thumb {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.week-sheet-day {
+  margin-bottom: var(--space-4);
+}
+
+.week-sheet-day h2 {
+  margin-bottom: var(--space-2);
+  padding-bottom: var(--space-1);
+  border-bottom: 1px solid var(--rule);
+}
+
+.week-sheet-shift {
+  break-inside: avoid;
+  page-break-inside: avoid;
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px dashed var(--rule);
+}
+
+.week-sheet-shift:last-child {
+  border-bottom: none;
+}
+
+.admin-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+
+.admin-actions a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+}
+
+.admin-export-dates {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+@media print {
+  .site-header,
+  .sidebar-nav,
+  .day-sheet-toolbar,
+  .week-sheet-toolbar,
+  .nav-toggle,
+  #logoutButton,
+  footer,
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white;
+  }
+
+  main.container,
+  .dashboard-layout,
+  .dashboard-main {
+    display: block;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .day-sheet-shift,
+  .week-sheet-day {
+    border: none;
+    page-break-after: always;
+  }
+
+  .day-sheet-shift:last-child,
+  .week-sheet-day:last-child {
+    page-break-after: auto;
+  }
+}
