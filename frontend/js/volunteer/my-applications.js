@@ -19,17 +19,8 @@ function setMessage(text) {
 
 function showToast(message, type = 'success') {
   const toast = document.createElement('div');
-  toast.style.cssText = `
-    position: fixed;
-    top: 1rem;
-    right: 1rem;
-    padding: 1rem;
-    background: ${type === 'success' ? 'var(--green)' : 'var(--danger)'};
-    color: ${type === 'success' ? 'var(--on-primary)' : 'var(--on-danger)'};
-    border-radius: 4px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    z-index: 10000;
-  `;
+  toast.className = type === 'success' ? 'toast' : 'toast toast--error';
+  toast.setAttribute('role', type === 'success' ? 'status' : 'alert');
   toast.textContent = message;
   document.body.appendChild(toast);
   setTimeout(() => document.body.removeChild(toast), 3000);
@@ -57,25 +48,24 @@ async function loadAnimalsForApplication(app, container) {
 
   container.innerHTML = '';
   const heading = document.createElement('p');
-  heading.style.fontWeight = '600';
+  heading.className = 'app-card-subhead';
   heading.textContent = 'Animals on this shift';
   container.appendChild(heading);
 
   animals.forEach((animal) => {
     const block = document.createElement('div');
-    block.style.cssText =
-      'margin:0.5rem 0;padding:0.65rem 0.85rem;border:1px solid var(--border-color,#ddd);border-radius:6px;';
+    block.className = 'app-card-animal';
     const title = document.createElement('strong');
     title.textContent = animal.name;
     block.appendChild(title);
     if (animal.handling_notes) {
       const notes = document.createElement('p');
-      notes.style.cssText = 'margin:0.35rem 0;font-size:0.9rem;';
+      notes.className = 'small-note';
       notes.textContent = `Handling: ${animal.handling_notes}`;
       block.appendChild(notes);
     }
     const actions = document.createElement('div');
-    actions.style.cssText = 'display:flex;flex-wrap:wrap;gap:0.35rem;margin-top:0.35rem;';
+    actions.className = 'actions';
     ['walk', 'feed', 'socialise'].forEach((type) => {
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -122,15 +112,14 @@ async function loadShiftNotesForApplication(app, container) {
   }
   container.innerHTML = '';
   const heading = document.createElement('p');
-  heading.style.fontWeight = '600';
+  heading.className = 'app-card-subhead';
   heading.textContent = 'Shift notes';
   container.appendChild(heading);
   notes.forEach((note) => {
     const block = document.createElement('div');
     block.className = 'strip';
     const meta = document.createElement('small');
-    meta.style.display = 'block';
-    meta.style.color = 'var(--text-muted)';
+    meta.className = 'muted';
     const when = note.created_at
       ? new Date(note.created_at).toLocaleString('en-GB', {
           day: 'numeric',
@@ -141,7 +130,7 @@ async function loadShiftNotesForApplication(app, container) {
       : '';
     meta.textContent = `${note.author_name || 'Staff'}${when ? ` · ${when}` : ''}`;
     const body = document.createElement('p');
-    body.style.margin = '0.25rem 0 0';
+    body.className = 'strip-body';
     body.textContent = note.body;
     block.appendChild(meta);
     block.appendChild(body);
@@ -171,15 +160,14 @@ function renderApplications() {
 
   filtered.forEach((app) => {
     const card = document.createElement('article');
+    card.className = 'app-card';
     card.dataset.applicationId = app.id;
 
     const header = document.createElement('div');
-    header.style.display = 'flex';
-    header.style.justifyContent = 'space-between';
-    header.style.alignItems = 'center';
+    header.className = 'app-card-head';
 
     const title = document.createElement('h3');
-    title.textContent = app.opportunity_title || 'Volunteer Opportunity';
+    title.textContent = app.opportunity_title || 'Volunteer shift';
 
     const badge = createStatusBadgeForApp(app.status, app.waitlist_position);
 
@@ -187,13 +175,12 @@ function renderApplications() {
     header.appendChild(badge);
 
     const meta = document.createElement('p');
-    const location = app.opportunity_location || 'Location TBA';
+    const location = app.opportunity_location || 'location to be confirmed';
     const dates = formatShiftWhen(app.opportunity_start_date, app.opportunity_end_date);
-    meta.textContent = `${location}${dates ? ` • ${dates}` : ''}`;
+    meta.textContent = dates ? `${dates}, ${location}` : location;
 
     const appliedAt = document.createElement('p');
-    appliedAt.style.fontSize = '0.875rem';
-    appliedAt.style.color = 'var(--text-muted)';
+    appliedAt.className = 'small-note muted';
     appliedAt.textContent = `Applied ${formatDateOnly(app.created_at)}`;
 
     card.appendChild(header);
@@ -208,7 +195,7 @@ function renderApplications() {
     const today = new Date().toISOString().slice(0, 10);
     if (isAccepted && startDay && startDay === today) {
       const checkInWrap = document.createElement('div');
-      checkInWrap.style.cssText = 'margin-top:0.75rem;display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;';
+      checkInWrap.className = 'actions app-card-section';
 
       if (!app.checked_in_at) {
         const codeInput = document.createElement('input');
@@ -243,7 +230,8 @@ function renderApplications() {
       } else if (!app.checked_out_at) {
         const checked = document.createElement('span');
         checked.textContent = 'Checked in';
-        checked.style.color = '#0f9d58';
+        checked.className = 'status-label';
+        checked.dataset.tone = 'ok';
         const codeInput = document.createElement('input');
         codeInput.type = 'text';
         codeInput.maxLength = 6;
@@ -264,7 +252,7 @@ function renderApplications() {
               showToast(err?.error || 'Check-out failed', 'error');
               return;
             }
-            showToast('Checked out — hours submitted for approval');
+            showToast('Checked out. Your hours are with staff to approve.');
             await fetchApplications();
           } catch (e) {
             showToast('Check-out failed', 'error');
@@ -276,7 +264,8 @@ function renderApplications() {
       } else {
         const done = document.createElement('span');
         done.textContent = 'Checked out';
-        done.style.color = '#0f9d58';
+        done.className = 'status-label';
+        done.dataset.tone = 'ok';
         checkInWrap.appendChild(done);
       }
       card.appendChild(checkInWrap);
@@ -284,9 +273,9 @@ function renderApplications() {
 
     if (isAccepted) {
       const animalWrap = document.createElement('div');
-      animalWrap.style.cssText = 'margin-top:0.75rem;';
+      animalWrap.className = 'app-card-section';
       animalWrap.dataset.animalSlot = '1';
-      animalWrap.innerHTML = '<p style="font-size:0.875rem;color:var(--text-muted)">Loading animals…</p>';
+      animalWrap.innerHTML = '<span class="skeleton" aria-hidden="true"></span>';
       card.appendChild(animalWrap);
       loadAnimalsForApplication(app, animalWrap).catch(() => {
         animalWrap.innerHTML = '';
@@ -296,7 +285,6 @@ function renderApplications() {
       chatBtn.type = 'button';
       chatBtn.className = 'secondary';
       chatBtn.textContent = 'Open shift chat';
-      chatBtn.style.marginTop = '0.5rem';
       chatBtn.addEventListener('click', async () => {
         try {
           const { openShiftChat, messagesPageHref } = await import('../components/threadsUi.js');
@@ -313,9 +301,8 @@ function renderApplications() {
 
     if (isAccepted) {
       const notesWrap = document.createElement('div');
-      notesWrap.style.cssText = 'margin-top:0.75rem;';
-      notesWrap.innerHTML =
-        '<p style="font-size:0.875rem;color:var(--text-muted)">Loading shift notes…</p>';
+      notesWrap.className = 'app-card-section';
+      notesWrap.innerHTML = '<span class="skeleton" aria-hidden="true"></span>';
       card.appendChild(notesWrap);
       loadShiftNotesForApplication(app, notesWrap).catch(() => {
         notesWrap.innerHTML = '';
@@ -325,14 +312,7 @@ function renderApplications() {
     // Show rejection reason if present
     if (statusLower === 'rejected' && app.rejection_reason) {
       const reasonBox = document.createElement('div');
-      reasonBox.style.cssText = `
-        margin-top: 0.75rem;
-        padding: 0.65rem 0.85rem;
-        background: var(--danger-tint);
-        border-left: 3px solid var(--danger);
-        border-radius: 4px;
-        font-size: 0.9rem;
-      `;
+      reasonBox.className = 'error-message app-card-section';
       const reasonLabel = document.createElement('strong');
       reasonLabel.textContent = 'Reason: ';
       const reasonText = document.createTextNode(app.rejection_reason);
@@ -344,7 +324,7 @@ function renderApplications() {
     // General notes (non-rejection)
     if (app.notes && statusLower !== 'rejected') {
       const notes = document.createElement('p');
-      notes.style.fontSize = '0.9rem';
+      notes.className = 'small-note';
       notes.textContent = `Notes: ${app.notes}`;
       card.appendChild(notes);
     }
@@ -367,9 +347,8 @@ function renderApplications() {
     if (canCancel) {
       const cancelBtn = document.createElement('button');
       cancelBtn.type = 'button';
-      cancelBtn.className = 'secondary button-secondary';
-      cancelBtn.textContent = 'Cancel Application';
-      cancelBtn.style.cssText = 'border: 2px solid #ff9800; color: #e65100; margin-top: 0.5rem;';
+      cancelBtn.className = 'danger';
+      cancelBtn.textContent = 'Cancel application';
       cancelBtn.addEventListener('click', () => {
         showConfirm({
           heading: 'Cancel this application?',
@@ -402,15 +381,14 @@ function renderApplications() {
     if (isAccepted && isWithinCutoff(app) && !app.open_swap_id) {
       const swapBtn = document.createElement('button');
       swapBtn.type = 'button';
-      swapBtn.className = 'secondary button-secondary';
-      swapBtn.textContent = 'Request swap';
-      swapBtn.style.cssText = 'border: 2px solid #1565c0; color: #0d47a1; margin-top: 0.5rem; margin-left: 0.5rem;';
+      swapBtn.className = 'secondary';
+      swapBtn.textContent = 'Ask someone to cover';
       swapBtn.addEventListener('click', () => {
         showConfirm({
           heading: 'Request a shift swap?',
           body: 'Other qualifying volunteers will be offered the chance to cover this shift. Inside the cancellation window you cannot cancel directly.',
-          confirmText: 'Request Swap',
-          cancelText: 'Keep Shift',
+          confirmText: 'Ask for cover',
+          cancelText: 'Keep shift',
           onConfirm: async () => {
             try {
               const res = await apiRequest(`/applications/${app.id}/swap`, { method: 'POST' });
@@ -433,8 +411,9 @@ function renderApplications() {
       card.appendChild(swapBtn);
     } else if (isAccepted && app.open_swap_id) {
       const swapNote = document.createElement('p');
-      swapNote.style.cssText = 'margin-top:0.5rem;font-size:0.9rem;color:#1565c0;';
-      swapNote.textContent = 'Swap request open — waiting for cover.';
+      swapNote.className = 'status-label';
+      swapNote.dataset.tone = 'pending';
+      swapNote.textContent = 'Waiting for someone to cover';
       card.appendChild(swapNote);
     }
 
@@ -443,7 +422,6 @@ function renderApplications() {
       calLink.href = `/api/applications/${app.id}/ics`;
       calLink.textContent = 'Add to calendar';
       calLink.className = 'secondary';
-      calLink.style.cssText = 'display:inline-block;margin-top:0.5rem;margin-left:0.5rem;';
       card.appendChild(calLink);
     }
 
@@ -468,7 +446,7 @@ function attachFilterHandlers() {
 
 async function fetchApplications() {
   if (!applicationsContainer) return;
-  setMessage('Loading applications...');
+  setMessage('Loading your applications');
   try {
     const res = await apiRequest('/applications/my-applications', { method: 'GET' });
     if (!res.ok) {

@@ -59,7 +59,7 @@ function populateOpportunityFilter(hours) {
   ).sort((a, b) => a.title.localeCompare(b.title));
 
   const currentValue = filterOpportunity.value;
-  filterOpportunity.innerHTML = '<option value="">All Opportunities</option>';
+  filterOpportunity.innerHTML = '<option value="">All shifts</option>';
 
   uniqueOpportunities.forEach((opp) => {
     const option = document.createElement('option');

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0f766e" />
+    <meta name="theme-color" content="#1F5C45" />
     <link rel="manifest" href="/public/manifest.webmanifest" />
     <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
     <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
@@ -15,64 +15,6 @@
     <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" />
     <link rel="stylesheet" href="/public/css/custom.css" />
     <link rel="stylesheet" href="/public/css/opportunity-modal.css" />
-    <style>
-      .calendar-banner {
-        background: var(--green-tint);
-        border: 1px solid var(--green-tint-border);
-        border-radius: var(--radius-card);
-        padding: 1rem 1.5rem;
-        margin-bottom: 1.25rem;
-        font-size: 1.1rem;
-        font-weight: 500;
-        color: var(--green);
-      }
-      .calendar-view-toggles {
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-        margin-bottom: 1rem;
-      }
-      .calendar-view-toggles button {
-        margin: 0;
-      }
-      .calendar-wrapper {
-        background: var(--surface);
-        border-radius: var(--radius-card);
-        padding: 1.25rem;
-        border: 1px solid var(--border);
-      }
-      .fc-daygrid-day,
-      .fc-daygrid-day-frame,
-      .fc td,
-      .fc th,
-      .fc table {
-        background: transparent !important;
-        color: var(--text) !important;
-      }
-      .fc {
-        font-size: 1rem;
-      }
-      .fc-event {
-        font-size: 0.85rem;
-        padding: 0.2em 0.4em;
-        cursor: pointer;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      .fc-event-title {
-        font-weight: 600;
-      }
-      .fc-daygrid-event-dot {
-        display: none;
-      }
-      .calendar-empty-state {
-        text-align: center;
-        padding: 4rem 2rem;
-        font-size: 1.5rem;
-        color: var(--text-muted);
-      }
-    </style>
     <!-- preload:start -->
     <link rel="preload" href="/public/fonts/atkinson-hyperlegible-next-400.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/public/fonts/young-serif-400.woff2" as="font" type="font/woff2" crossorigin>
@@ -105,15 +47,14 @@
           <span class="brand-mark" aria-hidden="true"></span>
           <strong>ShelterLink</strong>
         </a>
-        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">Menu</button>
         <ul class="nav-menu" id="navMenu" data-volunteer-nav></ul>
-        <button id="logoutButton" class="secondary">Logout</button>
+        <button id="logoutButton" class="secondary">Sign out</button>
       </nav>
     </header>
 
     <main class="container">
       <section>
-        <h1>Shift Calendar</h1>
+        <h1>Your calendar</h1>
         <p>View available shifts at a glance. Click an open shift to apply.</p>
       </section>
 
@@ -124,7 +65,7 @@
       <div class="calendar-view-toggles">
         <button id="viewMonthButton">Month</button>
         <button id="viewWeekButton" class="secondary">Week</button>
-        <button id="viewListButton" class="secondary">Switch to List View</button>
+        <button id="viewListButton" class="secondary">List</button>
       </div>
 
       <div class="calendar-wrapper">

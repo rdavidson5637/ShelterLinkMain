@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0f766e" />
+    <meta name="theme-color" content="#1F5C45" />
     <link rel="manifest" href="/public/manifest.webmanifest" />
     <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
     <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
@@ -50,15 +50,14 @@
           <span class="brand-mark" aria-hidden="true"></span>
           <strong>ShelterLink</strong>
         </a>
-        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">Menu</button>
         <ul class="nav-menu" id="navMenu" data-volunteer-nav></ul>
-        <button id="logoutButton" class="secondary">Logout</button>
+        <button id="logoutButton" class="secondary">Sign out</button>
       </nav>
     </header>
 
     <main class="container">
-      <article style="max-width: 720px; margin: 0 auto;">
-        <h1>Complete Your Volunteer Profile</h1>
+      <article class="form-page">
+        <h1>Your volunteer profile</h1>
         <p>Provide your availability and emergency contact details to get started.</p>
 
         <div id="message" role="status" aria-live="polite"></div>
@@ -117,18 +116,18 @@
                 <input type="date" id="away_until" name="away_until" />
               </label>
               <small>While away, you will not receive shift reminders, match digests, urgent cover emails, or message digests. Clear the date when you are back.</small>
-              <p style="margin-top:0.5rem;">
+              <p class="field-follow">
                 <button type="button" id="saveAwayButton" class="secondary" hidden>Save away mode</button>
               </p>
             </div>
 
             <div class="form-section form-full-width">
               <fieldset>
-                <legend>Interest tags</legend>
+                <legend>What you are interested in</legend>
                 <div id="interestTags" class="tag-chips"></div>
                 <small id="interestTagsHint">Select areas you care about. We will recommend matching shifts.</small>
               </fieldset>
-              <p style="margin-top:0.5rem;">
+              <p class="field-follow">
                 <button type="button" id="saveInterestsButton" class="secondary" hidden>Save interests</button>
               </p>
             </div>
@@ -136,7 +135,7 @@
             <div class="form-section form-full-width" id="fosterHomeSection">
               <fieldset>
                 <legend>Foster home suitability</legend>
-                <p><small>Optional — complete these if you are interested in fostering. Staff must approve you as a foster carer separately.</small></p>
+                <p><small>Optional. Fill these in if you are interested in fostering. Staff must approve you as a foster carer separately.</small></p>
                 <label for="home_type">
                   Home type
                   <select id="home_type" name="home_type">
@@ -166,7 +165,7 @@
                   <textarea id="foster_notes" name="foster_notes" rows="2" placeholder="Anything else about your home setup"></textarea>
                 </label>
               </fieldset>
-              <p style="margin-top:0.5rem;">
+              <p class="field-follow">
                 <button type="button" id="saveFosterButton" class="secondary" hidden>Save foster home details</button>
               </p>
             </div>
@@ -180,12 +179,12 @@
                 <label><input type="checkbox" id="prefer_threads" name="prefer_threads" value="1" /> Message thread alerts</label>
                 <label><input type="checkbox" id="prefer_fosters" name="prefer_fosters" value="1" /> Foster match alerts</label>
                 <div id="pushToggle"></div>
-                <p style="margin-top:0.5rem;">
-                  <button type="button" id="savePrefsButton" class="secondary">Save notification prefs</button>
+                <p class="field-follow">
+                  <button type="button" id="savePrefsButton" class="secondary">Save notification choices</button>
                 </p>
                 <p id="pushStatus" class="secondary" role="status"></p>
               </fieldset>
-              <p style="margin-top:1rem;">
+              <p class="form-actions">
                 <button type="button" id="logoutAllButton" class="secondary">Sign out of all devices</button>
               </p>
             </div>
@@ -193,7 +192,7 @@
 
           <div id="customFieldsContainer" class="form-grid" hidden></div>
 
-          <button type="submit" id="submitButton">Complete Profile</button>
+          <button type="submit" id="submitButton">Save profile</button>
         </form>
       </article>
     </main>

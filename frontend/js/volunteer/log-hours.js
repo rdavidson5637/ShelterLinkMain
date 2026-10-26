@@ -170,7 +170,7 @@ async function handleSubmit(event) {
 
       showFormErrors(logHoursForm, [{ message: errorMessage }]);
       submitButton.disabled = false;
-      submitButton.textContent = 'Log Hours';
+      submitButton.textContent = 'Log hours';
       return;
     }
 
@@ -182,7 +182,7 @@ async function handleSubmit(event) {
     showFormErrors(logHoursForm, [{ message: 'Network error while logging hours' }]);
   } finally {
     submitButton.disabled = false;
-    submitButton.textContent = 'Log Hours';
+    submitButton.textContent = 'Log hours';
   }
 }
 

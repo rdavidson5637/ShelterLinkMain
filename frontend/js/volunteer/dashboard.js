@@ -1,7 +1,6 @@
 import { API_URL, apiRequest } from '../config.js';
 import { requireAuth, logout, loadAuthMe } from '../auth.js';
 import { formatShiftWhen, parseShiftDate } from '../utils/dateFormat.js';
-import { renderStatCards } from '../components/statCard.js';
 import { showConfirm } from '../components/confirmDialog.js';
 import { escapeHtml } from '../utils/escapeHtml.js';
 import { loadBrand } from '../brand.js';
@@ -14,12 +13,6 @@ let shelterLabel = '';
 const userNameEl = document.getElementById('userName');
 const profileStatusBannerEl = document.getElementById('profileStatusBanner');
 const profileStatusEl = document.getElementById('profileStatus');
-const statsGridEl = document.getElementById('statsGrid');
-renderStatCards(statsGridEl, [
-  { label: 'Total hours', valueId: 'totalHours', value: '0' },
-  { label: 'Shifts completed', valueId: 'shiftsCompleted', value: '0' },
-  { label: 'Current streak', valueId: 'currentStreak', value: '0' },
-]);
 const totalHoursEl = document.getElementById('totalHours');
 const shiftsCompletedEl = document.getElementById('shiftsCompleted');
 const currentStreakEl = document.getElementById('currentStreak');
@@ -46,11 +39,22 @@ let icalUrl = '';
 let impactSnapshot = null;
 let displayName = 'Volunteer';
 
+/** Show the "Nothing needs you" line only when no row in the panel is showing. */
+function updateNeedsYou() {
+  const empty = document.getElementById('needsYouEmpty');
+  if (!empty) return;
+  const banner = profileStatusBannerEl && !profileStatusBannerEl.hidden;
+  const checklist = document.querySelector('#onboardingChecklist .ruled-row:not(.is-loading)');
+  const loading = document.querySelector('#onboardingChecklist .is-loading');
+  empty.hidden = Boolean(banner || checklist || loading);
+}
+
 function setProfileStatus(content, tone = 'neutral') {
   if (!profileStatusEl) return;
   if (tone === 'success' || tone === 'hidden') {
     if (profileStatusBannerEl) profileStatusBannerEl.hidden = true;
     profileStatusEl.innerHTML = '';
+    updateNeedsYou();
     return;
   }
   if (profileStatusBannerEl) profileStatusBannerEl.hidden = false;
@@ -61,6 +65,7 @@ function setProfileStatus(content, tone = 'neutral') {
     profileStatusEl.appendChild(content);
   }
   profileStatusBannerEl.dataset.tone = tone;
+  updateNeedsYou();
 }
 
 function setImpactStats(stats = {}) {
@@ -75,7 +80,8 @@ async function loadOnboardingChecklist() {
   try {
     const res = await apiRequest('/vetting/me/onboarding', { method: 'GET' });
     if (!res.ok) {
-      el.textContent = 'Unable to load onboarding checklist.';
+      el.textContent = 'Your onboarding steps could not be loaded.';
+      updateNeedsYou();
       return;
     }
     const data = await res.json();
@@ -86,10 +92,38 @@ async function loadOnboardingChecklist() {
       ['Clear background check', data.has_clear_background_check],
       ['Waivers accepted', data.waivers_complete],
     ];
-    el.innerHTML = `<ul>${items.map(([label, ok]) => `<li>${ok ? '\u2713' : '\u25cb'} ${escapeHtml(label)}</li>`).join('')}</ul>`;
+    // Only the steps still to do need the volunteer. Done steps are a count.
+    const todo = items.filter(([, ok]) => !ok);
+    const list = document.createElement('ul');
+    list.className = 'ruled-rows';
+    todo.forEach(([label]) => {
+      const row = document.createElement('li');
+      row.className = 'ruled-row needs-you';
+      const main = document.createElement('div');
+      main.className = 'ruled-row-main';
+      const title = document.createElement('span');
+      title.className = 'ruled-row-title';
+      title.textContent = label;
+      const detail = document.createElement('span');
+      detail.className = 'ruled-row-detail';
+      detail.textContent = `Onboarding: ${items.length - todo.length} of ${items.length} steps done`;
+      main.append(title, detail);
+      const end = document.createElement('div');
+      end.className = 'ruled-row-end';
+      const status = document.createElement('span');
+      status.className = 'status-label';
+      status.dataset.tone = 'pending';
+      status.textContent = 'To do';
+      end.appendChild(status);
+      row.append(main, end);
+      list.appendChild(row);
+    });
+    el.replaceChildren(list);
+    updateNeedsYou();
   } catch (error) {
     console.error('[Dashboard] onboarding checklist error:', error);
-    el.textContent = 'Unable to load onboarding checklist.';
+    el.textContent = 'Your onboarding steps could not be loaded.';
+    updateNeedsYou();
   }
 }
 
@@ -97,15 +131,15 @@ function renderBadges(badges = {}) {
   if (badgesListEl) {
     const earned = badges.earned || [];
     if (!earned.length) {
-      badgesListEl.innerHTML = '<p>No badges earned yet — your first shift unlocks First Step.</p>';
+      badgesListEl.innerHTML = '<p>No badges yet. Your first shift earns First Step.</p>';
     } else {
-      badgesListEl.innerHTML = earned.map((b) => `<span style="display:inline-block;margin:0.25rem 0.35rem 0.25rem 0;padding:0.35rem 0.6rem;background:#e8f5e9;border-radius:4px;">${escapeHtml(b.emoji || '')} ${escapeHtml(b.label)}</span>`).join('');
+      badgesListEl.innerHTML = `<p class="tag-chips">${earned.map((b) => `<span class="tag-chip-display">${escapeHtml(b.label)}</span>`).join('')}</p>`;
     }
   }
   if (nextBadgeProgressEl) {
     const next = badges.nextBadgeProgress;
-    if (!next) nextBadgeProgressEl.textContent = 'You have earned every badge. Amazing!';
-    else nextBadgeProgressEl.textContent = `Next: ${next.label} — ${next.current} / ${next.target} (${next.percent}%)`;
+    if (!next) nextBadgeProgressEl.textContent = 'You have every badge there is.';
+    else nextBadgeProgressEl.textContent = `Next: ${next.label}, ${next.current} of ${next.target}.`;
   }
 }
 
@@ -116,10 +150,10 @@ async function fetchAndDisplayHelpedAnimals() {
     if (!res.ok) { helpedAnimalsDetailsEl.textContent = 'Unable to load animals right now.'; return; }
     const rows = await res.json();
     if (!rows.length) {
-      helpedAnimalsDetailsEl.innerHTML = '<p>No animal activity yet. After an accepted shift, log a walk, feed, or socialise from My applications.</p>';
+      helpedAnimalsDetailsEl.innerHTML = '<p class="muted">None yet. After a shift, log a walk, feed or socialise from <a href="/pages/volunteer/my-applications.html">your applications</a>.</p>';
       return;
     }
-    helpedAnimalsDetailsEl.innerHTML = `<ul>${rows.map((r) => `<li><strong>${escapeHtml(r.name)}</strong> (${escapeHtml(r.species)}) — ${escapeHtml(r.activity_count)} log${Number(r.activity_count) === 1 ? '' : 's'}</li>`).join('')}</ul>`;
+    helpedAnimalsDetailsEl.innerHTML = `<ul class="plain-list">${rows.map((r) => `<li><strong>${escapeHtml(r.name)}</strong> <span class="muted">${escapeHtml(r.species)}, <span class="num">${escapeHtml(r.activity_count)}</span> log${Number(r.activity_count) === 1 ? '' : 's'}</span></li>`).join('')}</ul>`;
   } catch {
     helpedAnimalsDetailsEl.textContent = 'Unable to load animals right now.';
   }
@@ -131,25 +165,27 @@ function drawImpactCard(stats) {
   const w = impactCanvas.width;
   const h = impactCanvas.height;
   const styles = getComputedStyle(document.documentElement);
-  const brand = styles.getPropertyValue('--green').trim() || '#0f766e';
-  const ink = styles.getPropertyValue('--on-primary').trim() || '#ffffff';
+  const brand = styles.getPropertyValue('--brand').trim();
+  const ink = styles.getPropertyValue('--on-brand').trim();
+  const display = "'Young Serif', Georgia, serif";
+  const body = "'Atkinson Hyperlegible Next', system-ui, sans-serif";
   ctx.fillStyle = brand;
   ctx.fillRect(0, 0, w, h);
   ctx.fillStyle = ink;
-  ctx.font = 'bold 42px Georgia, serif';
+  ctx.font = `42px ${display}`;
   ctx.fillText('ShelterLink', 48, 70);
-  ctx.font = '22px Georgia, serif';
-  ctx.fillText('My volunteer impact', 48, 110);
-  ctx.font = '28px system-ui, sans-serif';
+  ctx.font = `22px ${body}`;
+  ctx.fillText('My volunteering', 48, 110);
+  ctx.font = `28px ${body}`;
   ctx.fillText(displayName, 48, 170);
-  ctx.font = 'bold 36px system-ui, sans-serif';
+  ctx.font = `bold 36px ${body}`;
   ctx.fillText(`${stats.totalHours ?? 0} hours`, 48, 240);
-  ctx.font = '24px system-ui, sans-serif';
+  ctx.font = `24px ${body}`;
   ctx.fillText(`${stats.shiftsCompleted ?? 0} shifts · ${stats.currentStreak ?? 0}-month streak`, 48, 285);
   const earned = stats.badges?.earned || [];
-  ctx.font = '20px system-ui, sans-serif';
-  ctx.fillText(earned.length ? `Badges: ${earned.map((b) => b.label).join(', ')}` : 'Keep going — badges await!', 48, 340);
-  ctx.font = '16px system-ui, sans-serif';
+  ctx.font = `20px ${body}`;
+  ctx.fillText(earned.length ? `Badges: ${earned.map((b) => b.label).join(', ')}` : 'First badge on the way', 48, 340);
+  ctx.font = `16px ${body}`;
   ctx.globalAlpha = 0.85;
   ctx.fillStyle = ink;
   ctx.fillText(shelterLabel || 'ShelterLink', 48, 390);
@@ -171,7 +207,7 @@ function renderCommunityServiceProgress(profile, approvedHours) {
   const percent = target > 0 ? Math.min(100, Math.round((approved / target) * 100)) : 0;
   const completed = target > 0 && approved >= target;
   card.hidden = false;
-  details.textContent = completed ? `Complete — ${approved} / ${target} approved hours.` : `${approved} / ${target} approved hours (${remaining} remaining).`;
+  details.textContent = completed ? `Done. ${approved} of ${target} hours approved.` : `${approved} of ${target} hours approved, ${remaining} to go.`;
   if (bar) bar.value = percent;
 }
 
@@ -285,7 +321,7 @@ function renderNextShiftActions(next) {
   if (!withinCutoff) {
     const cancel = document.createElement('button');
     cancel.type = 'button';
-    cancel.className = 'secondary button-secondary button-small';
+    cancel.className = 'danger';
     cancel.textContent = 'Cancel';
     cancel.addEventListener('click', () => {
       showConfirm({
@@ -307,7 +343,7 @@ function renderNextShiftActions(next) {
   } else if (!next.open_swap_id) {
     const swap = document.createElement('button');
     swap.type = 'button';
-    swap.className = 'secondary button-secondary button-small';
+    swap.className = 'secondary';
     swap.textContent = 'Request a swap';
     swap.addEventListener('click', () => {
       showConfirm({
@@ -361,13 +397,13 @@ async function fetchAndDisplayNextShift() {
     const when = document.createElement('p');
     when.textContent = formatShiftWhen(next.opportunity_start_date, next.opportunity_end_date);
     const location = document.createElement('p');
-    location.textContent = next.opportunity_location || 'Location TBA';
+    location.textContent = next.opportunity_location || 'Location to be confirmed';
     if (fromCache) nextShiftDetailsEl.append(renderCachedNote(res));
     nextShiftDetailsEl.append(title, when, location);
     if (start && isSameCalendarDay(start) && next.check_in_code) {
       const code = document.createElement('p');
       code.className = 'next-shift-code';
-      code.innerHTML = `Check-in code: <code>${escapeHtml(next.check_in_code)}</code>`;
+      code.innerHTML = `Check-in code <mark class="num">${escapeHtml(next.check_in_code)}</mark>`;
       nextShiftDetailsEl.appendChild(code);
     }
     nextShiftDetailsEl.appendChild(renderNextShiftActions(next));
@@ -385,7 +421,7 @@ async function fetchAndDisplayRecommended() {
     if (!res.ok) { recommendedDetailsEl.textContent = 'Unable to load recommendations.'; return; }
     const rows = await res.json();
     if (!Array.isArray(rows) || !rows.length) {
-      recommendedDetailsEl.innerHTML = 'No recommendations yet. <a href="/pages/volunteer/complete-profile.html">Add interest tags</a> or browse open shifts.';
+      recommendedDetailsEl.innerHTML = '<p class="muted">Nothing to suggest yet. <a href="/pages/volunteer/complete-profile.html">Add what you are interested in</a> and suggestions show up here.</p>';
       return;
     }
     const list = document.createElement('div');
@@ -394,8 +430,8 @@ async function fetchAndDisplayRecommended() {
       const item = document.createElement('div');
       item.className = 'recommended-item';
       const tags = (opp.tags || []).map((t) => `<span class="tag-chip-display">${escapeHtml(t.name)}</span>`).join('');
-      const start = opp.start_date ? new Date(opp.start_date).toLocaleString() : 'Flexible';
-      item.innerHTML = `<a href="/pages/volunteer/browse-shifts.html">${escapeHtml(opp.title || 'Opportunity')}</a><br/><small>${escapeHtml(start)} · ${escapeHtml(opp.location || 'Location TBA')}</small>${tags ? `<div>${tags}</div>` : ''}`;
+      const start = formatShiftWhen(opp.start_date, opp.end_date);
+      item.innerHTML = `<a href="/pages/volunteer/browse-shifts.html">${escapeHtml(opp.title || 'Shift')}</a><br/><small>${escapeHtml(start)}, ${escapeHtml(opp.location || 'location to be confirmed')}</small>${tags ? `<div class="tag-chips">${tags}</div>` : ''}`;
       list.appendChild(item);
     });
     recommendedDetailsEl.innerHTML = '';
@@ -419,10 +455,11 @@ async function fetchAndDisplayQualifications() {
     const res = await apiRequest('/qualifications/mine', { method: 'GET' });
     if (!res.ok) { myQualificationsDetailsEl.textContent = 'Unable to load qualifications.'; return; }
     const rows = await res.json();
-    if (!Array.isArray(rows) || !rows.length) { myQualificationsDetailsEl.textContent = 'No qualifications awarded yet.'; return; }
-    myQualificationsDetailsEl.innerHTML = `<ul style="margin:0;padding-left:1.1rem;">${rows.map((q) => {
-      const expires = q.expires_at ? `expires ${String(q.expires_at).slice(0, 10)}` : 'never expires';
-      return `<li><strong>${escapeHtml(q.name)}</strong> — ${escapeHtml(expires)} (${escapeHtml(statusLabel(q.status))})</li>`;
+    if (!Array.isArray(rows) || !rows.length) { myQualificationsDetailsEl.innerHTML = '<p class="muted">None yet. Staff add these after training.</p>'; return; }
+    myQualificationsDetailsEl.innerHTML = `<ul class="plain-list">${rows.map((q) => {
+      const expires = q.expires_at ? `expires ${String(q.expires_at).slice(0, 10)}` : 'does not expire';
+      const tone = q.status === 'expired' ? 'danger' : (q.status === 'expiring_soon' || q.status === 'expires_today') ? 'pending' : 'ok';
+      return `<li><strong>${escapeHtml(q.name)}</strong> <span class="status-label" data-tone="${tone}">${escapeHtml(statusLabel(q.status))}</span><br/><small class="num">${escapeHtml(expires)}</small></li>`;
     }).join('')}</ul>`;
   } catch (error) {
     console.error('[Dashboard] qualifications error:', error);
@@ -441,8 +478,8 @@ async function fetchAndDisplayDocuments() {
     const res = await apiRequest('/documents/mine', { method: 'GET' });
     if (!res.ok) { myDocumentsDetailsEl.textContent = 'Unable to load documents.'; return; }
     const docs = await res.json();
-    if (!Array.isArray(docs) || !docs.length) { myDocumentsDetailsEl.textContent = 'No documents uploaded yet.'; return; }
-    myDocumentsDetailsEl.innerHTML = `<ul style="margin:0;padding-left:1.1rem;">${docs.map((d) => {
+    if (!Array.isArray(docs) || !docs.length) { myDocumentsDetailsEl.innerHTML = '<p class="muted">No documents yet.</p>'; return; }
+    myDocumentsDetailsEl.innerHTML = `<ul class="plain-list">${docs.map((d) => {
       const label = d.label || d.original_name || 'Document';
       const expires = d.expires_at ? ` · expires ${String(d.expires_at).slice(0, 10)}` : '';
       return `<li><a href="/api/documents/${encodeURIComponent(d.id)}/download">${escapeHtml(label)}</a> (${escapeHtml(formatBytes(d.size))}${escapeHtml(expires)})</li>`;
@@ -455,7 +492,7 @@ async function fetchAndDisplayDocuments() {
 function setDocUploadMessage(text, tone = 'neutral') {
   if (!documentUploadMessage) return;
   if (!text) { documentUploadMessage.textContent = ''; return; }
-  documentUploadMessage.className = tone === 'error' ? 'error' : tone === 'success' ? 'success' : '';
+  documentUploadMessage.className = tone === 'error' ? 'error-message' : tone === 'success' ? 'success-message' : '';
   documentUploadMessage.textContent = text;
 }
 async function handleDocumentUpload(event) {
@@ -541,6 +578,22 @@ async function exportMyHoursCSV() {
     setExportButtonLoading(false);
   }
 }
+/**
+ * Sections that only load for approved volunteers still hold skeletons.
+ * Replace them with one plain line so nothing looks stuck.
+ */
+function settleUnloadedSections() {
+  const lines = [
+    [badgesListEl, ''],
+    [nextBadgeProgressEl, 'Badges start once your profile is approved.'],
+    [helpedAnimalsDetailsEl, 'Animals you help will show here after your first shift.'],
+    [icalFeedDetailsEl, 'Your calendar link appears once your profile is approved.'],
+  ];
+  lines.forEach(([el, text]) => {
+    if (el && el.querySelector('.skeleton')) el.textContent = text;
+  });
+}
+
 async function init() {
   mountInstallPrompt(document.getElementById('installPrompt'));
   mountPushToggle(document.getElementById('pushToggle'));
@@ -556,6 +609,8 @@ async function init() {
     renderProfileIncomplete();
     setImpactStats();
     renderNextShiftEmpty();
+    if (recommendedDetailsEl) recommendedDetailsEl.textContent = 'Shift suggestions appear once your profile is approved.';
+    settleUnloadedSections();
   } else if (profile && profile.approved) {
     renderProfileApproved();
     const stats = await fetchAndDisplayStats();
@@ -570,9 +625,10 @@ async function init() {
     renderProfilePending();
     setImpactStats();
     if (nextShiftDetailsEl) renderNextShiftEmpty();
-    if (recommendedDetailsEl) recommendedDetailsEl.textContent = 'Recommendations appear once your profile is approved.';
+    if (recommendedDetailsEl) recommendedDetailsEl.textContent = 'Shift suggestions appear once your profile is approved.';
     if (myQualificationsDetailsEl) await fetchAndDisplayQualifications();
     await fetchAndDisplayDocuments();
+    settleUnloadedSections();
   }
   documentUploadForm?.addEventListener('submit', handleDocumentUpload);
   if (logoutButton) logoutButton.addEventListener('click', (event) => { event.preventDefault(); logout(); });

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0f766e" />
+    <meta name="theme-color" content="#1F5C45" />
     <link rel="manifest" href="/public/manifest.webmanifest" />
     <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
     <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
@@ -15,62 +15,6 @@
     <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" />
     <link rel="stylesheet" href="/public/css/custom.css" />
     <style>
-      .cert-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-        margin: 1rem 0 1.5rem;
-      }
-      .certificate-sheet {
-        --green: #0f766e;
-        --text: #1f2937;
-        --text-secondary: #5b6670;
-        background: #ffffff;
-        color: var(--text);
-        border: 2px solid var(--green);
-        padding: 2rem 2.5rem;
-        max-width: 297mm;
-        margin: 0 auto;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-      }
-      .certificate-sheet .brand {
-        font-size: 1.75rem;
-        color: var(--green);
-        letter-spacing: 0.02em;
-        margin: 0;
-      }
-      .certificate-sheet .subtitle {
-        color: var(--text-secondary);
-        margin: 0.25rem 0 1.5rem;
-      }
-      .certificate-sheet h1 {
-        font-size: 1.5rem;
-        margin: 0 0 0.5rem;
-      }
-      .certificate-sheet .volunteer-name {
-        font-size: 2rem;
-        font-weight: 700;
-        margin: 0.75rem 0;
-      }
-      .certificate-sheet .stats {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 2rem;
-        margin: 1.25rem 0;
-      }
-      .certificate-sheet .stat strong {
-        display: block;
-        font-size: 1.75rem;
-        color: var(--green);
-      }
-      .certificate-sheet .verify {
-        margin-top: 1.5rem;
-        font-size: 0.9rem;
-        color: var(--text-secondary);
-      }
-      .certificate-sheet .badges {
-        margin-top: 1rem;
-      }
       @media print {
         @page {
           size: A4 landscape;
@@ -131,9 +75,8 @@
           <span class="brand-mark" aria-hidden="true"></span>
           <strong>ShelterLink</strong>
         </a>
-        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">Menu</button>
         <ul class="nav-menu" id="navMenu" data-volunteer-nav></ul>
-        <button id="logoutButton" class="secondary">Logout</button>
+        <button id="logoutButton" class="secondary">Sign out</button>
       </nav>
     </header>
 
@@ -142,9 +85,9 @@
         <h1>Hours certificate</h1>
         <p>Download a printable certificate of your approved volunteer hours.</p>
         <div class="cert-actions">
-          <button type="button" id="issueButton">Issue / refresh certificate</button>
-          <button type="button" id="printButton" class="secondary" hidden>Print / save PDF</button>
-          <a href="/pages/volunteer/my-hours.html" role="button" class="secondary outline">Back to my hours</a>
+          <button type="button" id="issueButton">Make or refresh the certificate</button>
+          <button type="button" id="printButton" class="secondary" hidden>Print or save as PDF</button>
+          <a href="/pages/volunteer/my-hours.html" role="button" class="secondary">Back to your hours</a>
         </div>
         <div id="message" role="status" aria-live="polite"></div>
         <p id="certificateEmpty" class="no-print" hidden>
@@ -155,7 +98,7 @@
       <article id="certificateSheet" class="certificate-sheet" hidden>
         <p class="brand">ShelterLink</p>
         <p class="subtitle" data-shelter-name></p>
-        <h1>Certificate of Volunteer Service</h1>
+        <h1>Certificate of volunteer service</h1>
         <p>This certifies that</p>
         <p class="volunteer-name" id="certName">—</p>
         <p>has completed approved volunteer service with <span data-shelter-name></span>.</p>

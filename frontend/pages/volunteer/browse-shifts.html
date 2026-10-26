@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0f766e" />
+    <meta name="theme-color" content="#1F5C45" />
     <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
     <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-title" content="ShelterLink" />
@@ -15,103 +15,6 @@
     <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" />
     <link rel="stylesheet" href="/public/css/custom.css" />
     <link rel="stylesheet" href="/public/css/opportunity-modal.css" />
-    <style>
-      .browse-filters {
-        background: var(--surface);
-        border-radius: var(--radius-card);
-        padding: 1.25rem;
-        margin-bottom: 1.25rem;
-        border: 1px solid var(--border);
-      }
-      .browse-filters .search-input {
-        font-size: 1.125rem;
-        min-height: 48px;
-        padding: 0.75rem 1rem;
-      }
-      .browse-status {
-        font-size: 1rem;
-        margin-bottom: 1rem;
-        color: #555;
-      }
-      .browse-empty-state {
-        text-align: center;
-        padding: 3rem 2rem;
-        font-size: 1.25rem;
-        color: var(--text-muted);
-      }
-      .browse-empty-state button {
-        margin-top: 1rem;
-      }
-      .clear-filters-wrap {
-        margin-top: 0.75rem;
-      }
-
-      .opportunities-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 1rem;
-        margin-top: 1rem;
-      }
-
-      .opportunity-card {
-        padding: 1rem;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        background: white;
-        transition: all 0.2s;
-        display: flex;
-        flex-direction: column;
-      }
-
-      .opportunity-card:hover {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        transform: translateY(-2px);
-      }
-
-      .opportunity-card h3 {
-        margin: 0 0 0.5rem;
-        font-size: 1.25rem;
-      }
-
-      .opportunity-card p {
-        font-size: 0.9rem;
-        margin: 0.25rem 0;
-      }
-
-      .opportunity-card .description {
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-      }
-
-      .opportunity-card .meta {
-        display: flex;
-        gap: 1rem;
-        flex-wrap: wrap;
-        font-size: 0.85rem;
-        color: var(--text-muted);
-        margin: 0.5rem 0;
-      }
-
-      .opportunity-card .actions {
-        margin-top: auto;
-        padding-top: 1rem;
-        text-align: right;
-      }
-
-      .opportunity-card button {
-        padding: 0.5rem 1.5rem;
-        font-size: 0.9rem;
-        margin-top: 0;
-      }
-
-      @media (max-width: 768px) {
-        .opportunities-grid {
-          grid-template-columns: 1fr;
-        }
-      }
-    </style>
     <!-- preload:start -->
     <link rel="preload" href="/public/fonts/atkinson-hyperlegible-next-400.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/public/fonts/young-serif-400.woff2" as="font" type="font/woff2" crossorigin>
@@ -123,6 +26,7 @@
     <link rel="modulepreload" href="/js/components/icons.js">
     <link rel="modulepreload" href="/js/components/navConfig.js">
     <link rel="modulepreload" href="/js/components/opportunityModal.js">
+    <link rel="modulepreload" href="/js/components/rows.js">
     <link rel="modulepreload" href="/js/components/statusBanner.js">
     <link rel="modulepreload" href="/js/components/volunteerNav.js">
     <link rel="modulepreload" href="/js/config.js">
@@ -146,28 +50,27 @@
           <span class="brand-mark" aria-hidden="true"></span>
           <strong>ShelterLink</strong>
         </a>
-        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">Menu</button>
         <ul class="nav-menu" id="navMenu" data-volunteer-nav></ul>
-        <button id="logoutButton" class="secondary">Logout</button>
+        <button id="logoutButton" class="secondary">Sign out</button>
       </nav>
     </header>
 
     <main class="container">
-      <section>
-        <h1>Browse Volunteer Shifts</h1>
-        <p>Filter and explore open opportunities at the shelter.</p>
-      </section>
+      <header class="page-header">
+        <h1>Find a shift</h1>
+        <p class="lead">Open shifts at the sanctuary, soonest first. Tap one to see the details and apply.</p>
+      </header>
 
-      <section class="browse-filters" aria-label="Filter shifts">
-        <div class="grid">
-          <label for="filter_search">
+      <section class="ruled-panel browse-filters" aria-label="Filter shifts">
+        <div class="filter-grid">
+          <label for="filter_search" class="filter-search">
             Search
             <input
               type="text"
               id="filter_search"
               name="search"
               class="search-input"
-              placeholder="Search by name or location"
+              placeholder="Shift name or place"
               autocomplete="off"
             />
           </label>
@@ -189,30 +92,32 @@
             </select>
           </label>
           <label for="filter_tag">
-            Tag
+            Interest
             <select id="filter_tag" name="tag">
-              <option value="">Any tag</option>
+              <option value="">Any interest</option>
             </select>
           </label>
         </div>
         <div class="clear-filters-wrap" id="clearFiltersWrap" style="display: none;">
-          <button type="button" id="clearFiltersButton" class="secondary button-secondary">Clear All Filters</button>
+          <button type="button" id="clearFiltersButton" class="secondary button-secondary">Clear all filters</button>
         </div>
       </section>
 
-      <p id="shiftsStatus" class="browse-status" role="status">Loading shifts…</p>
+      <p id="shiftsStatus" class="browse-status muted" role="status">Loading shifts</p>
 
-      <section id="coverShiftsSection" style="display:none;margin-bottom:1.5rem;">
-        <h2>Cover a shift</h2>
-        <p>These volunteers need someone to take their accepted place.</p>
-        <div id="cover-shifts-container" class="opportunities-grid"></div>
+      <section id="coverShiftsSection" class="ruled-panel needs-you" style="display:none;" aria-labelledby="coverTitle">
+        <header class="ruled-panel-head">
+          <h2 id="coverTitle">Cover a shift</h2>
+          <span class="muted">These volunteers need someone to take their place.</span>
+        </header>
+        <div id="cover-shifts-container" class="cover-shifts"></div>
       </section>
 
       <section>
-        <div id="shifts-container" class="opportunities-grid"></div>
-        <div id="emptyState" class="browse-empty-state" style="display: none;">
-          <p>No shifts match your search. Try clearing the filters.</p>
-          <button type="button" id="emptyStateClearButton" class="secondary button-secondary">Clear Filters</button>
+        <div id="shifts-container" class="shift-groups"></div>
+        <div id="emptyState" class="ruled-panel empty-state browse-empty-state" style="display: none;">
+          <p>No shifts match your search.</p>
+          <button type="button" id="emptyStateClearButton" class="secondary">Clear the filters</button>
         </div>
       </section>
     </main>

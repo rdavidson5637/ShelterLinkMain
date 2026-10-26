@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0f766e" />
+    <meta name="theme-color" content="#1F5C45" />
     <link rel="manifest" href="/public/manifest.webmanifest" />
     <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
     <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
@@ -45,16 +45,15 @@
           <span class="brand-mark" aria-hidden="true"></span>
           <strong>ShelterLink</strong>
         </a>
-        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">Menu</button>
         <ul class="nav-menu" id="navMenu" data-volunteer-nav></ul>
-        <button id="logoutButton" class="secondary">Logout</button>
+        <button id="logoutButton" class="secondary">Sign out</button>
       </nav>
     </header>
 
     <main class="container">
       <section>
         <h1>Transport</h1>
-        <p>Claim open legs on animal transport relays. Handovers are coordinated through the shelter — never contact other drivers directly.</p>
+        <p>Claim open legs on animal transport relays. Handovers are arranged through the shelter. Do not contact other drivers directly.</p>
         <div id="message" role="status" aria-live="polite"></div>
         <article class="status-banner">
           <p><strong>Coordination:</strong> Use the transport message thread or contact the shelter office. Other drivers’ phone numbers and emails are never shared.</p>
@@ -63,12 +62,12 @@
 
       <section>
         <h2>Open legs</h2>
-        <div id="openLegsList">Loading…</div>
+        <div id="openLegsList"><span class="skeleton" aria-hidden="true"></span></div>
       </section>
 
       <section>
         <h2>My claimed legs</h2>
-        <div id="myLegsList">Loading…</div>
+        <div id="myLegsList"><span class="skeleton" aria-hidden="true"></span></div>
       </section>
     </main>
 

@@ -21,11 +21,28 @@ function isOpportunityFull(opportunity) {
   return spotsFilled >= maxVolunteers;
 }
 
+let tokenCache = null;
+function tokens() {
+  if (tokenCache) return tokenCache;
+  const css = getComputedStyle(document.documentElement);
+  const read = (name) => css.getPropertyValue(name).trim();
+  tokenCache = {
+    brand: read('--brand'),
+    marker: read('--marker'),
+    ink: read('--ink'),
+    ink2: read('--ink-2'),
+    onBrand: read('--on-brand'),
+  };
+  return tokenCache;
+}
+
 function getEventColor(opportunity, appliedIds) {
   const id = opportunity.id ?? opportunity.opportunity_id;
-  if (appliedIds.has(id)) return { color: '#f59e0b', textColor: '#1f2937' };
-  if (isOpportunityFull(opportunity)) return { color: '#5b6670', textColor: '#ffffff' };
-  return { color: '#0f766e', textColor: '#ffffff' };
+  // FullCalendar needs real colour values, so read them from the CSS tokens.
+  const t = tokens();
+  if (appliedIds.has(id)) return { color: t.marker, textColor: t.ink };
+  if (isOpportunityFull(opportunity)) return { color: t.ink2, textColor: t.onBrand };
+  return { color: t.brand, textColor: t.onBrand };
 }
 
 function mapOpportunitiesToEvents(opportunities, appliedIds) {

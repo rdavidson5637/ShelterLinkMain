@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0f766e" />
+    <meta name="theme-color" content="#1F5C45" />
     <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
     <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-title" content="ShelterLink" />
@@ -27,7 +27,6 @@
     <link rel="modulepreload" href="/js/components/installPrompt.js">
     <link rel="modulepreload" href="/js/components/navConfig.js">
     <link rel="modulepreload" href="/js/components/pushToggle.js">
-    <link rel="modulepreload" href="/js/components/statCard.js">
     <link rel="modulepreload" href="/js/components/statusBanner.js">
     <link rel="modulepreload" href="/js/components/volunteerNav.js">
     <link rel="modulepreload" href="/js/config.js">
@@ -52,124 +51,151 @@
           <span class="brand-mark" aria-hidden="true"></span>
           <strong>ShelterLink</strong>
         </a>
-        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">Menu</button>
         <ul class="nav-menu" id="navMenu" data-volunteer-nav></ul>
-        <button id="logoutButton" class="secondary">Logout</button>
+        <button id="logoutButton" class="secondary">Sign out</button>
       </nav>
     </header>
 
     <main class="container">
+      <header class="page-header dash-header">
+        <div>
+          <h1>Hello, <span id="userName">there</span></h1>
+          <p class="lead">What is on, what needs you, and what to do next.</p>
+        </div>
+        <p class="actions">
+          <a href="/pages/volunteer/browse-shifts.html" role="button" id="browseShiftsButton">Find a shift</a>
+          <a href="/pages/volunteer/log-hours.html" id="logHoursButton">Log hours</a>
+        </p>
+      </header>
+
       <div id="installPrompt"></div>
-      <section>
-        <article class="stat-card">
-          <strong>Notifications</strong>
-          <div id="pushToggle"></div>
-          <p><a href="/pages/volunteer/complete-profile.html#notifications">Choose which notifications</a></p>
-        </article>
-      </section>
-<div class="dashboard-main">
-        <section>
-          <h1>Welcome, <span id="userName">Volunteer</span>!</h1>
-          <p>Stay up to date with your volunteer status, upcoming shifts, and recent activity.</p>
-        </section>
 
-        <section id="profileStatusBanner" class="status-banner" hidden>
-          <p id="profileStatus"></p>
-        </section>
+      <div class="dash">
+        <div class="dash-main">
+          <section class="ruled-panel needs-you" id="needsYouPanel" aria-labelledby="needsYouTitle">
+            <header class="ruled-panel-head">
+              <h2 id="needsYouTitle">Needs you</h2>
+            </header>
+            <ul class="ruled-rows" id="needsYouList">
+              <li class="ruled-row needs-you" id="profileStatusBanner" hidden>
+                <div class="ruled-row-main">
+                  <span class="ruled-row-title" id="profileStatus"></span>
+                </div>
+              </li>
+              <li id="onboardingChecklist" class="needs-you-checklist">
+                <ul class="ruled-rows"><li class="ruled-row is-loading" aria-hidden="true"><span class="ruled-row-main"><span class="skeleton"></span><span class="skeleton skeleton-detail"></span></span></li></ul>
+              </li>
+              <li class="ruled-row" id="needsYouEmpty" hidden>
+                <div class="ruled-row-main">
+                  <span class="ruled-row-detail">Nothing needs you right now.</span>
+                </div>
+              </li>
+            </ul>
+          </section>
 
-        <section>
-          <article class="stat-card">
-            <strong>Onboarding checklist</strong>
-            <div id="onboardingChecklist">Loading…</div>
-          </article>
-        </section>
+          <section class="ruled-panel next-shift-panel" id="nextShiftCard" aria-labelledby="nextShiftTitle">
+            <header class="ruled-panel-head">
+              <h2 id="nextShiftTitle">Your next shift</h2>
+            </header>
+            <div class="ruled-panel-body" id="nextShiftDetails"><p class="skeleton" aria-hidden="true"></p><p class="skeleton skeleton-detail" aria-hidden="true"></p></div>
+          </section>
 
-        <section>
-          <article class="next-shift-panel" id="nextShiftCard">
-            <h2>Your next shift</h2>
-            <div id="nextShiftDetails">Loading your next shift...</div>
-          </article>
-        </section>
+          <p class="figures-strip" id="statsGrid">
+            <a href="/pages/volunteer/my-hours.html"><strong id="totalHours"><span class="skeleton skeleton-figure" aria-hidden="true"></span></strong> hours logged</a>
+            <a href="/pages/volunteer/my-hours.html"><strong id="shiftsCompleted"><span class="skeleton skeleton-figure" aria-hidden="true"></span></strong> shifts done</a>
+            <a href="/pages/volunteer/my-hours.html"><strong id="currentStreak"><span class="skeleton skeleton-figure" aria-hidden="true"></span></strong> month streak</a>
+          </p>
 
-        <section class="stats-grid" id="statsGrid"></section>
+          <section class="ruled-panel" id="communityServiceCard" aria-labelledby="communityServiceTitle" hidden>
+            <header class="ruled-panel-head">
+              <h2 id="communityServiceTitle">Community service hours</h2>
+            </header>
+            <div class="ruled-panel-body">
+              <p id="communityServiceDetails"><span class="skeleton" aria-hidden="true"></span></p>
+              <progress id="communityServiceProgress" max="100" value="0" aria-labelledby="communityServiceTitle"></progress>
+            </div>
+          </section>
 
-        <section>
-          <article class="stat-card" id="communityServiceCard" hidden>
-            <strong>Community service progress</strong>
-            <p id="communityServiceDetails">Loading…</p>
-            <progress id="communityServiceProgress" max="100" value="0"></progress>
-          </article>
-        </section>
+          <section class="ruled-panel" aria-labelledby="recommendedTitle">
+            <header class="ruled-panel-head">
+              <h2 id="recommendedTitle">Shifts you might like</h2>
+              <a href="/pages/volunteer/browse-shifts.html">All open shifts</a>
+            </header>
+            <div class="ruled-panel-body" id="recommendedDetails"><p class="skeleton" aria-hidden="true"></p></div>
+          </section>
+        </div>
 
-        <section>
-          <article class="stat-card">
-            <strong>Badges</strong>
-            <div id="badgesList"></div>
-            <p id="nextBadgeProgress">Loading badge progress...</p>
-          </article>
-          <article class="stat-card">
-            <strong>Animals you have helped</strong>
-            <div id="helpedAnimalsDetails">Loading…</div>
-          </article>
-        </section>
+        <aside class="dash-side" aria-label="Your record">
+          <section class="ruled-panel" aria-labelledby="badgesTitle">
+            <header class="ruled-panel-head"><h2 id="badgesTitle">Badges</h2></header>
+            <div class="ruled-panel-body">
+              <div id="badgesList"></div>
+              <p id="nextBadgeProgress" class="muted"><span class="skeleton" aria-hidden="true"></span></p>
+            </div>
+          </section>
 
-        <section>
-          <article class="stat-card">
-            <strong>Share my impact</strong>
-            <p>Download a branded summary of your volunteering.</p>
-            <canvas id="impactCanvas" width="800" height="420" style="max-width:100%;border:1px solid #ddd;"></canvas>
-            <p style="margin-top:0.75rem;">
-              <button type="button" id="downloadImpactButton" class="secondary">Download image</button>
-            </p>
-          </article>
-        </section>
+          <section class="ruled-panel" aria-labelledby="animalsTitle">
+            <header class="ruled-panel-head"><h2 id="animalsTitle">Animals you have helped</h2></header>
+            <div class="ruled-panel-body" id="helpedAnimalsDetails"><p class="skeleton" aria-hidden="true"></p></div>
+          </section>
 
-        <section>
-          <article class="stat-card">
-            <strong>Recommended for you</strong>
-            <div id="recommendedDetails">Loading recommendations...</div>
-          </article>
-          <article class="stat-card">
-            <strong>My qualifications</strong>
-            <div id="myQualificationsDetails">Loading your qualifications...</div>
-          </article>
-          <article class="stat-card">
-            <strong>My documents</strong>
-            <p>Reference letters and similar files. Do not upload AccessNI or disclosure certificates.</p>
-            <div id="myDocumentsDetails">Loading your documents...</div>
-            <form id="documentUploadForm" style="margin-top:0.75rem;">
-              <label for="documentFile">
-                Upload PDF, JPG, or PNG (max 5MB)
-                <input type="file" id="documentFile" name="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" required />
-              </label>
-              <label for="documentLabel">
-                Label (optional)
-                <input type="text" id="documentLabel" name="label" maxlength="255" placeholder="e.g. Reference letter" />
-              </label>
-              <button type="submit" id="documentUploadButton" class="secondary button-small">Upload</button>
-            </form>
-            <p id="documentUploadMessage" role="status" aria-live="polite"></p>
-          </article>
-          <article class="stat-card">
-            <strong>Calendar feed</strong>
-            <p id="icalFeedDetails">Loading subscribe URL...</p>
-            <p>
-              <button type="button" id="copyIcalButton" class="secondary button-small">Copy link</button>
-              <a id="appleCalLink" hidden rel="noopener" target="_blank">Add to Apple Calendar</a>
-              <a id="googleCalLink" hidden rel="noopener" target="_blank">Add to Google Calendar</a>
-            </p>
-          </article>
-        </section>
+          <section class="ruled-panel" aria-labelledby="qualsTitle">
+            <header class="ruled-panel-head"><h2 id="qualsTitle">Your qualifications</h2></header>
+            <div class="ruled-panel-body" id="myQualificationsDetails"><p class="skeleton" aria-hidden="true"></p></div>
+          </section>
 
-        <section>
-          <h2>Quick Actions</h2>
-          <div class="grid">
-            <a href="/pages/volunteer/calendar.html" role="button">Calendar</a>
-            <a href="/pages/volunteer/browse-shifts.html" role="button" id="browseShiftsButton">Find shifts</a>
-            <a href="/pages/volunteer/log-hours.html" role="button" id="logHoursButton" class="secondary">Log hours</a>
-            <button type="button" id="exportHoursCsvButton" class="secondary">Export My Hours CSV</button>
-          </div>
-        </section>
+          <section class="ruled-panel" aria-labelledby="docsTitle">
+            <header class="ruled-panel-head"><h2 id="docsTitle">Your documents</h2></header>
+            <div class="ruled-panel-body">
+              <p class="muted">Reference letters and similar files. Do not upload AccessNI or disclosure certificates.</p>
+              <div id="myDocumentsDetails"><p class="skeleton" aria-hidden="true"></p></div>
+              <form id="documentUploadForm" class="inline-form">
+                <label for="documentFile">
+                  Add a PDF, JPG or PNG (5MB at most)
+                  <input type="file" id="documentFile" name="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" required />
+                </label>
+                <label for="documentLabel">
+                  Label (optional)
+                  <input type="text" id="documentLabel" name="label" maxlength="255" placeholder="For example, reference letter" />
+                </label>
+                <button type="submit" id="documentUploadButton" class="secondary">Upload</button>
+              </form>
+              <p id="documentUploadMessage" role="status" aria-live="polite"></p>
+            </div>
+          </section>
+
+          <section class="ruled-panel" aria-labelledby="feedTitle">
+            <header class="ruled-panel-head"><h2 id="feedTitle">Your shifts in your calendar</h2></header>
+            <div class="ruled-panel-body">
+              <p id="icalFeedDetails"><span class="skeleton" aria-hidden="true"></span></p>
+              <p class="actions">
+                <button type="button" id="copyIcalButton" class="secondary">Copy link</button>
+                <a id="appleCalLink" hidden rel="noopener" target="_blank">Add to Apple Calendar</a>
+                <a id="googleCalLink" hidden rel="noopener" target="_blank">Add to Google Calendar</a>
+              </p>
+            </div>
+          </section>
+
+          <section class="ruled-panel" aria-labelledby="notifyTitle">
+            <header class="ruled-panel-head"><h2 id="notifyTitle">Notifications</h2></header>
+            <div class="ruled-panel-body">
+              <div id="pushToggle"></div>
+              <p><a href="/pages/volunteer/complete-profile.html#notifications">Choose which notifications</a></p>
+            </div>
+          </section>
+
+          <section class="ruled-panel" aria-labelledby="impactTitle">
+            <header class="ruled-panel-head"><h2 id="impactTitle">Share what you have done</h2></header>
+            <div class="ruled-panel-body">
+              <p class="muted">A picture of your hours and shifts to share or keep.</p>
+              <canvas id="impactCanvas" class="impact-canvas" width="800" height="420"></canvas>
+              <p class="actions">
+                <button type="button" id="downloadImpactButton" class="secondary">Download image</button>
+                <button type="button" id="exportHoursCsvButton" class="secondary">Export my hours (CSV)</button>
+              </p>
+            </div>
+          </section>
+        </aside>
       </div>
     </main>
 

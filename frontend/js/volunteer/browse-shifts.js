@@ -1,4 +1,5 @@
 import { apiRequest } from '../config.js';
+import { createDateBlock, createRuledRow, createSkeletonRows, createStatusLabel } from '../components/rows.js';
 import { requireAuth, logout } from '../auth.js';
 import { showOpportunityModal, hideOpportunityModal } from '../components/opportunityModal.js';
 import { formatShiftWhen, upcomingFirst } from '../utils/dateFormat.js';
@@ -242,101 +243,66 @@ async function handleApplyFromModal(opportunity, id, options = {}) {
 }
 
 function renderOpportunityCard(opportunity) {
-  const article = document.createElement('article');
-  article.className = 'opportunity-card';
-
   const missingQuals = getMissingQualifications(opportunity);
   const required = opportunity.required_qualifications || [];
-  if (missingQuals.length) {
-    article.classList.add('opportunity-card--unqualified');
-  }
-
-  const title = document.createElement('h3');
-  title.textContent = opportunity.title || 'Volunteer Opportunity';
-  if (Number(opportunity.is_urgent)) {
-    const badge = document.createElement('span');
-    badge.className = 'status-badge';
-    badge.style.cssText = 'margin-left:0.5rem;background:#fde8e8;color:#7a1f1f;';
-    badge.textContent = 'Urgent cover needed';
-    title.appendChild(document.createTextNode(' '));
-    title.appendChild(badge);
-  }
-
-  const meta = document.createElement('div');
-  meta.className = 'meta';
-  const location = opportunity.location || 'Location TBA';
   const start = opportunity.start_date || '';
   const end = opportunity.end_date || '';
 
-  const locationMeta = document.createElement('span');
-  locationMeta.textContent = location;
-
-  const dateMeta = document.createElement('span');
-  dateMeta.textContent = formatShiftWhen(start, end);
-
   const maxVolunteers = opportunity.max_volunteers ?? opportunity.maxVolunteers;
   const spotsFilled = opportunity.spots_filled ?? opportunity.spotsFilled;
-  const capacityMeta = document.createElement('span');
+  let capacity = createStatusLabel('Places open', 'neutral');
   if (maxVolunteers) {
     const filled = Number(spotsFilled || 0);
     const total = Number(maxVolunteers);
-    capacityMeta.textContent = `${filled}/${total} spaces filled${filled >= total ? ' (Full)' : ''}`;
-  } else {
-    capacityMeta.textContent = 'Open spaces';
+    capacity = filled >= total
+      ? createStatusLabel('Full', 'neutral')
+      : createStatusLabel(`${total - filled} of ${total} places left`, 'neutral');
   }
 
-  meta.appendChild(locationMeta);
-  meta.appendChild(dateMeta);
-  meta.appendChild(capacityMeta);
-
-  if (required.length) {
-    const reqMeta = document.createElement('span');
-    reqMeta.className = 'requires-tag';
-    reqMeta.textContent = `requires: ${required.map((q) => q.name).join(', ')}`;
-    meta.appendChild(reqMeta);
+  const details = [`${formatShiftWhen(start, end)}, ${opportunity.location || 'location to be confirmed'}`];
+  if (required.length) details.push(`Needs: ${required.map((q) => q.name).join(', ')}`);
+  if (opportunity.description) {
+    const desc = document.createElement('span');
+    desc.className = 'description';
+    desc.textContent = opportunity.description;
+    details.push(desc);
   }
-
   const oppTags = opportunity.tags || [];
   if (oppTags.length) {
-    const tagsMeta = document.createElement('div');
+    const tagsMeta = document.createElement('span');
+    tagsMeta.className = 'tag-chips';
     oppTags.forEach((t) => {
       const chip = document.createElement('span');
       chip.className = 'tag-chip-display';
       chip.textContent = t.name;
       tagsMeta.appendChild(chip);
     });
-    meta.appendChild(tagsMeta);
+    details.push(tagsMeta);
   }
-
   if (missingQuals.length) {
-    const reason = document.createElement('p');
+    const reason = document.createElement('span');
     reason.className = 'unqualified-reason';
-    reason.textContent = `You need: ${missingQuals.map((q) => q.name).join(', ')}`;
-    article.appendChild(title);
-    article.appendChild(meta);
-    article.appendChild(reason);
-  } else {
-    article.appendChild(title);
-    article.appendChild(meta);
+    reason.textContent = `You need ${missingQuals.map((q) => q.name).join(', ')} first.`;
+    details.push(reason);
   }
 
-  const description = document.createElement('p');
-  description.className = 'description';
-  const desc = opportunity.description || 'No description provided.';
-  description.textContent = desc;
-
-  const actions = document.createElement('div');
-  actions.className = 'actions';
   const viewDetailsButton = document.createElement('button');
   viewDetailsButton.type = 'button';
-  viewDetailsButton.textContent = missingQuals.length ? 'View (unqualified)' : 'View Details';
+  viewDetailsButton.className = missingQuals.length ? 'secondary' : 'button-small';
+  viewDetailsButton.textContent = 'View details';
   viewDetailsButton.addEventListener('click', () => openOpportunityModal(opportunity));
-  actions.appendChild(viewDetailsButton);
 
-  article.appendChild(description);
-  article.appendChild(actions);
-
-  return article;
+  const urgent = Number(opportunity.is_urgent) ? createStatusLabel('Cover needed', 'pending') : null;
+  const row = createRuledRow({
+    lead: createDateBlock(start),
+    title: opportunity.title || 'Volunteer shift',
+    details,
+    end: [urgent, capacity, viewDetailsButton],
+    needsYou: Boolean(urgent) && !missingQuals.length,
+  });
+  row.classList.add('opportunity-card');
+  if (missingQuals.length) row.classList.add('opportunity-card--unqualified');
+  return row;
 }
 
 function applyFiltersAndRender() {
@@ -362,17 +328,22 @@ function applyFiltersAndRender() {
       if (emptyState) emptyState.style.display = 'none';
       groupShiftsByPeriod(filtered).forEach((group) => {
         const section = document.createElement('section');
-        section.className = 'shift-group';
+        section.className = 'ruled-panel shift-group';
+        const head = document.createElement('header');
+        head.className = 'ruled-panel-head';
         const heading = document.createElement('h2');
         heading.textContent = group.heading;
-        const count = document.createElement('p');
+        const count = document.createElement('span');
         count.className = 'shift-group-count';
         const n = group.shifts.length;
         count.textContent = `${n} shift${n === 1 ? '' : 's'}`;
-        section.append(heading, count);
+        head.append(heading, count);
+        const list = document.createElement('ul');
+        list.className = 'ruled-rows';
         group.shifts.forEach((opp) => {
-          section.appendChild(renderOpportunityCard(opp));
+          list.appendChild(renderOpportunityCard(opp));
         });
+        section.append(head, list);
         shiftsContainer.appendChild(section);
       });
     } else {
@@ -471,7 +442,7 @@ function renderCoverSwapCard(swap) {
   const meta = document.createElement('div');
   meta.className = 'meta';
   const locationMeta = document.createElement('span');
-  locationMeta.textContent = swap.opportunity_location || 'Location TBA';
+  locationMeta.textContent = swap.opportunity_location || 'Location to be confirmed';
   const dateMeta = document.createElement('span');
   const start = swap.opportunity_start_date || '';
   const end = swap.opportunity_end_date || '';
@@ -558,7 +529,7 @@ async function loadTagFilterOptions() {
     if (!res.ok) return;
     const tags = await res.json();
     const current = tagSelect.value;
-    tagSelect.innerHTML = '<option value="">Any tag</option>';
+    tagSelect.innerHTML = '<option value="">Any interest</option>';
     (Array.isArray(tags) ? tags : []).forEach((t) => {
       const opt = document.createElement('option');
       opt.value = String(t.id);
@@ -607,7 +578,16 @@ async function init() {
   if (!user) return;
 
   if (shiftsStatus) shiftsStatus.textContent = 'Loading shifts…';
-  if (shiftsContainer) shiftsContainer.innerHTML = '<p>Loading shifts...</p>';
+  if (shiftsContainer) {
+    const list = document.createElement('ul');
+    list.className = 'ruled-rows';
+    list.appendChild(createSkeletonRows(4));
+    const panel = document.createElement('section');
+    panel.className = 'ruled-panel';
+    panel.setAttribute('aria-hidden', 'true');
+    panel.appendChild(list);
+    shiftsContainer.replaceChildren(panel);
+  }
 
   attachEventListeners();
   const urlFilters = getFiltersFromUrl();

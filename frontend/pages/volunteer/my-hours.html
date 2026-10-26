@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0f766e" />
+    <meta name="theme-color" content="#1F5C45" />
     <link rel="manifest" href="/public/manifest.webmanifest" />
     <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
     <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
@@ -46,112 +46,100 @@
           <span class="brand-mark" aria-hidden="true"></span>
           <strong>ShelterLink</strong>
         </a>
-        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">Menu</button>
         <ul class="nav-menu" id="navMenu" data-volunteer-nav></ul>
-        <button id="logoutButton" class="secondary">Logout</button>
+        <button id="logoutButton" class="secondary">Sign out</button>
       </nav>
     </header>
 
     <main class="container">
-      <section>
-        <h1>My Volunteer Hours</h1>
-        <p>View and export your volunteer hours history.</p>
-      </section>
-
-      <section class="grid">
-        <article>
-          <header>
-            <strong>Total Approved Hours</strong>
-          </header>
-          <p id="totalApprovedHours" class="stat-value" style="font-size: 2rem; font-weight: bold;">0</p>
-        </article>
-        <article>
-          <header>
-            <strong>Total Pending Hours</strong>
-          </header>
-          <p id="totalPendingHours" class="stat-value">0</p>
-        </article>
-        <article>
-          <header>
-            <strong>Actions</strong>
-          </header>
+      <header class="page-header dash-header">
+        <div>
+          <h1>Your hours</h1>
+          <p class="lead">Every shift you have logged, and what staff have approved.</p>
+        </div>
+        <p class="actions">
           <a href="/pages/volunteer/log-hours.html" role="button">Log hours</a>
-          <button id="exportCsvButton" class="secondary">Export CSV</button>
-          <a href="/pages/volunteer/certificate.html" role="button" class="secondary" style="margin-top:0.5rem;display:inline-block;">
-            Download certificate
-          </a>
-        </article>
-      </section>
+          <button id="exportCsvButton" class="secondary">Export (CSV)</button>
+          <a href="/pages/volunteer/certificate.html" class="secondary">Your certificate</a>
+        </p>
+      </header>
 
-      <section>
-        <h2>Filters</h2>
-        <form id="filtersForm">
-          <div class="form-grid">
-            <div class="form-section"><label for="filterStartDate">
-              Start Date
+      <p class="figures-strip">
+        <span><strong id="totalApprovedHours" class="num"><span class="skeleton skeleton-figure" aria-hidden="true"></span></strong> hours approved</span>
+        <span><strong id="totalPendingHours" class="num"><span class="skeleton skeleton-figure" aria-hidden="true"></span></strong> hours waiting for approval</span>
+      </p>
+
+      <section class="ruled-panel" aria-labelledby="filtersTitle">
+        <header class="ruled-panel-head"><h2 id="filtersTitle">Filter</h2></header>
+        <form id="filtersForm" class="panel-form">
+          <div class="filter-grid">
+            <label for="filterStartDate">
+              From
               <input type="date" id="filterStartDate" name="filterStartDate" />
-            </label></div>
-            <div class="form-section"><label for="filterEndDate">
-              End Date
+            </label>
+            <label for="filterEndDate">
+              To
               <input type="date" id="filterEndDate" name="filterEndDate" />
-            </label></div>
-            <div class="form-section"><label for="filterOpportunity">
-              Opportunity
+            </label>
+            <label for="filterOpportunity">
+              Shift
               <select id="filterOpportunity" name="filterOpportunity">
-                <option value="">All Opportunities</option>
+                <option value="">All shifts</option>
               </select>
-            </label></div>
-            <div class="form-section"><label for="filterStatus">
+            </label>
+            <label for="filterStatus">
               Status
               <select id="filterStatus" name="filterStatus">
                 <option value="">All</option>
-                <option value="pending">Pending</option>
+                <option value="pending">Waiting for approval</option>
                 <option value="approved">Approved</option>
               </select>
-            </label></div>
+            </label>
           </div>
-          <div class="form-full-width">
-            <button type="submit">Apply Filters</button>
-            <button type="button" id="clearFiltersButton" class="secondary button-secondary">Clear Filters</button>
-          </div>
+          <p class="actions">
+            <button type="submit">Apply</button>
+            <button type="button" id="clearFiltersButton" class="secondary">Clear filters</button>
+          </p>
         </form>
       </section>
 
-      <section>
-        <h2>Hours History</h2>
+      <section class="ruled-panel" aria-labelledby="historyTitle">
+        <header class="ruled-panel-head"><h2 id="historyTitle">Hours so far</h2></header>
+        <div class="table-wrapper table-wrapper--flush">
         <table id="hours-table">
-            <caption>Hours history</caption>
+            <caption class="visually-hidden">Hours history</caption>
           <thead>
             <tr>
               <th scope="col">Date</th>
-              <th scope="col">Opportunity</th>
+              <th scope="col">Shift</th>
               <th scope="col">Hours</th>
               <th scope="col">Status</th>
             </tr>
           </thead>
           <tbody id="hoursTableBody">
             <tr>
-              <td colspan="4">Loading...</td>
+              <td colspan="4"><span class="skeleton" aria-hidden="true"></span></td>
             </tr>
           </tbody>
         </table>
+        </div>
       </section>
 
-      <section>
-        <h2>Leave feedback</h2>
-        <p>Rate past shifts you attended. No login is needed on the feedback form once you open the link.</p>
-        <div class="table-wrapper">
+      <section class="ruled-panel" aria-labelledby="feedbackTitle">
+        <header class="ruled-panel-head"><h2 id="feedbackTitle">Tell us how a shift went</h2></header>
+        <div class="ruled-panel-body"><p class="muted">Rate shifts you went to. The feedback form opens without signing in.</p></div>
+        <div class="table-wrapper table-wrapper--flush">
           <table>
-            <caption>Shifts awaiting feedback</caption>
+            <caption class="visually-hidden">Shifts waiting for feedback</caption>
             <thead>
               <tr>
                 <th scope="col">Date</th>
-                <th scope="col">Opportunity</th>
+                <th scope="col">Shift</th>
                 <th scope="col">Feedback</th>
               </tr>
             </thead>
             <tbody id="feedbackShiftsBody">
-              <tr><td colspan="3">Loading...</td></tr>
+              <tr><td colspan="3"><span class="skeleton" aria-hidden="true"></span></td></tr>
             </tbody>
           </table>
         </div>

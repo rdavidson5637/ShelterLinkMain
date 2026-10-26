@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0f766e" />
+    <meta name="theme-color" content="#1F5C45" />
     <link rel="manifest" href="/public/manifest.webmanifest" />
     <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
     <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
@@ -47,15 +47,14 @@
           <span class="brand-mark" aria-hidden="true"></span>
           <strong>ShelterLink</strong>
         </a>
-        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">Menu</button>
         <ul class="nav-menu" id="navMenu" data-volunteer-nav></ul>
-        <button id="logoutButton" class="secondary">Logout</button>
+        <button id="logoutButton" class="secondary">Sign out</button>
       </nav>
     </header>
 
     <main class="container">
       <section>
-        <h1>Log Volunteer Hours</h1>
+        <h1>Log hours</h1>
         <p>Record your volunteer hours for approved opportunities.</p>
       </section>
 
@@ -98,12 +97,12 @@
             </div>
           </div>
 
-          <button type="submit" id="submitButton">Log Hours</button>
+          <button type="submit" id="submitButton">Log hours</button>
         </form>
       </section>
 
       <section id="recent-hours">
-        <h2>Recent Hours</h2>
+        <h2>Recent hours</h2>
         <table>
             <caption>Recent hours</caption>
           <thead>
@@ -116,7 +115,7 @@
           </thead>
           <tbody id="hoursTableBody">
             <tr>
-              <td colspan="4">Loading...</td>
+              <td colspan="4"><span class="skeleton" aria-hidden="true"></span></td>
             </tr>
           </tbody>
         </table>

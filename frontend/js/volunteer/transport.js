@@ -28,7 +28,7 @@ async function openTransportThread(contextId, subject) {
       context_type: 'transport_run',
       context_id: contextId,
       subject: subject || 'Transport coordination',
-      body: 'Hi — I claimed a leg on this transport run and need to coordinate handover via the shelter.',
+      body: 'Hi, I have claimed a leg of this transport run and need to sort out the handover through the shelter.',
     },
   });
   if (res.ok) {

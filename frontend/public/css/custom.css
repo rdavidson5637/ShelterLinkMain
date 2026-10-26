@@ -472,8 +472,10 @@ a[role='button'],
   text-decoration-thickness: 2px;
 }
 
-:is(button, [type='submit'], [type='button'], [role='button'], .button, a).danger.danger,
-:is(button, [type='submit'], [type='button'], [role='button'], .button, a).danger.danger:hover {
+/* Destructive text outranks the text-link variants by one class, so rule
+   order no longer decides whether it is red. */
+:is(button, [type='submit'], [type='button'], [role='button'], .button, a).danger.danger.danger,
+:is(button, [type='submit'], [type='button'], [role='button'], .button, a).danger.danger.danger:hover {
   color: var(--danger);
 }
 
@@ -1953,12 +1955,6 @@ footer {
   font-size: var(--step--1);
 }
 
-.strip {
-  margin: 0.5rem 0;
-  padding: 0.5rem 0.75rem;
-  border-left: 3px solid var(--green);
-  background: var(--green-tint);
-}
 
 /* Status badges from statusBadge.js render as status labels: dot + word. */
 .badge {
@@ -2170,6 +2166,462 @@ label:has(> input[type='radio']) > input {
 }
 
 /* --------------------------------------------------------------------------
+   Volunteer dashboard: main column, side column from 1024px
+   -------------------------------------------------------------------------- */
+.dash-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-3);
+}
+
+.dash-header .actions {
+  margin: 0;
+}
+
+.dash {
+  display: grid;
+  gap: 0 var(--space-4);
+}
+
+.dash-main,
+.dash-side {
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .dash {
+    grid-template-columns: minmax(0, 2fr) minmax(18rem, 1fr);
+    align-items: start;
+  }
+}
+
+/* The checklist rows sit inside the Needs you list as a nested list. */
+.needs-you-checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.needs-you-checklist:not(:has(.ruled-row)) {
+  display: none;
+}
+
+.needs-you-checklist .ruled-row:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+
+#needsYouList > li:last-child .ruled-row:last-child,
+#needsYouList > li.ruled-row:last-child {
+  border-bottom: 0;
+}
+
+.plain-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plain-list > li {
+  margin: 0;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--rule);
+  list-style: none;
+}
+
+.plain-list > li:last-child {
+  border-bottom: 0;
+}
+
+.impact-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+
+.needs-you .ruled-row.needs-you {
+  border-left: 0;
+  padding-left: var(--space-2);
+}
+
+.inline-form button {
+  width: auto;
+}
+
+.inline-form {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2) 0 0;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--rule);
+  border-radius: 0;
+  max-width: none;
+}
+
+progress {
+  accent-color: var(--brand);
+}
+
+/* --------------------------------------------------------------------------
+   Volunteer pages. Prefixed with main so they outrank the old per-page
+   <style> blocks still in some heads.
+   -------------------------------------------------------------------------- */
+main .browse-filters {
+  padding: var(--space-2);
+  margin-bottom: var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0 var(--space-2);
+}
+
+.filter-grid label {
+  margin-bottom: 0;
+}
+
+@media (min-width: 768px) {
+  .filter-grid .filter-search {
+    grid-column: span 2;
+  }
+}
+
+main .browse-filters .search-input {
+  font-size: var(--step-0);
+  min-height: var(--tap);
+  padding: 0.5rem 0.75rem;
+}
+
+main .browse-status {
+  font-size: var(--step-0);
+  color: var(--ink-2);
+  margin-bottom: var(--space-2);
+}
+
+main .shift-groups {
+  display: block;
+  margin: 0;
+}
+
+main .shift-group .ruled-panel-head h2 {
+  font-size: var(--step-1);
+}
+
+.shift-group-count {
+  color: var(--ink-2);
+  font-size: var(--step--1);
+}
+
+/* Shift rows. The old card styling is reset here. */
+main .opportunity-card,
+main .opportunity-card:hover {
+  display: grid;
+  margin: 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  border-radius: 0;
+  box-shadow: none;
+  transform: none;
+}
+
+main .ruled-rows > .opportunity-card:last-child {
+  border-bottom: 0;
+}
+
+main .opportunity-card.needs-you {
+  border-left: 4px solid var(--marker);
+}
+
+main .opportunity-card .description {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+main .opportunity-card--unqualified {
+  opacity: 1;
+}
+
+main .opportunity-card--unqualified .ruled-row-title {
+  color: var(--ink-2);
+}
+
+main .opportunity-card .unqualified-reason {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+/* Cover-a-shift cards are still articles; lay them out as rows. */
+main .cover-shifts article.opportunity-card {
+  display: block;
+  padding: 0.75rem var(--space-2);
+}
+
+main .cover-shifts article.opportunity-card h3 {
+  margin: 0 0 0.25rem;
+  font-size: var(--step-0);
+}
+
+main .cover-shifts .meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2);
+  color: var(--ink-2);
+  font-size: var(--step--1);
+}
+
+main .cover-shifts .actions {
+  margin-top: var(--space-1);
+  text-align: left;
+}
+
+main .browse-empty-state {
+  text-align: left;
+  font-size: var(--step-0);
+  padding: var(--space-2);
+}
+
+/* My applications: each application is a ruled entry. */
+main article.app-card {
+  margin: 0 0 var(--space-2);
+  padding: var(--space-2);
+}
+
+.app-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-2);
+}
+
+.app-card-head h3 {
+  margin: 0;
+}
+
+.app-card > p {
+  margin: 0.25rem 0 0;
+}
+
+.app-card > button,
+.app-card > a {
+  margin: var(--space-1) var(--space-2) 0 0;
+}
+
+.app-card-section {
+  margin-top: var(--space-2);
+}
+
+.app-card-subhead {
+  margin: 0 0 0.25rem;
+  font-weight: 700;
+}
+
+.app-card-animal {
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--rule);
+}
+
+.small-note {
+  font-size: var(--step--1);
+}
+
+.strip {
+  margin: var(--space-1) 0;
+  padding: var(--space-1) var(--space-2);
+  border-left: 3px solid var(--rule-strong);
+  background: var(--paper);
+}
+
+.strip-body {
+  margin: 0.25rem 0 0;
+}
+
+/* Toast: short confirmations. Above the tab bar on phones. */
+.toast {
+  position: fixed;
+  right: var(--space-2);
+  bottom: var(--space-2);
+  left: var(--space-2);
+  z-index: 1200;
+  max-width: 28rem;
+  margin-left: auto;
+  padding: 0.75rem var(--space-2);
+  background: var(--ink);
+  color: var(--surface);
+  border-radius: var(--radius);
+}
+
+.toast--error {
+  background: var(--danger);
+  color: var(--on-brand);
+}
+
+body.has-tab-bar .toast {
+  bottom: calc(var(--tab-bar-h) + env(safe-area-inset-bottom) + var(--space-1));
+}
+
+/* Long single-column forms: profile, waiver. */
+main article.form-page {
+  max-width: 45rem;
+  margin: 0 auto var(--section-gap);
+}
+
+.field-follow {
+  margin-top: var(--space-1);
+}
+
+.form-actions {
+  margin-top: var(--space-2);
+}
+
+main .stat-value {
+  margin: 0;
+  font-size: var(--step-3);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.panel-form {
+  margin: 0;
+  max-width: none;
+  padding: var(--space-2);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+.panel-form .actions {
+  margin: var(--space-1) 0 0;
+}
+
+.panel-form .actions button,
+.actions > button[type='submit'] {
+  width: auto;
+}
+
+.table-wrapper--flush {
+  border: 0;
+  border-radius: 0;
+}
+
+/* Calendar */
+main .calendar-banner {
+  padding: 0.75rem var(--space-2);
+  margin-bottom: var(--space-2);
+  background: var(--marker-tint);
+  border: 0;
+  border-left: 4px solid var(--marker);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  color: var(--ink);
+  font-size: var(--step-0);
+  font-weight: 400;
+}
+
+main .calendar-wrapper {
+  padding: var(--space-2);
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+
+main .calendar-empty-state {
+  text-align: left;
+  padding: var(--space-2);
+  font-size: var(--step-0);
+  color: var(--ink-2);
+}
+
+main .fc {
+  --fc-border-color: var(--rule);
+  --fc-today-bg-color: var(--marker-tint);
+  --fc-event-bg-color: var(--brand);
+  --fc-event-border-color: var(--brand);
+  --fc-event-text-color: var(--on-brand);
+  --fc-button-bg-color: var(--surface);
+  --fc-button-border-color: var(--field-border);
+  --fc-button-text-color: var(--ink);
+  --fc-button-hover-bg-color: var(--paper);
+  --fc-button-hover-border-color: var(--brand);
+  --fc-button-active-bg-color: var(--brand-tint);
+  --fc-button-active-border-color: var(--brand);
+  --fc-page-bg-color: var(--surface);
+  --fc-neutral-bg-color: var(--paper);
+  font-size: var(--step-0);
+  font-variant-numeric: tabular-nums;
+}
+
+main .fc .fc-toolbar-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--step-2);
+}
+
+main .fc .fc-button {
+  min-height: var(--tap);
+  border-radius: var(--radius);
+  box-shadow: none;
+  text-transform: none;
+  font-weight: 700;
+}
+
+/* Waiver */
+main .waiver-scroll {
+  max-height: 20rem;
+  overflow-y: auto;
+  margin-bottom: var(--space-2);
+  padding: var(--space-2);
+  white-space: pre-wrap;
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+}
+
+main .waiver-block {
+  max-width: 45rem;
+  margin: 0 auto;
+}
+
+/* Certificate: a sheet that prints on A4 */
+main .certificate-sheet {
+  --green: var(--brand);
+  --text: var(--ink);
+  --text-secondary: var(--ink-2);
+  background: var(--surface);
+  color: var(--ink);
+  border: 2px solid var(--brand);
+  border-radius: var(--radius);
+  box-shadow: none;
+}
+
+main .certificate-sheet .brand {
+  font-family: var(--font-display);
+  font-size: var(--step-3);
+  color: var(--brand);
+  letter-spacing: 0;
+}
+
+main .certificate-sheet .volunteer-name {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--step-4);
+}
+
+main .certificate-sheet .stat strong {
+  color: var(--brand);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------------------
    Kiosk: the check-in tablet in the yard. Light, big targets.
    -------------------------------------------------------------------------- */
 html:has(body.kiosk-body),
@@ -2378,39 +2830,39 @@ body.kiosk-body #message {
   color: var(--text);
 }
 
-.next-shift-panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-card);
-  padding: 1.25rem 1.25rem 1rem;
-  margin-bottom: 1.5rem;
+.next-shift-panel .ruled-panel-body > p {
+  margin: 0 0 0.25rem;
+  color: var(--ink-2);
 }
 
-.next-shift-panel h2 {
-  margin-top: 0;
-  margin-bottom: 0.5rem;
-}
-
-.next-shift-panel p {
-  margin: 0 0 0.35rem;
-  color: var(--text-secondary);
-}
-
+.next-shift-panel .ruled-panel-body > p:first-of-type,
 .next-shift-panel strong {
-  color: var(--text);
+  color: var(--ink);
+  font-size: var(--step-1);
 }
 
-.next-shift-code code {
-  font-size: var(--step-1);
+.next-shift-code {
+  margin-top: var(--space-1) !important;
+  color: var(--ink) !important;
+}
+
+.next-shift-code mark {
+  font-size: var(--step-2);
+  font-weight: 700;
   letter-spacing: 0.08em;
 }
 
 .next-shift-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: var(--space-1) var(--space-3);
   align-items: center;
-  margin-top: 0.75rem;
+  margin: var(--space-2) 0 0;
+}
+
+.offline-copy-note {
+  font-size: var(--step--1);
+  color: var(--ink-2);
 }
 
 .shift-group {
@@ -2453,26 +2905,6 @@ body.kiosk-body #message {
   form {
     padding: 1rem;
   }
-}
-
-/* --------------------------------------------------------------------------
-   Qualifications gating on browse-shifts
-   -------------------------------------------------------------------------- */
-.opportunity-card--unqualified {
-  opacity: 0.6;
-}
-
-.opportunity-card .requires-tag {
-  display: block;
-  margin-top: 0.35rem;
-  font-size: var(--step--1);
-  color: var(--text-secondary);
-}
-
-.opportunity-card .unqualified-reason {
-  margin: 0.5rem 0 0;
-  font-size: var(--step--1);
-  color: var(--warning-text);
 }
 
 /* --------------------------------------------------------------------------

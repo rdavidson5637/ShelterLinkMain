@@ -28,7 +28,7 @@ function renderCertificate(cert) {
   document.getElementById('certShifts').textContent = String(cert.shifts_at_issue || 0);
   document.getElementById('certIssued').textContent =
     formatDateOnly(cert.issued_at) || String(cert.issued_at || '').slice(0, 10);
-  document.getElementById('certCode').textContent = cert.code || '—';
+  document.getElementById('certCode').textContent = cert.code || 'Not issued';
   const verifyUrl = `${window.location.origin}/api/public/verify-certificate/${encodeURIComponent(
     cert.code || ''
   )}`;
