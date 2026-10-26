@@ -7,124 +7,7 @@
     <title>Check-in kiosk - ShelterLink</title>
     <meta name="robots" content="noindex" />
     <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" />
-    <style>
-      :root {
-        --kiosk-bg: #0f2a1f;
-        --kiosk-panel: #163828;
-        --kiosk-accent: #7cb342;
-        --kiosk-text: #f4f7f5;
-      }
-      html, body {
-        height: 100%;
-        margin: 0;
-        background: radial-gradient(circle at top, #1d4d35, var(--kiosk-bg) 55%);
-        color: var(--kiosk-text);
-      }
-      body.kiosk-body {
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-      }
-      .kiosk-shell {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        padding: 1.25rem;
-        max-width: 1100px;
-        margin: 0 auto;
-        width: 100%;
-      }
-      .kiosk-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        gap: 1rem;
-        margin-bottom: 1rem;
-      }
-      .kiosk-header h1 {
-        margin: 0;
-        font-size: clamp(1.8rem, 4vw, 2.6rem);
-        letter-spacing: 0.02em;
-      }
-      .kiosk-panel {
-        background: color-mix(in srgb, var(--kiosk-panel) 92%, black);
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 1rem;
-        padding: 1.25rem;
-      }
-      .shift-list {
-        display: grid;
-        gap: 1rem;
-      }
-      .shift-card h2 {
-        margin: 0 0 0.35rem;
-        font-size: 1.35rem;
-      }
-      .volunteer-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-        gap: 0.75rem;
-        margin-top: 0.75rem;
-      }
-      .volunteer-btn {
-        min-height: 4.5rem;
-        font-size: 1.1rem;
-        margin: 0;
-        background: #214f36;
-        border: 1px solid rgba(255,255,255,0.12);
-        color: var(--kiosk-text);
-      }
-      .volunteer-btn[data-state="checked_in"] {
-        background: #355f20;
-        border-color: var(--kiosk-accent);
-      }
-      .volunteer-btn[data-state="checked_out"] {
-        opacity: 0.55;
-      }
-      .code-form {
-        display: grid;
-        gap: 0.75rem;
-        max-width: 28rem;
-        margin: 1rem auto 0;
-      }
-      .code-form input {
-        font-size: 1.5rem;
-        letter-spacing: 0.2em;
-        text-align: center;
-        text-transform: uppercase;
-      }
-      .skip-link {
-        position: absolute;
-        left: 0.75rem;
-        top: -4rem;
-        z-index: 10000;
-        padding: 0.5rem 1rem;
-        background: var(--kiosk-accent);
-        color: #0f2a1f;
-        border-radius: 6px;
-        font-weight: 600;
-        text-decoration: none;
-      }
-      .skip-link:focus,
-      .skip-link:focus-visible {
-        top: 0.75rem;
-        outline: 2px solid #fff;
-        outline-offset: 2px;
-      }
-      button,
-      .volunteer-btn,
-      input,
-      [type="submit"] {
-        min-height: 44px;
-      }
-      .volunteer-btn {
-        min-height: 4.5rem;
-      }
-      .hidden { display: none !important; }
-      #message { min-height: 1.5rem; }
-      #message .error { color: #ffb4a8; }
-      #message .success { color: #b9f6ca; }
-    </style>
+    <link rel="stylesheet" href="/public/css/custom.css" />
     <!-- preload:start -->
     <link rel="preload" href="/public/fonts/atkinson-hyperlegible-next-400.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/public/fonts/young-serif-400.woff2" as="font" type="font/woff2" crossorigin>
@@ -137,7 +20,7 @@
     <main class="kiosk-shell" id="main-content">
       <header class="kiosk-header">
         <div>
-          <h1>ShelterLink Kiosk</h1>
+          <h1>Shift check-in</h1>
           <p class="muted" id="clockLabel">Today&rsquo;s shifts</p>
         </div>
         <button type="button" id="lockButton" class="secondary hidden">Lock</button>
@@ -147,10 +30,10 @@
 
       <section id="unlockPanel" class="kiosk-panel">
         <h2>Staff unlock</h2>
-        <p class="muted">Sign in once to unlock this tablet for volunteer check-in.</p>
+        <p class="muted">A member of staff signs in once to unlock this tablet for check-in.</p>
         <form id="unlockForm" class="code-form">
           <label>
-            Email
+            Email address
             <input type="email" id="unlockEmail" required autocomplete="username" />
           </label>
           <label>
@@ -162,9 +45,9 @@
       </section>
 
       <section id="shiftsPanel" class="kiosk-panel hidden">
-        <h2 id="shiftsHeading">Today's shifts</h2>
+        <h2 id="shiftsHeading">Today&rsquo;s shifts</h2>
         <div id="shiftsList" class="shift-list">
-          <p class="muted">Loading today&rsquo;s shifts…</p>
+          <p class="skeleton" aria-hidden="true"></p><p class="visually-hidden">Loading today&rsquo;s shifts</p>
         </div>
       </section>
 
