@@ -2,8 +2,8 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { validateBody, positiveParam, boundQueryInput } = require('../middleware/validate');
-const { bodies } = require('../validation/bodies');
+const { validateBody, validateQuery, positiveParam, boundQueryInput } = require('../middleware/validate');
+const { bodies, queries } = require('../validation/bodies');
 
 function run(middleware, req) {
   return new Promise((resolve) => {
@@ -83,4 +83,14 @@ test('group booking rejects an unexpected field', async () => {
   });
   assert.equal(result.status, 400);
   assert.ok(result.body.fields.role);
+});
+
+test('admin dashboard applications query (status and limit) passes validation', async () => {
+  const req = { query: { limit: '5' } };
+  const result = await run(validateQuery(queries.applications), req);
+  assert.equal(result.next, true);
+  const both = await run(validateQuery(queries.applications), { query: { status: 'pending', limit: '5' } });
+  assert.equal(both.next, true);
+  const unknown = await run(validateQuery(queries.applications), { query: { page: '2' } });
+  assert.equal(unknown.status, 400);
 });

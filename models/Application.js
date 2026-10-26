@@ -127,7 +127,7 @@ async function findByOpportunityId(opportunityId) {
 
 async function findAll(filters = {}) {
   try {
-    const { status } = filters;
+    const { status, limit } = filters;
     const whereClauses = [];
     const params = [];
 
@@ -135,6 +135,9 @@ async function findAll(filters = {}) {
       whereClauses.push('a.status = ?');
       params.push(status);
     }
+
+    const rowLimit = Number.isInteger(limit) && limit > 0 ? Math.min(limit, 100) : null;
+    if (rowLimit) params.push(rowLimit);
 
     const sql = `
         SELECT
@@ -160,6 +163,7 @@ async function findAll(filters = {}) {
         LEFT JOIN opportunities o ON o.opportunity_id = a.opportunity_id
         ${whereClauses.length ? `WHERE ${whereClauses.join(' AND ')}` : ''}
         ORDER BY a.applied_at DESC
+        ${rowLimit ? 'LIMIT ?' : ''}
     `;
     const [rows] = await pool.execute(sql, params);
     return rows.map(row => {

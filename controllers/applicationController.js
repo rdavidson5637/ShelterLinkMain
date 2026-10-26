@@ -231,10 +231,14 @@ async function getAllApplications(req, res) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
-    const { status } = req.query || {};
+    const { status, limit } = req.query || {};
     const filters = {};
     if (status) {
       filters.status = status;
+    }
+    const parsedLimit = Number.parseInt(limit, 10);
+    if (Number.isInteger(parsedLimit) && parsedLimit > 0) {
+      filters.limit = Math.min(parsedLimit, 100);
     }
 
     const applications = await Application.findAll(filters);

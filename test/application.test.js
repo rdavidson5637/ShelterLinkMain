@@ -65,3 +65,23 @@ test('countApprovedByUserId counts accepted+approved', async () => {
   assert.strictEqual(n, 4);
   assert.match(mock.lastCall().sql, /IN \('accepted', 'approved'\)/);
 });
+
+test('findAll applies a capped LIMIT only when asked', async () => {
+  mock.resetCalls();
+  mock.setHandler(async () => [[]]);
+  await Application.findAll({ status: 'pending', limit: 5 });
+  let call = mock.calls.at(-1);
+  assert.match(call.sql, /LIMIT \?/);
+  assert.deepStrictEqual(call.params, ['pending', 5]);
+
+  mock.resetCalls();
+  await Application.findAll({ limit: 5000 });
+  call = mock.calls.at(-1);
+  assert.deepStrictEqual(call.params, [100]);
+
+  mock.resetCalls();
+  await Application.findAll({});
+  call = mock.calls.at(-1);
+  assert.doesNotMatch(call.sql, /LIMIT/);
+  assert.deepStrictEqual(call.params, []);
+});
