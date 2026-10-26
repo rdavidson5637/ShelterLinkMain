@@ -53,6 +53,21 @@ test('frontend/sw.js contains version token, never-cache prefixes, and not /publ
     assert.ok(source.includes(prefix), prefix);
   }
   assert.ok(source.includes('/api/auth/me'));
+  for (const asset of [
+    '/public/fonts/atkinson-hyperlegible-next-400.woff2',
+    '/public/fonts/atkinson-hyperlegible-next-700.woff2',
+    '/public/fonts/young-serif-400.woff2',
+    '/public/css/custom.css',
+    '/js/auth.js',
+    '/js/brand.js',
+  ]) {
+    assert.ok(source.includes(asset), asset);
+  }
   assert.ok(source.includes('/api/applications/my-applications'));
   assert.ok(source.includes('/api/volunteer/profile'));
+});
+
+test('font files get the same long cache as vendor assets', () => {
+  const server = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
+  assert.match(server, /\/public\/fonts\/[\s\S]*max-age=31536000, immutable/);
 });

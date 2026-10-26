@@ -13,6 +13,14 @@ control edges. I added one token, `--field-border: #8F8877` (3.4:1 on surface, 3
 it only for input, select and textarea borders. `--rule-strong` still draws the table header rule as the
 brief says. OK to keep, or do you want the brief value back?
 
+## K3 - session writes and the shelter lookup
+
+Two server changes would cut the Atlantic wait further, after the Railway region move. They are not applied.
+
+`server.js` sets `rolling: true` on the Postgres session store. Every API call can write the session row to keep the one-hour idle window moving. Turning rolling off, or rolling only on a timer, would drop those writes. It also changes when a session expires, so it needs your say-so.
+
+`middleware/shelter.js` loads the user row on every `/api` request that has a session, to find `shelter_id`. The id could be kept on the session at login and refreshed when the user row changes. That is an auth and session change, so it is left here.
+
 ## C1 (Claude Code) - logged-in pages not checked
 
 The login page shows no demo accounts, so C1 was checked on public pages and a scratch fixture of the

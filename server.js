@@ -72,7 +72,7 @@ app.get('/sw.js', (req, res) => {
 app.use(express.static(path.join(__dirname, 'frontend'), {
   setHeaders(res, filePath) {
     const rel = filePath.replace(/\\/g, '/');
-    if (rel.includes('/public/css/vendor/') || rel.includes('/public/js/vendor/')) {
+    if (rel.includes('/public/css/vendor/') || rel.includes('/public/js/vendor/') || rel.includes('/public/fonts/')) {
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
       return;
     }

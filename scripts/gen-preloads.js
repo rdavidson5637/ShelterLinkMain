@@ -2,7 +2,9 @@
 
 /**
  * Writes font preloads and modulepreload tags into each frontend HTML head.
- * Rerun after import graphs change. Only the marker block is rewritten.
+ * Walks static import and export-from edges only. Classic scripts and
+ * dynamic import() are not listed. Rerun after import graphs change.
+ * Only the marker block is rewritten.
  *
  *   node scripts/gen-preloads.js
  *   node scripts/gen-preloads.js --check
