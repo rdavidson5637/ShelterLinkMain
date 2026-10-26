@@ -524,7 +524,7 @@ const queries = {
       series: qstr(10),
     })
     .strict(),
-  applications: z.object({ status: qstr(40) }).strict(),
+  applications: z.object({ status: qstr(40), limit: qstr(10) }).strict(),
   animals: z.object({ species: qstr(40), status: qstr(40) }).strict(),
   incidents: z
     .object({
