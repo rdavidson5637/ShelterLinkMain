@@ -82,7 +82,7 @@ async function loadBookings() {
         actions.appendChild(confirmBtn);
         actions.appendChild(declineBtn);
       } else {
-        actions.textContent = '—';
+        actions.textContent = 'No action needed';
       }
       tableBody.appendChild(tr);
     });

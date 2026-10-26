@@ -14,6 +14,7 @@
     <title>Transport - ShelterLink</title>
     <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" />
     <link rel="stylesheet" href="/public/css/custom.css" />
+    <link rel="stylesheet" href="/public/css/admin.css" />
     <!-- preload:start -->
     <link rel="preload" href="/public/fonts/atkinson-hyperlegible-next-400.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/public/fonts/young-serif-400.woff2" as="font" type="font/woff2" crossorigin>
@@ -60,7 +61,7 @@
         </section>
 
         <section>
-          <article style="max-width: 720px;">
+          <article class="form-panel">
             <h2>New transport run</h2>
             <form id="runForm">
               <label for="title">
@@ -106,7 +107,7 @@
               <option value="cancelled">Cancelled</option>
             </select>
           </label>
-          <div id="runsList">Loading…</div>
+          <div id="runsList"><span class="skeleton" aria-hidden="true"></span></div>
         </section>
       </div>
     </main>

@@ -170,10 +170,10 @@ function renderShiftNotes(notes = []) {
       const when = formatNoteWhen(n.created_at);
       const canDelete = currentUserRole === 'admin';
       return `<article class="strip">
-        <p style="margin:0;"><strong>${escapeHtml(n.author_name || 'Staff')}</strong>${
+        <p class="note-meta"><strong>${escapeHtml(n.author_name || 'Staff')}</strong>${
           when ? ` · ${escapeHtml(when)}` : ''
         }</p>
-        <p style="margin:0.25rem 0;">${escapeHtml(n.body || '')}</p>
+        <p class="note-body">${escapeHtml(n.body || '')}</p>
         ${
           canDelete
             ? `<button type="button" class="secondary button-small" data-delete-note="${n.id}">Delete</button>`
@@ -286,12 +286,12 @@ function createRepeatIndicator(opportunity) {
 
 function createCheckInCodeBadge(opportunity) {
   if (!opportunity.check_in_code) return '';
-  return ` <code title="Check-in code" style="font-size:0.85em;">${escapeHtml(opportunity.check_in_code)}</code>`;
+  return ` <code title="Check-in code" class="num">${escapeHtml(opportunity.check_in_code)}</code>`;
 }
 
 function createUrgentBadge(opportunity) {
   if (!Number(opportunity.is_urgent)) return '';
-  return ' <span class="status-badge" style="background:#fde8e8;color:#7a1f1f;">Urgent</span>';
+  return ' <span class="status-label" data-tone="pending">Cover needed</span>';
 }
 
 function renderOpportunitiesTable() {
@@ -519,7 +519,7 @@ async function saveOpportunity(event) {
 
 async function duplicateOpportunity(opportunity) {
   const confirmed = window.confirm(
-    `Duplicate "${opportunity.title}"? A new draft will be created with dates cleared — set the dates and save.`
+    `Duplicate "${opportunity.title}"? A new draft is made with the dates cleared. Set the dates and save.`
   );
   if (!confirmed) return;
 
@@ -533,7 +533,7 @@ async function duplicateOpportunity(opportunity) {
       return;
     }
     const clone = await response.json();
-    setMessage('success', 'Draft created — set the dates below and save.');
+    setMessage('success', 'Draft made. Set the dates below and save.');
     await fetchOpportunities();
     const refreshed = opportunities.find((o) => Number(o.id) === Number(clone.id));
     populateEditForm(refreshed || clone);

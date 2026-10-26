@@ -90,7 +90,7 @@ async function init() {
         retentionResult.textContent = JSON.stringify(body, null, 2);
       }
       setMessage(
-        `Retention complete — scanned ${body.scanned}, anonymised ${body.anonymised}`,
+        `Retention done. Scanned ${body.scanned}, anonymised ${body.anonymised}.`,
         'success'
       );
     } catch {

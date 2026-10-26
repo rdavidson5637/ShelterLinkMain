@@ -29,7 +29,7 @@ function setMessage(text, tone = 'neutral') {
 }
 
 function formatDate(value) {
-  return formatDateOnly(value) || '—';
+  return formatDateOnly(value) || 'No date';
 }
 
 function buildQuery() {
@@ -45,7 +45,7 @@ function buildQuery() {
 function renderAverages(averages) {
   if (overallAverageEl) {
     overallAverageEl.textContent =
-      averages?.overall != null ? Number(averages.overall).toFixed(2) : '—';
+      averages?.overall != null ? Number(averages.overall).toFixed(2) : 'No ratings yet';
   }
   if (overallCountEl) {
     overallCountEl.textContent = `${averages?.count || 0} rating${averages?.count === 1 ? '' : 's'}`;
@@ -84,7 +84,7 @@ function renderTable(items) {
     if (openConcern) tr.classList.add('concern-open');
 
     const concernLabel = !item.flag_concern
-      ? '—'
+      ? 'None'
       : item.handled_at
         ? 'Handled'
         : 'Needs attention';
@@ -112,7 +112,7 @@ function renderTable(items) {
       btn.addEventListener('click', () => markHandled(item.id, btn));
       actionsTd.appendChild(btn);
     } else {
-      actionsTd.textContent = '—';
+      actionsTd.textContent = 'No action needed';
     }
 
     tableBody.appendChild(tr);

@@ -65,7 +65,7 @@ function renderLeaderboard(rows) {
   }
   leaderboardEl.innerHTML = `
     <ol>
-      ${rows.map((r) => `<li><strong>${r.name}</strong> — ${Number(r.total_hours).toFixed(1)} hrs</li>`).join('')}
+      ${rows.map((r) => `<li><strong>${String(r.name).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`)}</strong>, <span class="num">${Number(r.total_hours).toFixed(1)}</span> hours</li>`).join('')}
     </ol>
   `;
 }

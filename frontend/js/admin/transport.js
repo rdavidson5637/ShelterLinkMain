@@ -156,7 +156,7 @@ async function loadRunDetail(runId, el) {
     const who = leg.claimer_name
       ? `${leg.claimer_name}${leg.claimer_email ? ` (${leg.claimer_email})` : ''}`
       : 'unclaimed';
-    li.textContent = `${leg.from_location} → ${leg.to_location} — ${who}${
+    li.textContent = `${leg.from_location} to ${leg.to_location}, ${who}${
       leg.completed_at ? ' · completed' : ''
     }`;
     list.appendChild(li);

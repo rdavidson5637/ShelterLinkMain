@@ -14,26 +14,7 @@
     <title>Shift feedback - ShelterLink</title>
     <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" />
     <link rel="stylesheet" href="/public/css/custom.css" />
-    <style>
-      tr.concern-open {
-        background: rgba(180, 60, 40, 0.08);
-      }
-      tr.concern-open td:first-child {
-        box-shadow: inset 4px 0 0 #b43c28;
-      }
-      .avg-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-      }
-      .avg-list li {
-        display: flex;
-        justify-content: space-between;
-        gap: 1rem;
-        padding: 0.35rem 0;
-        border-bottom: 1px solid var(--pico-muted-border-color, #ddd);
-      }
-    </style>
+    <link rel="stylesheet" href="/public/css/admin.css" />
     <!-- preload:start -->
     <link rel="preload" href="/public/fonts/atkinson-hyperlegible-next-400.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/public/fonts/young-serif-400.woff2" as="font" type="font/woff2" crossorigin>
@@ -83,13 +64,13 @@
       <section class="grid">
         <article>
           <header><strong>Overall average</strong></header>
-          <p id="overallAverage" class="stat-value" style="font-size: 2rem; font-weight: bold;">:</p>
+          <p id="overallAverage" class="stat-value"><span class="skeleton" aria-hidden="true"></span></p>
           <p id="overallCount" class="muted">0 ratings</p>
         </article>
         <article>
           <header><strong>By opportunity</strong></header>
           <ul class="avg-list" id="byOpportunityList">
-            <li>Loading…</li>
+            <li><span class="skeleton" aria-hidden="true"></span></li>
           </ul>
         </article>
       </section>
@@ -152,7 +133,7 @@
               </tr>
             </thead>
             <tbody id="feedbackTableBody">
-              <tr><td colspan="7">Loading...</td></tr>
+              <tr><td colspan="7"><span class="skeleton" aria-hidden="true"></span></td></tr>
             </tbody>
           </table>
         </div>

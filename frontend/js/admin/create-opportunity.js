@@ -299,7 +299,7 @@ async function loadTemplates() {
     const res = await apiRequest('/opportunity-templates', { method: 'GET' });
     if (!res.ok) return;
     allTemplates = await res.json();
-    templateSelect.innerHTML = '<option value="">— Blank opportunity —</option>';
+    templateSelect.innerHTML = '<option value="">Blank shift</option>';
     allTemplates.forEach((t) => {
       const opt = document.createElement('option');
       opt.value = String(t.id);

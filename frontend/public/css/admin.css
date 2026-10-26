@@ -166,3 +166,131 @@
     page-break-after: auto;
   }
 }
+
+/* --------------------------------------------------------------------------
+   K6: shifts, animals and comms (owned by Claude Code; K5 rules live above)
+   -------------------------------------------------------------------------- */
+.opportunity-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+}
+
+.repeat-indicator {
+  margin-left: 0.25rem;
+  color: var(--ink-2);
+  font-size: var(--step--1);
+}
+
+/* Feedback: open concerns are marked rows, with the word in the status column. */
+tr.concern-open {
+  background: var(--danger-tint);
+}
+
+tr.concern-open td:first-child {
+  border-left: 4px solid var(--danger);
+}
+
+.avg-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.avg-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--rule);
+  font-variant-numeric: tabular-nums;
+}
+
+.avg-list li:last-child {
+  border-bottom: 0;
+}
+
+/* Single-column admin forms sit in one readable column. */
+main article.form-panel {
+  max-width: 45rem;
+}
+
+.form-narrow {
+  max-width: 35rem;
+}
+
+.stacked-form {
+  margin-top: var(--space-2);
+}
+
+.note-meta {
+  margin: 0;
+  font-size: var(--step--1);
+  color: var(--ink-2);
+}
+
+.note-body {
+  margin: 0.25rem 0 var(--space-1);
+}
+
+.filter-submit {
+  align-self: end;
+}
+
+.inline-fields {
+  display: grid;
+  gap: var(--space-1) var(--space-2);
+  align-items: end;
+}
+
+@media (min-width: 768px) {
+  .inline-fields {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+}
+
+.result-pre {
+  margin-top: var(--space-2);
+  padding: var(--space-2);
+  white-space: pre-wrap;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+
+/* Staff guide: the morning routine as numbered ruled steps. */
+.guide-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: guide;
+}
+
+.guide-steps > li {
+  position: relative;
+  margin: 0;
+  padding: 0.75rem 0 0.75rem 2.75rem;
+  border-bottom: 1px solid var(--rule);
+  counter-increment: guide;
+  list-style: none;
+}
+
+.guide-steps > li:last-child {
+  border-bottom: 0;
+}
+
+.guide-steps > li::before {
+  content: counter(guide);
+  position: absolute;
+  top: 0.75rem;
+  left: 0;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: 50%;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}

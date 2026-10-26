@@ -82,7 +82,7 @@ async function loadAnimals() {
     const tr = document.createElement('tr');
     const handling = animal.handling_notes
       ? animal.handling_notes.slice(0, 80) + (animal.handling_notes.length > 80 ? '…' : '')
-      : '—';
+      : 'Not set';
     tr.innerHTML = `
       <td></td>
       <td></td>
@@ -95,7 +95,7 @@ async function loadAnimals() {
     cells[0].textContent = animal.name;
     cells[1].textContent = animal.species;
     cells[2].textContent = animal.status;
-    cells[3].textContent = animal.kennel_ref || '—';
+    cells[3].textContent = animal.kennel_ref || 'Not set';
     cells[4].textContent = handling;
     const editBtn = document.createElement('button');
     editBtn.type = 'button';
@@ -143,7 +143,7 @@ async function loadActivity(animal) {
   const detail = await res.json();
   viewingAnimalId = animal.id;
   activitySection.hidden = false;
-  activityTitle.textContent = `Activity — ${animal.name}`;
+  activityTitle.textContent = `Activity: ${animal.name}`;
   if (incidentAnimalId) incidentAnimalId.value = String(animal.id);
   activityTableBody.innerHTML = '';
   const rows = detail.activity || [];
@@ -158,7 +158,7 @@ async function loadActivity(animal) {
       cells[0].textContent = (row.logged_at || '').replace('T', ' ').slice(0, 16);
       cells[1].textContent = name;
       cells[2].textContent = row.activity_type;
-      cells[3].textContent = row.notes || '—';
+      cells[3].textContent = row.notes || 'No notes';
       cells.forEach((c) => tr.appendChild(c));
       activityTableBody.appendChild(tr);
     });
@@ -195,7 +195,7 @@ function renderIncidents(incidents) {
           return;
         }
         if (viewingAnimalId) {
-          await loadActivity({ id: viewingAnimalId, name: activityTitle.textContent.replace(/^Activity — /, '') });
+          await loadActivity({ id: viewingAnimalId, name: activityTitle.textContent.replace(/^Activity: /, '') });
         }
       });
       cells[4].appendChild(btn);
@@ -229,7 +229,7 @@ incidentForm?.addEventListener('submit', async (e) => {
   }
   document.getElementById('incident_body').value = '';
   setMessage('success', 'Incident note added.');
-  await loadActivity({ id: Number(animalId), name: activityTitle.textContent.replace(/^Activity — /, '') });
+  await loadActivity({ id: Number(animalId), name: activityTitle.textContent.replace(/^Activity: /, '') });
 });
 
 form.addEventListener('submit', async (e) => {

@@ -14,20 +14,7 @@
     <title>Shifts - ShelterLink</title>
     <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" />
     <link rel="stylesheet" href="/public/css/custom.css" />
-    <style>
-      .opportunity-actions {
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-      }
-
-      .repeat-indicator {
-        display: inline-block;
-        margin-left: 0.25rem;
-        color: var(--text-secondary);
-        font-size: 0.9rem;
-      }
-    </style>
+    <link rel="stylesheet" href="/public/css/admin.css" />
     <!-- preload:start -->
     <link rel="preload" href="/public/fonts/atkinson-hyperlegible-next-400.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/public/fonts/young-serif-400.woff2" as="font" type="font/woff2" crossorigin>
@@ -113,8 +100,8 @@
       </section>
 
       <section>
-        <article style="max-width: 760px; margin-inline: auto;">
-          <h2>Edit Opportunity</h2>
+        <article class="form-panel">
+          <h2>Edit shift</h2>
           <p>Select an opportunity from the list to edit it.</p>
           <form id="editOpportunityForm">
             <input type="hidden" id="opportunity_id" name="opportunity_id" />
@@ -216,7 +203,7 @@
               </div>
             </div>
             <div class="opportunity-actions">
-              <button type="submit" id="saveButton" disabled>Save Changes</button>
+              <button type="submit" id="saveButton" disabled>Save changes</button>
               <button type="button" id="cancelEditButton" class="secondary button-secondary">Cancel</button>
             </div>
           </form>

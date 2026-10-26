@@ -50,7 +50,7 @@ async function loadAnimals() {
   (animals || []).forEach((a) => {
     const opt = document.createElement('option');
     opt.value = a.id;
-    opt.textContent = `${a.name} (${a.species}) — ${a.status}`;
+    opt.textContent = `${a.name} (${a.species}), ${a.status}`;
     animalSelect.appendChild(opt);
   });
 }
@@ -123,7 +123,7 @@ async function loadOffers(requestId, container) {
     .map((o) => {
       const name = carerName(o);
       return `<li>
-        <strong>${escapeHtml(name)}</strong> — ${escapeHtml(o.status)}
+        <strong>${escapeHtml(name)}</strong>, ${escapeHtml(o.status)}
         ${o.note ? `<br/><em>${escapeHtml(o.note)}</em>` : ''}
         ${
           o.status === 'pending'
@@ -187,8 +187,8 @@ async function loadPlacements() {
         <td>${p.animal_name || p.animal_id}</td>
         <td>${carerName(p)}</td>
         <td>${String(p.started_on || '').slice(0, 10)}</td>
-        <td>${p.days_elapsed != null ? p.days_elapsed : '—'}</td>
-        <td>${p.expected_end_on ? String(p.expected_end_on).slice(0, 10) : '—'}</td>
+        <td>${p.days_elapsed != null ? p.days_elapsed : 'Not started'}</td>
+        <td>${p.expected_end_on ? String(p.expected_end_on).slice(0, 10) : 'Not set'}</td>
         <td>
           <button type="button" class="secondary button-small end-placement" data-id="${p.id}">End</button>
         </td>

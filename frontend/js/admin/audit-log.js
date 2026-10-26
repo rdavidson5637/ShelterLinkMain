@@ -21,7 +21,7 @@ function setMessage(text, tone = 'neutral') {
 }
 
 function formatWhen(value) {
-  if (!value) return '—';
+  if (!value) return 'Not recorded';
   return formatShiftWhen(value);
 }
 

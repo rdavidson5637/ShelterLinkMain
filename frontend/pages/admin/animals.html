@@ -14,6 +14,7 @@
     <title>Animals - ShelterLink</title>
     <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" />
     <link rel="stylesheet" href="/public/css/custom.css" />
+    <link rel="stylesheet" href="/public/css/admin.css" />
     <!-- preload:start -->
     <link rel="preload" href="/public/fonts/atkinson-hyperlegible-next-400.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/public/fonts/young-serif-400.woff2" as="font" type="font/woff2" crossorigin>
@@ -86,7 +87,7 @@
         </section>
 
         <section>
-          <article style="max-width: 720px;">
+          <article class="form-panel">
             <h2 id="formTitle">Add animal</h2>
             <form id="animalForm">
               <input type="hidden" id="animal_id" />
@@ -151,7 +152,7 @@
                 <button type="button" id="cancelEditButton" class="secondary" hidden>Cancel edit</button>
               </div>
             </form>
-            <form id="photoForm" hidden style="margin-top: 1rem;">
+            <form id="photoForm" class="stacked-form" hidden>
               <label for="photo">
                 Photo (JPG or PNG, max 5MB)
                 <input type="file" id="photo" name="photo" accept="image/jpeg,image/png" />
@@ -177,7 +178,7 @@
                 </tr>
               </thead>
               <tbody id="animalsTableBody">
-                <tr><td colspan="6">Loading...</td></tr>
+                <tr><td colspan="6"><span class="skeleton" aria-hidden="true"></span></td></tr>
               </tbody>
             </table>
           </div>
@@ -201,7 +202,7 @@
           </div>
 
           <h3>Welfare / incident notes</h3>
-          <form id="incidentForm" style="max-width: 560px;">
+          <form id="incidentForm" class="form-narrow">
             <input type="hidden" id="incident_animal_id" />
             <label for="incident_severity">
               Severity

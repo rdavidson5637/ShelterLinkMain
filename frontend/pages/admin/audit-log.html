@@ -14,6 +14,7 @@
     <title>Audit log - ShelterLink</title>
     <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" />
     <link rel="stylesheet" href="/public/css/custom.css" />
+    <link rel="stylesheet" href="/public/css/admin.css" />
     <!-- preload:start -->
     <link rel="preload" href="/public/fonts/atkinson-hyperlegible-next-400.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/public/fonts/young-serif-400.woff2" as="font" type="font/woff2" crossorigin>
@@ -60,7 +61,7 @@
       </section>
 
       <section>
-        <form id="filterForm" class="grid" style="grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 1rem;">
+        <form id="filterForm" class="filter-grid panel-form">
           <label>
             Action
             <input type="text" name="action" id="filterAction" placeholder="e.g. hours.approve" />
@@ -81,7 +82,7 @@
             To
             <input type="date" name="to" id="filterTo" />
           </label>
-          <div style="align-self: end;">
+          <div class="filter-submit">
             <button type="submit">Apply filters</button>
           </div>
         </form>
@@ -102,7 +103,7 @@
             </tr>
           </thead>
           <tbody id="auditTableBody">
-            <tr><td colspan="5">Loading...</td></tr>
+            <tr><td colspan="5"><span class="skeleton" aria-hidden="true"></span></td></tr>
           </tbody>
         </table>
       </section>
