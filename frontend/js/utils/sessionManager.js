@@ -1,4 +1,5 @@
 import { apiRequest } from '../config.js';
+import { loadAuthMe, refreshAuthMe } from '../auth.js';
 
 const SESSION_FLAG_KEY = 'session_expired';
 const SESSION_TIMEOUT_MS = 60 * 60 * 1000; // 60 minutes
@@ -46,7 +47,7 @@ function showWarningBanner() {
     padding: 0;
   `;
   stayLink.addEventListener('click', async () => {
-    await apiRequest('/auth/me', { method: 'GET' }).catch(() => null);
+    await refreshAuthMe();
     warningShown = false;
     removeBanner();
     resetInactivityTimer();
@@ -72,17 +73,13 @@ function resetInactivityTimer() {
 }
 
 export async function checkSession() {
-  try {
-    const res = await apiRequest('/auth/me', { method: 'GET' });
-    if (res.status === 401) {
-      sessionStorage.setItem(SESSION_FLAG_KEY, '1');
-      window.location.href = '/login.html';
-      return false;
-    }
-    return true;
-  } catch (_) {
-    return true;
+  const result = await refreshAuthMe();
+  if (result.status === 401) {
+    sessionStorage.setItem(SESSION_FLAG_KEY, '1');
+    window.location.href = '/login.html';
+    return false;
   }
+  return true;
 }
 
 function setupActivityListeners() {
@@ -101,10 +98,8 @@ async function maybeShowPrivacyNotice() {
   }
   if (document.getElementById('privacyNoticeBar')) return;
 
-  const res = await apiRequest('/auth/me', { method: 'GET' });
-  if (!res.ok) return;
-  const user = await res.json().catch(() => null);
-  if (!user || !user.needsPrivacyNotice) return;
+  const result = await loadAuthMe();
+  if (!result.ok || !result.user || !result.user.needsPrivacyNotice) return;
 
   const bar = document.createElement('div');
   bar.id = 'privacyNoticeBar';

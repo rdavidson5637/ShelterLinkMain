@@ -1,18 +1,26 @@
 import { apiRequest } from './config.js';
+import { createAuthMeLoader } from './authMe.js';
 import { isAdminRole, isStaffOrAdminRole } from './utils/roles.js';
 import { getRegistration, clearUserCache } from './pwa.js';
 
 export { isAdminRole, isStaffOrAdminRole };
 
+const authMe = createAuthMeLoader(() => apiRequest('/auth/me', { method: 'GET' }));
+
+/** Shared /api/auth/me for this page load. */
+export function loadAuthMe() {
+  return authMe.load();
+}
+
+/** New /api/auth/me. Used by the session timer and "stay logged in". */
+export function refreshAuthMe() {
+  return authMe.refresh();
+}
+
 export async function checkAuth() {
-  try {
-    const res = await apiRequest('/auth/me', { method: 'GET' });
-    if (!res.ok) return null;
-    const user = await res.json();
-    return user || null;
-  } catch (_) {
-    return null;
-  }
+  const result = await loadAuthMe();
+  if (result.networkError || !result.ok) return null;
+  return result.user || null;
 }
 
 async function unsubscribePushBestEffort() {

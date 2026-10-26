@@ -1,5 +1,5 @@
 import { API_URL, apiRequest } from '../config.js';
-import { requireAuth, logout } from '../auth.js';
+import { requireAuth, logout, loadAuthMe } from '../auth.js';
 import { formatShiftWhen, parseShiftDate } from '../utils/dateFormat.js';
 import { renderStatCards } from '../components/statCard.js';
 import { showConfirm } from '../components/confirmDialog.js';
@@ -196,9 +196,9 @@ async function fetchAndDisplayStats() {
 
 async function fetchCurrentUser() {
   try {
-    const res = await apiRequest('/auth/me', { method: 'GET' });
-    if (!res.ok) throw new Error('Failed to load current user');
-    return res.json();
+    const result = await loadAuthMe();
+    if (!result.ok) throw new Error('Failed to load current user');
+    return result.user;
   } catch (error) {
     console.error('[Dashboard] fetchCurrentUser error:', error);
     return null;

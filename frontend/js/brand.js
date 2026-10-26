@@ -1,14 +1,46 @@
+import { BRAND_CACHE_KEY, readBrandCache, writeBrandCache } from './brandCache.js';
+
 let pending = null;
+
+function brandStorage() {
+  try {
+    if (typeof sessionStorage === 'undefined') return null;
+    return sessionStorage;
+  } catch {
+    return null;
+  }
+}
+
+async function resolveBrand() {
+  const storage = brandStorage();
+  const now = Date.now();
+  if (storage) {
+    const cached = readBrandCache(storage.getItem(BRAND_CACHE_KEY), now);
+    if (cached.hit) return cached.brand;
+  }
+  if (typeof fetch !== 'function') return null;
+  try {
+    const res = await fetch('/api/public/brand', { credentials: 'same-origin' });
+    const brand = res.ok ? await res.json() : null;
+    if (brand && storage) {
+      const raw = writeBrandCache(brand, now);
+      if (raw) {
+        try {
+          storage.setItem(BRAND_CACHE_KEY, raw);
+        } catch {
+          /* quota or private mode */
+        }
+      }
+    }
+    return brand;
+  } catch {
+    return null;
+  }
+}
 
 export function loadBrand() {
   if (pending) return pending;
-  if (typeof fetch !== 'function') {
-    pending = Promise.resolve(null);
-    return pending;
-  }
-  pending = fetch('/api/public/brand', { credentials: 'same-origin' })
-    .then((res) => (res.ok ? res.json() : null))
-    .catch(() => null);
+  pending = resolveBrand();
   return pending;
 }
 

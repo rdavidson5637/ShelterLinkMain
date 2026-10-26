@@ -2,6 +2,10 @@
 
 Agents add questions here instead of stopping. Newest at the bottom.
 
+## Demo logins are hidden on the local server
+
+`/api/public/demo-info` returns `showDemoHints: false`, so the login page does not list demo accounts. Signed-in checks need a volunteer and a staff or admin user. We will not read `.env`. The hints appear only outside production, and only when `DEMO_ADMIN_EMAIL`, `DEMO_ADMIN_PASSWORD`, `DEMO_VOLUNTEER_EMAIL` and `DEMO_VOLUNTEER_PASSWORD` are set. Please set those for the local server, or name accounts we may use.
+
 ## C1 (Claude Code) - input border colour
 
 The brief's `--rule-strong` (#B9B2A1) is 2.0:1 against `--surface`. WCAG 1.4.11 asks for 3:1 on form
