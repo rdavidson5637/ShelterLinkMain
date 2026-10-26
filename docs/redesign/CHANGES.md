@@ -1,6 +1,62 @@
 # Redesign and speed run - changes
 
-Measured numbers only.
+Measured numbers only. The summary comes first; the measurement notes behind it follow.
+
+## Summary for Ryan
+
+Branch `redesign/concord-run`, 26 October 2026. Claude Code and Cursor, coordinated through Concord.
+Nothing is pushed. Each task is reviewed by the agent that did not build it. `npm test` is green (441 tests).
+
+### What it looked like before
+
+From the brief: the Tailwind default teal and amber, the system font, uppercase stat cards showing "-"
+for two seconds while data loaded, every section the same rounded card, an automatic dark mode with neon
+teal buttons, and a header with a Menu pill, a refresh icon and a full-width Logout button.
+
+From the plan's 26 October measurement: `/api/auth/me` took about 2.1 s at p50 on Railway, and each page
+called it up to three times. Every page also fetched `/api/public/brand`, and the scripts loaded as a
+three-to-four step import waterfall.
+
+### What it looks like now
+
+- **One look, the yard rota board.** Paper background, ink text, one brand green, a yellow highlighter
+  only on what needs someone. Atkinson Hyperlegible Next for reading, Young Serif for page titles, both
+  self-hosted with their licences. Light theme only. All colours live in one token block in `custom.css`.
+- **Every screen starts with what needs you.** The volunteer home leads with "Needs you" (profile status
+  and unfinished onboarding steps), then the next shift with its check-in code, then one line of figures.
+  The admin home ("Today at {shelter}") does the same for staff.
+- **Lists are ruled rows** with dates down the left, a status word with a dot, and one action. Loading
+  shows grey placeholder rows the same size as real ones. No more dashes. Empty lists say so in one sentence.
+- **Navigation.** Volunteers on a phone get a bottom tab bar: Home, Shifts, Hours, Messages, More. On
+  a laptop it is a top bar. Staff get a sidebar from 1024px and a menu drawer below that. Sign out and
+  "Reload page" live in an account menu.
+- **Words.** Sentence case everywhere, plain copy, no em dashes, error messages that say what to do.
+- **Accessibility.** axe finds nothing on the 27 public and volunteer pages except two FullCalendar
+  internals. Lighthouse accessibility is 100 on the pages measured. See `docs/ACCESSIBILITY.md`.
+
+### What got faster, and how we know
+
+| Change | Evidence |
+|---|---|
+| One `/api/auth/me` per page load instead of up to three | K1 test `test/authMeOnce.test.js`; browser check that two callers share one request |
+| Shelter brand cached for 10 minutes in the tab | K1, `frontend/js/brand.js` |
+| Fonts and every page's scripts preloaded, so there is no import waterfall | K2, `scripts/gen-preloads.js`; `test/preloads.test.js` fails if a page's list goes stale |
+| CSS, fonts and shared scripts precached; fonts cached for a year | K3. Second navigation on the dev server: `loadEventEnd` 43 ms, CSS/JS/fonts transferred 0 bytes |
+| Home page Lighthouse, mobile | Performance 98, LCP 2.0 s, CLS 0 (C5 table below) |
+
+There are no "before" Lighthouse numbers, for the reason given under C5.
+
+### What is left, and why
+
+- **R1, yours:** move the Railway service from San Francisco to EU West, next to Supabase in Ireland.
+  Today every database query crosses the Atlantic, and nothing in this branch can remove that.
+- **Decisions waiting in `QUESTIONS.md`:** demo logins for testing, the input border colour, reset
+  password length, the logged-out 401 that costs every page a Lighthouse point, the kiosk 401, session
+  rolling and the per-request shelter lookup, and trimming Pico (about 5.9 KB gzipped saved).
+- **Not seen signed in.** Neither agent had a login, so signed-in pages were checked with a mocked session
+  in the browser (no records touched). Please click through a volunteer and a staff account before merging.
+
+<!-- K5, K7 and the final preload rerun are added below when they land. -->
 
 ## K3 - local dev server, 26 Oct 2026
 
