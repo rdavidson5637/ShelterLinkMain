@@ -24,8 +24,9 @@ const hoursExportStartDate = document.getElementById('hoursExportStartDate');
 const hoursExportEndDate = document.getElementById('hoursExportEndDate');
 
 function formatNumber(num) {
-  if (num === null || num === undefined || Number.isNaN(Number(num))) return '';
-  return Number(num).toLocaleString();
+  const value = Number(num);
+  if (!Number.isFinite(value)) return '0';
+  return value.toLocaleString();
 }
 
 function personName(row) {
@@ -50,6 +51,10 @@ async function loadStats() {
     }
 
     const stats = await res.json();
+    if (!stats || typeof stats !== 'object' || Array.isArray(stats)) {
+      showStatsError(true);
+      return null;
+    }
     showStatsError(false);
     setFigure(totalVolunteersEl, stats.totalVolunteers);
     setFigure(approvedVolunteersEl, stats.totalApprovedVolunteers);
