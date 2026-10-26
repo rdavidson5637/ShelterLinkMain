@@ -1,8 +1,10 @@
 /**
- * Shared dashboard metric card: small uppercase label, large tabular number.
+ * Shared dashboard figure: sentence-case label over a tabular number.
+ * Until a value is set it shows a skeleton the size of the number, never a
+ * dash. Setting textContent on the value element replaces the skeleton.
  */
 
-export function createStatCard({ label, valueId, value = '—', badgeId } = {}) {
+export function createStatCard({ label, valueId, value = null, badgeId } = {}) {
   const article = document.createElement('article');
   article.className = 'stat-card';
 
@@ -12,7 +14,14 @@ export function createStatCard({ label, valueId, value = '—', badgeId } = {}) 
   const valueEl = document.createElement('p');
   if (valueId) valueEl.id = valueId;
   valueEl.className = 'stat-number';
-  valueEl.textContent = value;
+  if (value == null) {
+    const skeleton = document.createElement('span');
+    skeleton.className = 'skeleton skeleton-figure';
+    skeleton.setAttribute('aria-hidden', 'true');
+    valueEl.appendChild(skeleton);
+  } else {
+    valueEl.textContent = value;
+  }
   article.append(heading, valueEl);
 
   if (badgeId) {

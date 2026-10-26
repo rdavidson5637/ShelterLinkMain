@@ -5,6 +5,7 @@
  */
 
 import { trapTabKey } from '../utils/focusTrap.js';
+import { icon } from './icons.js';
 
 const PROFILE_URL = '/pages/volunteer/complete-profile.html';
 
@@ -55,7 +56,7 @@ function createModalElement() {
     <div class="opportunity-modal-card" role="document">
       <div class="opportunity-modal-header">
         <h2 id="opportunity-modal-title" class="opportunity-modal-title"></h2>
-        <button type="button" class="opportunity-modal-close" aria-label="Close"><span aria-hidden="true">×</span></button>
+        <button type="button" class="opportunity-modal-close" aria-label="Close">${icon('close')}</button>
       </div>
       <div id="opportunity-modal-body" class="opportunity-modal-body">
         <p class="opportunity-modal-line opportunity-modal-location-line"></p>

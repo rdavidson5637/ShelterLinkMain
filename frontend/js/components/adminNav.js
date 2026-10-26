@@ -1,5 +1,8 @@
 import { checkAuth } from '../auth.js';
 import { apiRequest } from '../config.js';
+import { bindFocusTrap } from '../utils/focusTrap.js';
+import { mountAccountMenu } from './accountMenu.js';
+import { icon } from './icons.js';
 import {
   ADMIN_INSIGHT,
   ADMIN_MANAGE,
@@ -7,6 +10,15 @@ import {
   filterNavForRole,
   isCurrentPath,
 } from './navConfig.js';
+
+/*
+ * Admin shell. From 1024px the #admin-nav aside is a sidebar column. Below
+ * that it is a drawer opened from the header Menu button: it traps focus,
+ * closes on Escape or the backdrop, and returns focus to the button.
+ * Layout is in custom.css.
+ */
+
+const DRAWER_QUERY = '(max-width: 1023px)';
 
 function linkEl(item, pathname) {
   const a = document.createElement('a');
@@ -17,15 +29,6 @@ function linkEl(item, pathname) {
     a.setAttribute('aria-current', 'page');
   }
   return a;
-}
-
-function closeAll(root) {
-  root.querySelectorAll('.nav-disclosure-toggle').forEach((btn) => {
-    btn.setAttribute('aria-expanded', 'false');
-  });
-  root.querySelectorAll('.nav-disclosure-panel').forEach((panel) => {
-    panel.hidden = true;
-  });
 }
 
 function createDisclosure(label, items, pathname, panelId) {
@@ -54,7 +57,6 @@ function createDisclosure(label, items, pathname, panelId) {
   button.addEventListener('click', (event) => {
     event.stopPropagation();
     const open = button.getAttribute('aria-expanded') === 'true';
-    closeAll(wrap.parentElement || wrap);
     button.setAttribute('aria-expanded', String(!open));
     panel.hidden = open;
   });
@@ -63,84 +65,97 @@ function createDisclosure(label, items, pathname, panelId) {
   return wrap;
 }
 
-function bindDisclosureChrome(root) {
-  const onKey = (event) => {
-    if (event.key === 'Escape') closeAll(root);
-  };
-  const onPointer = (event) => {
-    if (!root.contains(event.target)) closeAll(root);
-  };
-  document.addEventListener('keydown', onKey);
-  document.addEventListener('click', onPointer);
-}
-
-function addRefreshButton() {
-  const headerNav = document.querySelector('.site-header .site-nav');
-  if (!headerNav || headerNav.querySelector('.nav-refresh')) return;
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'nav-refresh';
-  btn.setAttribute('aria-label', 'Refresh');
-  btn.innerHTML =
-    '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.6 6.4A8 8 0 1 0 20 12h-2a6 6 0 1 1-1.8-4.2L14 10h6V4l-2.4 2.4z"/></svg>';
-  btn.addEventListener('click', () => window.location.reload());
-  const logout = headerNav.querySelector('#logoutButton');
-  if (logout) headerNav.insertBefore(btn, logout);
-  else headerNav.appendChild(btn);
-}
-
-function bindMobileToggle(navRoot) {
-  const toggle = document.querySelector('.site-header .nav-toggle');
-  if (!toggle || !navRoot || toggle.dataset.navBound === '1') return;
-  toggle.dataset.navBound = '1';
-  toggle.addEventListener('click', () => {
-    const open = navRoot.classList.toggle('nav-open');
-    toggle.setAttribute('aria-expanded', String(open));
-    document.body.classList.toggle('admin-nav-open', open);
-  });
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && navRoot.classList.contains('nav-open')) {
-      navRoot.classList.remove('nav-open');
-      toggle.setAttribute('aria-expanded', 'false');
-      document.body.classList.remove('admin-nav-open');
-      toggle.focus();
-    }
-  });
-}
-
 export function renderAdminNav(root, role, pathname = window.location.pathname) {
   if (!root) return;
   root.innerHTML = '';
-  root.setAttribute('aria-label', 'Admin');
 
-  const heading = document.createElement('h3');
-  heading.textContent = 'Admin';
-  root.appendChild(heading);
+  const head = document.createElement('div');
+  head.className = 'drawer-head';
+  const title = document.createElement('p');
+  title.className = 'drawer-title';
+  title.textContent = 'Menu';
+  const close = document.createElement('button');
+  close.type = 'button';
+  close.className = 'drawer-close';
+  close.setAttribute('aria-label', 'Close menu');
+  close.innerHTML = icon('close');
+  head.append(title, close);
+  root.appendChild(head);
+
+  const nav = document.createElement('nav');
+  nav.setAttribute('aria-label', 'Admin');
 
   filterNavForRole(ADMIN_PRIMARY, role).forEach((item) => {
-    root.appendChild(linkEl(item, pathname));
+    nav.appendChild(linkEl(item, pathname));
   });
 
   const manage = filterNavForRole(ADMIN_MANAGE, role);
   if (manage.length) {
-    root.appendChild(createDisclosure('Manage', manage, pathname, 'admin-nav-manage'));
+    nav.appendChild(createDisclosure('Manage', manage, pathname, 'admin-nav-manage'));
   }
   const insight = filterNavForRole(ADMIN_INSIGHT, role);
   if (insight.length) {
-    root.appendChild(createDisclosure('Insight', insight, pathname, 'admin-nav-insight'));
+    nav.appendChild(createDisclosure('Insight', insight, pathname, 'admin-nav-insight'));
   }
 
-  bindDisclosureChrome(root);
+  root.appendChild(nav);
+}
+
+function bindDrawer(root) {
+  const toggle = document.querySelector('.site-header .nav-toggle');
+  if (!toggle || toggle.dataset.navBound === '1') return;
+  toggle.dataset.navBound = '1';
+  toggle.removeAttribute('aria-label');
+  toggle.innerHTML = `${icon('menu', { size: 20 })}<span>Menu</span>`;
+
+  const backdrop = document.createElement('div');
+  backdrop.className = 'drawer-backdrop';
+  backdrop.hidden = true;
+  document.body.appendChild(backdrop);
+
+  const media = window.matchMedia(DRAWER_QUERY);
+  let releaseTrap = null;
+
+  const setOpen = (open, { restoreFocus = true } = {}) => {
+    root.classList.toggle('nav-open', open);
+    document.body.classList.toggle('admin-nav-open', open);
+    toggle.setAttribute('aria-expanded', String(open));
+    backdrop.hidden = !open;
+    if (open) {
+      root.setAttribute('role', 'dialog');
+      root.setAttribute('aria-modal', 'true');
+      root.setAttribute('aria-label', 'Menu');
+      releaseTrap = bindFocusTrap(root);
+      (root.querySelector('[aria-current="page"]') || root.querySelector('nav a'))?.focus();
+    } else {
+      root.removeAttribute('role');
+      root.removeAttribute('aria-modal');
+      root.removeAttribute('aria-label');
+      if (releaseTrap) releaseTrap();
+      releaseTrap = null;
+      if (restoreFocus) toggle.focus();
+    }
+  };
+
+  toggle.addEventListener('click', () => setOpen(!root.classList.contains('nav-open')));
+  root.querySelector('.drawer-close')?.addEventListener('click', () => setOpen(false));
+  backdrop.addEventListener('click', () => setOpen(false));
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && root.classList.contains('nav-open')) setOpen(false);
+  });
+  media.addEventListener('change', (event) => {
+    if (!event.matches && root.classList.contains('nav-open')) setOpen(false, { restoreFocus: false });
+  });
 }
 
 async function mount() {
   const root = document.getElementById('admin-nav');
   if (!root) return;
-  const user = await checkAuth();
+  const user = await checkAuth().catch(() => null);
   const role = user?.role || '';
   renderAdminNav(root, role);
-  bindMobileToggle(root);
-  addRefreshButton();
+  bindDrawer(root);
+  mountAccountMenu(document.querySelector('.site-header .site-nav'), { user });
   try {
     const res = await apiRequest('/threads/unread-count', { method: 'GET' });
     if (!res.ok) return;

@@ -32,18 +32,18 @@ export const ADMIN_INSIGHT = [
   { id: 'privacy', label: 'Privacy and GDPR', href: '/pages/admin/privacy.html', adminOnly: true },
 ];
 
-/** Daily volunteer destinations — stay visible in the top bar. */
+/** Daily volunteer destinations: the mobile tab bar and the desktop top bar. */
 export const VOLUNTEER_PRIMARY = [
-  { id: 'dashboard', label: 'Home', href: '/pages/volunteer/dashboard.html' },
-  { id: 'browse', label: 'Find shifts', href: '/pages/volunteer/browse-shifts.html' },
-  { id: 'calendar', label: 'Calendar', href: '/pages/volunteer/calendar.html' },
-  { id: 'messages', label: 'Messages', href: '/pages/volunteer/messages.html' },
+  { id: 'dashboard', label: 'Home', href: '/pages/volunteer/dashboard.html', icon: 'home' },
+  { id: 'browse', label: 'Shifts', href: '/pages/volunteer/browse-shifts.html', icon: 'shifts' },
+  { id: 'hours', label: 'Hours', href: '/pages/volunteer/my-hours.html', icon: 'hours' },
+  { id: 'messages', label: 'Messages', href: '/pages/volunteer/messages.html', icon: 'messages' },
 ];
 
-/** Lower-frequency destinations — grouped under More so the bar stays one row. */
+/** Lower-frequency destinations, grouped under More. */
 export const VOLUNTEER_MORE = [
+  { id: 'calendar', label: 'Calendar', href: '/pages/volunteer/calendar.html' },
   { id: 'applications', label: 'Applications', href: '/pages/volunteer/my-applications.html' },
-  { id: 'hours', label: 'Hours', href: '/pages/volunteer/my-hours.html' },
   { id: 'foster', label: 'Foster', href: '/pages/volunteer/foster.html' },
   { id: 'transport', label: 'Transport', href: '/pages/volunteer/transport.html' },
   { id: 'profile', label: 'Profile', href: '/pages/volunteer/complete-profile.html' },

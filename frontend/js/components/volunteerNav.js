@@ -1,5 +1,7 @@
 import { checkAuth } from '../auth.js';
 import { apiRequest } from '../config.js';
+import { mountAccountMenu } from './accountMenu.js';
+import { icon } from './icons.js';
 import {
   VOLUNTEER_MORE,
   VOLUNTEER_PRIMARY,
@@ -7,72 +9,18 @@ import {
   volunteerMoreContainsPath,
 } from './navConfig.js';
 
-function ensureVolunteerNavStyles() {
-  if (document.getElementById('volunteer-nav-styles')) return;
-  const style = document.createElement('style');
-  style.id = 'volunteer-nav-styles';
-  style.textContent = `
-    .site-nav .nav-menu { flex-wrap: nowrap; flex: 1; }
-    .nav-more { position: relative; display: flex; align-items: center; }
-    button.nav-more-toggle.secondary {
-      display: inline-flex; align-items: center; gap: 0.35rem;
-      margin: 0; padding: 0.4rem 0.65rem; width: auto; height: auto;
-      line-height: 1.2; border: 0; border-radius: var(--radius-control);
-      background: transparent; box-shadow: none; color: var(--text-secondary);
-      font: inherit; font-size: 0.9rem; font-weight: 500; cursor: pointer;
-      white-space: nowrap;
-    }
-    .nav-more-toggle::after {
-      content: ''; width: 0.35rem; height: 0.35rem;
-      border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
-      transform: rotate(45deg); margin-top: -0.15rem;
-    }
-    .nav-more-toggle[aria-expanded='true']::after {
-      transform: rotate(-135deg); margin-top: 0.15rem;
-    }
-    button.nav-more-toggle.secondary:hover,
-    button.nav-more-toggle.secondary:focus-visible {
-      background: var(--green-tint); border: 0; color: var(--text);
-    }
-    .nav-more-toggle--current { background: var(--green-tint); color: var(--text); font-weight: 600; }
-    .nav-more-panel {
-      display: flex !important; flex-direction: column !important; align-items: stretch;
-      flex-wrap: nowrap; position: absolute; right: 0; top: calc(100% + 4px); min-width: 12.5rem;
-      margin: 0; padding: 0.25rem 0; list-style: none; background: var(--surface);
-      border: 1px solid var(--border); border-radius: var(--radius-control);
-      box-shadow: var(--shadow-card); z-index: 30;
-    }
-    .site-nav .nav-menu .nav-more-panel li { display: block; width: 100%; margin: 0; padding: 0; }
-    .nav-more-link {
-      display: block; margin: 0; padding: 0.55rem 0.85rem;
-      color: var(--text-secondary); font-weight: 500; text-decoration: none; white-space: nowrap;
-    }
-    .nav-more-link:hover, .nav-more-link:focus-visible { background: var(--green-tint); color: var(--text); }
-    .nav-more-link[aria-current='page'] { background: var(--green); color: var(--on-primary); font-weight: 600; }
-    @media (max-width: 600px) {
-      .nav-more { display: block; }
-      button.nav-more-toggle.secondary {
-        width: 100%; justify-content: flex-start; min-height: 44px; padding: 0.75rem 0.65rem;
-        pointer-events: none; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.04em;
-        text-transform: uppercase; color: var(--text-muted); background: transparent;
-      }
-      .nav-more-toggle::after { display: none; }
-      .nav-more-panel, .nav-more-panel[hidden] {
-        display: flex !important; flex-direction: column !important; position: static; min-width: 0; padding: 0;
-        border: 0; border-radius: 0; box-shadow: none; background: transparent;
-      }
-      .nav-more-link { min-height: 44px; padding: 0.75rem 0.65rem 0.75rem 1.15rem; }
-    }
-  `;
-  document.head.appendChild(style);
-}
+/*
+ * Volunteer shell. Desktop (768px and up): links in the top bar with a More
+ * menu. Mobile: a bottom tab bar (Home, Shifts, Hours, Messages, More).
+ * Sign out lives in the account menu. Layout is in custom.css.
+ */
 
 function appendUnreadBadge(anchor, count) {
   if (!anchor || !count) return;
   const badge = document.createElement('span');
   badge.className = 'nav-unread-badge';
   badge.textContent = count > 99 ? '99+' : String(count);
-  badge.setAttribute('aria-label', `${count} unread messages`);
+  badge.setAttribute('aria-label', `${count} unread`);
   anchor.appendChild(badge);
 }
 
@@ -87,33 +35,24 @@ function linkEl(item, pathname) {
   return a;
 }
 
-function closeMore(root) {
-  const toggle = root?.querySelector('.nav-more-toggle');
-  const panel = root?.querySelector('.nav-more-panel');
-  if (toggle) toggle.setAttribute('aria-expanded', 'false');
-  if (panel) panel.hidden = true;
-}
-
-function createMoreMenu(items, pathname) {
+/** A More button plus a panel of links. Used by the top bar and the tab bar. */
+function createMoreMenu({ items, pathname, panelId, buttonClass, panelClass, buttonHtml }) {
   const wrap = document.createElement('div');
   wrap.className = 'nav-more';
 
-  const childCurrent = volunteerMoreContainsPath(pathname);
-
   const button = document.createElement('button');
   button.type = 'button';
-  button.className = 'nav-more-toggle secondary';
+  button.className = buttonClass;
   button.setAttribute('aria-expanded', 'false');
-  button.setAttribute('aria-haspopup', 'true');
-  button.setAttribute('aria-controls', 'volunteer-nav-more');
-  button.textContent = 'More';
-  if (childCurrent) {
-    button.classList.add('nav-more-toggle--current');
+  button.setAttribute('aria-controls', panelId);
+  button.innerHTML = buttonHtml;
+  if (volunteerMoreContainsPath(pathname)) {
+    button.classList.add('is-current');
   }
 
   const panel = document.createElement('ul');
-  panel.id = 'volunteer-nav-more';
-  panel.className = 'nav-more-panel';
+  panel.id = panelId;
+  panel.className = panelClass;
   panel.hidden = true;
   items.forEach((item) => {
     const li = document.createElement('li');
@@ -123,32 +62,42 @@ function createMoreMenu(items, pathname) {
     panel.appendChild(li);
   });
 
+  const close = ({ focusButton = false } = {}) => {
+    button.setAttribute('aria-expanded', 'false');
+    panel.hidden = true;
+    if (focusButton) button.focus();
+  };
+
   button.addEventListener('click', (event) => {
     event.stopPropagation();
     const open = button.getAttribute('aria-expanded') === 'true';
-    button.setAttribute('aria-expanded', String(!open));
-    panel.hidden = open;
+    if (open) {
+      close();
+      return;
+    }
+    button.setAttribute('aria-expanded', 'true');
+    panel.hidden = false;
+    panel.querySelector('a')?.focus();
+  });
+  wrap.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !panel.hidden) {
+      event.stopPropagation();
+      close({ focusButton: true });
+    }
+  });
+  wrap.addEventListener('focusout', (event) => {
+    if (!panel.hidden && event.relatedTarget && !wrap.contains(event.relatedTarget)) close();
+  });
+  document.addEventListener('click', (event) => {
+    if (!wrap.contains(event.target) && !panel.hidden) close();
   });
 
   wrap.append(button, panel);
   return wrap;
 }
 
-function bindMoreChrome(listEl) {
-  const more = listEl?.querySelector('.nav-more');
-  if (!more || more.dataset.navBound === '1') return;
-  more.dataset.navBound = '1';
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') closeMore(more);
-  });
-  document.addEventListener('click', (event) => {
-    if (!more.contains(event.target)) closeMore(more);
-  });
-}
-
 export function renderVolunteerNav(listEl, pathname = window.location.pathname) {
   if (!listEl) return;
-  ensureVolunteerNavStyles();
   listEl.innerHTML = '';
 
   VOLUNTEER_PRIMARY.forEach((item) => {
@@ -160,65 +109,88 @@ export function renderVolunteerNav(listEl, pathname = window.location.pathname) 
   });
 
   const moreLi = document.createElement('li');
-  moreLi.appendChild(createMoreMenu(VOLUNTEER_MORE, pathname));
+  moreLi.appendChild(
+    createMoreMenu({
+      items: VOLUNTEER_MORE,
+      pathname,
+      panelId: 'volunteer-nav-more',
+      buttonClass: 'nav-link nav-more-toggle',
+      panelClass: 'nav-more-panel',
+      buttonHtml: 'More',
+    })
+  );
   listEl.appendChild(moreLi);
-  bindMoreChrome(listEl);
 }
 
-async function attachUnreadBadge(listEl) {
-  const link = listEl?.querySelector('[data-nav-id="messages"]');
-  if (!link) return;
+export function renderTabBar(pathname = window.location.pathname) {
+  const existing = document.querySelector('.tab-bar');
+  if (existing) existing.remove();
+
+  const bar = document.createElement('nav');
+  bar.className = 'tab-bar';
+  bar.setAttribute('aria-label', 'Volunteer tabs');
+
+  const list = document.createElement('ul');
+  VOLUNTEER_PRIMARY.forEach((item) => {
+    const li = document.createElement('li');
+    const a = linkEl(item, pathname);
+    a.className = 'tab-bar-link';
+    a.innerHTML = `${icon(item.icon)}<span class="tab-bar-label"></span>`;
+    a.querySelector('.tab-bar-label').textContent = item.label;
+    li.appendChild(a);
+    list.appendChild(li);
+  });
+
+  const moreLi = document.createElement('li');
+  moreLi.appendChild(
+    createMoreMenu({
+      items: VOLUNTEER_MORE,
+      pathname,
+      panelId: 'volunteer-tab-more',
+      buttonClass: 'tab-bar-link nav-more-toggle',
+      panelClass: 'tab-bar-sheet',
+      buttonHtml: `${icon('more')}<span class="tab-bar-label">More</span>`,
+    })
+  );
+  list.appendChild(moreLi);
+
+  bar.appendChild(list);
+  document.body.appendChild(bar);
+  document.body.classList.add('has-tab-bar');
+  return bar;
+}
+
+async function attachUnreadBadges() {
+  const links = document.querySelectorAll('[data-nav-id="messages"]');
+  if (!links.length) return;
   try {
     const res = await apiRequest('/threads/unread-count', { method: 'GET' });
     if (!res.ok) return;
     const data = await res.json();
-    appendUnreadBadge(link, Number(data.count) || 0);
+    const count = Number(data.count) || 0;
+    links.forEach((link) => appendUnreadBadge(link, count));
   } catch (_) {
     /* ignore */
   }
-}
-
-function addRefreshButton(nav) {
-  if (!nav || nav.querySelector('.nav-refresh')) return;
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'nav-refresh';
-  btn.setAttribute('aria-label', 'Refresh');
-  btn.innerHTML =
-    '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.6 6.4A8 8 0 1 0 20 12h-2a6 6 0 1 1-1.8-4.2L14 10h6V4l-2.4 2.4z"/></svg>';
-  btn.addEventListener('click', () => window.location.reload());
-  const logout = nav.querySelector('#logoutButton');
-  if (logout) nav.insertBefore(btn, logout);
-  else nav.appendChild(btn);
-}
-
-function bindMobileToggle(nav) {
-  const toggle = nav?.querySelector('.nav-toggle');
-  if (!nav || !toggle || toggle.dataset.navBound === '1') return;
-  toggle.dataset.navBound = '1';
-  toggle.addEventListener('click', () => {
-    const open = nav.classList.toggle('nav-open');
-    toggle.setAttribute('aria-expanded', String(open));
-  });
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && nav.classList.contains('nav-open')) {
-      nav.classList.remove('nav-open');
-      toggle.setAttribute('aria-expanded', 'false');
-      toggle.focus();
-    }
-  });
 }
 
 async function mount() {
   const nav = document.querySelector('nav[aria-label="Volunteer navigation"]');
   const list = document.getElementById('navMenu') || nav?.querySelector('[data-volunteer-nav], .nav-menu');
   if (!list) return;
-  await checkAuth();
-  renderVolunteerNav(list);
   const navRoot = nav || list.closest('.site-nav');
-  bindMobileToggle(navRoot);
-  addRefreshButton(navRoot);
-  await attachUnreadBadge(list);
+  // The tab bar replaces the old Menu toggle.
+  navRoot?.querySelector('.nav-toggle')?.remove();
+  navRoot?.classList.add('site-nav--volunteer');
+
+  const user = await checkAuth().catch(() => null);
+  renderVolunteerNav(list);
+  renderTabBar();
+  mountAccountMenu(navRoot, {
+    user,
+    links: [{ label: 'Your profile', href: '/pages/volunteer/complete-profile.html' }],
+  });
+  await attachUnreadBadges();
 }
 
 mount();
