@@ -412,6 +412,7 @@ async function findChecksNeedingStaffWarning(now = new Date(), days = STAFF_WARN
     `,
     [today, warnDay]
   );
+  if (!Array.isArray(rows)) return [];
   return rows.map((row) => ({
     ...toSafeCheck(row),
     first_name: row.first_name,

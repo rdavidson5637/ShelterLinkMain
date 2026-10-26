@@ -729,11 +729,13 @@ test('expiry email escapes volunteer names and omits the reference number', asyn
         notes: 'SECRET-NOTES',
       }]];
     }
+    if (/^\s*SELECT/i.test(sql)) return [[]];
     return [{ affectedRows: 0, insertId: 1 }];
   });
   try {
     const job = require('../jobs/backgroundCheckExpiry');
-    await job.runBackgroundCheckExpiry(new Date('2026-06-01T00:00:00Z'));
+    const result = await job.runBackgroundCheckExpiry(new Date('2026-06-01T00:00:00Z'));
+    assert.equal(result.failed, 0);
     assert.equal(emailCalls.length, 1);
     const html = emailCalls[0][2];
     assert.match(html, /&lt;Ann&gt;/);
@@ -773,11 +775,13 @@ test('staff email lists accepted shifts whose check does not cover the date', as
         notes: 'SECRET-NOTES',
       }]];
     }
+    if (/^\s*SELECT/i.test(sql)) return [[]];
     return [{ affectedRows: 0, insertId: 1 }];
   });
   try {
     const job = require('../jobs/backgroundCheckExpiry');
     const result = await job.runBackgroundCheckExpiry(new Date('2026-06-01T12:00:00Z'));
+    assert.equal(result.failed, 0);
     assert.equal(emailCalls.length, 1);
     const html = emailCalls[0][2];
     assert.match(html, /&lt;Bea&gt;/);

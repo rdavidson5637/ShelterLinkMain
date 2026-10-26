@@ -3,12 +3,45 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const http = require('http');
+const { Duplex } = require('stream');
 
 process.env.NODE_ENV = 'test';
 process.env.SESSION_SECRET = process.env.SESSION_SECRET || 'header-check-only-not-a-real-secret-value';
 
 const { securityHeaders } = require('../utils/securityHeaders');
 const { app } = require('../server');
+
+function getHeadersInMemory(path) {
+  return new Promise((resolve, reject) => {
+    const socket = new Duplex({
+      read() {},
+      write(_chunk, _enc, cb) {
+        cb();
+      },
+    });
+    socket.remoteAddress = '127.0.0.1';
+    const req = new http.IncomingMessage(socket);
+    req.method = 'GET';
+    req.url = path;
+    req.headers = { host: '127.0.0.1' };
+
+    const res = new http.ServerResponse(req);
+    res.assignSocket(socket);
+    const origEnd = res.end.bind(res);
+    res.end = function (...args) {
+      origEnd(...args);
+      const raw = res.getHeaders();
+      const headers = {};
+      for (const [k, v] of Object.entries(raw)) {
+        headers[k.toLowerCase()] = v;
+      }
+      resolve(headers);
+      return res;
+    };
+    res.on('error', reject);
+    app.handle(req, res, reject);
+  });
+}
 
 function getHeaders(path) {
   return new Promise((resolve, reject) => {
@@ -20,8 +53,21 @@ function getHeaders(path) {
         server.close(() => resolve(headers));
       });
       req.on('error', (error) => {
-        server.close(() => reject(error));
+        server.close(() => {
+          if (error && (error.code === 'EPERM' || error.code === 'EACCES')) {
+            getHeadersInMemory(path).then(resolve, reject);
+          } else {
+            reject(error);
+          }
+        });
       });
+    });
+    server.on('error', (error) => {
+      if (error && (error.code === 'EPERM' || error.code === 'EACCES')) {
+        getHeadersInMemory(path).then(resolve, reject);
+      } else {
+        reject(error);
+      }
     });
   });
 }
