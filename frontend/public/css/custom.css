@@ -1010,6 +1010,12 @@ tbody td :is(button, [role='button'], .button) {
   width: auto;
 }
 
+/* Inside a panel body the body already pads; don't pad twice. */
+.ruled-panel-body > .empty-state,
+.ruled-panel-body .empty-state:only-child {
+  padding: 0;
+}
+
 /* --------------------------------------------------------------------------
    Motion
    -------------------------------------------------------------------------- */
@@ -1476,6 +1482,16 @@ header.site-header {
 
 .dashboard-main {
   min-width: 0;
+}
+
+/* Anything placed in the layout before the sidebar (the install prompt)
+   spans the full width, so the sidebar keeps the first column. */
+.dashboard-layout > :not(.sidebar-nav):not(.dashboard-main) {
+  grid-column: 1 / -1;
+}
+
+.dashboard-layout > :empty:not(.sidebar-nav) {
+  display: none;
 }
 
 .sidebar-nav {
