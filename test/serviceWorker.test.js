@@ -60,6 +60,9 @@ test('frontend/sw.js contains version token, never-cache prefixes, and not /publ
     '/public/css/custom.css',
     '/js/auth.js',
     '/js/brand.js',
+    '/js/components/icons.js',
+    '/js/components/accountMenu.js',
+    '/js/components/rows.js',
   ]) {
     assert.ok(source.includes(asset), asset);
   }
