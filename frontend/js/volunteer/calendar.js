@@ -198,6 +198,14 @@ function initCalendar() {
 
   calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: 'dayGridMonth',
+    // FullCalendar marks its chevrons role="img" with no name; the buttons
+    // around them are already labelled, so hide the icons from assistive tech.
+    datesSet: () => {
+      calendarEl.querySelectorAll('.fc-icon[role="img"]').forEach((icon) => {
+        icon.removeAttribute('role');
+        icon.setAttribute('aria-hidden', 'true');
+      });
+    },
     headerToolbar: {
       left: 'prev,next today',
       center: 'title',

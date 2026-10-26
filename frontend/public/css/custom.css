@@ -2629,6 +2629,20 @@ main .fc {
   font-variant-numeric: tabular-nums;
 }
 
+/* FullCalendar fades other-month days to 30%, which fails contrast. */
+main .fc .fc-day-other .fc-daygrid-day-top {
+  opacity: 1;
+}
+
+main .fc .fc-daygrid-day-number {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+main .fc .fc-day-other .fc-daygrid-day-number {
+  color: var(--ink-2);
+}
+
 main .fc .fc-toolbar-title {
   font-family: var(--font-display);
   font-weight: 400;
