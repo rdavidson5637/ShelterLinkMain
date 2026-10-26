@@ -125,6 +125,13 @@
       #message .error { color: #ffb4a8; }
       #message .success { color: #b9f6ca; }
     </style>
+    <!-- preload:start -->
+    <link rel="preload" href="/public/fonts/atkinson-hyperlegible-next-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/public/fonts/young-serif-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="modulepreload" href="/js/kiosk.js">
+    <link rel="modulepreload" href="/js/utils/dateFormat.js">
+    <link rel="modulepreload" href="/js/utils/skipLink.js">
+    <!-- preload:end -->
   </head>
   <body class="kiosk-body">
     <main class="kiosk-shell" id="main-content">
