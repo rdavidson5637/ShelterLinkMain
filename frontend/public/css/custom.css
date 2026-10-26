@@ -2583,6 +2583,15 @@ main form fieldset legend {
   border-radius: 0;
 }
 
+/* Filter buttons that select one view: the chosen one is marked. */
+#filterTabs button[aria-pressed='true'],
+#filterTabs button[aria-pressed='true']:hover {
+  background: var(--brand-tint);
+  color: var(--brand);
+  text-decoration: none;
+  padding-inline: 0.75rem;
+}
+
 /* Calendar */
 main .calendar-banner {
   padding: 0.75rem var(--space-2);

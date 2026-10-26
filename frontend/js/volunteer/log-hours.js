@@ -70,8 +70,8 @@ async function loadApprovedApplications() {
     setMessage(''); // Clear any previous error messages
   } catch (error) {
     console.error('[LogHours] loadApprovedApplications error:', error);
-    opportunitySelect.innerHTML = '<option value="" disabled>Error loading opportunities</option>';
-    setMessage('Error loading opportunities', 'error');
+    opportunitySelect.innerHTML = '<option value="" disabled>Shifts could not be loaded</option>';
+    setMessage('Your shifts could not be loaded. Try again in a minute.', 'error');
   }
 }
 
@@ -119,7 +119,7 @@ async function loadRecentHours() {
     });
   } catch (error) {
     console.error('[LogHours] loadRecentHours error:', error);
-    hoursTableBody.innerHTML = '<tr><td colspan="4">Error loading hours</td></tr>';
+    hoursTableBody.innerHTML = '<tr><td colspan="4">Your hours could not be loaded. Try again in a minute.</td></tr>';
   }
 }
 

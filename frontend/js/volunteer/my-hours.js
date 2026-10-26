@@ -152,7 +152,7 @@ function setExportButtonLoading(loading) {
   if (!exportCsvButton) return;
   exportCsvButton.disabled = loading;
   exportCsvButton.setAttribute('aria-busy', loading ? 'true' : 'false');
-  exportCsvButton.textContent = loading ? 'Exporting...' : 'Export CSV';
+  exportCsvButton.textContent = loading ? 'Exporting' : 'Export (CSV)';
 }
 
 function getFilenameFromDisposition(contentDisposition) {
@@ -213,7 +213,7 @@ async function loadHours() {
     renderHoursTable(allHours);
   } catch (error) {
     console.error('[MyHours] loadHours error:', error);
-    hoursTableBody.innerHTML = '<tr><td colspan="4">Error loading hours</td></tr>';
+    hoursTableBody.innerHTML = '<tr><td colspan="4">Your hours could not be loaded. Try again in a minute.</td></tr>';
   }
 }
 
@@ -258,7 +258,7 @@ async function loadFeedbackShifts() {
     });
   } catch (error) {
     console.error('[MyHours] loadFeedbackShifts error:', error);
-    feedbackShiftsBody.innerHTML = '<tr><td colspan="3">Error loading feedback links</td></tr>';
+    feedbackShiftsBody.innerHTML = '<tr><td colspan="3">Feedback links could not be loaded. Try again in a minute.</td></tr>';
   }
 }
 

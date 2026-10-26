@@ -517,7 +517,7 @@ async function handleDocumentUpload(event) {
     await fetchAndDisplayDocuments();
   } catch (error) {
     console.error('[Dashboard] document upload error:', error);
-    setDocUploadMessage('Network error while uploading', 'error');
+    setDocUploadMessage('The upload did not go through. Check your connection and try again.', 'error');
   }
 }
 async function fetchAndDisplayIcalFeed() {
@@ -550,7 +550,7 @@ function setExportButtonLoading(loading) {
   if (!exportHoursCsvButton) return;
   exportHoursCsvButton.disabled = loading;
   exportHoursCsvButton.setAttribute('aria-busy', loading ? 'true' : 'false');
-  exportHoursCsvButton.textContent = loading ? 'Exporting...' : 'Export My Hours CSV';
+  exportHoursCsvButton.textContent = loading ? 'Exporting' : 'Export my hours (CSV)';
 }
 function getFilenameFromDisposition(contentDisposition) {
   const match = /filename="?([^"]+)"?/i.exec(contentDisposition || '');

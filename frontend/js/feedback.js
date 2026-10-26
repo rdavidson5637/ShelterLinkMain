@@ -84,7 +84,7 @@ async function loadForm() {
     if (form) form.hidden = false;
   } catch (error) {
     console.error('[Feedback] loadForm error:', error);
-    if (shiftSummary) shiftSummary.textContent = 'Network error loading feedback form.';
+    if (shiftSummary) shiftSummary.textContent = 'The feedback form could not be loaded. Check your connection and try again.';
     setMessage('Please try again later.', 'error');
   }
 }

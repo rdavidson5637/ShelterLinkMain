@@ -577,7 +577,7 @@ async function init() {
   const user = await requireAuth();
   if (!user) return;
 
-  if (shiftsStatus) shiftsStatus.textContent = 'Loading shifts…';
+  if (shiftsStatus) shiftsStatus.textContent = 'Loading shifts';
   if (shiftsContainer) {
     const list = document.createElement('ul');
     list.className = 'ruled-rows';

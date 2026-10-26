@@ -47,7 +47,7 @@ async function loadRequest() {
     form.hidden = false;
   } catch (error) {
     console.error('[Reference] load error:', error);
-    introEl.textContent = 'Network error loading the reference form.';
+    introEl.textContent = 'The reference form could not be loaded. Check your connection and try again.';
   }
 }
 

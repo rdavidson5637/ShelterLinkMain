@@ -1,4 +1,5 @@
 import { apiRequest } from '../config.js';
+import { createSkeletonRows } from '../components/rows.js';
 import { requireAuth, logout } from '../auth.js';
 import { showConfirm } from '../components/confirmDialog.js';
 import { formatShiftWhen, formatDateOnly } from '../utils/dateFormat.js';
@@ -33,7 +34,11 @@ function createStatusBadgeForApp(status = '', waitlistPosition = null) {
 
 async function loadAnimalsForApplication(app, container) {
   const oppId = app.opportunity_id;
-  if (!oppId || !container) return;
+  if (!container) return;
+  if (!oppId) {
+    container.innerHTML = '';
+    return;
+  }
   const res = await apiRequest(`/opportunities/${oppId}`);
   if (!res.ok) {
     container.innerHTML = '';
@@ -99,7 +104,11 @@ async function loadAnimalsForApplication(app, container) {
 
 async function loadShiftNotesForApplication(app, container) {
   const oppId = app.opportunity_id;
-  if (!oppId || !container) return;
+  if (!container) return;
+  if (!oppId) {
+    container.innerHTML = '';
+    return;
+  }
   const res = await apiRequest(`/opportunities/${oppId}/notes`);
   if (!res.ok) {
     container.innerHTML = '';
@@ -434,19 +443,24 @@ function attachFilterHandlers() {
   const buttons = filterTabs.querySelectorAll('button[data-status]');
   buttons.forEach((btn) => {
     btn.addEventListener('click', () => {
-      buttons.forEach((b) => b.classList.remove('contrast'));
-      btn.classList.add('contrast');
+      buttons.forEach((b) => b.setAttribute('aria-pressed', 'false'));
+      btn.setAttribute('aria-pressed', 'true');
       currentFilter = btn.dataset.status || 'all';
       renderApplications();
     });
   });
-  const defaultTab = filterTabs.querySelector('button[data-status="all"]');
-  if (defaultTab) defaultTab.classList.add('contrast');
+  buttons.forEach((b) => b.setAttribute('aria-pressed', b.dataset.status === 'all' ? 'true' : 'false'));
 }
 
 async function fetchApplications() {
   if (!applicationsContainer) return;
-  setMessage('Loading your applications');
+  if (applicationsContainer) {
+    const list = document.createElement('ul');
+    list.className = 'ruled-rows ruled-panel';
+    list.setAttribute('aria-hidden', 'true');
+    list.appendChild(createSkeletonRows(3, { lead: false }));
+    applicationsContainer.replaceChildren(list);
+  }
   try {
     const res = await apiRequest('/applications/my-applications', { method: 'GET' });
     if (!res.ok) {
@@ -457,7 +471,7 @@ async function fetchApplications() {
     renderApplications();
   } catch (error) {
     console.error('[Volunteer] fetchApplications error:', error);
-    setMessage('Network error while loading applications.');
+    setMessage('Your applications could not be loaded. Check your connection and try again.');
   }
 }
 

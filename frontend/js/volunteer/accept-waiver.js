@@ -129,7 +129,7 @@ async function loadPending() {
     renderCurrent();
   } catch (error) {
     console.error('[Waiver] loadPending error:', error);
-    setMessage('Network error while loading waivers', 'error');
+    setMessage('The waiver could not be loaded. Check your connection and try again.', 'error');
   }
 }
 
