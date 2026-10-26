@@ -45,3 +45,24 @@ and Chrome logs a console error, which is the only thing keeping Best practices 
 the home page and the sign-in page. A `200` with `null` for "not signed in" (on that route, or a new
 `/api/auth/session` for this check only) would clear it. Same family as the kiosk 401 above. API change,
 so yours to decide.
+
+## P2 (Claude Code) - trimming Pico
+
+Measured with Chrome's CSS rule coverage, 26 Oct 2026, after C1 to C5 and K4. Every public, volunteer and
+admin page was loaded at 375px and 1280px (100 page loads), signed in through a client-side mock as a
+volunteer and as an admin. The used rules were joined and compared with the shipped file.
+
+| | Raw | Gzip (level 9) |
+|---|---|---|
+| `pico-2.1.1.min.css` as shipped | 83,319 B | 11,640 B |
+| Only the rules that were used | 28,702 B | 5,758 B |
+| Saving | 54,617 B (66%) | 5,882 B (51%) |
+
+This is an upper bound on the saving. The mock returned empty lists, so states that only appear with real
+data or interaction were not exercised: open dialogs, invalid form fields, tooltips, `<details>`, progress
+bars mid-way, and so on. A safe trim would keep Pico's sections for those (forms, dialog, accordion,
+progress, tooltip) and drop the rest (grid, nav dropdowns, cards, loading spinners, the dark theme
+variables, `.contrast`/`.outline` button variants we no longer use).
+
+Pico stays untouched for now, as the plan says. Do you want a trimmed vendor file (a build-free copy
+checked in next to the original, with a test that fails if a page uses a class that was cut)?
