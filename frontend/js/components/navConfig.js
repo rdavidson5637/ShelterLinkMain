@@ -3,7 +3,7 @@
  */
 
 export const ADMIN_PRIMARY = [
-  { id: 'dashboard', label: 'Dashboard', href: '/pages/admin/dashboard.html' },
+  { id: 'dashboard', label: 'Today', href: '/pages/admin/dashboard.html' },
   { id: 'shifts', label: 'Shifts', href: '/pages/admin/opportunities.html' },
   { id: 'day-sheet', label: 'Day sheet', href: '/pages/admin/day-sheet.html' },
   { id: 'week-sheet', label: 'Week sheet', href: '/pages/admin/week-sheet.html' },
