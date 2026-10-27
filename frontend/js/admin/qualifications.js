@@ -68,7 +68,7 @@ function renderTable() {
     nameTd.textContent = q.name || '';
 
     const descTd = document.createElement('td');
-    descTd.textContent = q.description || '—';
+    descTd.textContent = q.description || 'No description';
 
     const validityTd = document.createElement('td');
     validityTd.textContent =

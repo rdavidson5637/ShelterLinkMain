@@ -42,6 +42,7 @@ function updateSelectAllState() {
 
   if (selectAllCheckbox) selectAllCheckbox.checked = allChecked;
   if (headerCheckbox) headerCheckbox.checked = allChecked;
+  if (bulkApproveButton) bulkApproveButton.disabled = checkedCount === 0;
 }
 
 function showToast(message, type = 'success') {
@@ -72,7 +73,8 @@ function removeRow(hoursId) {
   updatePendingCount();
 
   if (pendingHours.length === 0) {
-    hoursTableBody.innerHTML = '<tr><td colspan="6">No pending hours to approve</td></tr>';
+    hoursTableBody.innerHTML = '<tr><td colspan="6">Nothing is waiting for approval.</td></tr>';
+    updateSelectAllState();
   }
 }
 
@@ -80,8 +82,9 @@ function renderTable() {
   if (!hoursTableBody) return;
 
   if (!pendingHours.length) {
-    hoursTableBody.innerHTML = '<tr><td colspan="6">No pending hours to approve</td></tr>';
+    hoursTableBody.innerHTML = '<tr><td colspan="6">Nothing is waiting for approval.</td></tr>';
     updatePendingCount();
+    updateSelectAllState();
     return;
   }
 
@@ -112,8 +115,9 @@ function renderTable() {
     hoursTd.textContent = entry.hours || 0;
     if (entry.verified_by_checkin) {
       const mark = document.createElement('div');
-      mark.textContent = 'verified by check-in';
-      mark.style.cssText = 'font-size:0.75rem;color:#1565c0;';
+      mark.textContent = 'Verified by check-in';
+      mark.className = 'status-label';
+      mark.dataset.tone = 'brand';
       hoursTd.appendChild(mark);
     }
 
@@ -136,6 +140,7 @@ function renderTable() {
   });
 
   updatePendingCount();
+  updateSelectAllState();
 }
 
 async function handleApprove(hoursId) {

@@ -70,11 +70,11 @@
             <input type="checkbox" id="selectAllCheckbox" />
             Select all
           </label>
-          <button id="bulkApproveButton" class="secondary" type="button">Approve selected</button>
+          <button id="bulkApproveButton" type="button" disabled>Approve selected</button>
         </div>
 
         <table class="people-stack">
-            <caption>Hours awaiting approval</caption>
+            <caption class="visually-hidden">Hours awaiting approval</caption>
           <thead>
             <tr>
               <th scope="col">
@@ -89,7 +89,7 @@
           </thead>
           <tbody id="hoursTableBody">
             <tr>
-              <td colspan="6">Loading...</td>
+              <td colspan="6"><span class="skeleton" aria-hidden="true"></span><span class="visually-hidden">Loading</span></td>
             </tr>
           </tbody>
         </table>

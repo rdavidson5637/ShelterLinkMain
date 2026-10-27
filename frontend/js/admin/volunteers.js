@@ -362,7 +362,7 @@ async function loadVettingSection(userId) {
 async function viewProfile(userId) {
   if (!profileModal || !profileContent) return;
 
-  profileContent.innerHTML = '<p>Loading profile...</p>';
+  profileContent.innerHTML = '<p class="skeleton" aria-hidden="true"></p>';
   
   if (typeof profileModal.showModal === 'function') {
     profileModal.showModal();
@@ -388,7 +388,7 @@ async function viewProfile(userId) {
               const expires = q.expires_at
                 ? `expires ${String(q.expires_at).slice(0, 10)}`
                 : 'never expires';
-              return `<li><strong>${escapeHtml(q.name)}</strong> — awarded ${escapeHtml(String(q.awarded_at).slice(0, 10))}, ${escapeHtml(expires)}</li>`;
+              return `<li><strong>${escapeHtml(q.name)}</strong>, awarded ${escapeHtml(String(q.awarded_at).slice(0, 10))}, ${escapeHtml(expires)}</li>`;
             })
             .join('')}</ul>`;
         }
@@ -414,7 +414,7 @@ async function viewProfile(userId) {
               const accepted = w.accepted_at
                 ? ` · accepted ${String(w.accepted_at).slice(0, 10)} (v${w.accepted_version})`
                 : '';
-              return `<li><strong>${escapeHtml(w.title)}</strong> — ${escapeHtml(statusLabel)} (current v${escapeHtml(w.current_version)})${escapeHtml(accepted)}</li>`;
+              return `<li><strong>${escapeHtml(w.title)}</strong>, ${escapeHtml(statusLabel)} (current v${escapeHtml(w.current_version)})${escapeHtml(accepted)}</li>`;
             })
             .join('')}</ul>`;
         }
@@ -467,14 +467,14 @@ async function viewProfile(userId) {
           if (row.field_type === 'checkbox') {
             display = row.value === '1' || row.value === 1 || row.value === true ? 'Yes' : 'No';
           }
-          return `<li><strong>${escapeHtml(label)}:</strong> ${display == null || display === '' ? '—' : escapeHtml(display)}</li>`;
+          return `<li><strong>${escapeHtml(label)}:</strong> ${display == null || display === '' ? 'Not given' : escapeHtml(display)}</li>`;
         })
         .join('')}</ul>`;
     }
 
     // Format profile data for display
     const profileHtml = `
-      <div style="display: grid; gap: 1rem;">
+      <div class="profile-stack">
         <div>
           <strong>Name:</strong> ${escapeHtml(profile.user_name || `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'N/A')}
         </div>
@@ -507,20 +507,20 @@ async function viewProfile(userId) {
           <span class="badge ${profile.foster_approved ? 'badge--approved' : 'badge--neutral'}">
             ${profile.foster_approved ? 'Yes' : 'No'}
           </span>
-          <button type="button" class="secondary button-small" id="toggleFosterApprovedBtn" style="margin-left:0.5rem;">
+          <button type="button" class="secondary button-small" id="toggleFosterApprovedBtn">
             ${profile.foster_approved ? 'Revoke foster approval' : 'Approve for foster'}
           </button>
         </div>
         <div>
           <strong>Foster home:</strong>
-          <ul style="margin:0.25rem 0 0; padding-left:1.25rem;">
-            <li>Type: ${escapeHtml(profile.home_type || '—')}</li>
-            <li>Max size: ${escapeHtml(profile.max_foster_size || '—')}</li>
+          <ul class="profile-list">
+            <li>Type: ${escapeHtml(profile.home_type || 'Not given')}</li>
+            <li>Max size: ${escapeHtml(profile.max_foster_size || 'Not given')}</li>
             <li>Garden: ${profile.has_garden ? 'Yes' : 'No'}${profile.garden_secure ? ' (secure)' : ''}</li>
             <li>Other dogs/cats: ${profile.has_other_dogs ? 'dogs' : 'no dogs'} / ${profile.has_other_cats ? 'cats' : 'no cats'}</li>
             <li>Children under 16: ${profile.has_children_under_16 ? 'Yes' : 'No'}</li>
             <li>Can medicate: ${profile.can_medicate ? 'Yes' : 'No'}</li>
-            <li>Notes: ${escapeHtml(profile.foster_notes || '—')}</li>
+            <li>Notes: ${escapeHtml(profile.foster_notes || 'None')}</li>
           </ul>
         </div>
         <div>
@@ -531,9 +531,9 @@ async function viewProfile(userId) {
               : ''
           }
         </div>
-        <div style="border-top: 1px solid #ddd; padding-top: 0.75rem;">
+        <div class="profile-section">
           <strong>Community service / type settings</strong>
-          <form id="serviceSettingsForm" style="display:grid; gap:0.5rem; margin-top:0.5rem;">
+          <form id="serviceSettingsForm" class="profile-form">
             <label>
               Type
               <select id="serviceVolunteerType" name="volunteer_type">
@@ -566,10 +566,10 @@ async function viewProfile(userId) {
           <strong>Documents:</strong>
           ${docsHtml}
         </div>
-        <div style="border-top: 1px solid #ddd; padding-top: 0.75rem;">
+        <div class="profile-section">
           <strong>AccessNI / background checks</strong>
-          <div id="vettingChecksList"><p>Loading…</p></div>
-          <form id="backgroundCheckForm" style="display:grid; gap:0.5rem; margin-top:0.5rem;">
+          <div id="vettingChecksList"><p class="skeleton" aria-hidden="true"></p></div>
+          <form id="backgroundCheckForm" class="profile-form">
             <label>
               Check type
               <select id="bgCheckType" required>
@@ -597,10 +597,10 @@ async function viewProfile(userId) {
             <button type="submit" class="button-small">Save background check</button>
           </form>
         </div>
-        <div style="border-top: 1px solid #ddd; padding-top: 0.75rem;">
+        <div class="profile-section">
           <strong>References</strong>
-          <div id="vettingRefsList"><p>Loading…</p></div>
-          <form id="referenceRequestForm" style="display:grid; gap:0.5rem; margin-top:0.5rem;">
+          <div id="vettingRefsList"><p class="skeleton" aria-hidden="true"></p></div>
+          <form id="referenceRequestForm" class="profile-form">
             <label>Referee name <input type="text" id="refName" required /></label>
             <label>Referee email <input type="email" id="refEmail" required /></label>
             <label>Relationship <input type="text" id="refRelationship" placeholder="e.g. former manager" /></label>
@@ -609,7 +609,7 @@ async function viewProfile(userId) {
         </div>
         ${
           isAdminRole(currentUser)
-            ? `<div data-admin-only style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            ? `<div data-admin-only class="people-actions">
           <button type="button" class="secondary button-small" id="gdprExportBtn" data-user-id="${escapeHtml(userId)}">Export GDPR JSON</button>
           <button type="button" class="contrast button-small" id="gdprEraseBtn" data-user-id="${escapeHtml(userId)}">Erase account</button>
         </div>`
