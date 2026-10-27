@@ -441,7 +441,7 @@ async function fetchOpportunities() {
     const endpoint = query ? `/opportunities?${query}` : '/opportunities';
     const response = await apiRequest(endpoint, { method: 'GET' });
     if (!response.ok) {
-      setMessage('error', 'Failed to load opportunities.');
+      setMessage('error', 'Shifts could not be loaded. Try again in a minute.');
       opportunities = [];
       renderOpportunitiesTable();
       return;
@@ -451,7 +451,7 @@ async function fetchOpportunities() {
     renderOpportunitiesTable();
   } catch (error) {
     console.error('[Admin] fetch opportunities error:', error);
-    setMessage('error', 'Network error while loading opportunities.');
+    setMessage('error', 'No connection. Try again when you are back online.');
     opportunities = [];
     renderOpportunitiesTable();
   }
@@ -482,7 +482,7 @@ async function saveOpportunity(event) {
   setMessage();
 
   if (!selectedOpportunityId) {
-    setMessage('error', 'Select an opportunity to edit first.');
+    setMessage('error', 'Pick a shift to edit first.');
     return;
   }
 
@@ -501,15 +501,15 @@ async function saveOpportunity(event) {
 
     if (!response.ok) {
       const errorBody = await response.json().catch(() => ({}));
-      setMessage('error', errorBody?.error || 'Failed to update opportunity.');
+      setMessage('error', errorBody?.error || 'The shift did not save. Try again in a moment.');
       return;
     }
 
-    setMessage('success', 'Opportunity updated.');
+    setMessage('success', 'Shift saved.');
     await fetchOpportunities();
   } catch (error) {
     console.error('[Admin] update opportunity error:', error);
-    setMessage('error', 'Network error while updating opportunity.');
+    setMessage('error', 'No connection. The shift did not save.');
   } finally {
     if (selectedOpportunityId) {
       saveButton?.removeAttribute('disabled');
@@ -529,7 +529,7 @@ async function duplicateOpportunity(opportunity) {
     });
     if (!response.ok) {
       const errorBody = await response.json().catch(() => ({}));
-      setMessage('error', errorBody?.error || 'Failed to duplicate opportunity.');
+      setMessage('error', errorBody?.error || 'The shift could not be copied. Try again in a moment.');
       return;
     }
     const clone = await response.json();
@@ -539,7 +539,7 @@ async function duplicateOpportunity(opportunity) {
     populateEditForm(refreshed || clone);
   } catch (error) {
     console.error('[Admin] duplicate opportunity error:', error);
-    setMessage('error', 'Network error while duplicating opportunity.');
+    setMessage('error', 'No connection. The shift was not copied.');
   }
 }
 
@@ -599,7 +599,7 @@ async function closeOpportunity(opportunity) {
 
     if (!response.ok) {
       const errorBody = await response.json().catch(() => ({}));
-      setMessage('error', errorBody?.error || 'Failed to close opportunity.');
+      setMessage('error', errorBody?.error || 'The shift could not be closed. Try again in a moment.');
       return;
     }
 
@@ -616,12 +616,12 @@ async function closeOpportunity(opportunity) {
         `Series delete complete: ${deleted} removed${skipped ? `, ${skipped} skipped (accepted applications)` : ''}.`
       );
     } else {
-      setMessage('success', 'Opportunity closed.');
+      setMessage('success', 'Shift closed.');
     }
     await fetchOpportunities();
   } catch (error) {
     console.error('[Admin] close opportunity error:', error);
-    setMessage('error', 'Network error while closing opportunity.');
+    setMessage('error', 'No connection. The shift was not closed.');
   }
 }
 

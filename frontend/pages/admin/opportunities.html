@@ -61,7 +61,7 @@
       <section class="page-toolbar">
         <div>
           <h1>Shifts</h1>
-          <p>Review active and closed opportunities. Edit details or close openings directly from this page.</p>
+          <p class="lead">Every shift, open and closed. Pick one to edit it, repeat it or close it.</p>
         </div>
         <a href="/pages/admin/create-opportunity.html" role="button">Create opportunity</a>
       </section>
@@ -70,7 +70,7 @@
         <article>
           <div>
             <label for="statusFilter">
-              Status Filter
+              Status
               <select id="statusFilter" name="statusFilter">
                 <option value="">All statuses</option>
                 <option value="open">Open</option>
@@ -92,7 +92,7 @@
                 </tr>
               </thead>
               <tbody id="opportunitiesTableBody">
-                <tr><td colspan="5">Loading opportunities...</td></tr>
+                <tr><td colspan="5"><span class="skeleton" aria-hidden="true"></span></td></tr>
               </tbody>
             </table>
           </div>
@@ -102,7 +102,7 @@
       <section>
         <article class="form-panel">
           <h2>Edit shift</h2>
-          <p>Select an opportunity from the list to edit it.</p>
+          <p class="muted">Pick a shift from the list to edit it.</p>
           <form id="editOpportunityForm">
             <input type="hidden" id="opportunity_id" name="opportunity_id" />
             <div class="form-grid">
@@ -199,7 +199,7 @@
               </div>
               <div class="form-section form-full-width">
                 <span>Tags</span>
-                <div id="opportunityTags" class="tag-chips" aria-label="Opportunity tags"></div>
+                <div id="opportunityTags" class="tag-chips" aria-label="Interests"></div>
               </div>
             </div>
             <div class="opportunity-actions">

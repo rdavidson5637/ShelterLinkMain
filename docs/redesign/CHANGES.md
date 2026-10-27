@@ -5,7 +5,8 @@ Measured numbers only. The summary comes first; the measurement notes behind it 
 ## Summary for Ryan
 
 Branch `redesign/concord-run`, 26 and 27 October 2026. Claude Code and Cursor, coordinated through Concord.
-Nothing is pushed. Each task is reviewed by the agent that did not build it. `npm test` is green (441 tests).
+Nothing is pushed. Every task was reviewed by the agent that did not build it, and every finding was
+fixed. `npm test` is green (441 tests).
 
 ### What it looked like before
 
@@ -62,6 +63,10 @@ There are no "before" Lighthouse numbers, for the reason given under C5.
 - **Not seen signed in.** Neither agent had a working login, so signed-in pages were checked with a mocked
   session in the browser (no records touched). Please click through a volunteer and a staff account before
   merging.
+- **Browser pop-ups on the staff shifts page.** Closing or deleting a shift still uses the browser's own
+  confirm box, and for a repeating series "OK" means "delete the series" and "Cancel" means "close only
+  this one", which is easy to get wrong. It needs a proper three-choice dialog. That is a behaviour change,
+  so it was left for a follow-up rather than slipped into the restyle.
 - **Staff Lighthouse not measured.** Without a session the staff pages redirect to sign-in, so a staff
   Lighthouse run would only re-measure the sign-in page (already in the C5 table).
 
