@@ -2961,12 +2961,6 @@ body.kiosk-body #message {
   margin-bottom: 1.5rem;
 }
 
-.shift-group h2 {
-  margin-bottom: 0.2rem;
-  padding-bottom: 0.35rem;
-  border-bottom: 1px solid var(--border);
-}
-
 .shift-group-count {
   color: var(--text-muted);
   font-size: var(--step--1);
