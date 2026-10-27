@@ -1,6 +1,8 @@
 import { apiRequest } from '../config.js';
 import { requireAuth } from '../auth.js';
 import { escapeHtml } from '../utils/escapeHtml.js';
+import { createDateBlock, createEmptyState, createRuledRow, createStatusLabel } from '../components/rows.js';
+import { openRowForm, textField } from '../components/rowForm.js';
 
 const messageEl = document.getElementById('message');
 const matchingList = document.getElementById('matchingList');
@@ -26,132 +28,141 @@ function showEmergency(phone) {
   emergencyBanner.hidden = false;
 }
 
+const DAY = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+
+function formatDay(value) {
+  const iso = String(value || '').slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+  const [y, m, d] = iso.split('-').map(Number);
+  return DAY.format(new Date(y, m - 1, d));
+}
+
+function plainEmpty(container, sentence, action) {
+  container.replaceChildren(createEmptyState(sentence, action));
+}
+
 async function loadMatching() {
   const res = await apiRequest('/fosters/matching');
   if (!res.ok) {
-    matchingList.innerHTML =
-      '<p>Unable to load matching requests. You may need foster approval and home details on your profile.</p>';
+    plainEmpty(matchingList, 'Foster requests are shown once staff have approved you as a foster carer and your home details are on your profile.', {
+      href: '/pages/volunteer/complete-profile.html#fosterHomeSection',
+      label: 'Add your home details',
+    });
     return;
   }
   const data = await res.json();
   showEmergency(data.emergency_phone);
   const requests = data.requests || [];
   if (!requests.length) {
-    matchingList.innerHTML =
-      '<p>No matching open foster requests right now. Update your foster home details on Profile, and ask staff to mark you foster-approved.</p>';
+    plainEmpty(matchingList, 'No foster requests match your home right now.');
     return;
   }
 
-  matchingList.innerHTML = '';
+  const list = document.createElement('ul');
+  list.className = 'ruled-rows';
   requests.forEach((req) => {
-    const article = document.createElement('article');
     const offered = req.my_offer && req.my_offer.status === 'pending';
-    article.innerHTML = `
-      <header>
-        <strong>${escapeHtml(req.animal_name || `Animal #${req.animal_id}`)}</strong>
-        · ${escapeHtml(req.urgency)}
-        · from ${escapeHtml(String(req.needed_from || '').slice(0, 10))}
-      </header>
-      <p>${escapeHtml(req.description || 'No description.')}</p>
-      ${
-        offered
-          ? '<p class="success">You have offered to foster.</p>'
-          : `<label>Note (optional)
-              <textarea class="offer-note" rows="2"></textarea>
-            </label>
-            <button type="button" class="offer-btn" data-id="${escapeHtml(req.id)}">Offer to foster</button>`
-      }
-    `;
-    matchingList.appendChild(article);
-
-    const btn = article.querySelector('.offer-btn');
-    btn?.addEventListener('click', async () => {
-      const note = article.querySelector('.offer-note')?.value || null;
-      const offerRes = await apiRequest(`/fosters/requests/${req.id}/offers`, {
-        method: 'POST',
-        body: { note },
-      });
-      const body = await offerRes.json().catch(() => ({}));
-      if (!offerRes.ok) {
-        setMessage('error', body.error || 'Unable to submit offer');
-        return;
-      }
-      setMessage('success', 'Offer submitted. Staff will review and confirm.');
-      await loadMatching();
+    const from = formatDay(req.needed_from);
+    const end = [];
+    if (req.urgency === 'urgent') end.push(createStatusLabel('Urgent', 'pending'));
+    if (offered) {
+      end.push(createStatusLabel('You offered', 'ok'));
+    } else {
+      const offer = document.createElement('button');
+      offer.type = 'button';
+      offer.className = 'button-small';
+      offer.textContent = 'Offer to foster';
+      end.push(offer);
+    }
+    const name = req.animal_name || `Animal ${req.animal_id}`;
+    const row = createRuledRow({
+      lead: createDateBlock(req.needed_from),
+      title: name,
+      details: [from ? `Needed from ${from}` : 'Start date to be agreed', req.description || ''],
+      end,
+      needsYou: req.urgency === 'urgent' && !offered,
     });
+    row.querySelector('.ruled-row-end button')?.addEventListener('click', () => {
+      openRowForm(row, () => [textField('Anything staff should know? (optional)', 'offer-note', 'For example, home all day on weekends')], 'Send offer', async (form) => {
+        const note = form.querySelector('.offer-note')?.value.trim() || null;
+        const offerRes = await apiRequest(`/fosters/requests/${req.id}/offers`, { method: 'POST', body: { note } });
+        const body = await offerRes.json().catch(() => ({}));
+        if (!offerRes.ok) {
+          setMessage('error', body.error || 'Your offer did not go through. Try again in a moment.');
+          return;
+        }
+        setMessage('success', `Offer sent for ${name}. Staff will confirm.`);
+        await loadMatching();
+      });
+    });
+    list.appendChild(row);
   });
+  matchingList.replaceChildren(list);
 }
 
 async function loadPlacements() {
   const res = await apiRequest('/fosters/my-placements');
   if (!res.ok) {
-    placementsList.innerHTML = '<p class="error-message">Unable to load placements.</p>';
+    plainEmpty(placementsList, 'Your foster placements could not be loaded. Try again in a minute.');
     return;
   }
   const data = await res.json();
   if (data.emergency_phone) showEmergency(data.emergency_phone);
   const placements = data.placements || [];
   if (!placements.length) {
-    placementsList.innerHTML = '<p>You have no foster placements yet.</p>';
+    plainEmpty(placementsList, 'No animals are staying with you yet.');
     return;
   }
 
-  placementsList.innerHTML = '';
+  const list = document.createElement('ul');
+  list.className = 'ruled-rows';
   placements.forEach((p) => {
-    const article = document.createElement('article');
     const active = p.status === 'active';
-    article.innerHTML = `
-      <header>
-        <strong>${escapeHtml(p.animal_name || `Animal #${p.animal_id}`)}</strong>
-        · ${escapeHtml(p.status)}
-        · started ${escapeHtml(String(p.started_on || '').slice(0, 10))}
-      </header>
-      ${
-        p.animal_handling_notes
-          ? `<p><strong>Handling notes:</strong> ${p.animal_handling_notes}</p>`
-          : ''
-      }
-      ${
-        active
-          ? `<div class="form-grid">
-              <label>
-                Check-in type
-                <select class="checkin-type">
-                  <option value="other">General check-in</option>
-                  <option value="feed">Feed</option>
-                  <option value="socialise">Socialise</option>
-                  <option value="medical">Medical</option>
-                  <option value="walk">Walk</option>
-                </select>
-              </label>
-              <label class="form-full-width">
-                Notes
-                <textarea class="checkin-notes" rows="2" placeholder="How are they doing?"></textarea>
-              </label>
-            </div>
-            <button type="button" class="checkin-btn" data-id="${p.id}">Log check-in</button>`
-          : `<p>Ended ${p.ended_on ? String(p.ended_on).slice(0, 10) : ''}.</p>`
-      }
-    `;
-    placementsList.appendChild(article);
-
-    article.querySelector('.checkin-btn')?.addEventListener('click', async () => {
-      const activity_type = article.querySelector('.checkin-type')?.value || 'other';
-      const notes = article.querySelector('.checkin-notes')?.value || 'Foster check-in';
-      const checkRes = await apiRequest(`/fosters/placements/${p.id}/check-in`, {
-        method: 'POST',
-        body: { activity_type, notes },
+    const name = p.animal_name || `Animal ${p.animal_id}`;
+    const started = formatDay(p.started_on);
+    const ended = formatDay(p.ended_on);
+    const details = [active ? (started ? `With you since ${started}` : 'With you now') : (ended ? `Went home ${ended}` : 'Placement ended')];
+    // Handling notes are staff-written text: always set as text, never HTML.
+    if (p.animal_handling_notes) details.push(`Handling: ${p.animal_handling_notes}`);
+    const end = [createStatusLabel(active ? 'With you' : 'Ended', active ? 'ok' : 'neutral')];
+    if (active) {
+      const log = document.createElement('button');
+      log.type = 'button';
+      log.className = 'button-small';
+      log.textContent = 'Log a check-in';
+      end.push(log);
+    }
+    const row = createRuledRow({ lead: createDateBlock(p.started_on), title: name, details, end });
+    row.querySelector('.ruled-row-end button')?.addEventListener('click', () => {
+      openRowForm(row, () => {
+        const typeLabel = document.createElement('label');
+        typeLabel.textContent = 'What did you do?';
+        const select = document.createElement('select');
+        select.className = 'checkin-type';
+        [['other', 'General check-in'], ['feed', 'Feed'], ['walk', 'Walk'], ['socialise', 'Play or socialise'], ['medical', 'Medicine or vet']].forEach(([value, label]) => {
+          const opt = document.createElement('option');
+          opt.value = value;
+          opt.textContent = label;
+          select.appendChild(opt);
+        });
+        typeLabel.appendChild(select);
+        return [typeLabel, textField(`How is ${name} doing?`, 'checkin-notes', 'For example, eating well, a bit shy')];
+      }, 'Save check-in', async (form) => {
+        const activity_type = form.querySelector('.checkin-type')?.value || 'other';
+        const notes = form.querySelector('.checkin-notes')?.value.trim() || 'Foster check-in';
+        const checkRes = await apiRequest(`/fosters/placements/${p.id}/check-in`, { method: 'POST', body: { activity_type, notes } });
+        const body = await checkRes.json().catch(() => ({}));
+        if (!checkRes.ok) {
+          setMessage('error', body.error || 'The check-in did not save. Try again in a moment.');
+          return;
+        }
+        setMessage('success', `Check-in saved for ${name}.`);
+        await loadPlacements();
       });
-      const body = await checkRes.json().catch(() => ({}));
-      if (!checkRes.ok) {
-        setMessage('error', body.error || 'Failed to log check-in');
-        return;
-      }
-      setMessage('success', 'Check-in logged.');
-      const notesEl = article.querySelector('.checkin-notes');
-      if (notesEl) notesEl.value = '';
     });
+    list.appendChild(row);
   });
+  placementsList.replaceChildren(list);
 }
 
 async function init() {

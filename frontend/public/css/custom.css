@@ -2592,6 +2592,36 @@ main form fieldset legend {
   padding-inline: 0.75rem;
 }
 
+/* A panel body that holds a ruled list lets the rows reach the edges. */
+.ruled-panel-body:has(> .ruled-rows) {
+  padding: 0;
+}
+
+/* One-step forms that open inside a row (components/rowForm.js). */
+.row-form {
+  display: grid;
+  gap: var(--space-1);
+  width: 100%;
+  max-width: 28rem;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+.row-form label {
+  margin: 0;
+  font-weight: 400;
+}
+
+.row-form .actions {
+  margin: 0;
+}
+
+.row-form button[type='submit'] {
+  width: auto;
+}
+
 /* Calendar */
 main .calendar-banner {
   padding: 0.75rem var(--space-2);

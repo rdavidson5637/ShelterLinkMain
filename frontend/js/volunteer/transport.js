@@ -1,5 +1,7 @@
 import { apiRequest } from '../config.js';
 import { requireAuth, checkAuth } from '../auth.js';
+import { createDateBlock, createEmptyState, createRuledRow, createStatusLabel } from '../components/rows.js';
+import { openRowForm, textField } from '../components/rowForm.js';
 
 const messageEl = document.getElementById('message');
 const openLegsList = document.getElementById('openLegsList');
@@ -15,10 +17,21 @@ function setMessage(type, text) {
   messageEl.appendChild(p);
 }
 
-function formatLeg(leg) {
-  const when = leg.run_date ? String(leg.run_date).slice(0, 10) : '';
-  const animal = leg.animal_name ? ` · ${leg.animal_name}` : '';
-  return `${leg.run_title || 'Transport'} (${when})${animal}: ${leg.from_location} → ${leg.to_location}`;
+function legTitle(leg) {
+  return `${leg.from_location} to ${leg.to_location}`;
+}
+
+function legDetails(leg) {
+  const facts = [leg.run_title || 'Transport run'];
+  if (leg.animal_name) facts.push(leg.animal_name);
+  facts.push(leg.distance_miles != null ? `about ${leg.distance_miles} miles` : 'mileage to be confirmed');
+  return facts.join(', ');
+}
+
+function rowsList() {
+  const list = document.createElement('ul');
+  list.className = 'ruled-rows';
+  return list;
 }
 
 async function openTransportThread(contextId, subject) {
@@ -41,113 +54,108 @@ async function openTransportThread(contextId, subject) {
 async function loadOpenLegs() {
   const res = await apiRequest('/transport/legs/open');
   if (!res.ok) {
-    openLegsList.innerHTML = '<p class="error-message">Unable to load open legs. Approved volunteers only.</p>';
+    openLegsList.replaceChildren(createEmptyState('Transport legs are shown to approved volunteers. Ask staff if you would like to drive.'));
     return;
   }
   const data = await res.json();
   const legs = data.legs || [];
   if (!legs.length) {
-    openLegsList.innerHTML = '<p>No open transport legs right now.</p>';
+    openLegsList.replaceChildren(createEmptyState('No transport legs need a driver right now.'));
     return;
   }
-  openLegsList.innerHTML = '';
+  const list = rowsList();
   legs.forEach((leg) => {
-    const article = document.createElement('article');
-    article.innerHTML = `
-      <header><strong></strong></header>
-      <p></p>
-      <button type="button" class="claim-btn">Claim this leg</button>
-    `;
-    article.querySelector('strong').textContent = formatLeg(leg);
-    article.querySelector('p').textContent =
-      leg.distance_miles != null ? `About ${leg.distance_miles} miles` : 'Mileage TBC';
-    article.querySelector('.claim-btn').addEventListener('click', async () => {
-      const claimRes = await apiRequest(`/transport/legs/${leg.id}/claim`, {
-        method: 'POST',
-        body: {},
-      });
+    const claim = document.createElement('button');
+    claim.type = 'button';
+    claim.className = 'button-small';
+    claim.textContent = 'Drive this leg';
+    claim.setAttribute('aria-label', `Drive this leg: ${legTitle(leg)}`);
+    claim.addEventListener('click', async () => {
+      claim.disabled = true;
+      const claimRes = await apiRequest(`/transport/legs/${leg.id}/claim`, { method: 'POST', body: {} });
       const body = await claimRes.json().catch(() => ({}));
+      claim.disabled = false;
       if (!claimRes.ok) {
-        setMessage('error', body.error || 'Could not claim leg');
+        setMessage('error', body.error || 'That leg could not be claimed. Someone may have taken it.');
         return;
       }
-      const prev = body.previous_leg?.exists
-        ? ` Previous leg exists (order ${body.previous_leg.leg_order}).`
-        : '';
-      const next = body.next_leg?.exists
-        ? ` Next leg exists (order ${body.next_leg.leg_order}).`
-        : '';
-      setMessage(
-        'success',
-        `Leg claimed.${prev}${next} ${body.coordination || 'Coordinate via shelter.'}`
-      );
+      setMessage('success', `You are driving ${legTitle(leg)}. ${body.coordination || 'The shelter will arrange the handover.'}`);
       await loadOpenLegs();
       await loadMyLegs();
     });
-    openLegsList.appendChild(article);
+    list.appendChild(createRuledRow({
+      lead: createDateBlock(leg.run_date),
+      title: legTitle(leg),
+      details: [legDetails(leg)],
+      end: [claim],
+    }));
   });
+  openLegsList.replaceChildren(list);
 }
 
 async function loadMyLegs() {
   const res = await apiRequest('/transport/legs/mine');
   if (!res.ok) {
-    myLegsList.innerHTML = '<p class="error-message">Unable to load your legs.</p>';
+    myLegsList.replaceChildren(createEmptyState('Your legs could not be loaded. Try again in a minute.'));
     return;
   }
   const data = await res.json();
   const legs = data.legs || [];
   if (!legs.length) {
-    myLegsList.innerHTML = '<p>You have not claimed any legs yet.</p>';
+    myLegsList.replaceChildren(createEmptyState('You are not driving any legs yet.'));
     return;
   }
-  myLegsList.innerHTML = '';
+  const list = rowsList();
   legs.forEach((leg) => {
-    const article = document.createElement('article');
     const done = Boolean(leg.completed_at);
-    article.innerHTML = `
-      <header><strong></strong></header>
-      <p></p>
-      <p class="muted">Coordinate via shelter · message thread available</p>
-      <div class="actions"></div>
-    `;
-    article.querySelector('strong').textContent = formatLeg(leg);
-    article.querySelector('p').textContent = done
-      ? `Completed ${String(leg.completed_at).replace('T', ' ').slice(0, 16)}`
-      : 'In progress';
-    const actions = article.querySelector('.actions');
-    const msgBtn = document.createElement('button');
-    msgBtn.type = 'button';
-    msgBtn.className = 'secondary';
-    msgBtn.textContent = 'Message thread';
-    msgBtn.addEventListener('click', () =>
-      openTransportThread(leg.run_id, `Transport: ${leg.run_title || 'run'}`)
-    );
-    actions.appendChild(msgBtn);
+    const end = [createStatusLabel(done ? 'Done' : 'Coming up', done ? 'ok' : 'brand')];
+    const msg = document.createElement('button');
+    msg.type = 'button';
+    msg.className = 'secondary';
+    msg.textContent = 'Message the shelter';
+    msg.addEventListener('click', () => openTransportThread(leg.run_id, `Transport: ${leg.run_title || 'run'}`));
+    end.push(msg);
+    let complete = null;
     if (!done) {
-      const completeBtn = document.createElement('button');
-      completeBtn.type = 'button';
-      completeBtn.textContent = 'Mark complete';
-      completeBtn.addEventListener('click', async () => {
-        const miles = window.prompt('Actual miles (optional):', leg.distance_miles || '');
-        const completeRes = await apiRequest(`/transport/legs/${leg.id}/complete`, {
-          method: 'POST',
-          body: {
-            distance_miles: miles === null || miles === '' ? null : Number(miles),
-          },
-        });
-        if (!completeRes.ok) {
-          const body = await completeRes.json().catch(() => ({}));
-          setMessage('error', body.error || 'Could not complete leg');
+      complete = document.createElement('button');
+      complete.type = 'button';
+      complete.className = 'button-small';
+      complete.textContent = 'Mark as done';
+      end.push(complete);
+    }
+    const row = createRuledRow({
+      lead: createDateBlock(leg.run_date),
+      title: legTitle(leg),
+      details: [legDetails(leg)],
+      end,
+    });
+    complete?.addEventListener('click', () => {
+      openRowForm(row, () => {
+        const field = textField('Miles driven (optional)', 'leg-miles');
+        const input = field.querySelector('input');
+        input.inputMode = 'decimal';
+        if (leg.distance_miles != null) input.value = String(leg.distance_miles);
+        return [field];
+      }, 'Save', async (form) => {
+        const raw = form.querySelector('.leg-miles')?.value.trim();
+        const miles = raw ? Number(raw) : null;
+        if (raw && !Number.isFinite(miles)) {
+          setMessage('error', 'Miles should be a number, for example 12.5.');
           return;
         }
-        setMessage('success', 'Leg marked complete.');
+        const completeRes = await apiRequest(`/transport/legs/${leg.id}/complete`, { method: 'POST', body: { distance_miles: miles } });
+        if (!completeRes.ok) {
+          const body = await completeRes.json().catch(() => ({}));
+          setMessage('error', body.error || 'That did not save. Try again in a moment.');
+          return;
+        }
+        setMessage('success', `${legTitle(leg)} marked as done. Thank you.`);
         await loadMyLegs();
       });
-      actions.appendChild(document.createTextNode(' '));
-      actions.appendChild(completeBtn);
-    }
-    myLegsList.appendChild(article);
+    });
+    list.appendChild(row);
   });
+  myLegsList.replaceChildren(list);
 }
 
 async function init() {
