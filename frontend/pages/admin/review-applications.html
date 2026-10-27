@@ -14,6 +14,7 @@
     <title>Review applications - ShelterLink</title>
     <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" />
     <link rel="stylesheet" href="/public/css/custom.css" />
+    <link rel="stylesheet" href="/public/css/admin.css" />
     <!-- preload:start -->
     <link rel="preload" href="/public/fonts/atkinson-hyperlegible-next-400.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/public/fonts/young-serif-400.woff2" as="font" type="font/woff2" crossorigin>
@@ -55,15 +56,14 @@
 
     <main class="container dashboard-layout">
       <aside id="admin-nav" class="sidebar-nav"></aside>
-      <div class="dashboard-main">
-      <section>
-        <h1>Review Applications</h1>
-        <p>Approve or reject volunteer applications.</p>
-      </section>
+      <div class="dashboard-main people-page">
+      <h1>Applications</h1>
+      <p>Approve or reject volunteer applications.</p>
 
-      <section>
-        <label for="statusFilter" style="max-width: 240px;">
-          Filter by status
+      <section class="ruled-panel">
+        <div class="ruled-panel-body">
+        <label for="statusFilter">
+          Status
           <select id="statusFilter" name="status">
             <option value="pending" selected>Pending</option>
             <option value="waitlisted">Waitlisted</option>
@@ -72,9 +72,13 @@
             <option value="all">All</option>
           </select>
         </label>
+        </div>
       </section>
 
-      <section>
+      <section class="ruled-panel" aria-labelledby="applicationsHeading">
+        <header class="ruled-panel-head">
+          <h2 id="applicationsHeading">Volunteer applications</h2>
+        </header>
         <div id="message" role="status" aria-live="polite"></div>
         <div class="table-wrapper directory-table">
           <table>
@@ -100,14 +104,14 @@
     <dialog id="notesModal" aria-labelledby="reject-modal-title">
       <article>
         <header>
-          <strong id="reject-modal-title">Add Notes for Rejection</strong>
+          <strong id="reject-modal-title">Notes for this rejection</strong>
         </header>
         <p>Please provide optional notes for the volunteer.</p>
         <label for="rejectNotes">
           Notes
           <textarea id="rejectNotes" rows="3" placeholder="Reason for rejection (optional)"></textarea>
         </label>
-        <footer style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+        <footer class="dialog-actions">
           <button id="cancelModalButton" class="secondary button-secondary">Cancel</button>
           <button id="submitModalButton" class="contrast">Submit</button>
         </footer>

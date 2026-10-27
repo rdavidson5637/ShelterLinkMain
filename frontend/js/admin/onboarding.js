@@ -11,7 +11,7 @@ const STAGE_LABELS = {
   awaiting_approval: 'Awaiting approval',
   needs_waiver: 'Needs waiver',
   needs_references: 'Needs references',
-  reference_flagged: 'Reference flagged — needs staff review',
+  reference_flagged: 'Reference flagged. Needs staff review',
   needs_accessni: 'Needs AccessNI',
   ready: 'Ready',
 };
@@ -43,33 +43,52 @@ async function loadPipeline() {
   const pipeline = data.pipeline || {};
   const counts = data.counts || {};
 
-  countsEl.innerHTML = '';
+  countsEl.className = 'figures-strip';
+  countsEl.replaceChildren();
   stages.forEach((stage) => {
-    const p = document.createElement('p');
-    p.innerHTML = `<strong>${STAGE_LABELS[stage] || stage}:</strong> ${counts[stage] || 0}`;
-    countsEl.appendChild(p);
+    const item = document.createElement('span');
+    const strong = document.createElement('strong');
+    strong.textContent = String(counts[stage] || 0);
+    item.append(strong, document.createTextNode(` ${STAGE_LABELS[stage] || stage}`));
+    countsEl.appendChild(item);
   });
 
-  sectionsEl.innerHTML = '';
+  sectionsEl.replaceChildren();
   stages.forEach((stage) => {
     const people = pipeline[stage] || [];
     const section = document.createElement('section');
+    section.className = 'ruled-panel';
+    const header = document.createElement('header');
+    header.className = 'ruled-panel-head';
     const h2 = document.createElement('h2');
     h2.textContent = `${STAGE_LABELS[stage] || stage} (${people.length})`;
-    section.appendChild(h2);
+    header.appendChild(h2);
+    section.appendChild(header);
     if (!people.length) {
       const empty = document.createElement('p');
-      empty.textContent = 'None';
+      empty.className = 'ruled-panel-body';
+      empty.textContent = 'Nobody is at this stage.';
       section.appendChild(empty);
     } else {
       const ul = document.createElement('ul');
+      ul.className = 'ruled-rows';
       people.forEach((v) => {
         const li = document.createElement('li');
+        li.className = 'ruled-row';
+        const main = document.createElement('div');
+        main.className = 'ruled-row-main';
         const a = document.createElement('a');
+        a.className = 'ruled-row-title';
         a.href = `/pages/admin/volunteers.html?user=${encodeURIComponent(v.user_id)}`;
         a.textContent = volunteerName(v);
-        li.appendChild(a);
-        li.appendChild(document.createTextNode(` — ${v.email || ''}`));
+        main.appendChild(a);
+        if (v.email) {
+          const detail = document.createElement('span');
+          detail.className = 'ruled-row-detail';
+          detail.textContent = v.email;
+          main.appendChild(detail);
+        }
+        li.appendChild(main);
         ul.appendChild(li);
       });
       section.appendChild(ul);

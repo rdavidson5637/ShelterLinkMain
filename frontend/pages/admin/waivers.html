@@ -14,6 +14,7 @@
     <title>Waivers - ShelterLink</title>
     <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" />
     <link rel="stylesheet" href="/public/css/custom.css" />
+    <link rel="stylesheet" href="/public/css/admin.css" />
     <!-- preload:start -->
     <link rel="preload" href="/public/fonts/atkinson-hyperlegible-next-400.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/public/fonts/young-serif-400.woff2" as="font" type="font/woff2" crossorigin>
@@ -52,7 +53,7 @@
 
     <main class="container dashboard-layout">
       <aside id="admin-nav" class="sidebar-nav"></aside>
-      <div class="dashboard-main">
+      <div class="dashboard-main people-page">
       <section>
         <h1>Waivers</h1>
         <p>Create and update electronic waivers. Editing the text bumps the version; with re-acceptance enabled, volunteers must accept again.</p>
@@ -60,7 +61,7 @@
       </section>
 
       <section>
-        <article style="max-width: 720px;">
+        <article class="ruled-panel people-form">
           <h2 id="formTitle">Add waiver</h2>
           <form id="waiverForm">
             <input type="hidden" id="waiver_id" />
@@ -80,7 +81,7 @@
               <input type="checkbox" id="requires_reacceptance" name="requires_reacceptance" checked />
               Require re-acceptance when text changes
             </label>
-            <div class="opportunity-actions">
+            <div class="people-actions">
               <button type="submit" id="saveButton">Save</button>
               <button type="button" id="cancelEditButton" class="secondary" hidden>Cancel edit</button>
             </div>
@@ -91,7 +92,7 @@
       <section>
         <h2>All waivers</h2>
         <div class="table-wrapper">
-          <table>
+          <table class="people-stack">
             <caption>Waivers</caption>
             <thead>
               <tr>

@@ -14,6 +14,7 @@
     <title>Volunteer directory - ShelterLink</title>
     <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" />
     <link rel="stylesheet" href="/public/css/custom.css" />
+    <link rel="stylesheet" href="/public/css/admin.css" />
     <!-- preload:start -->
     <link rel="preload" href="/public/fonts/atkinson-hyperlegible-next-400.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/public/fonts/young-serif-400.woff2" as="font" type="font/woff2" crossorigin>
@@ -55,31 +56,32 @@
 
     <main class="container dashboard-layout">
       <aside id="admin-nav" class="sidebar-nav"></aside>
-      <div class="dashboard-main">
-      <section>
-        <h1>Volunteer Directory</h1>
-      </section>
+      <div class="dashboard-main people-page">
+      <h1>Volunteers</h1>
 
-      <!-- Filter Section -->
-      <section>
-        <div class="grid" style="grid-template-columns: 2fr 1fr; gap: 1rem;">
-          <label for="searchInput">
-            Search by name or email
-            <input type="text" id="searchInput" name="search" placeholder="Search volunteers..." />
-          </label>
-          <label for="statusFilter">
-            Filter by approval status
-            <select id="statusFilter" name="status">
-              <option value="all">All</option>
-              <option value="approved">Approved</option>
-              <option value="pending">Pending</option>
-            </select>
-          </label>
+      <section class="ruled-panel">
+        <div class="ruled-panel-body">
+          <div class="people-filters">
+            <label for="searchInput">
+              Search by name or email
+              <input type="text" id="searchInput" name="search" placeholder="Search volunteers" />
+            </label>
+            <label for="statusFilter">
+              Approval status
+              <select id="statusFilter" name="status">
+                <option value="all">All</option>
+                <option value="approved">Approved</option>
+                <option value="pending">Pending</option>
+              </select>
+            </label>
+          </div>
         </div>
       </section>
 
-      <!-- Volunteers Table -->
-      <section>
+      <section class="ruled-panel" aria-labelledby="volunteersHeading">
+        <header class="ruled-panel-head">
+          <h2 id="volunteersHeading">Registered volunteers</h2>
+        </header>
         <div id="message" role="status" aria-live="polite"></div>
         <div class="table-wrapper directory-table">
           <table>
@@ -108,7 +110,7 @@
     <dialog id="profileModal" aria-labelledby="profile-modal-title">
       <article>
         <header>
-          <strong id="profile-modal-title">Volunteer Profile</strong>
+          <strong id="profile-modal-title">Volunteer profile</strong>
           <button aria-label="Close" rel="prev" id="closeModalButton" class="close"></button>
         </header>
         <div id="profileContent">
@@ -141,7 +143,7 @@
             <input type="date" id="awardDate" required />
           </label>
           <p id="awardExpiryHint" class="secondary"></p>
-          <footer style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+          <footer class="dialog-actions">
             <button type="submit" id="awardSubmitButton">Award</button>
             <button type="button" id="closeAwardModalFooterButton" class="secondary">Cancel</button>
           </footer>

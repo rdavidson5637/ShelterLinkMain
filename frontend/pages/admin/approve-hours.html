@@ -14,6 +14,7 @@
     <title>Approve hours - ShelterLink</title>
     <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" />
     <link rel="stylesheet" href="/public/css/custom.css" />
+    <link rel="stylesheet" href="/public/css/admin.css" />
     <!-- preload:start -->
     <link rel="preload" href="/public/fonts/atkinson-hyperlegible-next-400.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/public/fonts/young-serif-400.woff2" as="font" type="font/woff2" crossorigin>
@@ -53,31 +54,33 @@
 
     <main class="container dashboard-layout">
       <aside id="admin-nav" class="sidebar-nav"></aside>
-      <div class="dashboard-main">
-      <section>
-        <h1>Approve Volunteer Hours</h1>
-        <p>Review and approve pending volunteer hour submissions.</p>
-      </section>
+      <div class="dashboard-main people-page">
+      <h1>Hours to approve</h1>
+      <p>Review hour logs before they are counted.</p>
 
       <div id="message" role="status" aria-live="polite"></div>
 
-      <section>
-        <div style="margin-bottom: 1rem;">
+      <section class="ruled-panel" aria-labelledby="hoursHeading">
+        <header class="ruled-panel-head">
+          <h2 id="hoursHeading">Waiting for approval</h2>
+        </header>
+        <div class="ruled-panel-body">
+        <div class="people-toolbar">
           <label>
             <input type="checkbox" id="selectAllCheckbox" />
-            Select All
+            Select all
           </label>
-          <button id="bulkApproveButton" class="secondary" style="margin-left: 1rem;">Bulk Approve Selected</button>
+          <button id="bulkApproveButton" class="secondary" type="button">Approve selected</button>
         </div>
 
-        <table>
+        <table class="people-stack">
             <caption>Hours awaiting approval</caption>
           <thead>
             <tr>
-              <th scope="col" style="width: 3rem;">
+              <th scope="col">
                 <input type="checkbox" id="headerCheckbox" aria-label="Select all hours" />
               </th>
-              <th scope="col">Volunteer Name</th>
+              <th scope="col">Volunteer</th>
               <th scope="col">Opportunity</th>
               <th scope="col">Date</th>
               <th scope="col">Hours</th>
@@ -90,6 +93,7 @@
             </tr>
           </tbody>
         </table>
+        </div>
       </section>
       </div>
     </main>

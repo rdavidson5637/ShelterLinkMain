@@ -14,6 +14,7 @@
     <title>Qualifications - ShelterLink</title>
     <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" />
     <link rel="stylesheet" href="/public/css/custom.css" />
+    <link rel="stylesheet" href="/public/css/admin.css" />
     <!-- preload:start -->
     <link rel="preload" href="/public/fonts/atkinson-hyperlegible-next-400.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/public/fonts/young-serif-400.woff2" as="font" type="font/woff2" crossorigin>
@@ -52,15 +53,15 @@
 
     <main class="container dashboard-layout">
       <aside id="admin-nav" class="sidebar-nav"></aside>
-      <div class="dashboard-main">
+      <div class="dashboard-main people-page">
       <section>
-        <h1>Qualifications &amp; training</h1>
-        <p>Define training requirements that can gate volunteer shifts. Leave validity blank for qualifications that never expire.</p>
+        <h1>Qualifications</h1>
+        <p>Training that can be required before a shift. Leave validity blank when it does not expire.</p>
         <div id="message" role="status" aria-live="polite"></div>
       </section>
 
       <section>
-        <article style="max-width: 720px;">
+        <article class="ruled-panel people-form">
           <h2 id="formTitle">Add qualification</h2>
           <form id="qualificationForm">
             <input type="hidden" id="qualification_id" />
@@ -76,7 +77,7 @@
               Validity (months)
               <input type="number" id="validity_months" name="validity_months" min="1" placeholder="Leave blank = never expires" />
             </label>
-            <div class="opportunity-actions">
+            <div class="people-actions">
               <button type="submit" id="saveButton">Save</button>
               <button type="button" id="cancelEditButton" class="secondary" hidden>Cancel edit</button>
             </div>
@@ -87,7 +88,7 @@
       <section>
         <h2>All qualifications</h2>
         <div class="table-wrapper">
-          <table>
+          <table class="people-stack">
             <caption>Qualifications</caption>
             <thead>
               <tr>

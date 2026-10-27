@@ -46,26 +46,12 @@ function updateSelectAllState() {
 
 function showToast(message, type = 'success') {
   const toast = document.createElement('div');
-  toast.style.cssText = `
-    position: fixed;
-    top: 1rem;
-    right: 1rem;
-    padding: 1rem;
-    background: ${type === 'success' ? 'var(--green)' : 'var(--danger)'};
-    color: ${type === 'success' ? 'var(--on-primary)' : 'var(--on-danger)'};
-    border-radius: 4px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    z-index: 10000;
-    animation: slideIn 0.3s ease;
-  `;
+  toast.className = type === 'success' ? 'people-toast' : 'people-toast is-error';
   toast.textContent = message;
   document.body.appendChild(toast);
 
   setTimeout(() => {
-    toast.style.animation = 'slideOut 0.3s ease';
-    setTimeout(() => {
-      document.body.removeChild(toast);
-    }, 300);
+    toast.remove();
   }, 3000);
 }
 
