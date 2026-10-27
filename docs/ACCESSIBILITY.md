@@ -24,12 +24,11 @@ ShelterLink aims to meet WCAG 2.1 AA on volunteer-facing flows first, then admin
 
 ## Checked
 
-26 October 2026, axe-core 4 with the WCAG 2.0 and 2.1 A and AA rules, at 375px and 1280px, on all 14 public pages and all 13 volunteer pages, signed in through a client-side mock. No violations, apart from the FullCalendar items below. Lighthouse accessibility scored 100 on the home page and the sign-in page, mobile and desktop.
+26 October 2026, axe-core 4 with the WCAG 2.0 and 2.1 A and AA rules, at 375px and 1280px, on all 14 public pages and all 13 volunteer pages, signed in through a client-side mock. No violations, apart from the FullCalendar items below. On 27 October the same check ran on all 23 staff pages: no violations, after three tables that scroll sideways on a phone were made keyboard focusable. Lighthouse accessibility scored 100 on the home page and the sign-in page, mobile and desktop.
 
 ## Known outstanding
 
 - FullCalendar on the volunteer calendar: at 375px its column header is a scroll region that is not keyboard focusable, and its day cells use `aria-labelledby` pointing at the day number, so the accessible name differs from the cell's text. Both come from the library. The list view (the List button) avoids both.
 - Some browser-native date pickers remain.
 - Admin filter and bulk-action forms still rely on live-region messages for some server errors rather than a summary.
-- Admin pages have not had the axe pass yet.
 - Automated axe or Lighthouse CI is not part of the test suite yet.
