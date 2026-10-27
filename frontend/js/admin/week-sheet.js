@@ -1,6 +1,7 @@
 import { apiRequest, API_URL } from '../config.js';
 import { requireAuth, checkAuth, logout, isStaffOrAdminRole, applyRoleVisibility } from '../auth.js';
 import { formatShiftWhen, toIsoDateLocal } from '../utils/dateFormat.js';
+import { createSkeletonRows } from '../components/rows.js';
 
 const weekStartInput = document.getElementById('weekStart');
 const loadButton = document.getElementById('loadButton');
@@ -34,6 +35,18 @@ function setMessage(type, text) {
   note.className = css;
   note.textContent = text;
   messageEl.replaceChildren(note);
+}
+
+function showSheetSkeleton(target) {
+  if (!target) return;
+  const list = document.createElement('ul');
+  list.className = 'ruled-rows';
+  list.setAttribute('aria-hidden', 'true');
+  list.appendChild(createSkeletonRows(3));
+  const status = document.createElement('p');
+  status.className = 'visually-hidden';
+  status.textContent = 'Loading';
+  target.replaceChildren(list, status);
 }
 
 function escapeHtml(value) {
@@ -134,7 +147,7 @@ async function loadSheet() {
   if (weekStartInput) weekStartInput.value = weekStart;
   updateIcsLink(weekStart);
   setMessage();
-  if (contentEl) contentEl.innerHTML = '<p>Loading…</p>';
+  showSheetSkeleton(contentEl);
   try {
     const res = await apiRequest(
       `/admin/week-sheet?week_start=${encodeURIComponent(weekStart)}`

@@ -1,6 +1,7 @@
 import { apiRequest } from '../config.js';
 import { requireAuth, checkAuth, logout, isStaffOrAdminRole, applyRoleVisibility } from '../auth.js';
 import { formatShiftWhen, toIsoDateLocal } from '../utils/dateFormat.js';
+import { createSkeletonRows } from '../components/rows.js';
 
 const sheetDateInput = document.getElementById('sheetDate');
 const loadButton = document.getElementById('loadButton');
@@ -24,6 +25,18 @@ function setMessage(type, text) {
   note.className = css;
   note.textContent = text;
   messageEl.replaceChildren(note);
+}
+
+function showSheetSkeleton(target) {
+  if (!target) return;
+  const list = document.createElement('ul');
+  list.className = 'ruled-rows';
+  list.setAttribute('aria-hidden', 'true');
+  list.appendChild(createSkeletonRows(3));
+  const status = document.createElement('p');
+  status.className = 'visually-hidden';
+  status.textContent = 'Loading';
+  target.replaceChildren(list, status);
 }
 
 function escapeHtml(value) {
@@ -124,7 +137,7 @@ function renderShift(opp) {
 async function loadSheet() {
   const date = sheetDateInput?.value || todayIso();
   setMessage();
-  if (contentEl) contentEl.innerHTML = '<p>Loading…</p>';
+  showSheetSkeleton(contentEl);
   try {
     const res = await apiRequest(`/admin/day-sheet?date=${encodeURIComponent(date)}`);
     if (!res.ok) {
