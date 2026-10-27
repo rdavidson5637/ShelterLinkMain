@@ -4,7 +4,7 @@ Measured numbers only. The summary comes first; the measurement notes behind it 
 
 ## Summary for Ryan
 
-Branch `redesign/concord-run`, 26 October 2026. Claude Code and Cursor, coordinated through Concord.
+Branch `redesign/concord-run`, 26 and 27 October 2026. Claude Code and Cursor, coordinated through Concord.
 Nothing is pushed. Each task is reviewed by the agent that did not build it. `npm test` is green (441 tests).
 
 ### What it looked like before
@@ -31,8 +31,14 @@ three-to-four step import waterfall.
   a laptop it is a top bar. Staff get a sidebar from 1024px and a menu drawer below that. Sign out and
   "Reload page" live in an account menu.
 - **Words.** Sentence case everywhere, plain copy, no em dashes, error messages that say what to do.
-- **Accessibility.** axe finds nothing on the 27 public and volunteer pages except two FullCalendar
-  internals. Lighthouse accessibility is 100 on the pages measured. See `docs/ACCESSIBILITY.md`.
+- **Every page.** All 14 public, 13 volunteer and 23 staff pages are on the new design. No colours sit
+  outside the token block, and the only inline styles left are a few show and hide switches that scripts
+  flip. Loading shows placeholders, not "Loading..." or dashes.
+- **Accessibility.** axe finds nothing on all 50 pages except two FullCalendar internals on the volunteer
+  calendar. Lighthouse accessibility is 100 on the pages measured. See `docs/ACCESSIBILITY.md`.
+- **Two security fixes found on the way.** Text people had typed was being inserted into pages as HTML in
+  two places: animal handling notes on the volunteer foster page, and volunteer names in the reports
+  leaderboard. Both now go in as plain text.
 
 ### What got faster, and how we know
 
@@ -53,10 +59,22 @@ There are no "before" Lighthouse numbers, for the reason given under C5.
 - **Decisions waiting in `QUESTIONS.md`:** demo logins for testing, the input border colour, reset
   password length, the logged-out 401 that costs every page a Lighthouse point, the kiosk 401, session
   rolling and the per-request shelter lookup, and trimming Pico (about 5.9 KB gzipped saved).
-- **Not seen signed in.** Neither agent had a login, so signed-in pages were checked with a mocked session
-  in the browser (no records touched). Please click through a volunteer and a staff account before merging.
+- **Not seen signed in.** Neither agent had a working login, so signed-in pages were checked with a mocked
+  session in the browser (no records touched). Please click through a volunteer and a staff account before
+  merging.
+- **Staff Lighthouse not measured.** Without a session the staff pages redirect to sign-in, so a staff
+  Lighthouse run would only re-measure the sign-in page (already in the C5 table).
 
-<!-- K5, K7 and the final preload rerun are added below when they land. -->
+### Built after the redesign, on separate branches
+
+Each is on its own branch off this one, with a note in `docs/features/` and the decisions it needs:
+
+- `features/yard-board`: a live board of which animals need a walk, who has one out, and take out and
+  bring back. Needs migration 036, written for your review and not run on any real database.
+- `features/impact-report`: a printable report for funders of what volunteers did between two dates.
+  Read-only.
+- `features/keep-in-touch`: a staff list of regulars who have stopped coming and approved volunteers who
+  never started, with an email link for each. Read-only.
 
 ## K3 - local dev server, 26 Oct 2026
 
