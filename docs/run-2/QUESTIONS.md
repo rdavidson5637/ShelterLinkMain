@@ -15,3 +15,7 @@ These five copies differ. Each copy is dated 22 Oct and the original is dated 26
 - `utils/password 2.js` still uses the old 8-character rule with an uppercase letter and a number. The original uses a 10-character minimum, a common-password list, and a dummy bcrypt hash for login timing. The copy does not export `MIN_PASSWORD_LENGTH`, `COMMON_PASSWORD_MESSAGE`, `DUMMY_PASSWORD_HASH`, or `COMMON_PASSWORDS`.
 
 Ryan: these five look like older copies with nothing unique. Delete `_to_delete/` when you are satisfied, or say if any of that old behaviour should be kept.
+
+## Today loads every application (2 Nov 2026)
+
+Not blocking. `/applications` has no server-side limit. Today asks for the whole list and shows the first five. I1 stopped sending `?limit=5` because that query is rejected. A limit on the API would be a separate change.
