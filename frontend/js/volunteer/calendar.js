@@ -153,7 +153,7 @@ function showApplyNotice(text) {
   const banner = document.getElementById('calendarBanner');
   if (!banner || !text) return;
   banner.textContent = text;
-  banner.scrollIntoView({ block: 'nearest' });
+  banner.scrollIntoView({ block: 'start' });
 }
 
 async function fetchOpportunities() {

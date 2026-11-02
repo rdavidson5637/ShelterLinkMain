@@ -2,7 +2,7 @@ import { apiRequest } from '../config.js';
 import { createDateBlock, createRuledRow, createSkeletonRows, createStatusLabel } from '../components/rows.js';
 import { requireAuth, logout } from '../auth.js';
 import { showOpportunityModal, hideOpportunityModal, setOpportunityModalMessage } from '../components/opportunityModal.js';
-import { missingQualifications } from '../utils/missingQualifications.js';
+import { missingQualificationLabel, missingQualifications } from '../utils/missingQualifications.js';
 import { formatShiftWhen, upcomingFirst } from '../utils/dateFormat.js';
 import { groupShiftsByPeriod } from '../utils/groupShifts.js';
 
@@ -233,7 +233,7 @@ function showApplyNotice(text) {
   if (!shiftsStatus || !text) return;
   const count = shiftsStatus.textContent;
   shiftsStatus.textContent = count ? `${count} ${text}` : text;
-  shiftsStatus.scrollIntoView({ block: 'nearest' });
+  shiftsStatus.scrollIntoView({ block: 'start' });
 }
 
 function renderOpportunityCard(opportunity) {
@@ -276,7 +276,7 @@ function renderOpportunityCard(opportunity) {
   if (missingQuals.length) {
     const reason = document.createElement('span');
     reason.className = 'unqualified-reason';
-    reason.textContent = `You need ${missingQuals.map((q) => q.name).join(', ')} first.`;
+    reason.textContent = missingQualificationLabel(missingQuals);
     details.push(reason);
   }
 

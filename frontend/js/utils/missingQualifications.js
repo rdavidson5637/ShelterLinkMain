@@ -55,6 +55,14 @@ export function missingQualifications(opportunity, held = [], asOf = new Date())
   return dedupeMissing(missing);
 }
 
+export function missingQualificationLabel(missing = []) {
+  const names = [...new Set(missing.map((item) => item.name).filter(Boolean))];
+  if (names.length === 0) return '';
+  if (names.length === 1) return `You need ${names[0]} first.`;
+  const last = names[names.length - 1];
+  return `You need ${names.slice(0, -1).join(', ')} and ${last} first.`;
+}
+
 export function missingQualificationSentence(missing = []) {
   const parts = missing.map((item) =>
     item.animalName ? `${item.name} for ${item.animalName}` : item.name

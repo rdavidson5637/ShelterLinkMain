@@ -81,6 +81,23 @@ test('the same qualification is named once when the shift and the animal both re
   );
 });
 
+test('two animals that need the same qualification are named once on the card', async () => {
+  const { missingQualifications, missingQualificationLabel } = await import(
+    '../frontend/js/utils/missingQualifications.js'
+  );
+  const missing = missingQualifications(
+    {
+      animals: [
+        { name: 'Bella', requires_qualification_id: 4, requires_qualification_name: 'Dog Handling' },
+        { name: 'Rex', requires_qualification_id: 4, requires_qualification_name: 'Dog Handling' },
+      ],
+    },
+    []
+  );
+  assert.equal(missing.length, 2);
+  assert.equal(missingQualificationLabel(missing), 'You need Dog Handling first.');
+});
+
 test('an expired award does not cover the animal qualification', async () => {
   const { missingQualifications } = await import('../frontend/js/utils/missingQualifications.js');
   const missing = missingQualifications(
