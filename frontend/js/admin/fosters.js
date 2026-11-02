@@ -146,7 +146,12 @@ async function loadOffers(requestId, container) {
         setMessage('error', body.error || 'Failed to confirm offer');
         return;
       }
-      setMessage('success', 'Placement confirmed. Volunteer emailed if SMTP is configured.');
+      setMessage(
+        'success',
+        body.volunteer_emailed
+          ? 'Placement confirmed. The volunteer was emailed.'
+          : 'Placement confirmed. The email did not go.'
+      );
       await loadRequests();
       await loadPlacements();
     });

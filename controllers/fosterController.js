@@ -4,7 +4,7 @@ const Foster = require('../models/Foster');
 const Animal = require('../models/Animal');
 const VolunteerProfile = require('../models/VolunteerProfile');
 const { isStaffOrAdmin } = require('../middleware/auth');
-const { sendFosterPlacementConfirmation } = require('../utils/emailService');
+const emailService = require('../utils/emailService');
 const pushService = require('../utils/pushService');
 const { buildFosterPayload } = require('../utils/pushPayloads');
 
@@ -148,10 +148,11 @@ async function confirmOffer(req, res) {
       notes: body.notes,
     });
 
+    let volunteerEmailed = false;
     try {
       const placement = result.placement;
       if (placement?.email) {
-        await sendFosterPlacementConfirmation(placement.email, {
+        await emailService.sendFosterPlacementConfirmation(placement.email, {
           volunteerName: placement.first_name || placement.name,
           animalName: placement.animal_name,
           startedOn: placement.started_on,
@@ -159,6 +160,7 @@ async function confirmOffer(req, res) {
           handlingNotes: placement.animal_handling_notes,
           emergencyPhone: emergencyPhone(),
         });
+        volunteerEmailed = true;
       }
     } catch (emailError) {
       console.error('[Foster] confirmOffer email error:', emailError.message);
@@ -167,6 +169,7 @@ async function confirmOffer(req, res) {
     return res.status(200).json({
       ...result,
       emergency_phone: emergencyPhone(),
+      volunteer_emailed: volunteerEmailed,
     });
   } catch (error) {
     if ([400, 404, 409].includes(error.status)) {

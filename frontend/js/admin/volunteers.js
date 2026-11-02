@@ -10,6 +10,8 @@ const statusFilter = document.getElementById('statusFilter');
 const volunteersTableBody = document.getElementById('volunteersTableBody');
 const volunteersCardList = document.getElementById('volunteersCardList');
 const messageEl = document.getElementById('message');
+const profileMessageEl = document.getElementById('profileMessage');
+const awardMessageEl = document.getElementById('awardMessage');
 const profileModal = document.getElementById('profileModal');
 const profileContent = document.getElementById('profileContent');
 const closeModalButton = document.getElementById('closeModalButton');
@@ -29,14 +31,33 @@ let filteredVolunteers = [];
 let allQualifications = [];
 let currentUser = null;
 
+function messageClass(tone, inDialog) {
+  if (inDialog) {
+    if (tone === 'error') return 'error-message';
+    if (tone === 'success') return 'success-message';
+    return 'info-message';
+  }
+  if (tone === 'error') return 'error';
+  if (tone === 'success') return 'success';
+  return '';
+}
+
 function setMessage(text, tone = 'neutral') {
-  if (!messageEl) return;
+  const el =
+    (awardModal?.open && awardMessageEl) ||
+    (profileModal?.open && profileMessageEl) ||
+    messageEl;
+  [messageEl, profileMessageEl, awardMessageEl].forEach((node) => {
+    if (node && node !== el) node.innerHTML = '';
+  });
+  if (!el) return;
   if (!text) {
-    messageEl.innerHTML = '';
+    el.innerHTML = '';
     return;
   }
-  const cls = tone === 'error' ? 'error' : tone === 'success' ? 'success' : '';
-  messageEl.innerHTML = `<p class="${cls}">${escapeHtml(text)}</p>`;
+  const inDialog = el !== messageEl;
+  el.innerHTML = `<p class="${messageClass(tone, inDialog)}">${escapeHtml(text)}</p>`;
+  if (inDialog) el.scrollIntoView({ block: 'nearest' });
 }
 
 function formatNumber(num) {

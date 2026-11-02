@@ -308,3 +308,57 @@ test('createRequest controller pushes to matching volunteers and survives push e
   assert.equal(res2.statusCode, 201);
   pushService.sendToUsers = orig;
 });
+
+test('confirmOffer reports whether the volunteer email went', async () => {
+  const Foster = require('../models/Foster');
+  const emailService = require('../utils/emailService');
+  const fosterCtrl = require('../controllers/fosterController');
+  const origConfirm = Foster.confirmOffer;
+  const origSend = emailService.sendFosterPlacementConfirmation;
+  const placement = {
+    email: 'alex@example.test',
+    first_name: 'Alex',
+    animal_name: 'Rex',
+  };
+  Foster.confirmOffer = async () => ({ placement });
+
+  function makeRes() {
+    return {
+      statusCode: 200,
+      body: undefined,
+      status(c) { this.statusCode = c; return this; },
+      json(b) { this.body = b; return this; },
+    };
+  }
+
+  emailService.sendFosterPlacementConfirmation = async () => {};
+  const sent = makeRes();
+  await fosterCtrl.confirmOffer(
+    { session: { userId: 1, role: 'admin' }, params: { offerId: 9 }, body: {} },
+    sent
+  );
+  assert.equal(sent.statusCode, 200);
+  assert.equal(sent.body.volunteer_emailed, true);
+
+  emailService.sendFosterPlacementConfirmation = async () => {
+    throw new Error('smtp down');
+  };
+  const failed = makeRes();
+  await fosterCtrl.confirmOffer(
+    { session: { userId: 1, role: 'admin' }, params: { offerId: 9 }, body: {} },
+    failed
+  );
+  assert.equal(failed.statusCode, 200);
+  assert.equal(failed.body.volunteer_emailed, false);
+
+  Foster.confirmOffer = async () => ({ placement: { animal_name: 'Rex' } });
+  const noAddress = makeRes();
+  await fosterCtrl.confirmOffer(
+    { session: { userId: 1, role: 'admin' }, params: { offerId: 9 }, body: {} },
+    noAddress
+  );
+  assert.equal(noAddress.body.volunteer_emailed, false);
+
+  Foster.confirmOffer = origConfirm;
+  emailService.sendFosterPlacementConfirmation = origSend;
+});
