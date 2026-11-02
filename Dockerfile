@@ -7,6 +7,7 @@ RUN apk add --no-cache postgresql-client
 COPY package.json package-lock.json ./
 # postinstall runs scripts/ensure-vendor.js during npm ci.
 COPY scripts ./scripts
+ENV NODE_ENV=production
 RUN npm ci --omit=dev
 
 COPY . .
