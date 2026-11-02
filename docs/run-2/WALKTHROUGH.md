@@ -44,6 +44,8 @@ Signed in as the seeded admin (Ciara).
 
 ## Not reached
 
+These were not done in the first walk. The second walk below covers them. Email settings were still blank.
+
 - Week sheet.
 - A check-in code on the kiosk.
 - A message thread, a reply, or the shift chat button after acceptance.
@@ -53,3 +55,27 @@ Signed in as the seeded admin (Ciara).
 - Cover this shift.
 - Day sheet, the staff shift list, and application review at 375.
 - Any email. The settings were blank on purpose.
+
+## Second walk, 2 Nov 2026
+
+Same local database and the same Walk Tester account. One shift was created for today so the kiosk had a code to try: Reception cover, 14:00 to 15:00, code SBEHGW. Walk Tester applied and the application was accepted before the kiosk step. Widths are 1280 unless the step says 375.
+
+1. Kiosk check-in. 1280. Staff unlock asked for an email and a password. After unlock, today listed Reception cover at 14:00 and the volunteer as "Walk T." The code SBEHGW returned "Checked in. Welcome!" At 375 the page did not scroll sideways, and the same button then said Checked in. Lock returned to Staff unlock. Signing in as Walk Tester after that lock reached the volunteer pages.
+
+2. Shift chat. 1280. Messages first said "No threads yet." Open shift chat on the accepted application opened a thread named Reception cover, Shift #16. The thread time was "02/11/2026, 16:15:10", not the "2 Nov 2026" form used on applications. A reply, "On my way to reception.", appeared under Walk Tester with the same numeric time, and a Delete control. Participants were Walk Tester and Ciara Gallagher.
+
+3. Hours for a past date. 1280. One hour on 1 Nov 2026 was logged against Reception cover, whose shift is 2 Nov. The page said "Hours logged successfully!" Recent hours showed 1 Nov 2026, Reception cover, 1.00, Pending. The page also says hours can be logged once the shift has happened. The past date was accepted even though it is the day before the shift.
+
+4. Week sheet. 1280. The heading was "Week of Today - Sun 8 Nov (5 shifts)". Reception cover listed Alex Jenkins, phone shown, check-in "Not checked in", Places 1 / 4. The Monday of the week is called Today rather than a date.
+
+5. Forgot password. The email field was left blank. Send reset link did not submit. The field said "Please fill in this field." No reset was requested. The page says a link will be sent. Email settings were still blank, so this was not taken further.
+
+6. References. 1280, on Walk Tester's staff profile. The section started as "No references requested yet." A request for Pat Example at pat.example@example.test then said "Reference request emailed to referee." and the row said requested. The server log said the email failed because EMAIL_HOST and EMAIL_FROM are missing. The page still said the email was sent. Background checks on the same profile said none were recorded. That form was not submitted.
+
+7. Cover this shift. 1280. Ask someone to cover opened a dialog, "Request a shift swap?", with Keep shift and Ask for cover. After Ask for cover the application said "Waiting for someone to cover". Signed in as Alex Jenkins, Find a shift showed Cover a shift for Reception cover, with Cover this shift. Confirming the claim moved the accepted place to Alex. Walk Tester's application became cancelled, and it still showed as checked in. Alex's new application is accepted and not checked in.
+
+8. Day sheet. 375. "Roster for Today" listed Reception cover, Places 1 / 4, and Alex Jenkins as Not checked in. The page did not scroll sideways.
+
+9. Staff shifts. 375. The button says Create shift. The list had 16 rows. The page did not scroll sideways.
+
+10. Application review. 375. Pending showed Siobhan Hughes for Cattery Care and Socialisation, 1 Nov 2026, and Eoin Roberts for Morning Dog Walking, 31 Oct 2026. Each card had Approve and More actions. The page did not scroll sideways. Approve was not clicked.
