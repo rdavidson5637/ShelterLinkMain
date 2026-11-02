@@ -55,6 +55,7 @@ async function requestReference(req, res) {
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;') || 'the shelter';
+    let linkSent = false;
     try {
       await sendEmail(
         referee_email,
@@ -69,11 +70,12 @@ async function requestReference(req, res) {
         <p>Thank you,<br/>ShelterLink</p>
         `
       );
+      linkSent = true;
     } catch (emailError) {
       console.error('[Vetting] reference email failed:', emailError.message);
     }
 
-    return res.status(201).json({ reference, link_sent: true });
+    return res.status(201).json({ reference, link_sent: linkSent });
   } catch (error) {
     console.error('[Vetting] requestReference error:', error.message);
     if (error.status === 404) return res.status(404).json({ error: 'Not found' });

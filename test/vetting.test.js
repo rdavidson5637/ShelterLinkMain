@@ -9,6 +9,7 @@ const mock = require('./helpers/mockDb');
 
 const emailPath = require.resolve('../utils/emailService');
 const emailCalls = [];
+let emailShouldFail = false;
 require.cache[emailPath] = {
   id: emailPath,
   filename: emailPath,
@@ -16,6 +17,7 @@ require.cache[emailPath] = {
   exports: {
     sendEmail: async (...args) => {
       emailCalls.push(args);
+      if (emailShouldFail) throw new Error('smtp down');
     },
   },
 };
@@ -798,4 +800,79 @@ test('staff email lists accepted shifts whose check does not cover the date', as
       else process.env[key] = value;
     }
   }
+});
+
+function referenceRequestHandler(sql) {
+  if (/FROM users/i.test(sql)) {
+    return [[{ user_id: 14, name: 'Walk Tester', email: 'walk@example.test', role: 'volunteer' }]];
+  }
+  if (/INSERT INTO volunteer_references/i.test(sql)) {
+    return [{ insertId: 12 }];
+  }
+  if (/FROM volunteer_references WHERE id/i.test(sql)) {
+    return [[{
+      id: 12,
+      user_id: 14,
+      referee_name: 'Pat Example',
+      referee_email: 'pat.example@example.test',
+      referee_relationship: 'former colleague',
+      status: 'requested',
+      expires_at: '2026-11-23',
+      requested_at: '2026-11-02',
+      responded_at: null,
+      is_suitable: null,
+      comments: null,
+    }]];
+  }
+  return [[]];
+}
+
+test('a reference request reports the email only when it was sent', async () => {
+  mock.resetCalls();
+  emailCalls.length = 0;
+  emailShouldFail = false;
+  mock.setHandler(async (sql) => referenceRequestHandler(sql));
+
+  const res = makeRes();
+  await vettingCtrl.requestReference(
+    {
+      session: { userId: 1, role: 'admin' },
+      params: { userId: 14 },
+      body: {
+        referee_name: 'Pat Example',
+        referee_email: 'pat.example@example.test',
+        referee_relationship: 'former colleague',
+      },
+    },
+    res
+  );
+  assert.equal(res.statusCode, 201);
+  assert.equal(res.body.link_sent, true);
+  assert.equal(emailCalls.length, 1);
+  assert.equal(res.body.reference.referee_email, 'pat.example@example.test');
+});
+
+test('a reference request is saved when the email fails, and says so', async () => {
+  mock.resetCalls();
+  emailCalls.length = 0;
+  emailShouldFail = true;
+  mock.setHandler(async (sql) => referenceRequestHandler(sql));
+
+  const res = makeRes();
+  await vettingCtrl.requestReference(
+    {
+      session: { userId: 1, role: 'admin' },
+      params: { userId: 14 },
+      body: {
+        referee_name: 'Pat Example',
+        referee_email: 'pat.example@example.test',
+      },
+    },
+    res
+  );
+  emailShouldFail = false;
+  assert.equal(res.statusCode, 201);
+  assert.equal(res.body.link_sent, false);
+  assert.equal(res.body.reference.status, 'requested');
+  assert.equal(emailCalls.length, 1);
 });

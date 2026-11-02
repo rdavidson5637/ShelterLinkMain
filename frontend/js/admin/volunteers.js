@@ -348,7 +348,14 @@ async function loadVettingSection(userId) {
           setMessage(body.error || 'Failed to request reference', 'error');
           return;
         }
-        setMessage('Reference request emailed to referee.', 'success');
+        if (body.link_sent) {
+          setMessage('Reference request emailed to referee.', 'success');
+        } else {
+          setMessage(
+            'The request was saved, but the email did not go. This link cannot be sent again. Contact the referee another way, or make a new request once email is set up.',
+            'neutral'
+          );
+        }
         refForm.reset();
         await loadVettingSection(userId);
       } catch (error) {

@@ -48,3 +48,7 @@ Ryan, two choices:
 
 1. Leave the block. The tablet stays the kiosk until someone presses Lock, then a person can sign in.
 2. Let a person sign in on that browser, and end the kiosk session as part of that sign-in.
+
+## A reference link cannot be sent again (2 Nov 2026)
+
+A reference request stores a hash of the link, not the link itself. If the email does not go, staff cannot send that same link again. The page now says the request was saved and the email did not go, and that the link cannot be sent again. A new request makes a second row and a new link. No resend was built.
