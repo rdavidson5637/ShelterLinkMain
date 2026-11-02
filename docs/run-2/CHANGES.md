@@ -38,6 +38,7 @@ Local database guards and the env loader are in. Today loads applications. A fai
 - I17: The hours status filter treats 1 as approved and 0 as waiting, the same way the totals do. Commit b1e9b37. `npm test` passed (479, 3 skipped). Waiting for approval showed the pending row.
 - I18: A dropped connection, a 429 or a 5xx stays on the page and says to check your signal. A 401 or a 403 goes to sign in, with no signal line. Loading rows are cleared, and a later successful check removes the line. Commit 12ed70a. `npm test` passed (481, 3 skipped). Checked on the volunteer home, the admin home, the public home, and an unlocked kiosk.
 - I19: Cancel run, Decline, and Chase for cover ask first. Keeping the run, the booking, or the email sends nothing. The same three requests run only after the confirm choice. Confirm on a group booking still sends straight away. Commit eab6788. `npm test` passed (482, 3 skipped). The Rex run stayed open and the pending booking stayed pending.
+- I20: Small animal is written as a word on animals, fosters and transport. Transport dates use the app date. Report headings are sentence case, the calendar button says Today, and a thread title is shown once. A staff profile date of birth uses the app date. Staff guide links and Edit buttons are at least 44px. Commit 84ebe3a. `npm test` passed (483, 3 skipped). The space before the full stop after the shelter name on the staff guide was left.
 
 ### A3 audit, 2 Nov 2026
 
