@@ -63,6 +63,7 @@ SMTP or the token is rolled back. Expired reset tokens are cleared by an hourly 
 | Variable | Notes |
 |---|---|
 | `DATABASE_URL` | Session pooler URI, port 5432 |
+| `DB_SSL_CA` | Optional CA for the database server, as PEM text or a path to a PEM file. When set, the connection verifies the certificate. When blank, remote TLS does not check the certificate and production logs one warning. Localhost does not use TLS. Leave blank until the CA is in place |
 | `SESSION_SECRET` | Fresh long random string |
 | `ADMIN_REGISTRATION_KEY` | Fresh secret, share only with shelter staff who create admins |
 | `FEEDBACK_TOKEN_SECRET` | Optional; falls back to `SESSION_SECRET` |

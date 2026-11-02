@@ -3,6 +3,7 @@
 const { Pool, types } = require('pg');
 const { loadEnv } = require('./loadEnv');
 const { shelterStore, mentionsTenantTable } = require('../utils/shelterContext');
+const { databaseSsl } = require('../utils/databaseSsl');
 
 loadEnv();
 
@@ -182,12 +183,6 @@ function shapeExecuteResult(sql, pgResult) {
   return [rows];
 }
 
-function isLocalHost(host) {
-  if (!host) return true;
-  const h = String(host).toLowerCase();
-  return h === 'localhost' || h === '127.0.0.1' || h === '::1';
-}
-
 function connectionConfig() {
   const connectionLimit = Number(process.env.DB_CONNECTION_LIMIT || 10);
   const idleTimeoutMillis = Number(process.env.DB_IDLE_TIMEOUT_MS || 30000);
@@ -201,7 +196,7 @@ function connectionConfig() {
     }
     return {
       connectionString: process.env.DATABASE_URL,
-      ssl: isLocalHost(host) ? false : { rejectUnauthorized: false },
+      ssl: databaseSsl(host),
       max: connectionLimit,
       idleTimeoutMillis,
     };
@@ -214,7 +209,7 @@ function connectionConfig() {
     user: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'shelterlink',
-    ssl: isLocalHost(host) ? false : { rejectUnauthorized: false },
+    ssl: databaseSsl(host),
     max: connectionLimit,
     idleTimeoutMillis,
   };
