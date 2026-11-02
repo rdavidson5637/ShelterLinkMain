@@ -10,7 +10,12 @@ function goToDashboard(user) {
 
 document.addEventListener('DOMContentLoaded', async () => {
   const btn = document.getElementById('goButton');
-  const user = await checkAuth();
+  let user = null;
+  try {
+    user = await checkAuth();
+  } catch (error) {
+    if (!error || !error.authUnreachable) throw error;
+  }
   if (user) {
     btn.textContent = 'Go to your home page';
     btn.addEventListener('click', () => goToDashboard(user));

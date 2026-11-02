@@ -48,6 +48,39 @@ test('concurrent auth me loads share one request and one body read', async () =>
   assert.equal(third, a);
 });
 
+test('only a 401 counts as signed out', async () => {
+  const { authMeOutcome } = await import('../frontend/js/authMe.js');
+  const user = { id: 4, role: 'staff' };
+
+  assert.equal(
+    authMeOutcome({ ok: true, status: 200, user, networkError: false }),
+    'signed-in'
+  );
+  assert.equal(
+    authMeOutcome({ ok: false, status: 401, user: null, networkError: false }),
+    'signed-out'
+  );
+  for (const status of [403, 429, 503]) {
+    assert.equal(
+      authMeOutcome({ ok: false, status, user: null, networkError: false }),
+      'unreachable'
+    );
+  }
+  assert.equal(
+    authMeOutcome({ ok: false, status: 0, user: null, networkError: true }),
+    'unreachable'
+  );
+});
+
+test('auth check throws instead of sending a failed request to login', () => {
+  const auth = read('frontend/js/auth.js');
+  assert.match(auth, /We could not reach ShelterLink\. Check your signal and try again\./);
+  assert.match(auth, /error\.authUnreachable = true/);
+  assert.match(auth, /if \(outcome === 'signed-out'\) return null/);
+  const session = read('frontend/js/utils/sessionManager.js');
+  assert.match(session, /reportAuthMe\(result\) === 'signed-out'/);
+});
+
 test('refresh starts a new auth me request and keeps 401 distinct from a network error', async () => {
   const { createAuthMeLoader } = await import('../frontend/js/authMe.js');
   const responses = [

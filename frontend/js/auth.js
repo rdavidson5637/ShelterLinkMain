@@ -1,5 +1,5 @@
 import { apiRequest } from './config.js';
-import { createAuthMeLoader } from './authMe.js';
+import { authMeOutcome, createAuthMeLoader } from './authMe.js';
 import { isAdminRole, isStaffOrAdminRole } from './utils/roles.js';
 import { getRegistration, clearUserCache } from './pwa.js';
 
@@ -17,10 +17,61 @@ export function refreshAuthMe() {
   return authMe.refresh();
 }
 
+const REACH_MESSAGE = 'We could not reach ShelterLink. Check your signal and try again.';
+
+export function reportAuthMe(result) {
+  const outcome = authMeOutcome(result);
+  if (outcome === 'unreachable') showCouldNotReach();
+  return outcome;
+}
+
+function showCouldNotReach() {
+  if (typeof document === 'undefined') return;
+  if (document.getElementById('reachNotice')) return;
+
+  const bar = document.createElement('div');
+  bar.id = 'reachNotice';
+  bar.className = 'reach-notice';
+  bar.setAttribute('role', 'status');
+
+  const text = document.createElement('p');
+  text.textContent = REACH_MESSAGE;
+
+  const retry = document.createElement('button');
+  retry.type = 'button';
+  retry.className = 'secondary';
+  retry.textContent = 'Try again';
+  retry.addEventListener('click', async () => {
+    retry.disabled = true;
+    const result = await refreshAuthMe();
+    const outcome = reportAuthMe(result);
+    if (outcome === 'signed-in') {
+      window.location.reload();
+      return;
+    }
+    if (outcome === 'signed-out') {
+      window.location.href = '/login.html';
+      return;
+    }
+    retry.disabled = false;
+  });
+
+  bar.append(text, retry);
+  const header = document.querySelector('header.site-header');
+  if (header) header.after(bar);
+  else document.body.prepend(bar);
+}
+
 export async function checkAuth() {
   const result = await loadAuthMe();
-  if (result.networkError || !result.ok) return null;
-  return result.user || null;
+  const outcome = reportAuthMe(result);
+  if (outcome === 'unreachable') {
+    const error = new Error(REACH_MESSAGE);
+    error.authUnreachable = true;
+    throw error;
+  }
+  if (outcome === 'signed-out') return null;
+  return result.user;
 }
 
 async function unsubscribePushBestEffort() {
@@ -94,7 +145,13 @@ export async function redirectIfPendingWaivers() {
 }
 
 export async function redirectIfAuthenticated() {
-  const user = await checkAuth();
+  let user;
+  try {
+    user = await checkAuth();
+  } catch (error) {
+    if (error && error.authUnreachable) return;
+    throw error;
+  }
   if (!user) return;
   if (user.role === 'admin' || user.role === 'staff') {
     window.location.href = '/pages/admin/dashboard.html';

@@ -3247,6 +3247,27 @@ body.kiosk-body #message {
   flex-shrink: 0;
 }
 
+.reach-notice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2);
+  background: var(--warning-tint);
+  color: var(--warning-text);
+  border-bottom: 1px solid var(--warning-border);
+}
+
+.reach-notice p {
+  margin: 0;
+  max-width: 65ch;
+}
+
+.reach-notice button {
+  min-height: 2.75rem;
+}
+
 .privacy-notice-bar {
   display: flex;
   flex-wrap: wrap;

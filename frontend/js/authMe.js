@@ -4,6 +4,14 @@
  * for the session timer and the "stay logged in" action.
  */
 
+/** signed-in, signed-out (401 only), or unreachable (anything else). */
+export function authMeOutcome(result) {
+  if (!result || result.networkError) return 'unreachable';
+  if (result.ok && result.user) return 'signed-in';
+  if (result.status === 401) return 'signed-out';
+  return 'unreachable';
+}
+
 export function createAuthMeLoader(request) {
   let current = null;
 

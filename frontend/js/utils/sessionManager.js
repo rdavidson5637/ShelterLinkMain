@@ -1,5 +1,5 @@
 import { apiRequest } from '../config.js';
-import { loadAuthMe, refreshAuthMe } from '../auth.js';
+import { loadAuthMe, refreshAuthMe, reportAuthMe } from '../auth.js';
 
 const SESSION_FLAG_KEY = 'session_expired';
 const SESSION_TIMEOUT_MS = 60 * 60 * 1000; // 60 minutes
@@ -74,7 +74,7 @@ function resetInactivityTimer() {
 
 export async function checkSession() {
   const result = await refreshAuthMe();
-  if (result.status === 401) {
+  if (reportAuthMe(result) === 'signed-out') {
     sessionStorage.setItem(SESSION_FLAG_KEY, '1');
     window.location.href = '/login.html';
     return false;

@@ -10,6 +10,17 @@ function goToDashboard(user) {
 
 document.addEventListener('DOMContentLoaded', async () => {
   const btn = document.getElementById('dashboardButton');
-  const user = await checkAuth();
-  btn.addEventListener('click', () => goToDashboard(user));
+  let user = null;
+  try {
+    user = await checkAuth();
+  } catch (error) {
+    if (!error || !error.authUnreachable) throw error;
+  }
+  btn.addEventListener('click', () => {
+    if (!user) {
+      window.location.href = '/index.html';
+      return;
+    }
+    goToDashboard(user);
+  });
 });
