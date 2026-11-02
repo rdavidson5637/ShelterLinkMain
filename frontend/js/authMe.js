@@ -4,12 +4,18 @@
  * for the session timer and the "stay logged in" action.
  */
 
-/** signed-in, signed-out (401 only), or unreachable (anything else). */
+/**
+ * signed-in: a user came back.
+ * signed-out: 401, 403, or any other answer that is not a rate limit or a 5xx.
+ * A 403 is how an unlocked kiosk answers, so it must not look like a lost signal.
+ * unreachable: the request never got a normal answer, or the server was too busy or down.
+ */
 export function authMeOutcome(result) {
   if (!result || result.networkError) return 'unreachable';
   if (result.ok && result.user) return 'signed-in';
-  if (result.status === 401) return 'signed-out';
-  return 'unreachable';
+  const status = Number(result.status) || 0;
+  if (status === 429 || status >= 500) return 'unreachable';
+  return 'signed-out';
 }
 
 export function createAuthMeLoader(request) {

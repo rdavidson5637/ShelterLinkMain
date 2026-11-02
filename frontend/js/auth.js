@@ -19,10 +19,41 @@ export function refreshAuthMe() {
 
 const REACH_MESSAGE = 'We could not reach ShelterLink. Check your signal and try again.';
 
+function watchUnreachable() {
+  if (typeof window === 'undefined' || window.__reachWatch) return;
+  window.__reachWatch = true;
+  window.addEventListener('unhandledrejection', (event) => {
+    if (!event.reason || !event.reason.authUnreachable) return;
+    event.preventDefault();
+    clearSkeletons();
+  });
+}
+
+watchUnreachable();
+
 export function reportAuthMe(result) {
   const outcome = authMeOutcome(result);
   if (outcome === 'unreachable') showCouldNotReach();
+  else hideCouldNotReach();
   return outcome;
+}
+
+function hideCouldNotReach() {
+  if (typeof document === 'undefined') return;
+  const bar = document.getElementById('reachNotice');
+  if (bar) bar.remove();
+}
+
+function clearSkeletons() {
+  if (typeof document === 'undefined') return;
+  document.querySelectorAll('.skeleton').forEach((node) => node.remove());
+  document.querySelectorAll('.visually-hidden').forEach((node) => {
+    if (node.textContent.trim() === 'Loading') node.remove();
+  });
+  document.querySelectorAll('tr, li').forEach((row) => {
+    const text = row.textContent.replace(/\s+/g, ' ').trim();
+    if (text === '' || text === 'Loading') row.remove();
+  });
 }
 
 function showCouldNotReach() {
@@ -66,6 +97,7 @@ export async function checkAuth() {
   const result = await loadAuthMe();
   const outcome = reportAuthMe(result);
   if (outcome === 'unreachable') {
+    clearSkeletons();
     const error = new Error(REACH_MESSAGE);
     error.authUnreachable = true;
     throw error;

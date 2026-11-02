@@ -48,7 +48,7 @@ test('concurrent auth me loads share one request and one body read', async () =>
   assert.equal(third, a);
 });
 
-test('only a 401 counts as signed out', async () => {
+test('a 403 is signed out, and only a drop, 429 or 5xx is unreachable', async () => {
   const { authMeOutcome } = await import('../frontend/js/authMe.js');
   const user = { id: 4, role: 'staff' };
 
@@ -56,11 +56,13 @@ test('only a 401 counts as signed out', async () => {
     authMeOutcome({ ok: true, status: 200, user, networkError: false }),
     'signed-in'
   );
-  assert.equal(
-    authMeOutcome({ ok: false, status: 401, user: null, networkError: false }),
-    'signed-out'
-  );
-  for (const status of [403, 429, 503]) {
+  for (const status of [401, 403]) {
+    assert.equal(
+      authMeOutcome({ ok: false, status, user: null, networkError: false }),
+      'signed-out'
+    );
+  }
+  for (const status of [429, 500, 503]) {
     assert.equal(
       authMeOutcome({ ok: false, status, user: null, networkError: false }),
       'unreachable'
@@ -77,6 +79,10 @@ test('auth check throws instead of sending a failed request to login', () => {
   assert.match(auth, /We could not reach ShelterLink\. Check your signal and try again\./);
   assert.match(auth, /error\.authUnreachable = true/);
   assert.match(auth, /if \(outcome === 'signed-out'\) return null/);
+  assert.match(auth, /unhandledrejection/);
+  assert.match(auth, /event\.preventDefault\(\)/);
+  assert.match(auth, /getElementById\('reachNotice'\)/);
+  assert.match(auth, /querySelectorAll\('\.skeleton'\)/);
   const session = read('frontend/js/utils/sessionManager.js');
   assert.match(session, /reportAuthMe\(result\) === 'signed-out'/);
 });
