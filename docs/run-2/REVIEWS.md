@@ -59,3 +59,4 @@ signed in, because no local database existed then.
 - I16 375 pass: approved (654641a). Fixes picked as I17 to I20. Main finds: the hours status filters never match, and any failed session check sends a signed-in person to the login page, both also on `main`. The API limit of 300 requests per 15 minutes per IP goes to Ryan.
 - I17 Hours filter: approved (b1e9b37). Waiting and Approved now match real rows at 375. The bug is also on `main`.
 - I18 Session check: approved (12ed70a, e58fd05), after being sent back. A network drop, 429 or 5xx keeps a signed-in person on the page with a plain message, and Try again recovers. A 401 or 403 follows the signed-out path, and a real unlocked kiosk works. Checked on 9 pages in 5 cases. The old behaviour is on `main`.
+- I19 Confirm steps: approved (eab6788). Cancel run, Chase for cover and Decline now ask first. Escape and keep send nothing, and confirm sends the same request as before.
