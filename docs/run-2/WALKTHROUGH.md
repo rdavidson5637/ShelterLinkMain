@@ -79,3 +79,61 @@ Same local database and the same Walk Tester account. One shift was created for 
 9. Staff shifts. 375. The button says Create shift. The list had 16 rows. The page did not scroll sideways.
 
 10. Application review. 375. Pending showed Siobhan Hughes for Cattery Care and Socialisation, 1 Nov 2026, and Eoin Roberts for Morning Dog Walking, 31 Oct 2026. Each card had Approve and More actions. The page did not scroll sideways. Approve was not clicked.
+
+## Phone width, pages the walks had not opened, 2 Nov 2026
+
+Findings only. Width 375. Local server on port 3000, signed in as Ciara Gallagher for staff pages and Alex Jenkins for volunteer pages. No rows were added, approved, declined, cancelled, deleted, or erased. The document width stayed at 375 on every page measured below. Console messages were not captured.
+
+Shared on these pages: the skip link measured about 146 by 40, and the footer Privacy link about 44 by 19. The volunteer privacy bar's accessible name was "Please read the privacy notice . It says what we hold about you." The privacy notice link in that bar measured about 97 by 21.
+
+### Staff
+
+Animals. All showed Bella, Miso, Pip, and Rex. The species column read dog, cat, and small_animal, and the status read available. Edit measured 36 by 44. Edit Bella filled the form in place, headed "Edit Bella", with arrival date 2026-09-23 and sex "female". Cancel edit returned to Add animal. Nothing was saved. Activity for Miso opened "Activity: Miso", "No activity logged yet.", and "No incident notes yet." An incident note was not added. Cat showed only Miso. Other showed "No animals yet." and "Add an animal".
+
+Fosters. Open requests said "No open foster requests." Active placements said "No active placements." The animal list in the new-request form included "Pip (small_animal), available". The six requirement checkboxes measured 20 by 20. A request was not created, so a list of one or many was not on screen.
+
+Transport. One run: "Rex transfer to foster · 2026-11-05 · open · 0/3 legs claimed · Rex", with three unclaimed legs. The new-run form already showed two leg rows, each with Remove. Chase for cover and Cancel run were on the run. They were not pressed: both submit straight away, with no confirm step. The animal list used the same raw species labels as fosters. A second run was not in the list.
+
+Shift feedback. Unfiltered: "4.00" and "2 ratings". Rows were 20 Oct 2026, Niamh Price, Cattery Care and Socialisation, 3/5, "Needs attention", Mark handled; and 16 Oct 2026, Alex Jenkins, Morning Dog Walking, 5/5, "None", "No action needed". Rating 5 left only Alex's row. Rating 5 plus Flagged only said "No ratings yet", "0 ratings", and "No feedback matching filters". Mark handled was not pressed.
+
+Group bookings. Pending, and All, showed one row: Belfast Metropolitan College, Fundraising Stall: Summer Fair, "Thu 12 Nov, 09:00", Orla Magee, size 6, Pending. Confirm measured 78 by 44 and Decline 59 by 44. They were not pressed: both submit straight away. Cancelled said "No group bookings".
+
+Hours to approve. Four rows: Alex Jenkins, N/A, 28 Oct 2026, 2.00; Siobhan Hughes, Fundraising Stall: Summer Fair, 31 Oct 2026, 4.00; Niamh Price, N/A, 1 Nov 2026, 2.00; Walk Tester, Reception cover, 1 Nov 2026, 1.00. Each had Approve. The select boxes measured 20 by 20. Approve selected was disabled until a box is ticked. Nothing was approved, so an empty list was not opened.
+
+Morning staff guide. A checklist, not a list of records. The lead read "A short checklist for opening the volunteer day at Assisi Animal Sanctuary ." with a space before the full stop. The links in the list, including Open day sheet, Animals, and Staff home, measured about 21 pixels tall.
+
+Custom fields. "No custom fields yet." The Required checkbox measured 20 by 20. A field was not saved.
+
+Waivers. "No waivers yet." The two checkboxes measured 20 by 20. A waiver was not saved.
+
+Qualifications. One row: Dog Handling, "24 months", Edit and Delete. Edit measured 36 by 44 and opened "Edit qualification" with validity 24. Cancel edit cleared it. Nothing was saved. Delete was not pressed: it asks to confirm, and confirming would remove the row. An empty list was not opened.
+
+Onboarding. Counts: 0 needs profile, 1 awaiting approval, 0 needs waiver, 6 needs references, 0 flagged, 0 needs AccessNI, 0 ready. Empty stages said "Nobody is at this stage." Awaiting approval was Maeve Williams. Needs references listed Alex Jenkins, Niamh Price, Ciaran Davies, Siobhan Hughes, Eoin Roberts, and Walk Tester at walk-i6-20261102@example.test. The name links measured 309 by 24. Maeve's link went to volunteers.html?user=7 and opened a profile dialog. Date of birth in that dialog read 2002-01-08. The dialog also showed a phone, a street address, and an emergency contact. It was closed without a change.
+
+Reports. Headings included "Reports & Exports", "Start Date", and "End Date". Leaderboard: Alex Jenkins 23.5 hours, Eoin Roberts 12.0, Ciaran Davies 10.5, Niamh Price 10.0, Siobhan Hughes 3.0. Hours by month listed Jan through Dec and no hour figures in the text. The export buttons were not pressed. One row and an empty leaderboard were not available without changing data.
+
+Privacy tools. A form, not a list. The sentence said no retention period is set and the button changes nothing while the period is empty. "directory" measured 62 by 21. Export, Erase, and Run retention now were not pressed.
+
+Audit log. Unfiltered rows were timed "Today, 18:11" and similar, actor "Ciara Gallagher (admin@shelterlink.org)", entity "volunteer #7", detail `{"user_id":7}`. Action "no.such.action" then said "No matching audit rows". A filter that returns exactly one row was not set up.
+
+Threads. One thread, Reception cover, listed twice in the list. Opening it showed "Reception cover · 2 Nov 2026, 16:15", participants Walk Tester and Ciara Gallagher, and one message from Walk Tester at that time: "On my way to reception." Mute measured 48 by 44, Delete 53 by 44, Send 275 by 44. Nothing was muted, deleted, or sent. Bulk email measured 74 by 21. The separate bulk-email page was not opened. An empty thread list was not on screen.
+
+### Volunteer, signed in as Alex Jenkins
+
+Certificate. "No certificate issued yet. Use Make or refresh the certificate to create one from your approved hours." Make or refresh was not pressed. A second heading, "Certificate of volunteer service", was in the page but hidden. More in the tab bar opened Calendar, Applications, Foster, Transport, and Profile, each about 391 by 48.
+
+Calendar. Month view titled November 2026. The day numbers measured about 18 by 32, the weekday labels about 25 pixels tall, and List 38 by 44. The control labelled "today" was lowercase. List showed Reception cover, Weekly Dog Walking, Morning Dog Walking, Cattery Care and Socialisation, Evening Dog Enrichment, Kennel Deep-Clean, Fundraising Stall: Summer Fair, and Transport Run: Vet Appointments, several of them repeating. A list row sat too low to click, so a shift dialog was not opened and nothing was applied.
+
+Your hours. The page said 23.5 hours approved and 2.0 waiting. The history included 30 Oct 2026, Weekend Adoption Morning, 3.00, Approved; 28 Oct 2026, N/A, 2.00, Pending; 26 Oct 2026, Evening Dog Enrichment, 1.50, Approved; 15 Oct 2026, Morning Dog Walking, 3.00, Approved; 28 Sept 2026, N/A, 8.00, Approved; 29 Aug 2026, N/A, 8.00, Approved. Your certificate measured 123 by 24. Leave feedback measured 110 by 21, on rows including 2 Nov 2026, Reception cover. Setting status to Waiting for approval and applying then said "No hours found matching your filters", even though the unfiltered history had a Pending row. The first press on Apply hit the ShelterLink brand link. The filter was applied from the button itself after that. Log hours and Export were not pressed.
+
+Foster. "No foster requests match your home right now." and "No animals are staying with you yet." The profile link measured 89 by 23. A request was not created.
+
+Transport. Three open legs for Rex transfer to foster, each dated "Thu 5 Nov" with no year, and a "Drive this leg" button. "Legs you are driving" said "You are not driving any legs yet." No leg was claimed. The note about other drivers uses a curly apostrophe in "drivers'".
+
+Accept waiver. Opened directly at /pages/volunteer/accept-waiver.html while signed in as Alex. It left that address and showed the volunteer home. The waiver text was not on screen.
+
+Complete profile. The form stayed on screen. The date of birth value was 1996-03-14. Address and emergency contact were filled. The garden, animals, children, medication, and alert checkboxes measured 20 by 20. Nothing was saved, and Sign out of all devices was not pressed.
+
+### Still not opened
+
+The first "Not reached" list above stands. This pass also did not open the bulk-email page behind the Threads link, and it did not open a calendar shift dialog.
