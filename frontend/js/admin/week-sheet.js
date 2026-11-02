@@ -169,6 +169,7 @@ async function loadSheet() {
   } catch (error) {
     console.error('[WeekSheet] load error:', error);
     setMessage('error', 'Network error loading week sheet.');
+    if (contentEl) contentEl.innerHTML = '';
   }
 }
 

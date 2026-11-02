@@ -158,6 +158,7 @@ async function loadSheet() {
   } catch (error) {
     console.error('[DaySheet] load error:', error);
     setMessage('error', 'Network error loading day sheet.');
+    if (contentEl) contentEl.innerHTML = '';
   }
 }
 
