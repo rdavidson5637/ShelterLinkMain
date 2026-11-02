@@ -25,4 +25,6 @@ signed in, because no local database existed then.
 ## Run 2
 
 - H1 Duplicate files: approved (2a14718). The eleven removed files cannot be re-compared now they are gone, so that part rests on Cursor's recorded `cmp` run.
-- A2 Guard setup-db: sent back (b9d795e). The guard fails open: a URL with `?host=` pointing at Supabase, an empty URL host with `PGHOST` set, a trailing dot on the host, or an unparseable value all get past it, and the first three reach Supabase through `pg`.
+- A2 Guard setup-db: approved (c760f01), after being sent back at b9d795e because `?host=`, `PGHOST`, a trailing dot and unparseable values got past the guard. Checked against `pg`'s own host resolution and with the real npm scripts on a `.invalid` host. To do: add `pg-connection-string` to `dependencies`.
+- L1 Local Postgres: approved (42d1f7a, c760f01). 452 tests pass on an export with no `.env`. Signed-in sweep of 36 pages at 375 and 1280 clean apart from the two items now in I1. `scripts/pg-connection.sh` still reads `.env` directly for the backup shell scripts.
+- I1 (approved to build): dashboard `?limit=5` is rejected with a 400, so Today always says "Could not load applications". Also on `main`; live site not checked. Certificate copy names a button that does not exist.
