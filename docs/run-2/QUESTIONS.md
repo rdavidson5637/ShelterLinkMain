@@ -23,3 +23,15 @@ Ryan: these five look like older copies with nothing unique. Delete `_to_delete/
 ## Today loads every application (2 Nov 2026)
 
 Not blocking. `/applications` has no server-side limit. Today asks for the whole list and shows the first five. I1 stopped sending `?limit=5` because that query is rejected. A limit on the API would be a separate change.
+
+## Sessions left alive after erasure (2 Nov 2026)
+
+On a database where the `session` table was created after migration 033, erasure, log out everywhere, and password reset leave sessions alive while reporting success. Migration 033 grants the tenant role only the tables that exist when it runs. `connect-pg-simple` creates `session` later, so the tenant role cannot delete from it, and the error is swallowed.
+
+Agents cannot check the live database. Ryan can check with:
+
+`SELECT has_table_privilege('shelterlink_tenant', 'session', 'DELETE');`
+
+`false` means the live database has this bug until the session delete runs outside the tenant role. Anyone erased or reset in the meantime should have their sessions cleared by hand.
+
+A table added by a later migration needs its own grant. Do not grant `session` to the tenant role. That would let one shelter see every shelter's sessions.

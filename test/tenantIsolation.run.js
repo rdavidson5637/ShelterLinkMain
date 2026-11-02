@@ -647,8 +647,6 @@ async function main() {
       )
     `);
     await admin.query('CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire")');
-    await admin.query('GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE session TO shelterlink_tenant');
-    await admin.query('GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO shelterlink_tenant');
 
     const started = require('../server');
     closePool = require('../config/database').closePool;

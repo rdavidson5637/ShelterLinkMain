@@ -1,5 +1,7 @@
 'use strict';
 
+const { runWithoutShelter } = require('./shelterContext');
+
 const SESSION_COOKIE_NAME = 'connect.sid';
 
 function isProduction() {
@@ -50,10 +52,12 @@ async function destroyUserSessions(pool, userId) {
   const id = Number(userId);
   if (!pool || !Number.isFinite(id) || id <= 0) return;
   try {
-    await pool.execute(
+    // session is not a tenant table. The tenant role cannot delete it, and a
+    // grant would let that role see every shelter's sessions. Bypass the role.
+    await runWithoutShelter(() => pool.execute(
       `DELETE FROM session WHERE sess->>'userId' = ?`,
       [String(id)]
-    );
+    ));
   } catch (error) {
     console.error('[Session] destroyUserSessions error:', error.message);
   }
