@@ -5,8 +5,16 @@ const assert = require('node:assert/strict');
 
 test(
   'a document download audit row can be written on the local database and then removed',
-  { skip: !process.env.ENV_FILE },
+  { skip: !(process.env.ENV_FILE && process.env.LOCAL_DB_REQUIRED === '1') },
   async () => {
+    require('../config/loadEnv').loadEnv();
+    const { assertLocalDatabase } = require('../utils/liveDbGuard');
+    assertLocalDatabase({
+      databaseUrl: process.env.DATABASE_URL,
+      dbHost: process.env.DB_HOST,
+      pgHost: process.env.PGHOST,
+    });
+
     const { pool, closePool } = require('../config/database');
     const { recordAudit } = require('../middleware/auditLog');
     const { runWithShelter, runWithoutShelter } = require('../utils/shelterContext');
