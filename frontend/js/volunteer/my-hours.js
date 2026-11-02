@@ -1,6 +1,7 @@
 import { API_URL, apiRequest } from '../config.js';
 import { requireAuth, logout } from '../auth.js';
 import { formatDateOnly } from '../utils/dateFormat.js';
+import { hourMatchesStatus } from './hourStatus.js';
 import { createStatusBadge } from '../components/statusBadge.js';
 
 const totalApprovedHoursEl = document.getElementById('totalApprovedHours');
@@ -99,10 +100,8 @@ function filterHours(hours) {
     filtered = filtered.filter((h) => Number(h.opportunity_id) === Number(opportunityId));
   }
 
-  if (status === 'approved') {
-    filtered = filtered.filter((h) => h.approved === true);
-  } else if (status === 'pending') {
-    filtered = filtered.filter((h) => h.approved === false);
+  if (status === 'approved' || status === 'pending') {
+    filtered = filtered.filter((h) => hourMatchesStatus(h.approved, status));
   }
 
   return filtered;
