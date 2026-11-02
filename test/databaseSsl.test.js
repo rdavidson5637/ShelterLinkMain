@@ -2,6 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const crypto = require('crypto');
 const { execFileSync } = require('child_process');
 const fs = require('fs');
 const os = require('os');
@@ -71,7 +72,7 @@ test('a CA is kept when the URL asks for sslmode or ssl, and pg sees that CA', (
   const literal = pem.trim().replace(/\n/g, '\\n');
   const spaced = pem.replace(/\s+/g, ' ');
   for (const value of [pem, literal, spaced]) {
-    for (const suffix of ['?sslmode=require', '?sslmode=no-verify', '?ssl=true']) {
+    for (const suffix of ['?sslmode=require', '?sslmode=no-verify', '?ssl=true', '?sslnegotiation=direct']) {
       const url = `postgresql://u:p@db.example.com/shelterlink${suffix}`;
       const applied = applyDatabaseSsl(url, 'db.example.com', { DB_SSL_CA: value });
       assert.equal(applied.connectionString.includes('ssl'), false);
@@ -80,6 +81,31 @@ test('a CA is kept when the URL asks for sslmode or ssl, and pg sees that CA', (
       assert.equal(seen.ssl.ca, applied.ssl.ca);
     }
   }
+});
+
+test('a certificate bundle keeps every certificate, and a bad block is refused', () => {
+  resetDatabaseSslWarning();
+  const second = execFileSync('openssl', [
+    'req', '-x509', '-newkey', 'rsa:2048',
+    '-keyout', '/dev/null',
+    '-out', '/dev/stdout',
+    '-days', '1',
+    '-nodes',
+    '-subj', '/CN=shelterlink-second',
+  ], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  const bundle = `${pem.trim()}\n${second.trim()}\n`;
+  const ca = databaseSsl('db.example.com', { DB_SSL_CA: bundle }).ca;
+  assert.equal(ca.match(/BEGIN CERTIFICATE/g).length, 2);
+  assert.equal(new crypto.X509Certificate(ca.slice(0, ca.indexOf('-----END CERTIFICATE-----') + '-----END CERTIFICATE-----'.length)).subject.includes('shelterlink-test'), true);
+  const secondBlock = ca.slice(ca.lastIndexOf('-----BEGIN CERTIFICATE-----'));
+  assert.equal(new crypto.X509Certificate(secondBlock).subject.includes('shelterlink-second'), true);
+
+  assert.throws(
+    () => databaseSsl('db.example.com', {
+      DB_SSL_CA: `${pem.trim()}\n-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----\n`,
+    }),
+    (error) => error.code === 'DB_SSL_CA'
+  );
 });
 
 test('a query host is the host used for TLS, not the URL hostname', () => {

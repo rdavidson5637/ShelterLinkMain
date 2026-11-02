@@ -3,8 +3,6 @@
 const crypto = require('crypto');
 const fs = require('fs');
 
-const SSL_PARAMS = ['ssl', 'sslmode', 'sslcert', 'sslkey', 'sslrootcert', 'uselibpqcompat'];
-
 let warned = false;
 
 function caError(message) {
@@ -23,24 +21,30 @@ function isLocalHost(host) {
 }
 
 function normalizePem(text) {
-  let pem = String(text || '').trim().replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
-  const match = pem.match(/-----BEGIN CERTIFICATE-----([\s\S]*?)-----END CERTIFICATE-----/);
-  if (!match) return pem;
-  const body = match[1].replace(/\s+/g, '');
-  const lines = body.match(/.{1,64}/g) || [];
-  return `-----BEGIN CERTIFICATE-----\n${lines.join('\n')}\n-----END CERTIFICATE-----\n`;
+  const pem = String(text || '').trim().replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
+  const blocks = [...pem.matchAll(/-----BEGIN CERTIFICATE-----([\s\S]*?)-----END CERTIFICATE-----/g)];
+  if (blocks.length === 0) return pem;
+  return `${blocks.map((match) => {
+    const body = match[1].replace(/\s+/g, '');
+    const lines = body.match(/.{1,64}/g) || [];
+    return `-----BEGIN CERTIFICATE-----\n${lines.join('\n')}\n-----END CERTIFICATE-----`;
+  }).join('\n')}\n`;
 }
 
 function validatePem(pem) {
   const normalized = normalizePem(pem);
-  try {
-    const certificate = new crypto.X509Certificate(normalized);
-    if (!certificate.raw || certificate.raw.length === 0) {
+  const blocks = normalized.match(/-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/g) || [];
+  if (blocks.length === 0) caError('DB_SSL_CA is not a valid certificate');
+  for (const block of blocks) {
+    try {
+      const certificate = new crypto.X509Certificate(block);
+      if (!certificate.raw || certificate.raw.length === 0) {
+        caError('DB_SSL_CA is not a valid certificate');
+      }
+    } catch (error) {
+      if (error && error.code === 'DB_SSL_CA') throw error;
       caError('DB_SSL_CA is not a valid certificate');
     }
-  } catch (error) {
-    if (error && error.code === 'DB_SSL_CA') throw error;
-    caError('DB_SSL_CA is not a valid certificate');
   }
   return normalized;
 }
@@ -65,7 +69,7 @@ function stripSslParams(connectionString) {
   if (queryAt === -1) return value;
   const kept = value.slice(queryAt + 1).split('&').filter((part) => {
     const key = decodeURIComponent((part.split('=')[0] || '').replace(/\+/g, ' ')).toLowerCase();
-    return !SSL_PARAMS.includes(key);
+    return !(key.startsWith('ssl') || key === 'uselibpqcompat');
   });
   return kept.length ? `${value.slice(0, queryAt)}?${kept.join('&')}` : value.slice(0, queryAt);
 }
