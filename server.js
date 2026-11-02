@@ -1,10 +1,13 @@
+const { loadEnv } = require('./config/loadEnv');
+
+loadEnv();
+
 const express = require('express');
 const session = require('express-session');
 const PgSession = require('connect-pg-simple')(session);
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
-const dotenv = require('dotenv');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
@@ -19,7 +22,6 @@ const { sessionCookieOptions } = require('./utils/sessionCookie');
 const { securityHeaders, permissionsPolicy } = require('./utils/securityHeaders');
 const { buildServiceWorker, getSwVersion } = require('./utils/serviceWorker');
 
-dotenv.config();
 validateEnv();
 logStartupWarnings();
 

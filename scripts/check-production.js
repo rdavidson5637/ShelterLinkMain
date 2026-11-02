@@ -8,7 +8,7 @@
  * Usage: npm run check-prod
  */
 
-require('dotenv').config();
+require('../config/loadEnv').loadEnv();
 process.env.NODE_ENV = 'production';
 
 const { collectProductionProblems, collectProductionWarnings } = require('../utils/validateEnv');

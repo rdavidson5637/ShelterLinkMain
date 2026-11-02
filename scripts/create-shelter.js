@@ -20,7 +20,7 @@
 
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config();
+require('../config/loadEnv').loadEnv();
 const { assertLiveWriteAllowed } = require('../utils/liveDbGuard');
 
 function usage() {

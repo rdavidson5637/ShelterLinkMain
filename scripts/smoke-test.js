@@ -23,7 +23,7 @@
  * Remove them afterwards with `npm run db:clean-demo` (does not wipe seed data).
  */
 
-require('dotenv').config();
+require('../config/loadEnv').loadEnv();
 
 const BASE = process.env.SMOKE_BASE_URL || `http://localhost:${process.env.PORT || 3000}`;
 const ADMIN_EMAIL = process.env.SMOKE_ADMIN_EMAIL || 'admin@shelterlink.org';

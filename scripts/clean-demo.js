@@ -14,7 +14,7 @@
  *   node scripts/clean-demo.js
  */
 
-require('dotenv').config();
+require('../config/loadEnv').loadEnv();
 const { pool, closePool } = require('../config/database');
 
 const SMOKE_OPP_TITLE = 'Smoke Test Shift %';

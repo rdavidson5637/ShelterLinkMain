@@ -23,7 +23,7 @@ const zlib = require('zlib');
 const { spawn } = require('child_process');
 const { Writable } = require('stream');
 const { pipeline } = require('stream/promises');
-require('dotenv').config();
+require('../config/loadEnv').loadEnv();
 const { encryptBuffer } = require('../utils/backupCrypto');
 
 const MAX_AGE_DAYS = 14;

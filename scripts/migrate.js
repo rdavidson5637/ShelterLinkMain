@@ -15,7 +15,7 @@
 
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config();
+require('../config/loadEnv').loadEnv();
 const { pgPool, pool, closePool } = require('../config/database');
 const { applySql } = require('./applySql');
 

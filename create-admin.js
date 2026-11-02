@@ -13,7 +13,7 @@
  * Pass the password in ADMIN_INITIAL_PASSWORD, or as the third argument, not both.
  */
 
-require('dotenv').config();
+require('./config/loadEnv').loadEnv();
 const { assertLiveWriteAllowed } = require('./utils/liveDbGuard');
 const { closePool } = require('./config/database');
 const { createAdminAccount } = require('./services/adminAccount');

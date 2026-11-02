@@ -11,7 +11,7 @@
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
-require('dotenv').config();
+require('../config/loadEnv').loadEnv();
 const { decryptBuffer } = require('../utils/backupCrypto');
 
 function argValue(flag) {

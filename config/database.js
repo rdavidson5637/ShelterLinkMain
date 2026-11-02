@@ -1,10 +1,10 @@
 'use strict';
 
 const { Pool, types } = require('pg');
-const dotenv = require('dotenv');
+const { loadEnv } = require('./loadEnv');
 const { shelterStore, mentionsTenantTable } = require('../utils/shelterContext');
 
-dotenv.config();
+loadEnv();
 
 // Match mysql2 dateStrings:true — DATE and TIMESTAMP come back as strings.
 const DATE_OID = 1082;

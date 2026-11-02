@@ -25,7 +25,7 @@
 
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config();
+require('../config/loadEnv').loadEnv();
 const { assertSetupAllowed } = require('../utils/liveDbGuard');
 
 const args = process.argv.slice(2);
