@@ -22,6 +22,7 @@ Local database guards and the env loader are in. Today loads applications. A fai
 - B6: Staff profile views and admin document downloads are written to the audit log after the response. A volunteer downloading their own file is not logged. The local check skips unless `LOCAL_DB_REQUIRED=1` and refuses any host that is not local before it connects. Commit c427974. `npm test` passed (462, that check skipped). This touches audit logging.
 - I4: Erasure, log out everywhere, and password reset delete the session outside the tenant role. The tenant test no longer grants that role access to `session`. Commit b58dcb5. Tenant isolation passed (144 requests). A local test deletes a session while a shelter context is active. The live-database question is in QUESTIONS.md.
 - I3: A throwaway `@example.test` volunteer is erased on the local database. Name, phone, address, the audit row, and the session are checked, then the rows are removed. Commit 7d5404a. Plain `npm test` skips it.
+- I5: `npm run test:local` runs the three local database tests with `ENV_FILE=.env.local` and `LOCAL_DB_REQUIRED=1`. Commit df359ff. It passed (3, none skipped). Plain `npm test` still skips them.
 
 ### A3 audit, 2 Nov 2026
 
