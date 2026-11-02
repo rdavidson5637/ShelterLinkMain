@@ -13,6 +13,8 @@ Local database guards and the env loader are in. Today loads applications. A fai
 - A3: CSV export is a small writer. json2csv is gone. body-parser and multer were updated without a force upgrade. zod 3 stays, and the zod 4 question is in QUESTIONS.md. Commit 3d60e16. `npm test` passed (456).
 - A5: The image sets NODE_ENV=production before npm ci. Commit c9edde1. This changes the deploy image.
 - B1: Email fields set autocapitalize none, autocorrect off, spellcheck false, and inputmode email. Commit a2c483f. Checked the local login page and the other HTML pages that have an email field.
+- B3: Foster request and placement names, notes and dates are escaped on the staff page. Commit ee4a732. `npm test` passed (456). A description of `<b>bold</b>` showed as text, then that request was cancelled.
+- A3b: Dates become ISO strings. Objects and arrays become JSON. The formula prefix then applies to that text, so an array does not slip through as `=1`. Commit 699e7a1. `node --test test/csvExport.test.js` passed (5).
 
 ### A3 audit, 2 Nov 2026
 
