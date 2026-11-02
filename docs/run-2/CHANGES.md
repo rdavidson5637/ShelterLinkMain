@@ -8,6 +8,7 @@ Local database guards and the env loader are in. Today loads applications. A fai
 - sheet-catch: A failed day or week sheet load now clears the old table as well as showing the error. Commit 348dac2. `npm test` passed (452).
 - I1: Today asks for `/applications` without `?limit=5`, so recent applications load. The certificate empty state uses the same words as the button. Commit 860da31. `npm test` passed (452). Checked on the local admin page: five applications listed, and the page did not say it could not load them.
 - pg-conn: `pg-connection-string` is a direct dependency. `docs/LOCAL-DEV.md` says `scripts/pg-connection.sh` reads `.env` directly. Commit 36e8b6e.
+- F1: Closing a shift uses the shared dialog. A series offers Just this shift, This and the whole series, and Keep it. A single shift offers Close this shift and Keep it. Keep sends no request. The series choice still deletes with `?series=true`. Commit eb8b598. `npm test` passed (454).
 
 ### A3 audit, 2 Nov 2026
 
