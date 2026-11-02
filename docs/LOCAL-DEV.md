@@ -61,4 +61,4 @@ The login page shows both while `NODE_ENV` is not production.
 - `node --test test/loadEnv.test.js` passed. With `ENV_FILE` set, `.env` was not loaded.
 - `node --test test/tenantIsolation.test.js` passed: 144 requests, shelter A unchanged. That test uses its own temporary cluster on `127.0.0.1:54329`, not `shelterlink_dev`.
 
-The admin Today page said "Could not load applications" in Recent applications. Hours, volunteer counts, and the volunteer list did load. That message was already the page's failure text. It is not fixed here.
+The admin Today page used to say "Could not load applications" because it requested `/applications?limit=5`. That query is not allowed, so the API returned 400. I1 drops the query. The page still shows only the first five.

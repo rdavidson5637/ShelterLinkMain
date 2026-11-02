@@ -87,7 +87,7 @@ async function loadRecentApplications() {
   if (!recentApplicationsTable) return 0;
 
   try {
-    const res = await apiRequest('/applications?limit=5', { method: 'GET' });
+    const res = await apiRequest('/applications', { method: 'GET' });
     if (!res.ok) {
       fillList(recentApplicationsTable, [], 'Could not load applications.');
       return 0;
