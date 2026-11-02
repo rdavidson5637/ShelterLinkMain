@@ -64,3 +64,7 @@ Ryan: should hours dated before the shift be refused, or is staff approval enoug
 A volunteer who has already checked in can ask someone else to cover the shift. The claim cancels the old application, and that cancelled row still shows as checked in. The new person is accepted and not checked in. This was not changed.
 
 Ryan: should cover be refused once someone has checked in?
+
+## Foster confirm now says whether the email went (2 Nov 2026)
+
+Confirming a foster offer used to return the placement and an emergency phone number. It now also returns `volunteer_emailed`, true only when that email was sent. The page uses it so staff are not told an email went when it did not. This changes the response shape. Say if that field should be removed and the page should use another signal.

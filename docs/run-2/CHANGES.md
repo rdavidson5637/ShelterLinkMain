@@ -30,6 +30,7 @@ Local database guards and the env loader are in. Today loads applications. A fai
 - I10: Day and week sheets print a real date, such as Tue 3 Nov 2026, 09:00 - 12:00, on the headings and the shift lines. Feedback says By shift. Staff messages say Applied to shift. Commits ee037f0, 7badaaa.
 - I11: A second local walk, covering the kiosk code, shift chat, a past hours date, the week sheet, a blank forgot-password field, a reference request, cover this shift, and the day sheet, staff shifts and application review at phone width. Commit edaec72. Notes are in `docs/run-2/WALKTHROUGH.md`. No product code was changed.
 - I13: A message time uses the app date, such as 2 Nov 2026, 16:15. A shift chat shows the shift title, or Shift chat, instead of a shift number. Commit 78fa01d.
+- I12: A profile dialog shows its own status, including a warning when a reference email does not go. Foster confirm says the volunteer was emailed only when the send succeeded. Commit 17c416a. The new `volunteer_emailed` field is in QUESTIONS.md.
 
 ### A3 audit, 2 Nov 2026
 
