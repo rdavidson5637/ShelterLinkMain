@@ -37,6 +37,7 @@ Local database guards and the env loader are in. Today loads applications. A fai
 - I16: A phone-width pass of the signed-in pages the walks had not opened. Notes are in `docs/run-2/WALKTHROUGH.md`. Commit 654641a. No product code. The shared API limit question is in QUESTIONS.md.
 - I17: The hours status filter treats 1 as approved and 0 as waiting, the same way the totals do. Commit b1e9b37. `npm test` passed (479, 3 skipped). Waiting for approval showed the pending row.
 - I18: A dropped connection, a 429 or a 5xx stays on the page and says to check your signal. A 401 or a 403 goes to sign in, with no signal line. Loading rows are cleared, and a later successful check removes the line. Commit 12ed70a. `npm test` passed (481, 3 skipped). Checked on the volunteer home, the admin home, the public home, and an unlocked kiosk.
+- I19: Cancel run, Decline, and Chase for cover ask first. Keeping the run, the booking, or the email sends nothing. The same three requests run only after the confirm choice. Confirm on a group booking still sends straight away. Commit eab6788. `npm test` passed (482, 3 skipped). The Rex run stayed open and the pending booking stayed pending.
 
 ### A3 audit, 2 Nov 2026
 
