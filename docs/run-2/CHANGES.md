@@ -23,6 +23,7 @@ Local database guards and the env loader are in. Today loads applications. A fai
 - I4: Erasure, log out everywhere, and password reset delete the session outside the tenant role. The tenant test no longer grants that role access to `session`. Commit b58dcb5. Tenant isolation passed (144 requests). A local test deletes a session while a shelter context is active. The live-database question is in QUESTIONS.md.
 - I3: A throwaway `@example.test` volunteer is erased on the local database. Name, phone, address, the audit row, and the session are checked, then the rows are removed. Commit 7d5404a. Plain `npm test` skips it.
 - I5: `npm run test:local` runs the three local database tests with `ENV_FILE=.env.local` and `LOCAL_DB_REQUIRED=1`. Commit df359ff. It passed (3, none skipped). Plain `npm test` still skips them.
+- I6: A local walk of sign-up, shifts, hours, messages, staff approval, the shift list, the day sheet and the kiosk. Commit 440b506. Notes are in `docs/run-2/WALKTHROUGH.md`. No product code was changed.
 
 ### A3 audit, 2 Nov 2026
 
