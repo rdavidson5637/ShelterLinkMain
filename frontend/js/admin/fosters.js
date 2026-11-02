@@ -75,15 +75,15 @@ async function loadRequests() {
     const article = document.createElement('article');
     article.innerHTML = `
       <header>
-        <strong>${req.animal_name || `Animal #${req.animal_id}`}</strong>
-        · ${req.urgency}
-        · needed ${String(req.needed_from || '').slice(0, 10)}
-        · ${req.pending_offers || 0} pending offer(s)
+        <strong>${escapeHtml(req.animal_name || `Animal #${req.animal_id}`)}</strong>
+        · ${escapeHtml(req.urgency || '')}
+        · needed ${escapeHtml(String(req.needed_from || '').slice(0, 10))}
+        · ${Number(req.pending_offers) || 0} pending offer(s)
       </header>
-      <p>${req.description || 'No description.'}</p>
-      <div class="offers-wrap" data-request-id="${req.id}">Loading offers…</div>
+      <p>${escapeHtml(req.description || 'No description.')}</p>
+      <div class="offers-wrap" data-request-id="${Number(req.id)}">Loading offers…</div>
       <p>
-        <button type="button" class="secondary button-small cancel-request" data-id="${req.id}">Cancel request</button>
+        <button type="button" class="secondary button-small cancel-request" data-id="${Number(req.id)}">Cancel request</button>
       </p>
     `;
     requestsList.appendChild(article);
@@ -184,13 +184,13 @@ async function loadPlacements() {
       ${placements
         .map(
           (p) => `<tr>
-        <td>${p.animal_name || p.animal_id}</td>
-        <td>${carerName(p)}</td>
-        <td>${String(p.started_on || '').slice(0, 10)}</td>
-        <td>${p.days_elapsed != null ? p.days_elapsed : 'Not started'}</td>
-        <td>${p.expected_end_on ? String(p.expected_end_on).slice(0, 10) : 'Not set'}</td>
+        <td>${escapeHtml(p.animal_name || p.animal_id)}</td>
+        <td>${escapeHtml(carerName(p))}</td>
+        <td>${escapeHtml(String(p.started_on || '').slice(0, 10))}</td>
+        <td>${p.days_elapsed != null ? escapeHtml(p.days_elapsed) : 'Not started'}</td>
+        <td>${p.expected_end_on ? escapeHtml(String(p.expected_end_on).slice(0, 10)) : 'Not set'}</td>
         <td>
-          <button type="button" class="secondary button-small end-placement" data-id="${p.id}">End</button>
+          <button type="button" class="secondary button-small end-placement" data-id="${Number(p.id)}">End</button>
         </td>
       </tr>`
         )
