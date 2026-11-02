@@ -34,6 +34,7 @@ Local database guards and the env loader are in. Today loads applications. A fai
 - N1: A public page uses the shelter named in `?slug=`. No slug stays on Assisi. An unknown slug says we could not find that shelter and does not name Assisi. Public links keep the slug. A slug page does not offer an account. Commits 5a42b8a, 3064e0f, b281c88 on `features/shelter-slug`. Not merged. The second shelter has no shifts, so a live booking there rests on the isolation test. Follow-up 1bb7642, not re-reviewed: an empty group booking says there are no open shifts, and an unknown slug is not logged as an error. A signed-in person still sees their own shelter.
 - I14: The README describes the app, the local scripts, and tenancy, and it does not say a sanctuary uses it. Pico and FullCalendar are downloaded on install. Commits 736a977, 85b6e51. `npm test` passed (478, 3 skipped). `npm run test:local` passed (3). QUESTIONS.md asks for a LICENSE file.
 - I15: A reading of what erasure blanks, deletes, and leaves, including documents, sessions, and backups. Off-server backup copies have no limit yet. Provider backups were not checked. Commits d4a9292, 665189f. No behaviour change. Decisions are in `docs/gdpr-erasure.md`.
+- I16: A phone-width pass of the signed-in pages the walks had not opened. Notes are in `docs/run-2/WALKTHROUGH.md`. Commit 654641a. No product code. The shared API limit question is in QUESTIONS.md.
 
 ### A3 audit, 2 Nov 2026
 

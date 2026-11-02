@@ -72,3 +72,7 @@ Confirming a foster offer used to return the placement and an emergency phone nu
 ## No LICENSE file (2 Nov 2026)
 
 `package.json` sets `"license": "MIT"`. There is no `LICENSE` file in the repo. Ryan: add one if the MIT text should sit in the tree.
+
+## API limit of 300 (2 Nov 2026)
+
+`apiLimiter` allows 300 requests per 15 minutes per IP across all of `/api`. Staff sharing a shelter connection could reach that, and it would stop everyone behind that address. A review of the phone-width notes hit this limit on the local server. The limit was not changed. Ryan: should it be raised, or keyed by user once signed in?
