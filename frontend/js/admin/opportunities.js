@@ -5,6 +5,8 @@ import { renderTagChips, getSelectedTagIds, setSelectedTagIds } from '../compone
 import { formatShiftWhen, splitDateTime, combineDateTime } from '../utils/dateFormat.js';
 import { createStatusBadge } from '../components/statusBadge.js';
 import { escapeHtml } from '../utils/escapeHtml.js';
+import { showConfirm } from '../components/confirmDialog.js';
+import { choiceFromDialog, closeShiftChoices, closeShiftEndpoint } from './closeShiftChoice.js';
 
 const tableBody = document.getElementById('opportunitiesTableBody');
 const statusFilter = document.getElementById('statusFilter');
@@ -574,25 +576,22 @@ async function flagUrgentCover(opportunity) {
 
 async function closeOpportunity(opportunity) {
   const partOfSeries = isSeriesMember(opportunity);
-  let deleteSeries = false;
-
-  if (partOfSeries) {
-    deleteSeries = window.confirm(
-      `"${opportunity.title}" is part of a repeating series.\n\nOK = delete the whole series (skips shifts with accepted applications)\nCancel = close only this shift`
-    );
-    if (!deleteSeries) {
-      const closeOnly = window.confirm(`Close only "${opportunity.title}"? This will hide it from volunteers.`);
-      if (!closeOnly) return;
-    }
-  } else {
-    const confirmed = window.confirm(`Close "${opportunity.title}"? This will hide it from volunteers.`);
-    if (!confirmed) return;
-  }
+  const choices = closeShiftChoices(partOfSeries);
+  const byId = Object.fromEntries(choices.map((choice) => [choice.id, choice.label]));
+  const result = await showConfirm({
+    heading: partOfSeries ? 'Close a repeating shift' : 'Close this shift',
+    body: partOfSeries
+      ? `"${opportunity.title}" is part of a repeating series. The whole series skips shifts that already have an accepted application.`
+      : `This will hide "${opportunity.title}" from volunteers.`,
+    cancelText: byId.keep,
+    confirmText: partOfSeries ? byId.series : byId.one,
+    extraText: partOfSeries ? byId.one : '',
+  });
+  const endpoint = closeShiftEndpoint(choiceFromDialog(result, partOfSeries), opportunity.id);
+  if (!endpoint) return;
+  const deleteSeries = endpoint.includes('series=true');
 
   try {
-    const endpoint = deleteSeries
-      ? `/opportunities/${opportunity.id}?series=true`
-      : `/opportunities/${opportunity.id}`;
     const response = await apiRequest(endpoint, {
       method: 'DELETE',
     });

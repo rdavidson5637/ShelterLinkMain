@@ -66,7 +66,9 @@
 }
 
 .confirm-dialog .confirm-dialog-btn-cancel,
-.confirm-dialog .confirm-dialog-btn-cancel:hover {
+.confirm-dialog .confirm-dialog-btn-cancel:hover,
+.confirm-dialog .confirm-dialog-btn-extra,
+.confirm-dialog .confirm-dialog-btn-extra:hover {
   padding: 0.5rem 0.25rem;
   background: transparent;
   border: 1px solid transparent;
@@ -74,6 +76,11 @@
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 0.2em;
+}
+
+.confirm-dialog .confirm-dialog-btn-extra,
+.confirm-dialog .confirm-dialog-btn-extra:hover {
+  color: var(--ink);
 }
 
 .confirm-dialog .confirm-dialog-btn-cancel:hover {
