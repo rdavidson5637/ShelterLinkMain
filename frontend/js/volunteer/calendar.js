@@ -151,7 +151,9 @@ async function handleApplyFromModal(opportunity, id, options = {}) {
 
 function showApplyNotice(text) {
   const banner = document.getElementById('calendarBanner');
-  if (banner && text) banner.textContent = text;
+  if (!banner || !text) return;
+  banner.textContent = text;
+  banner.scrollIntoView({ block: 'nearest' });
 }
 
 async function fetchOpportunities() {

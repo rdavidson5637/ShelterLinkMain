@@ -52,6 +52,35 @@ test('a current award covers the animal qualification', async () => {
   assert.deepEqual(missing, []);
 });
 
+test('a future expiry still covers the qualification', async () => {
+  const { missingQualifications } = await import('../frontend/js/utils/missingQualifications.js');
+  const missing = missingQualifications(
+    { required_qualifications: [{ id: 4, name: 'Dog Handling' }] },
+    [{ qualification_id: 4, expires_at: '2027-07-30' }]
+  );
+  assert.deepEqual(missing, []);
+});
+
+test('the same qualification is named once when the shift and the animal both require it', async () => {
+  const { missingQualifications, missingQualificationSentence } = await import(
+    '../frontend/js/utils/missingQualifications.js'
+  );
+  const missing = missingQualifications(
+    {
+      required_qualifications: [{ id: 4, name: 'Dog Handling' }],
+      animals: [
+        { name: 'Bella', requires_qualification_id: 4, requires_qualification_name: 'Dog Handling' },
+      ],
+    },
+    []
+  );
+  assert.equal(missing.length, 1);
+  assert.equal(
+    missingQualificationSentence(missing),
+    'You need Dog Handling for Bella before you can apply.'
+  );
+});
+
 test('an expired award does not cover the animal qualification', async () => {
   const { missingQualifications } = await import('../frontend/js/utils/missingQualifications.js');
   const missing = missingQualifications(

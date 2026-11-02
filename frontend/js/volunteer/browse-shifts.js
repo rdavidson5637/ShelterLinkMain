@@ -233,6 +233,7 @@ function showApplyNotice(text) {
   if (!shiftsStatus || !text) return;
   const count = shiftsStatus.textContent;
   shiftsStatus.textContent = count ? `${count} ${text}` : text;
+  shiftsStatus.scrollIntoView({ block: 'nearest' });
 }
 
 function renderOpportunityCard(opportunity) {

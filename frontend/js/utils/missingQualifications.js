@@ -1,6 +1,24 @@
 function toDateOnly(value) {
   if (!value) return null;
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return null;
+    return value.toISOString().slice(0, 10);
+  }
   return String(value).slice(0, 10);
+}
+
+function dedupeMissing(missing) {
+  const namedForAnimal = new Set(missing.filter((item) => item.animalName).map((item) => item.id));
+  const seen = new Set();
+  const unique = [];
+  for (const item of missing) {
+    if (!item.animalName && namedForAnimal.has(item.id)) continue;
+    const key = `${item.id}:${item.animalName || ''}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(item);
+  }
+  return unique;
 }
 
 function holdsQualification(heldById, qualificationId, asOf) {
@@ -34,7 +52,7 @@ export function missingQualifications(opportunity, held = [], asOf = new Date())
     });
   }
 
-  return missing;
+  return dedupeMissing(missing);
 }
 
 export function missingQualificationSentence(missing = []) {

@@ -197,18 +197,9 @@ export function showOpportunityModal(opportunity, options = {}) {
   const qualsSection = modalEl.querySelector('.opportunity-modal-quals-section');
   const qualsBody = modalEl.querySelector('.opportunity-modal-qualifications');
   const requiredQuals = opportunity.required_qualifications || [];
-  if (requiredQuals.length || missingQualifications.length) {
-    let html = '';
-    if (requiredQuals.length) {
-      const names = requiredQuals.map((q) => escapeHtml(q.name)).join(', ');
-      html += `<p>requires: ${names}</p>`;
-    }
-    if (missingQualifications.length) {
-      html += `<p class="opportunity-modal-unqualified">${escapeHtml(
-        missingQualificationSentence(missingQualifications)
-      )}</p>`;
-    }
-    qualsBody.innerHTML = html;
+  if (requiredQuals.length) {
+    const names = requiredQuals.map((q) => escapeHtml(q.name)).join(', ');
+    qualsBody.innerHTML = `<p>requires: ${names}</p>`;
     qualsSection.hidden = false;
   } else {
     qualsBody.innerHTML = '';
@@ -315,7 +306,7 @@ export function showOpportunityModal(opportunity, options = {}) {
   }
 
   actionsContainer.appendChild(actionButton);
-  if (unqualified) {
+  if (unqualified && !hasApplied && profileApproved) {
     setOpportunityModalMessage(missingQualificationSentence(missingQualifications));
   }
 

@@ -35,3 +35,7 @@ Agents cannot check the live database. Ryan can check with:
 `false` means the live database has this bug until the session delete runs outside the tenant role. Anyone erased or reset in the meantime should have their sessions cleared by hand.
 
 A table added by a later migration needs its own grant. Do not grant `session` to the tenant role. That would let one shelter see every shelter's sessions.
+
+## A valid qualification with an expiry date looks missing (2 Nov 2026)
+
+On main, the shift list turns an expiry date into text like "Mon Nov 02" and compares it with an ISO date. Any real expiry then looks earlier, so a volunteer who holds the qualification is told they do not, and Apply is not offered. The same comparison is fixed on this branch for both shift requirements and animal requirements. It reaches the live site only after this branch is merged.
