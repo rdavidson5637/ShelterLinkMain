@@ -1,6 +1,6 @@
 # Run 2 changes
 
-Local database guards and the env loader are in. Today loads applications. A failed day or week sheet clears the old table. Closing a shift uses the shared dialog. The check-in page is written by the opener. CSV export no longer uses json2csv, and the safe audit fixes are in. The image sets production before install. Email fields no longer auto-capitalise. Five older duplicate files are still in `_to_delete/` for you to delete or keep.
+Local database guards and the env loader are in. Today loads applications. A failed day or week sheet clears the old table. Closing a shift uses the shared dialog. The check-in page is written by the opener. CSV export no longer uses json2csv. The image sets production before install. Email fields no longer auto-capitalise. Foster names and notes are escaped. Database TLS verifies a certificate only when a CA is set. Each tenant test has its own cluster. The kiosk uses the shelter's day. The tenant table list is checked against the migration. Five older duplicate files are still in `_to_delete/` for you to delete or keep.
 
 - H1: Removed eleven identical duplicate files. Five older copies are in gitignored `_to_delete/`, with the differences in `docs/run-2/QUESTIONS.md`. Commit 2a14718. `npm test` passed (441). Those five copies are not deleted.
 - A2: `setup-db` refuses a Supabase host unless `CONFIRM_LIVE_SHELTER=yes`, refuses demo seed unless the host is localhost or 127.0.0.1, and resolves the host the way pg does. `dev:local`, `db:local:reset` and `db:local:migrate` refuse any other host. Commits b9d795e, c760f01. `npm test` passed (452).
@@ -15,6 +15,10 @@ Local database guards and the env loader are in. Today loads applications. A fai
 - B1: Email fields set autocapitalize none, autocorrect off, spellcheck false, and inputmode email. Commit a2c483f. Checked the local login page and the other HTML pages that have an email field.
 - B3: Foster request and placement names, notes and dates are escaped on the staff page. Commit ee4a732. `npm test` passed (456). A description of `<b>bold</b>` showed as text, then that request was cancelled.
 - A3b: Dates become ISO strings. Objects and arrays become JSON. The formula prefix then applies to that text, so an array does not slip through as `=1`. Commit 699e7a1. `node --test test/csvExport.test.js` passed (5).
+- B5: Remote database TLS verifies the certificate when `DB_SSL_CA` is set, including a bundle. A value that is not a certificate stops startup. Without a CA, the connection string is unchanged and the certificate is not checked. Commits 1c40c74, 94a4458, 5d1deb9. `npm test` passed (462, with the local audit check skipped). This touches the database connection.
+- I2: Each tenant test uses its own data directory and a free port, and deletes only that directory. Commit 326d256. Two overlapping runs both passed.
+- B8: Kiosk today and check-in use the shelter's day. At 23:30 UTC on 29 March 2026 the day is 30 March. Commit df0573a. `node --test test/kioskTime.test.js` passed.
+- T1: `TENANT_TABLES` matches the table array in migration 033, plus `shelters`. Commit 59cbcc7. No database. The test passed.
 
 ### A3 audit, 2 Nov 2026
 
