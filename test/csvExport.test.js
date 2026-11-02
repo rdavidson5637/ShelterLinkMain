@@ -38,3 +38,15 @@ test('convertToCSV prefixes formula characters so spreadsheets treat them as tex
   assert.match(csv, /Ada/);
   assert.doesNotMatch(csv, /(^|,)"?=1\+1/);
 });
+
+test('convertToCSV serialises dates, objects and arrays before the formula check', () => {
+  const when = new Date('2026-11-02T13:00:00.000Z');
+  const csv = convertToCSV(
+    [{ when, meta: { a: 1 }, tags: ['=1'], name: 'Ada' }],
+    ['when', 'meta', 'tags', 'name']
+  );
+  assert.match(csv, /"2026-11-02T13:00:00.000Z"/);
+  assert.match(csv, /"\{""a"":1\}"/);
+  assert.match(csv, /"\[""=1""\]"/);
+  assert.doesNotMatch(csv, /(^|,)=1(,|$)/);
+});

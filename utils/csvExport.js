@@ -4,6 +4,13 @@ function neutralizeFormula(value) {
   return value;
 }
 
+function presentValue(value) {
+  if (value == null) return value;
+  if (value instanceof Date) return neutralizeFormula(value.toISOString());
+  if (typeof value === 'object') return neutralizeFormula(JSON.stringify(value));
+  return neutralizeFormula(value);
+}
+
 function quoteField(value) {
   if (value == null) return '';
   const text = String(value);
@@ -23,7 +30,7 @@ function convertToCSV(data, fields) {
   const lines = [fields.map((field) => quoteField(String(field))).join(',')];
   for (const row of data) {
     const source = row && typeof row === 'object' ? row : {};
-    lines.push(fields.map((field) => quoteField(neutralizeFormula(source[field]))).join(','));
+    lines.push(fields.map((field) => quoteField(presentValue(source[field]))).join(','));
   }
   return lines.join('\n');
 }
