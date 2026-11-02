@@ -44,3 +44,5 @@ signed in, because no local database existed then.
 - T1 Tenant table drift test: approved (59cbcc7). Removing a table in a copy turned it red.
 - I3 GDPR erasure test: approved (7d5404a). It found that erasure, log out everywhere and password reset could leave sessions alive and report success, where `session` was created after migration 033. Test only, using a throwaway volunteer.
 - I4 Session deletion: approved (b58dcb5). The delete runs through `runWithoutShelter`, with no permission change, and the tenant test no longer grants itself the right that hid the bug. Control on the local database: both tests pass with the fix and fail with `permission denied for table session` without it. Live not checked; the query for Ryan is in QUESTIONS.md. The local tests skip in `npm test`.
+- I5 test:local script: approved (df359ff). Refuses a non-local host; plain `npm test` still touches no database.
+- I6 Assisi walkthrough proposal: approved with limits. Findings list first, one small fix per task, no change to registration behaviour, routes, API shapes, auth or schema.
