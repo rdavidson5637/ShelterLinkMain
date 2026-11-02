@@ -8,3 +8,9 @@ Local database guards and the env loader are in. Today loads applications. A fai
 - sheet-catch: A failed day or week sheet load now clears the old table as well as showing the error. Commit 348dac2. `npm test` passed (452).
 - I1: Today asks for `/applications` without `?limit=5`, so recent applications load. The certificate empty state uses the same words as the button. Commit 860da31. `npm test` passed (452). Checked on the local admin page: five applications listed, and the page did not say it could not load them.
 - pg-conn: `pg-connection-string` is a direct dependency. `docs/LOCAL-DEV.md` says `scripts/pg-connection.sh` reads `.env` directly. Commit 36e8b6e.
+
+### A3 audit, 2 Nov 2026
+
+`npm audit --omit=dev` before the fix: body-parser below 1.20.9 (high), multer 2.0.0 to 2.4.0 (high), zod below 4.6.6 (high, needs `--force`).
+
+After `npm audit fix` with no `--force`, and after removing `json2csv`: body-parser and multer are gone. multer is locked at 2.5.0. zod 3.25.76 remains. The offered fix is zod 4.6.7, a breaking change, so it is in QUESTIONS.md. A second `npm audit --omit=dev` reports that one high vulnerability.

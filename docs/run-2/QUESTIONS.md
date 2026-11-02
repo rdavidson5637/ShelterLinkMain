@@ -16,6 +16,10 @@ These five copies differ. Each copy is dated 22 Oct and the original is dated 26
 
 Ryan: these five look like older copies with nothing unique. Delete `_to_delete/` when you are satisfied, or say if any of that old behaviour should be kept.
 
+## Zod 4 (2 Nov 2026)
+
+`npm audit fix` will not move `zod` off 3.25.76. The fix it offers is `zod@4.6.7`, and it says that is a breaking change. Left on 3. Say if you want the upgrade looked at separately.
+
 ## Today loads every application (2 Nov 2026)
 
 Not blocking. `/applications` has no server-side limit. Today asks for the whole list and shows the first five. I1 stopped sending `?limit=5` because that query is rejected. A limit on the API would be a separate change.

@@ -18,6 +18,16 @@ test('convertToCSV rejects non-array input', () => {
   assert.throws(() => convertToCSV({}, ['a']), /must be an array/);
 });
 
+test('convertToCSV quotes commas, quotes and newlines', () => {
+  const csv = convertToCSV(
+    [{ name: 'Ada, Grace', note: 'She said "yes"', detail: 'line one\nline two' }],
+    ['name', 'note', 'detail']
+  );
+  assert.match(csv, /"Ada, Grace"/);
+  assert.match(csv, /"She said ""yes"""/);
+  assert.match(csv, /"line one\nline two"/);
+});
+
 test('convertToCSV prefixes formula characters so spreadsheets treat them as text', () => {
   const csv = convertToCSV(
     [{ name: '=1+1', note: '@SUM(A1)', plain: 'Ada' }],
