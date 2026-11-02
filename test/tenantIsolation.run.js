@@ -26,26 +26,42 @@ function assertLocalTestUrl(connectionString) {
 
 const SERVICE_URL = process.env.TENANT_DATABASE_URL || '';
 const USE_SERVICE = Boolean(SERVICE_URL);
+
+const { execFileSync, spawnSync } = require('child_process');
+const crypto = require('crypto');
+const fs = require('fs');
+const http = require('http');
+const os = require('os');
+const path = require('path');
+const bcrypt = require('bcrypt');
+const { Client } = require('pg');
+
+function choosePort() {
+  const output = execFileSync(process.execPath, ['-e', `
+    const net = require('net');
+    const server = net.createServer();
+    server.listen(0, '127.0.0.1', () => {
+      process.stdout.write(String(server.address().port));
+      server.close();
+    });
+  `], { encoding: 'utf8' });
+  const port = String(output).trim();
+  if (!/^[0-9]+$/.test(port)) throw new Error('Could not reserve a local port for tenant isolation');
+  return port;
+}
+
+const DATA = USE_SERVICE ? '' : fs.mkdtempSync(path.join(os.tmpdir(), 'shelterlink-tenant-'));
+const PG_PORT = USE_SERVICE ? '' : choosePort();
 const LOCAL = USE_SERVICE
   ? SERVICE_URL
-  : 'postgresql://postgres@127.0.0.1:54329/shelterlink_tenant_test';
+  : `postgresql://postgres@127.0.0.1:${PG_PORT}/shelterlink_tenant_test`;
 assertLocalTestUrl(LOCAL);
 process.env.DATABASE_URL = LOCAL;
 process.env.NODE_ENV = 'test';
 process.env.SESSION_SECRET = 'tenant-isolation-test-secret-value';
 process.env.PORT = '0';
 
-const { spawnSync } = require('child_process');
-const crypto = require('crypto');
-const fs = require('fs');
-const http = require('http');
-const path = require('path');
-const bcrypt = require('bcrypt');
-const { Client } = require('pg');
-
 const ROOT = path.join(__dirname, '..');
-const DATA = '/tmp/shelterlink-tenant-pg';
-const PG_PORT = '54329';
 const DB_NAME = 'shelterlink_tenant_test';
 const MARKER = 'MarkerA';
 const A_EMAILS = ['a.admin@example.test', 'a.volunteer@example.test'];
@@ -55,6 +71,7 @@ const REFERENCE_TOKEN = 'marker-a-reference-token';
 
 let pgBin = '';
 let startedLocalCluster = false;
+let ownsDataDir = Boolean(DATA);
 
 function resolvePgBin() {
   if (process.env.PG_BIN) {
@@ -85,8 +102,6 @@ function startCluster() {
   if (!pgBin || !fs.existsSync(bin('initdb'))) {
     throw new Error('Postgres initdb was not found on PATH. Install Postgres client tools, set PG_BIN, or set TENANT_DATABASE_URL to a local Postgres service.');
   }
-  runPg('pg_ctl', ['-D', DATA, 'stop', '-m', 'immediate', '-w'], { allowFail: true });
-  fs.rmSync(DATA, { recursive: true, force: true });
   runPg('initdb', [
     '-D', DATA,
     '-U', 'postgres',
@@ -101,15 +116,19 @@ function startCluster() {
     '-o', `-p ${PG_PORT} -k /tmp -c listen_addresses=127.0.0.1`,
     'start',
   ]);
-  runPg('createdb', ['-h', '127.0.0.1', '-p', PG_PORT, '-U', 'postgres', DB_NAME]);
   startedLocalCluster = true;
+  runPg('createdb', ['-h', '127.0.0.1', '-p', PG_PORT, '-U', 'postgres', DB_NAME]);
 }
 
 function stopCluster() {
-  if (!startedLocalCluster) return;
-  runPg('pg_ctl', ['-D', DATA, 'stop', '-m', 'immediate', '-w'], { allowFail: true });
-  fs.rmSync(DATA, { recursive: true, force: true });
+  if (startedLocalCluster) {
+    runPg('pg_ctl', ['-D', DATA, 'stop', '-m', 'immediate', '-w'], { allowFail: true });
+  }
+  if (ownsDataDir && DATA) {
+    fs.rmSync(DATA, { recursive: true, force: true });
+  }
   startedLocalCluster = false;
+  ownsDataDir = false;
 }
 
 function maintenanceUrl() {

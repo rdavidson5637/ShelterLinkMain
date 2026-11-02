@@ -59,6 +59,6 @@ The login page shows both while `NODE_ENV` is not production.
 - Signed in as the seeded admin (Ciara). Today, Shifts, Day sheet, and Volunteers loaded. Volunteers listed Alex Jenkins and the other seeded people.
 - Signed out, then signed in as Alex Jenkins. Home and Find a shift loaded. Find a shift showed 9 shifts.
 - `node --test test/loadEnv.test.js` passed. With `ENV_FILE` set, `.env` was not loaded.
-- `node --test test/tenantIsolation.test.js` passed: 144 requests, shelter A unchanged. That test uses its own temporary cluster on `127.0.0.1:54329`, not `shelterlink_dev`.
+- `node --test test/tenantIsolation.test.js` passed: 144 requests, shelter A unchanged. That test starts its own temporary cluster on 127.0.0.1, on a free port, in its own data directory. It does not use `shelterlink_dev`.
 
 The admin Today page used to say "Could not load applications" because it requested `/applications?limit=5`. That query is not allowed, so the API returned 400. I1 drops the query. The page still shows only the first five.
