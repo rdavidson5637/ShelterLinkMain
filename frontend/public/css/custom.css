@@ -3247,14 +3247,14 @@ body.kiosk-body #message {
 
 .privacy-notice-bar {
   position: sticky;
-  top: 0;
-  z-index: 20;
+  top: var(--header-h);
+  z-index: 900;
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: var(--space-2);
   align-items: center;
   justify-content: space-between;
-  padding: 1rem;
+  padding: var(--space-2);
   background: var(--green-tint);
   color: var(--text);
   border-bottom: 1px solid var(--green-tint-border);

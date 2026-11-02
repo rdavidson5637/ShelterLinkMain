@@ -83,10 +83,26 @@ export function createOverflowMenu({ label = 'More actions', items = [] } = {}) 
     panel.appendChild(action);
   });
 
+  function placePanel() {
+    panel.hidden = false;
+    panel.style.position = 'fixed';
+    panel.style.zIndex = '1100';
+    panel.style.right = 'auto';
+    const rect = button.getBoundingClientRect();
+    const height = panel.offsetHeight;
+    const width = panel.offsetWidth;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const top =
+      spaceBelow < height + 8 && rect.top > height + 8 ? rect.top - height - 4 : rect.bottom + 4;
+    const left = Math.min(Math.max(8, rect.right - width), window.innerWidth - width - 8);
+    panel.style.top = `${Math.max(8, top)}px`;
+    panel.style.left = `${left}px`;
+  }
+
   function openMenu() {
     closeAllMenus();
     button.setAttribute('aria-expanded', 'true');
-    panel.hidden = false;
+    placePanel();
     menuItemsOf(panel)[0]?.focus();
   }
 

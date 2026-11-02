@@ -146,7 +146,9 @@ async function maybeShowPrivacyNotice() {
 
   actions.append(accept, later);
   bar.append(text, actions);
-  document.body.prepend(bar);
+  const header = document.querySelector('header.site-header');
+  if (header) header.after(bar);
+  else document.body.prepend(bar);
 }
 
 function initSessionManager() {
