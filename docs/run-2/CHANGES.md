@@ -35,6 +35,7 @@ Local database guards and the env loader are in. Today loads applications. A fai
 - I14: The README describes the app, the local scripts, and tenancy, and it does not say a sanctuary uses it. Pico and FullCalendar are downloaded on install. Commits 736a977, 85b6e51. `npm test` passed (478, 3 skipped). `npm run test:local` passed (3). QUESTIONS.md asks for a LICENSE file.
 - I15: A reading of what erasure blanks, deletes, and leaves, including documents, sessions, and backups. Off-server backup copies have no limit yet. Provider backups were not checked. Commits d4a9292, 665189f. No behaviour change. Decisions are in `docs/gdpr-erasure.md`.
 - I16: A phone-width pass of the signed-in pages the walks had not opened. Notes are in `docs/run-2/WALKTHROUGH.md`. Commit 654641a. No product code. The shared API limit question is in QUESTIONS.md.
+- I17: The hours status filter treats 1 as approved and 0 as waiting, the same way the totals do. Commit b1e9b37. `npm test` passed (479, 3 skipped). Waiting for approval showed the pending row.
 
 ### A3 audit, 2 Nov 2026
 
