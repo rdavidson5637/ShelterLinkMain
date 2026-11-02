@@ -39,3 +39,12 @@ A table added by a later migration needs its own grant. Do not grant `session` t
 ## A valid qualification with an expiry date looks missing (2 Nov 2026)
 
 On main, the shift list turns an expiry date into text like "Mon Nov 02" and compares it with an ISO date. Any real expiry then looks earlier, so a volunteer who holds the qualification is told they do not, and Apply is not offered. The same comparison is fixed on this branch for both shift requirements and animal requirements. It reaches the live site only after this branch is merged.
+
+## Signing in while the kiosk is unlocked (2 Nov 2026)
+
+The kiosk and a normal sign-in share one browser session. While the kiosk is unlocked, signing in is refused. The sign-in page now says to lock the kiosk first. The session rule is unchanged.
+
+Ryan, two choices:
+
+1. Leave the block. The tablet stays the kiosk until someone presses Lock, then a person can sign in.
+2. Let a person sign in on that browser, and end the kiosk session as part of that sign-in.

@@ -55,7 +55,7 @@
     <main class="container">
       <section class="page-header">
         <h1>Log hours</h1>
-        <p class="lead">Record the hours you did on a shift. Staff approve them.</p>
+        <p class="lead">Record the hours you did on a shift. Staff approve them. You can log hours once the shift has happened.</p>
       </section>
 
       <div id="message" role="status" aria-live="polite"></div>
@@ -65,9 +65,9 @@
           <div class="form-grid">
             <div class="form-section form-full-width">
               <label for="opportunityId">
-                Opportunity
+                Shift
                 <select id="opportunityId" name="opportunityId" required>
-                  <option value="" disabled selected>Select an opportunity</option>
+                  <option value="" disabled selected>Select a shift</option>
                 </select>
               </label>
             </div>
@@ -108,7 +108,7 @@
           <thead>
             <tr>
               <th scope="col">Date</th>
-              <th scope="col">Opportunity</th>
+              <th scope="col">Shift</th>
               <th scope="col">Hours</th>
               <th scope="col">Status</th>
             </tr>

@@ -1,6 +1,6 @@
 import { apiRequest } from '../config.js';
 import { requireAuth, checkAuth, logout, isStaffOrAdminRole, applyRoleVisibility } from '../auth.js';
-import { formatShiftWhen, toIsoDateLocal } from '../utils/dateFormat.js';
+import { formatDateOnly, formatDayLabel, formatShiftWhen, formatTimeLabel, toIsoDateLocal } from '../utils/dateFormat.js';
 import { createSkeletonRows } from '../components/rows.js';
 
 const sheetDateInput = document.getElementById('sheetDate');
@@ -12,6 +12,12 @@ const logoutButton = document.getElementById('logoutButton');
 
 function todayIso() {
   return toIsoDateLocal();
+}
+
+function sheetDay(iso) {
+  if (!iso) return '';
+  const date = new Date(`${iso}T12:00:00`);
+  return Number.isNaN(date.getTime()) ? String(iso) : formatDayLabel(date);
 }
 
 function setMessage(type, text) {
@@ -59,6 +65,17 @@ function renderAnimal(a) {
   }${handling}</span></li>`;
 }
 
+function checkInStatusLabel(status) {
+  const words = {
+    not_checked_in: 'Not checked in',
+    checked_in: 'Checked in',
+    checked_out: 'Checked out',
+    no_show: 'No show',
+  };
+  if (!status) return '—';
+  return words[status] || String(status).replaceAll('_', ' ');
+}
+
 function renderVolunteerRow(v) {
   const flags = (v.qualification_flags || [])
     .map((f) => `${escapeHtml(f.name)}: ${f.held ? 'yes' : 'NO'}`)
@@ -67,7 +84,7 @@ function renderVolunteerRow(v) {
     <td>${escapeHtml(v.name)}</td>
     <td>${escapeHtml(v.phone || '—')}</td>
     <td>${escapeHtml(v.emergency_contact || '—')}</td>
-    <td>${escapeHtml(v.check_in_status || '—')}</td>
+    <td>${escapeHtml(checkInStatusLabel(v.check_in_status))}</td>
     <td>${flags || '—'}</td>
   </tr>`;
 }
@@ -83,14 +100,11 @@ function renderShift(opp) {
 
   const shiftNotes = (opp.shift_notes || [])
     .map((n) => {
-      const when = n.created_at
-        ? new Date(n.created_at).toLocaleString('en-GB', {
-            day: 'numeric',
-            month: 'short',
-            hour: '2-digit',
-            minute: '2-digit',
-          })
-        : '';
+      const noteDate = n.created_at ? new Date(n.created_at) : null;
+      const whenDate = formatDateOnly(n.created_at);
+      const whenTime =
+        noteDate && !Number.isNaN(noteDate.getTime()) ? formatTimeLabel(noteDate) : '';
+      const when = whenDate && whenTime ? `${whenDate}, ${whenTime}` : whenDate;
       return `<li><strong>${escapeHtml(n.author_name || 'Staff')}</strong>${
         when ? ` · ${escapeHtml(when)}` : ''
       }: ${escapeHtml(n.body)}</li>`;
@@ -105,7 +119,7 @@ function renderShift(opp) {
         · ${escapeHtml(opp.location || 'Location TBA')}
         · Code: <code>${escapeHtml(opp.check_in_code || '—')}</code>
         · Waitlist: ${Number(opp.waitlist_count) || 0}
-        · Spots: ${volunteers.length}${
+        · Places: ${volunteers.length}${
           opp.max_volunteers != null ? ` / ${opp.max_volunteers}` : ''
         }
       </p>
@@ -148,11 +162,11 @@ async function loadSheet() {
     }
     const sheet = await res.json();
     if (!sheet.opportunities?.length) {
-      contentEl.innerHTML = `<p>No shifts on ${escapeHtml(sheet.date)}.</p>`;
+      contentEl.innerHTML = `<p>No shifts on ${escapeHtml(sheetDay(sheet.date))}.</p>`;
       return;
     }
     contentEl.innerHTML = `
-      <h2 class="no-print">Roster for ${escapeHtml(sheet.date)}</h2>
+      <h2 class="no-print">Roster for ${escapeHtml(sheetDay(sheet.date))}</h2>
       ${sheet.opportunities.map(renderShift).join('')}
     `;
   } catch (error) {

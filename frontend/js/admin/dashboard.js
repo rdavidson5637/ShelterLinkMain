@@ -101,7 +101,7 @@ async function loadRecentApplications() {
         lead: createDateBlock(app.created_at),
         title: personName(app),
         titleHref: '/pages/admin/review-applications.html',
-        details: [app.opportunity_title || 'Opportunity', formatDateOnly(app.created_at) || ''],
+        details: [app.opportunity_title || 'Shift', formatDateOnly(app.created_at) || ''],
         end: [createStatusBadge(app.status)],
       })),
       'No applications yet.',
@@ -135,7 +135,7 @@ async function loadRecentHours() {
         title: personName(entry),
         titleHref: '/pages/admin/approve-hours.html',
         details: [
-          entry.opportunity_title || 'Opportunity',
+          entry.opportunity_title || 'Shift',
           `${entry.hours || 0} hours on ${formatDateOnly(entry.date || entry.created_at) || 'an unknown date'}`,
         ],
       })),

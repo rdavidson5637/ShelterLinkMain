@@ -103,7 +103,7 @@ function appendApplicationRow(app, options = {}) {
     startDate.getTime() < Date.now() - 24 * 60 * 60 * 1000;
 
   const titleTd = document.createElement('td');
-  titleTd.textContent = app.opportunity_title || 'Opportunity';
+  titleTd.textContent = app.opportunity_title || 'Shift';
 
   const dateTd = document.createElement('td');
   dateTd.textContent = formatDateOnly(app.created_at || app.applied_at) || 'N/A';
@@ -134,7 +134,7 @@ function appendApplicationRow(app, options = {}) {
     email.textContent = app.email || '';
     const meta = document.createElement('p');
     meta.className = 'person-card-meta';
-    meta.textContent = `${app.opportunity_title || 'Opportunity'} · ${formatDateOnly(app.created_at || app.applied_at) || ''}`;
+    meta.textContent = `${app.opportunity_title || 'Shift'} · ${formatDateOnly(app.created_at || app.applied_at) || ''}`;
     card.append(
       name,
       email,

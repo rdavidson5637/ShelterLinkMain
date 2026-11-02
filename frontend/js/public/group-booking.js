@@ -28,7 +28,7 @@ async function loadOpportunities() {
     const res = await fetch('/api/public/opportunities', { credentials: 'omit' });
     if (!res.ok) throw new Error('Failed to load');
     const rows = filterPublicBoard(await res.json()).filter(isAcceptingSignups);
-    opportunitySelect.innerHTML = '<option value="">Select an opportunity</option>';
+    opportunitySelect.innerHTML = '<option value="">Select a shift</option>';
     if (!Array.isArray(rows) || !rows.length) {
       opportunitySelect.innerHTML = '<option value="">No open opportunities</option>';
       return;
@@ -37,7 +37,7 @@ async function loadOpportunities() {
       const opt = document.createElement('option');
       opt.value = opp.id;
       const spots =
-        opp.spots_remaining == null ? 'unlimited' : `${opp.spots_remaining} spots left`;
+        opp.spots_remaining == null ? 'unlimited' : `${opp.spots_remaining} places left`;
       opt.textContent = `${opp.title || 'Shift'} - ${formatDate(opp.date || opp.start_date)} (${spots})`;
       opportunitySelect.appendChild(opt);
     });
@@ -57,7 +57,7 @@ async function submitForm(event) {
   clearFormErrors(form);
   const errors = [];
   if (!opportunitySelect.value) {
-    errors.push({ field: 'opportunityId', message: 'Select an opportunity.' });
+    errors.push({ field: 'opportunityId', message: 'Select a shift.' });
   }
   const groupName = document.getElementById('groupName').value.trim();
   const contactName = document.getElementById('contactName').value.trim();

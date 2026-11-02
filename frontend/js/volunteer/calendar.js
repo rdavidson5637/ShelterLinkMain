@@ -50,7 +50,7 @@ function getEventColor(opportunity, appliedIds) {
 function mapOpportunitiesToEvents(opportunities, appliedIds) {
   return opportunities.map((opp) => {
     const id = opp.id ?? opp.opportunity_id;
-    const title = opp.title || 'Volunteer Shift';
+    const title = opp.title || 'Volunteer shift';
     const location = opp.location || '';
     const startDate = opp.start_date || opp.start;
     const endDate = opp.end_date || opp.end || startDate;

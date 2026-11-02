@@ -92,7 +92,13 @@ async function handleLogin(event) {
     } else {
       const errorData = await res.json().catch(() => ({}));
       showFormErrors(form, [
-        { field: 'email', message: errorData.error || 'Invalid email or password.' },
+        {
+          field: 'email',
+          message:
+            errorData.error === 'Kiosk session cannot access this endpoint'
+              ? 'Lock the kiosk first, then sign in.'
+              : errorData.error || 'Invalid email or password.',
+        },
       ]);
     }
   } catch (error) {

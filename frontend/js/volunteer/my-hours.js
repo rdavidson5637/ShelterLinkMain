@@ -52,7 +52,7 @@ function populateOpportunityFilter(hours) {
       hours
         .map((h) => ({
           id: h.opportunity_id,
-          title: h.opportunity_title || `Opportunity #${h.opportunity_id}`,
+          title: h.opportunity_title || `Shift ${h.opportunity_id}`,
         }))
         .filter((o) => o.id)
     )

@@ -171,7 +171,7 @@ async function handleSubmit(event) {
     const created = await response.json().catch(() => ({}));
     const seriesNote =
       created?.series_count > 1 ? ` (${created.series_count} shifts in series)` : '';
-    setMessage('success', `Opportunity created successfully${seriesNote}! Redirecting...`);
+    setMessage('success', `Shift created${seriesNote}. Opening the shift list.`);
     setTimeout(() => {
       window.location.href = '/pages/admin/opportunities.html';
     }, 1500);

@@ -485,13 +485,13 @@ async function viewProfile(userId) {
           <strong>Phone:</strong> ${escapeHtml(profile.phone || 'N/A')}
         </div>
         <div>
-          <strong>Date of Birth:</strong> ${escapeHtml(profile.date_of_birth || 'N/A')}
+          <strong>Date of birth:</strong> ${escapeHtml(profile.date_of_birth || 'N/A')}
         </div>
         <div>
           <strong>Address:</strong> ${escapeHtml(profile.address || 'N/A')}
         </div>
         <div>
-          <strong>Emergency Contact:</strong> ${escapeHtml(profile.emergency_contact || 'N/A')}
+          <strong>Emergency contact:</strong> ${escapeHtml(profile.emergency_contact || 'N/A')}
         </div>
         <div>
           <strong>Availability:</strong> ${escapeHtml(profile.availability || 'N/A')}

@@ -42,7 +42,7 @@ function getSpotsText(spotsFilled, spotsTotal) {
   }
   const filled = Number(spotsFilled) || 0;
   const total = Number(spotsTotal);
-  return `${filled} of ${total} spots filled`;
+  return `${filled} of ${total} places filled`;
 }
 
 function createModalElement() {
@@ -143,7 +143,7 @@ export function showOpportunityModal(opportunity, options = {}) {
   }
 
   const id = opportunity.opportunityId ?? opportunity.id ?? opportunity.opportunity_id;
-  const title = opportunity.title || 'Volunteer Shift';
+  const title = opportunity.title || 'Volunteer shift';
   const location = opportunity.location || 'Location to be confirmed';
   const startDate = opportunity.start_date ?? opportunity.start;
   const endDate = opportunity.end_date ?? opportunity.end ?? startDate;
@@ -299,7 +299,7 @@ export function showOpportunityModal(opportunity, options = {}) {
     actionButton = document.createElement('button');
     actionButton.type = 'button';
     actionButton.className = 'opportunity-modal-btn opportunity-modal-btn-apply';
-    actionButton.textContent = 'Apply for this Shift';
+    actionButton.textContent = 'Apply for this shift';
     actionButton.addEventListener('click', () => {
       if (onApply) onApply(opportunity, id, { waitlist: false });
     });

@@ -1,6 +1,6 @@
 import { apiRequest, API_URL } from '../config.js';
 import { requireAuth, checkAuth, logout, isStaffOrAdminRole, applyRoleVisibility } from '../auth.js';
-import { formatShiftWhen, toIsoDateLocal } from '../utils/dateFormat.js';
+import { formatDayLabel, formatShiftWhen, toIsoDateLocal } from '../utils/dateFormat.js';
 import { createSkeletonRows } from '../components/rows.js';
 
 const weekStartInput = document.getElementById('weekStart');
@@ -22,6 +22,12 @@ function mondayOf(isoDate) {
 
 function todayMonday() {
   return mondayOf(toIsoDateLocal());
+}
+
+function sheetDay(iso) {
+  if (!iso) return '';
+  const date = new Date(`${iso}T12:00:00`);
+  return Number.isNaN(date.getTime()) ? String(iso) : formatDayLabel(date);
 }
 
 function setMessage(type, text) {
@@ -57,14 +63,19 @@ function escapeHtml(value) {
     .replace(/"/g, '&quot;');
 }
 
+function checkInStatusLabel(status) {
+  const words = {
+    not_checked_in: 'Not checked in',
+    checked_in: 'Checked in',
+    checked_out: 'Checked out',
+    no_show: 'No show',
+  };
+  if (!status) return '—';
+  return words[status] || String(status).replaceAll('_', ' ');
+}
+
 function formatDayHeading(dateIso) {
-  const d = new Date(`${dateIso}T12:00:00`);
-  return d.toLocaleDateString('en-GB', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
+  return formatDayLabel(new Date(`${dateIso}T12:00:00`));
 }
 
 function updateIcsLink(weekStart) {
@@ -76,7 +87,7 @@ function renderVolunteerRow(v) {
   return `<tr>
     <td>${escapeHtml(v.name)}</td>
     <td>${escapeHtml(v.phone || '—')}</td>
-    <td>${escapeHtml(v.check_in_status || '—')}</td>
+    <td>${escapeHtml(checkInStatusLabel(v.check_in_status))}</td>
   </tr>`;
 }
 
@@ -108,7 +119,7 @@ function renderShift(opp) {
         · ${escapeHtml(opp.location || 'Location TBA')}
         · Code: <code>${escapeHtml(opp.check_in_code || '—')}</code>
         · Waitlist: ${Number(opp.waitlist_count) || 0}
-        · Spots: ${volunteers.length}${
+        · Places: ${volunteers.length}${
           opp.max_volunteers != null ? ` / ${opp.max_volunteers}` : ''
         }
       </p>
@@ -161,8 +172,8 @@ async function loadSheet() {
     const sheet = await res.json();
     const total = sheet.opportunities?.length || 0;
     contentEl.innerHTML = `
-      <h2 class="no-print">Week of ${escapeHtml(sheet.week_start)} – ${escapeHtml(
-        sheet.week_end
+      <h2 class="no-print">Week of ${escapeHtml(sheetDay(sheet.week_start))} - ${escapeHtml(
+        sheetDay(sheet.week_end)
       )} (${total} shift${total === 1 ? '' : 's'})</h2>
       ${(sheet.days || []).map(renderDay).join('')}
     `;

@@ -48,7 +48,7 @@ async function loadApprovedApplications() {
       (app) => app.status === 'accepted' || app.status === 'approved'
     );
 
-    opportunitySelect.innerHTML = '<option value="" disabled selected>Select an opportunity</option>';
+    opportunitySelect.innerHTML = '<option value="" disabled selected>Select a shift</option>';
 
     if (!approved.length) {
       const option = document.createElement('option');
@@ -63,7 +63,7 @@ async function loadApprovedApplications() {
     approved.forEach((app) => {
       const option = document.createElement('option');
       option.value = app.opportunity_id;
-      option.textContent = app.opportunity_title || `Opportunity #${app.opportunity_id}`;
+      option.textContent = app.opportunity_title || `Shift ${app.opportunity_id}`;
       opportunitySelect.appendChild(option);
     });
 
@@ -136,7 +136,7 @@ async function handleSubmit(event) {
 
   if (!opportunityId || !date || isNaN(hours)) {
     const errors = [];
-    if (!opportunityId) errors.push({ field: 'opportunityId', message: 'Select an opportunity.' });
+    if (!opportunityId) errors.push({ field: 'opportunityId', message: 'Select a shift.' });
     if (!date) errors.push({ field: 'date', message: 'Choose the date you volunteered.' });
     if (isNaN(hours)) errors.push({ field: 'hours', message: 'Enter the number of hours.' });
     showFormErrors(logHoursForm, errors);

@@ -52,7 +52,7 @@ async function loadBookings() {
           ${row.notes ? `<br/><small>${escapeHtml(row.notes)}</small>` : ''}
         </td>
         <td>
-          ${escapeHtml(row.opportunity_title || 'Opportunity')}<br/>
+          ${escapeHtml(row.opportunity_title || 'Shift')}<br/>
           <small>${escapeHtml(formatDate(row.opportunity_start_date))}</small>
         </td>
         <td>
