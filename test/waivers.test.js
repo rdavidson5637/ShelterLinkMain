@@ -183,7 +183,12 @@ test('download route enforces ownership and streams bytes from the database', as
   const pdfBytes = Buffer.from('%PDF-1.4 pretend pdf bytes');
 
   mock.resetCalls();
-  mock.setHandler(async (sql) => {
+  const inserts = [];
+  mock.setHandler(async (sql, params) => {
+    if (/INSERT INTO audit_log/i.test(sql)) {
+      inserts.push({ params });
+      return [{ insertId: 1 }];
+    }
     if (/SELECT\s+content/i.test(sql) && /FROM user_documents/i.test(sql)) {
       return [[{
         content: pdfBytes,
@@ -228,14 +233,22 @@ test('download route enforces ownership and streams bytes from the database', as
   assert.strictEqual(ownerRes.sent.toString(), pdfBytes.toString());
   assert.strictEqual(ownerRes.headers['content-type'], 'application/pdf');
   assert.match(ownerRes.headers['content-disposition'], /filename="id\.pdf"/);
+  assert.strictEqual(ownerRes.auditDone, undefined);
+  assert.strictEqual(inserts.length, 0);
 
-  // Admin can download
+  // Admin can download, and the audit row has no file bytes
   const adminRes = makeRes();
   await docCtrl.downloadDocument(
     makeReq({ session: { userId: 1, role: 'admin' }, params: { id: 9 } }),
     adminRes
   );
   assert.ok(Buffer.isBuffer(adminRes.sent));
+  await adminRes.auditDone;
+  assert.strictEqual(inserts.length, 1);
+  assert.strictEqual(inserts[0].params[1], 'document.download');
+  assert.strictEqual(inserts[0].params[2], 'document');
+  assert.strictEqual(inserts[0].params[3], '9');
+  assert.doesNotMatch(String(inserts[0].params[4]), /pretend pdf|id\.pdf/);
 
   // Staff cannot download another volunteer's file
   const staffRes = makeRes();
@@ -245,6 +258,7 @@ test('download route enforces ownership and streams bytes from the database', as
   );
   assert.strictEqual(staffRes.statusCode, 403);
   assert.strictEqual(staffRes.sent, null);
+  assert.strictEqual(inserts.length, 1);
 });
 
 test('upload stores file content in the database', async () => {

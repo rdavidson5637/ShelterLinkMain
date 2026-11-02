@@ -6,8 +6,9 @@ const multer = require('multer');
 const UserDocument = require('../models/UserDocument');
 const User = require('../models/User');
 
-const { isAdminUser } = require('../middleware/auth');
+const { isAdminUser, isStaffOrAdmin } = require('../middleware/auth');
 const { canonicalMime, sniffDocument } = require('../utils/fileSignature');
+const { recordAudit, scheduleAudit } = require('../middleware/auditLog');
 
 const DISCLOSURE_FILE = /access[\s_-]*ni|\bdisclosure\b|\bdbs\b|criminal|barred list|police check/i;
 
@@ -200,7 +201,19 @@ async function downloadDocument(req, res) {
       'Content-Disposition',
       `attachment; filename="${downloadName}"`
     );
-    return res.send(file.buffer);
+    res.send(file.buffer);
+    if (isStaffOrAdmin(req)) {
+      scheduleAudit(res, () => recordAudit(req, {
+        action: 'document.download',
+        entityType: 'document',
+        entityId: doc.id,
+        detail: {
+          document_id: Number(doc.id),
+          user_id: Number(doc.user_id),
+        },
+      }));
+    }
+    return;
   } catch (error) {
     console.error('[Document] downloadDocument error:', error.message);
     if (error.status === 404) return res.status(404).json({ error: 'Not found' });

@@ -124,8 +124,35 @@ async function recordAudit(req, { action, entityType = null, entityId = null, de
   });
 }
 
+/**
+ * Run an audit after the response has been sent. The request does not wait for it.
+ * Test doubles have no response stream, so they get a promise on res.auditDone.
+ */
+function scheduleAudit(res, work) {
+  const run = () => Promise.resolve()
+    .then(work)
+    .catch((err) => {
+      console.error('[Audit] failed to record:', err && err.message ? err.message : err);
+    });
+
+  if (res && typeof res.on === 'function') {
+    let finished;
+    const pending = new Promise((resolve) => {
+      finished = resolve;
+    });
+    res.auditDone = pending;
+    res.on('finish', () => {
+      run().finally(finished);
+    });
+    return;
+  }
+
+  res.auditDone = Promise.resolve().then(run);
+}
+
 module.exports = {
   auditMutations,
   recordAudit,
+  scheduleAudit,
   inferFromRequest,
 };

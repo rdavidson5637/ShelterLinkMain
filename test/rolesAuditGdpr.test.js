@@ -390,6 +390,7 @@ test('staff view of a volunteer profile is audited without contact fields', asyn
   );
   assert.strictEqual(res.statusCode, 200);
   assert.strictEqual(res.body.address, '12 Secret Road');
+  await res.auditDone;
   assert.strictEqual(inserts.length, 1);
   assert.strictEqual(inserts[0].params[0], 9);
   assert.strictEqual(inserts[0].params[1], 'volunteer.profile.view');
