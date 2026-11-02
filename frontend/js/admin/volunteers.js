@@ -602,7 +602,7 @@ async function viewProfile(userId) {
           <div id="vettingRefsList"><p class="skeleton" aria-hidden="true"></p></div>
           <form id="referenceRequestForm" class="profile-form">
             <label>Referee name <input type="text" id="refName" required /></label>
-            <label>Referee email <input type="email" id="refEmail" required /></label>
+            <label>Referee email <input type="email" id="refEmail" required autocapitalize="none" autocorrect="off" spellcheck="false" inputmode="email" /></label>
             <label>Relationship <input type="text" id="refRelationship" placeholder="e.g. former manager" /></label>
             <button type="submit" class="button-small">Request reference</button>
           </form>
