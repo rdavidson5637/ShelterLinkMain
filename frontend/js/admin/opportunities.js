@@ -7,6 +7,7 @@ import { createStatusBadge } from '../components/statusBadge.js';
 import { escapeHtml } from '../utils/escapeHtml.js';
 import { showConfirm } from '../components/confirmDialog.js';
 import { choiceFromDialog, closeShiftChoices, closeShiftEndpoint } from './closeShiftChoice.js';
+import { writeCheckInPrint } from './checkInPrint.js';
 
 const tableBody = document.getElementById('opportunitiesTableBody');
 const statusFilter = document.getElementById('statusFilter');
@@ -406,17 +407,11 @@ function renderOpportunitiesTable() {
       printButton.textContent = 'Print code';
       printButton.addEventListener('click', () => {
         const w = window.open('', '_blank');
-        if (!w) return;
-        w.document.write(`<!DOCTYPE html><html><head><title>Check-in code</title>
-          <style>body{font-family:system-ui,sans-serif;text-align:center;padding:3rem}
-          h1{font-size:1.25rem}code{font-size:3rem;letter-spacing:0.2em}</style></head><body>
-          <h1>${escapeHtml(opportunity.title || 'Shift')}</h1>
-          <p>${escapeHtml(formatDateRange(opportunity))}</p>
-          <p>Check-in code</p>
-          <code>${escapeHtml(opportunity.check_in_code)}</code>
-          <script>window.print()<\/script>
-          </body></html>`);
-        w.document.close();
+        writeCheckInPrint(w, {
+          title: opportunity.title || 'Shift',
+          when: formatDateRange(opportunity),
+          code: opportunity.check_in_code,
+        });
       });
       actionsWrap.appendChild(printButton);
     }
