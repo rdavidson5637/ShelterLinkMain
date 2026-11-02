@@ -32,6 +32,7 @@ Local database guards and the env loader are in. Today loads applications. A fai
 - I13: A message time uses the app date, such as 2 Nov 2026, 16:15. A shift chat shows the shift title, or Shift chat, instead of a shift number. Commit 78fa01d.
 - I12: A profile dialog shows its own status, including a warning when a reference email does not go. Foster confirm says the volunteer was emailed only when the send succeeded. Commit 17c416a. The new `volunteer_emailed` field is in QUESTIONS.md.
 - N1: A public page uses the shelter named in `?slug=`. No slug stays on Assisi. An unknown slug says we could not find that shelter and does not name Assisi. Public links keep the slug. A slug page does not offer an account. Commits 5a42b8a, 3064e0f, b281c88 on `features/shelter-slug`. Not merged. The second shelter has no shifts, so a live booking there rests on the isolation test. Follow-up 1bb7642, not re-reviewed: an empty group booking says there are no open shifts, and an unknown slug is not logged as an error. A signed-in person still sees their own shelter.
+- I14: The README describes the app, the local scripts, and tenancy, and it does not say a sanctuary uses it. Pico and FullCalendar are downloaded on install. Commits 736a977, 85b6e51. `npm test` passed (478, 3 skipped). `npm run test:local` passed (3). QUESTIONS.md asks for a LICENSE file.
 
 ### A3 audit, 2 Nov 2026
 
