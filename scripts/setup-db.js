@@ -15,17 +15,18 @@
  *   npm run db:setup      # schema only
  *   npm run db:reset      # schema + sample data (fresh start)
  *
- * schema.pg.sql DROPs and recreates every table — this destroys all data.
+ * schema.pg.sql DROPs and recreates every table. This destroys all data.
  * When NODE_ENV=production the script refuses to run without --force, and
  * refuses to seed demo accounts at all. Use `npm run migrate` to upgrade a
  * live database without data loss.
+ * A Supabase host also needs CONFIRM_LIVE_SHELTER=yes. Demo seed is allowed
+ * only when the host is localhost or 127.0.0.1.
  */
 
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
-const { pgPool, closePool } = require('../config/database');
-const { applySql } = require('./applySql');
+const { assertSetupAllowed } = require('../utils/liveDbGuard');
 
 const args = process.argv.slice(2);
 const isProduction = process.env.NODE_ENV === 'production';
@@ -43,6 +44,21 @@ if (isProduction && (args.includes('--seed'))) {
   console.error('\n✗ Refusing to load demo/sample data in production (--seed ignored in prod).');
   process.exit(1);
 }
+
+try {
+  assertSetupAllowed({
+    databaseUrl: process.env.DATABASE_URL,
+    dbHost: process.env.DB_HOST,
+    seed: withSeed,
+    confirmFlag: process.env.CONFIRM_LIVE_SHELTER,
+  });
+} catch (error) {
+  console.error(`\n✗ ${error.message}`);
+  process.exit(1);
+}
+
+const { pgPool, closePool } = require('../config/database');
+const { applySql } = require('./applySql');
 
 function describeTarget() {
   if (process.env.DATABASE_URL) {
