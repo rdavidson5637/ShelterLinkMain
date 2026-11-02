@@ -80,4 +80,7 @@ build/
 .agents/
 .claude/
 
+# Parked macOS duplicate copies from H1. Not deleted until Ryan says so.
+_to_delete/
+
 
