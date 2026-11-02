@@ -1,6 +1,6 @@
 # Run 2 changes
 
-Local database guards and the env loader are in. Today loads applications. A failed day or week sheet clears the old table. Closing a shift uses the shared dialog. The check-in page is written by the opener. CSV export no longer uses json2csv. The image sets production before install. Email fields no longer auto-capitalise. Foster names and notes are escaped. Database TLS verifies a certificate only when a CA is set. Each tenant test has its own cluster. The kiosk uses the shelter's day. The tenant table list is checked against the migration. Five older duplicate files are still in `_to_delete/` for you to delete or keep.
+Local database guards and the env loader are in. Today loads applications. A failed day or week sheet clears the old table. Closing a shift uses the shared dialog. The check-in page is written by the opener. CSV export no longer uses json2csv. The image sets production before install. Email fields no longer auto-capitalise. Foster names and notes are escaped. Database TLS verifies a certificate only when a CA is set. Each tenant test has its own cluster. The kiosk uses the shelter's day. The tenant table list is checked against the migration. Erasure, log out everywhere, and password reset delete the session outside the tenant role. A local test erases a throwaway volunteer and checks that session is gone. Five older duplicate files are still in `_to_delete/` for you to delete or keep.
 
 - H1: Removed eleven identical duplicate files. Five older copies are in gitignored `_to_delete/`, with the differences in `docs/run-2/QUESTIONS.md`. Commit 2a14718. `npm test` passed (441). Those five copies are not deleted.
 - A2: `setup-db` refuses a Supabase host unless `CONFIRM_LIVE_SHELTER=yes`, refuses demo seed unless the host is localhost or 127.0.0.1, and resolves the host the way pg does. `dev:local`, `db:local:reset` and `db:local:migrate` refuse any other host. Commits b9d795e, c760f01. `npm test` passed (452).
@@ -20,6 +20,8 @@ Local database guards and the env loader are in. Today loads applications. A fai
 - B8: Kiosk today and check-in use the shelter's day. At 23:30 UTC on 29 March 2026 the day is 30 March. Commit df0573a. `node --test test/kioskTime.test.js` passed.
 - T1: `TENANT_TABLES` matches the table array in migration 033, plus `shelters`. Commit 59cbcc7. No database. The test passed.
 - B6: Staff profile views and admin document downloads are written to the audit log after the response. A volunteer downloading their own file is not logged. The local check skips unless `LOCAL_DB_REQUIRED=1` and refuses any host that is not local before it connects. Commit c427974. `npm test` passed (462, that check skipped). This touches audit logging.
+- I4: Erasure, log out everywhere, and password reset delete the session outside the tenant role. The tenant test no longer grants that role access to `session`. Commit b58dcb5. Tenant isolation passed (144 requests). A local test deletes a session while a shelter context is active. The live-database question is in QUESTIONS.md.
+- I3: A throwaway `@example.test` volunteer is erased on the local database. Name, phone, address, the audit row, and the session are checked, then the rows are removed. Commit 7d5404a. Plain `npm test` skips it.
 
 ### A3 audit, 2 Nov 2026
 
