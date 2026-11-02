@@ -1,190 +1,132 @@
 # ShelterLink
 
-ShelterLink is a volunteer management system built for animal shelters (Assisi
-first). Volunteers register, complete a profile, browse and apply for shifts,
-foster animals, message about shifts without sharing personal contacts, and log
-hours. Staff run the day from a printable day sheet, animals records, urgent
-cover, and foster placements.
+ShelterLink is a volunteer rota for one shelter at a time. A volunteer can register, complete a profile, apply for a shift, foster an animal, message about a shift without seeing another volunteer's contact details, and log hours. Staff can print a day sheet, keep animal records, ask for urgent cover, and place a foster.
 
-It is a full-stack application: a Node.js/Express REST API backed by Postgres
-(Supabase or local), with a static HTML/CSS/JavaScript frontend served by the
-same server. The app host must be always-on so scheduled jobs (reminders,
-digests, keep-alive ping) can run.
+One Node process serves the HTML, CSS, and JavaScript, and the Express API. The database is Postgres, on this machine or on Supabase. Scheduled jobs run in that same process, so the process has to stay up.
 
-See `DEPLOY.md` for production setup and `ASSISI-DEMO.md` for the shelter demo script.
+The database seed is sample data for local development. It is not a record of a sanctuary using this app.
 
-## Features
+## What the code does
 
-**Volunteers**
-- Register, log in, and reset a forgotten password (email link)
-- Complete a profile (including foster home suitability and away mode)
-- Browse open shifts (urgent cover highlighted); apply once approved
-- See animals on a shift with handling notes; log walk / feed / socialise
-- Shift chat and announcements (names only — no peer contact details)
-- Foster matching, placements, and check-ins
-- Hours logging, badges, printable service certificate
-- Onboarding checklist (profile, waiver, references, AccessNI)
-- Installable PWA on phones
+Volunteers
 
-**Administrators / staff**
-- Morning staff guide, printable day sheet, kiosk check-in
-- Animals as first-class records linked to shifts
-- Opportunities: templates, clone, shift notes, urgent cover (email + optional push)
-- Fosters: requests, offers, placements
-- Threaded messaging with oversight
-- AccessNI tracking and reference collection
-- Qualifications, waivers, group bookings, hours approval, GDPR tools
+- Register, sign in, and reset a forgotten password when email is configured
+- Complete a profile, including time away and whether a home can foster
+- Browse open shifts and apply once a profile is approved
+- See animals linked to a shift, and log a walk, a feed, or social time
+- Use shift chat and announcements by name, without peer contact details
+- Record hours, badges, and a printable certificate
+- Work through a checklist: profile, waiver, references, and a background check
 
-## Tech stack
+Staff
 
-- **Express.js** — web framework and REST API
-- **Postgres** (via `pg`, mysql2-compatible adapter in `config/database.js`)
-- **express-session** + `connect-pg-simple` — server-side sessions
-- **bcrypt** — password hashing
-- **helmet**, **express-rate-limit**, **xss**, **validator** — security hardening
-- **nodemailer** — transactional email (password reset, application updates)
-- Vanilla HTML/CSS/JS frontend (no build step)
+- Print a day sheet and use the kiosk for check-in
+- Keep animal records on shifts
+- Copy a shift, add a shift note, and flag urgent cover
+- Place fosters
+- Read message threads
+- Track qualifications, waivers, references, and background checks
+- Review group bookings, approve hours, and export or erase a volunteer record
 
-## Vendored libraries
+The site can be installed from the browser. This file does not name a host.
 
-| File | Version | Licence | Source |
-|---|---|---|---|
-| `frontend/public/css/vendor/pico-2.1.1.min.css` | 2.1.1 | MIT | https://cdn.jsdelivr.net/npm/@picocss/pico@2.1.1/css/pico.min.css |
-| `frontend/public/js/vendor/fullcalendar-6.1.19.min.js` | 6.1.19 | MIT | https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js |
+## Stack
 
-Check Pico and FullCalendar versions once a quarter.
+- Node.js 22 or newer, and Express
+- Postgres through the `pg` package. Some queries still use `?` placeholders. `config/database.js` turns those into Postgres parameters. There is no MySQL database. `database/schema.sql` and `database/seed.sql` are older files kept beside the Postgres files.
+- Sessions with `express-session` and `connect-pg-simple`
+- Passwords with bcrypt
+- `helmet`, `express-rate-limit`, and `validator` on requests
+- Email with nodemailer when `EMAIL_*` is set. Blank email settings leave sending off.
+- HTML, CSS, and JavaScript in `frontend/`, with no build step
 
-## Installing the app
+Two libraries are stored in the repo:
 
-**iPhone:** open https://shelterlink.online in Safari, tap Share, then Add to Home Screen. Open ShelterLink from the home screen, then turn on notifications from the dashboard.
+- Pico 2.1.1, MIT, `frontend/public/css/vendor/pico-2.1.1.min.css`
+- FullCalendar 6.1.19, MIT, `frontend/public/js/vendor/fullcalendar-6.1.19.min.js`
 
-**Android:** tap Install on the dashboard card, or use the Chrome menu, Install app. Then turn on notifications from the dashboard.
+## How a request is scoped
 
-## Getting started
+A signed-in request takes its shelter from the user row. The API rejects `shelter_id` in the body, the query, or the URL.
 
-### Prerequisites
-- Node.js 22+
-- A Postgres database. Local (`brew install postgresql@16`) or a free
-  [Supabase](https://supabase.com) project. Use the **session pooler** URI
-  (port 5432), not the transaction pooler (6543).
+Shelter-owned tables have a `shelter_id`. Before those queries, the connection sets `app.shelter_id` and runs `SET LOCAL ROLE shelterlink_tenant`. The Postgres policy `tenant_isolation` applies to that role. The application role bypasses the policy unless that switch runs. `session`, `job_runs`, and `schema_migrations` are not tenant tables.
 
-### 1. Install dependencies
+On this branch, a public page with nobody signed in stays on the sample shelter. A public address that names another shelter is on the unmerged branch `features/shelter-slug`.
+
+One email can belong to one shelter. A person at two shelters is not built.
+
+The longer note is `docs/tenancy/design.md`.
+
+## Local setup
+
+Install Node.js 22 or newer and the dependencies, then follow `docs/LOCAL-DEV.md`. That file is the local setup. This one does not copy it.
+
+These scripts read `.env.local` and refuse a database host that is not this machine:
+
 ```bash
-npm install
+npm run db:local:reset
+npm run db:local:migrate
+npm run dev:local
 ```
 
-### 2. Configure environment
+`npm run dev`, `npm run db:setup`, `npm run db:reset`, `npm run db:clean-demo`, and `npm run migrate` read `.env`. Do not use them for local work.
+
+Sample logins are described in `docs/LOCAL-DEV.md`. They are sample accounts.
+
+`npm run db:local:migrate` skips migration 034 until `BACKUP_CONFIRMED=yes`.
+
+## Tests
+
+`npm test` runs Node's test runner over `test/*.test.js`. Most of those tests mock the database.
+
+Three checks skip in that run. They write to the local database and remove those rows afterwards:
+
 ```bash
-cp .env.example .env
-```
-Then edit `.env` and set at least:
-- `DATABASE_URL` — Supabase session pooler URI, **or** `DB_HOST` / `DB_PORT` /
-  `DB_USER` / `DB_PASSWORD` / `DB_NAME` for local Postgres
-- `SESSION_SECRET` — a long random string
-- `ADMIN_REGISTRATION_KEY` — required to create admin accounts
-- Email (`EMAIL_*`) values if you want password-reset / notification emails to send
-
-### 3. Create the database
-With Postgres reachable, build the schema and load sample data in one step:
-```bash
-npm run db:reset      # schema + sample data (recommended for a first run)
-```
-or, for an empty database with no sample data:
-```bash
-npm run db:setup      # schema only
-```
-This uses `DATABASE_URL` or `DB_*` from your `.env`. MySQL files
-(`database/schema.sql`, `database/seed.sql`) are kept for reference only.
-
-### 4. Run the app
-```bash
-npm run dev           # development, auto-restart on changes
-# or
-npm start             # production-style start
-```
-Then open **http://localhost:3000**.
-
-## Sample login accounts
-
-`npm run db:reset` loads sample accounts from `database/seed.pg.sql`. On a
-development server the login page shows a Demo accounts card with those
-emails and passwords. That card is hidden when `NODE_ENV` is `production`.
-Do not use the sample accounts on a live shelter site.
-
-To create your own admin account instead, set `ADMIN_REGISTRATION_KEY` in `.env`
-and run:
-```bash
-ADMIN_INITIAL_PASSWORD='a-long-password' npm run create-admin -- "Your Name" you@example.com
-```
-The account is attached to the only shelter in the database. On a Supabase
-database, also set `CONFIRM_LIVE_SHELTER=yes`.
-
-## Testing
-
-The project ships with an automated test suite built on Node's built-in test
-runner (no extra dependencies). The tests mock the database layer, so they run
-without a live database connection and verify query construction, business logic
-(badge calculation, application/cancel guards, field whitelisting, hours
-validation, CSV export) and controller rules (capacity limits, profile-approval
-gating, open-only applications, accepted/approved hour logging):
-```bash
-npm test
-```
-Test files live in `test/`; `test/helpers/mockDb.js` installs an in-memory mock
-in place of the real connection pool.
-
-### End-to-end smoke test
-For a full-stack confidence check against a **running** server (real DB, auth,
-sessions and business rules), use the smoke test. It registers a volunteer,
-creates and staffs a shift, logs and approves hours, checks badges, and exports
-a CSV — reporting pass/fail per step:
-```bash
-npm run db:reset     # seed data (provides the admin account it signs in as)
-npm run dev          # in one terminal
-npm run smoke        # in another terminal
-```
-Each run adds one volunteer and one opportunity to the database.
-Remove those rows without wiping the demo seed: `npm run db:clean-demo`.
-
-## Project structure
-```
-config/        Database pool and connection helpers
-controllers/   Request handlers (auth, opportunities, applications, hours, stats, export)
-middleware/    Auth guards, input sanitisation, rate limiting, error handling
-models/        Data-access helpers, one per table (+ code-defined Badge)
-routes/        Express route definitions
-utils/         Email service and CSV export helpers
-database/      schema.pg.sql (Postgres), seed.pg.sql, plus MySQL originals for reference
-scripts/       setup-db.js (build/seed the database from .env)
-test/          Automated tests (node --test) with a mocked DB pool
-frontend/      Static site: pages/, js/, public/ (css, images), served by Express
-docs/          SECURITY.md and other documentation
-server.js      App entry point
+npm run test:local
 ```
 
-## Database
+`npm run test:local` reads `.env.local` and refuses a host that is not this machine.
 
-`database/schema.pg.sql` is the authoritative, from-scratch Postgres schema.
-MySQL originals remain in `database/schema.sql` and numbered `NNN_*.sql`
-files for reference. Future incremental changes use `NNN_*.pg.sql` and
-`npm run migrate`.
+The tenant isolation test starts its own temporary Postgres cluster. It does not use the local development database. It runs as part of `npm test`.
 
-The app host must stay running: a daily keep-alive job (`dbKeepAlive`) pings
-the database so a free-tier Supabase project is less likely to pause. Backups:
-`npm run backup` (requires `pg_dump`; dumps are gitignored under `backups/`).
+This file does not quote a coverage figure.
 
-## Environment variables
+## Layout
 
-See `.env.example` for the full, commented list. Email is optional — leave the
-`EMAIL_*` values blank to disable sending (password-reset links are still logged
-server-side for local testing).
+```
+config/        Pool, env loading, TLS
+controllers/   Request handlers
+middleware/    Auth, shelter binding, validation
+models/        Queries
+routes/        Express routes
+utils/         Shelter context and shared helpers
+database/      schema.pg.sql, migrations, seed.pg.sql
+scripts/       Local setup and checks
+test/          node --test
+frontend/      Pages and scripts served by Express
+server.js      Entry point
+```
+
+`DEPLOY.md` describes a hosted setup. Read the open items below before treating a host as finished. `docs/SECURITY.md` is the security note.
+
+## Still open
+
+Remote database TLS checks the server certificate only when `DB_SSL_CA` is set. Without it, the connection string is unchanged and the certificate is not checked. That path has not been tried against a hosted database in this work.
+
+On 2 Nov 2026, `npm audit --omit=dev` still reported one high finding: `zod` 3.25.76. The offered upgrade is zod 4, a breaking change, and it was left. See `docs/run-2/QUESTIONS.md`.
+
+Erasure, log out everywhere, and password reset delete sessions outside the tenant role in this code. Whether a hosted database still has the older grant is unchecked. Do not grant `session` to `shelterlink_tenant`. The check is in `docs/run-2/QUESTIONS.md`.
+
+Hours dated before the shift are accepted. A volunteer who has already checked in can still ask someone else to cover the shift. A reference link that did not send cannot be sent again. Those three are open questions in the same file.
+
+Five older duplicate files are still in `_to_delete/`.
+
+`session`, `job_runs`, and `schema_migrations` sit outside the tenant policy. Locking those down on a hosted project is still open.
 
 ## Security
 
-Passwords are hashed with bcrypt; sessions are httpOnly cookies; input is
-sanitised and rate-limited; security headers are set via helmet. See
-`docs/SECURITY.md` for details. Do not commit your real `.env`.
+Passwords are hashed with bcrypt. The session cookie is httpOnly. See `docs/SECURITY.md`. Do not commit `.env` or `.env.local`.
 
-## License
+## Licence
 
 MIT
