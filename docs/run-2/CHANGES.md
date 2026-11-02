@@ -19,6 +19,7 @@ Local database guards and the env loader are in. Today loads applications. A fai
 - I2: Each tenant test uses its own data directory and a free port, and deletes only that directory. Commit 326d256. Two overlapping runs both passed.
 - B8: Kiosk today and check-in use the shelter's day. At 23:30 UTC on 29 March 2026 the day is 30 March. Commit df0573a. `node --test test/kioskTime.test.js` passed.
 - T1: `TENANT_TABLES` matches the table array in migration 033, plus `shelters`. Commit 59cbcc7. No database. The test passed.
+- B6: Staff profile views and admin document downloads are written to the audit log after the response. A volunteer downloading their own file is not logged. The local check skips unless `LOCAL_DB_REQUIRED=1` and refuses any host that is not local before it connects. Commit c427974. `npm test` passed (462, that check skipped). This touches audit logging.
 
 ### A3 audit, 2 Nov 2026
 
