@@ -3,7 +3,8 @@
 const { Pool, types } = require('pg');
 const { loadEnv } = require('./loadEnv');
 const { shelterStore, mentionsTenantTable } = require('../utils/shelterContext');
-const { databaseSsl } = require('../utils/databaseSsl');
+const { databaseHost } = require('../utils/liveDbGuard');
+const { applyDatabaseSsl, databaseSsl } = require('../utils/databaseSsl');
 
 loadEnv();
 
@@ -188,23 +189,19 @@ function connectionConfig() {
   const idleTimeoutMillis = Number(process.env.DB_IDLE_TIMEOUT_MS || 30000);
 
   if (process.env.DATABASE_URL) {
-    let host = '';
-    try {
-      host = new URL(process.env.DATABASE_URL).hostname;
-    } catch {
-      host = '';
-    }
+    const host = databaseHost({ databaseUrl: process.env.DATABASE_URL });
+    const applied = applyDatabaseSsl(process.env.DATABASE_URL, host);
     return {
-      connectionString: process.env.DATABASE_URL,
-      ssl: databaseSsl(host),
+      connectionString: applied.connectionString,
+      ssl: applied.ssl,
       max: connectionLimit,
       idleTimeoutMillis,
     };
   }
 
-  const host = process.env.DB_HOST || 'localhost';
+  const host = databaseHost({ dbHost: process.env.DB_HOST || 'localhost' });
   return {
-    host,
+    host: process.env.DB_HOST || 'localhost',
     port: Number(process.env.DB_PORT || 5432),
     user: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD || '',
