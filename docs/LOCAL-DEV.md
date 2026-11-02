@@ -30,6 +30,8 @@ Skip that statement if the role already exists.
 
 `ENV_FILE=.env.local` loads that file and does not load `.env`.
 
+`dev:local`, `db:local:reset` and `db:local:migrate` refuse to start unless the host pg would use is `localhost` or `127.0.0.1`. The host is read the way pg reads it: the `host` query parameter, then `PGHOST` when the URL host is empty. A trailing dot is ignored. A URL that does not parse is refused.
+
 ## Each time you want a fresh local database
 
 ```

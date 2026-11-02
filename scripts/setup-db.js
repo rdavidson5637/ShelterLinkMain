@@ -26,7 +26,7 @@
 const fs = require('fs');
 const path = require('path');
 require('../config/loadEnv').loadEnv();
-const { assertSetupAllowed } = require('../utils/liveDbGuard');
+const { assertSetupAllowed, assertLocalDatabase } = require('../utils/liveDbGuard');
 
 const args = process.argv.slice(2);
 const isProduction = process.env.NODE_ENV === 'production';
@@ -46,12 +46,17 @@ if (isProduction && (args.includes('--seed'))) {
 }
 
 try {
-  assertSetupAllowed({
+  const target = {
     databaseUrl: process.env.DATABASE_URL,
     dbHost: process.env.DB_HOST,
+    pgHost: process.env.PGHOST,
+  };
+  assertSetupAllowed({
+    ...target,
     seed: withSeed,
     confirmFlag: process.env.CONFIRM_LIVE_SHELTER,
   });
+  if (process.env.LOCAL_DB_REQUIRED === '1') assertLocalDatabase(target);
 } catch (error) {
   console.error(`\n✗ ${error.message}`);
   process.exit(1);

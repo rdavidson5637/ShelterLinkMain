@@ -1,6 +1,20 @@
 const { loadEnv } = require('./config/loadEnv');
+const { assertLocalDatabase } = require('./utils/liveDbGuard');
 
 loadEnv();
+
+if (process.env.LOCAL_DB_REQUIRED === '1') {
+  try {
+    assertLocalDatabase({
+      databaseUrl: process.env.DATABASE_URL,
+      dbHost: process.env.DB_HOST,
+      pgHost: process.env.PGHOST,
+    });
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
+}
 
 const express = require('express');
 const session = require('express-session');

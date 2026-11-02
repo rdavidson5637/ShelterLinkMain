@@ -16,6 +16,21 @@
 const fs = require('fs');
 const path = require('path');
 require('../config/loadEnv').loadEnv();
+const { assertLocalDatabase } = require('../utils/liveDbGuard');
+
+if (process.env.LOCAL_DB_REQUIRED === '1') {
+  try {
+    assertLocalDatabase({
+      databaseUrl: process.env.DATABASE_URL,
+      dbHost: process.env.DB_HOST,
+      pgHost: process.env.PGHOST,
+    });
+  } catch (error) {
+    console.error(`\n✗ ${error.message}`);
+    process.exit(1);
+  }
+}
+
 const { pgPool, pool, closePool } = require('../config/database');
 const { applySql } = require('./applySql');
 
