@@ -1,5 +1,6 @@
 import { apiRequest } from '../config.js';
 import { requireAuth, checkAuth, logout, isStaffOrAdminRole } from '../auth.js';
+import { showConfirm } from '../components/confirmDialog.js';
 import { formatShiftWhen } from '../utils/dateFormat.js';
 import { createStatusBadge } from '../components/statusBadge.js';
 import { escapeHtml } from '../utils/escapeHtml.js';
@@ -77,7 +78,16 @@ async function loadBookings() {
         declineBtn.type = 'button';
         declineBtn.textContent = 'Decline';
         declineBtn.classList.add('secondary', 'button-secondary', 'button-small');
-        declineBtn.addEventListener('click', () => act(row.id, 'decline'));
+        declineBtn.addEventListener('click', async () => {
+          const choice = await showConfirm({
+            heading: 'Decline this booking?',
+            body: 'This declines the booking and emails the group contact.',
+            confirmText: 'Decline booking',
+            cancelText: 'Keep the booking',
+          });
+          if (choice !== 'confirm') return;
+          act(row.id, 'decline');
+        });
 
         actions.appendChild(confirmBtn);
         actions.appendChild(declineBtn);

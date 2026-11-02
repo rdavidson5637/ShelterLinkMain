@@ -1,5 +1,6 @@
 import { apiRequest } from '../config.js';
 import { requireAuth, checkAuth, logout, isStaffOrAdminRole, applyRoleVisibility } from '../auth.js';
+import { showConfirm } from '../components/confirmDialog.js';
 
 const messageEl = document.getElementById('message');
 const runForm = document.getElementById('runForm');
@@ -112,6 +113,13 @@ async function loadRuns() {
 
   runsList.querySelectorAll('.chase-btn').forEach((btn) => {
     btn.addEventListener('click', async () => {
+      const choice = await showConfirm({
+        heading: 'Ask for cover?',
+        body: 'This emails volunteers who can take a leg. It can be sent once in 24 hours.',
+        confirmText: 'Send the email',
+        cancelText: "Don't send",
+      });
+      if (choice !== 'confirm') return;
       const res = await apiRequest(`/transport/${btn.dataset.runId}/chase`, { method: 'POST', body: {} });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -123,6 +131,13 @@ async function loadRuns() {
   });
   runsList.querySelectorAll('.cancel-btn').forEach((btn) => {
     btn.addEventListener('click', async () => {
+      const choice = await showConfirm({
+        heading: 'Cancel this run?',
+        body: 'This marks the run as cancelled.',
+        confirmText: 'Cancel run',
+        cancelText: 'Keep the run',
+      });
+      if (choice !== 'confirm') return;
       const res = await apiRequest(`/transport/${btn.dataset.runId}/status`, {
         method: 'PUT',
         body: { status: 'cancelled' },
