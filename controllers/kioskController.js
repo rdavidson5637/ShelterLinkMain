@@ -8,6 +8,7 @@ const Application = require('../models/Application');
 const VolunteerHours = require('../models/VolunteerHours');
 const { hasRole } = require('../middleware/auth');
 const { isBypass, runWithoutShelter } = require('../utils/shelterContext');
+const { calendarDay, nowLocalSql, todayIso } = require('../utils/shelterTime');
 
 function respondSafeUser(row) {
   if (!row) return null;
@@ -22,13 +23,38 @@ function displayName(firstName, lastName) {
   return initial ? `${first} ${initial}` : first;
 }
 
+function wallClock(value) {
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return null;
+    return nowLocalSql(value);
+  }
+  const match = String(value || '').trim().match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/);
+  if (!match) return null;
+  return `${match[1]} ${match[2]}:${match[3]}:${match[4] || '00'}`;
+}
+
+function addHours(clock, hours) {
+  const match = String(clock || '').match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/);
+  if (!match) return null;
+  const utc = Date.UTC(
+    Number(match[1]),
+    Number(match[2]) - 1,
+    Number(match[3]),
+    Number(match[4]),
+    Number(match[5]),
+    Number(match[6])
+  );
+  const next = new Date(utc + hours * 60 * 60 * 1000);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${next.getUTCFullYear()}-${pad(next.getUTCMonth() + 1)}-${pad(next.getUTCDate())} ${pad(next.getUTCHours())}:${pad(next.getUTCMinutes())}:${pad(next.getUTCSeconds())}`;
+}
+
 function isWithinCheckInWindow(opportunityStart, now = new Date()) {
-  const start = new Date(opportunityStart);
-  if (Number.isNaN(start.getTime())) return false;
-  const windowStart = new Date(start.getTime() - 60 * 60 * 1000);
-  const endOfDay = new Date(start);
-  endOfDay.setHours(23, 59, 59, 999);
-  return now >= windowStart && now <= endOfDay;
+  const start = wallClock(opportunityStart);
+  const day = calendarDay(opportunityStart);
+  if (!start || !day) return false;
+  const current = nowLocalSql(now);
+  return current >= addHours(start, -1) && current <= `${day} 23:59:59`;
 }
 
 function isAcceptedStatus(status) {
@@ -36,13 +62,9 @@ function isAcceptedStatus(status) {
   return s === 'accepted' || s === 'approved';
 }
 
-function todayBounds() {
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  const end = new Date();
-  end.setHours(23, 59, 59, 999);
-  const toSql = (d) => d.toISOString().slice(0, 19).replace('T', ' ');
-  return { startSql: toSql(start), endSql: toSql(end) };
+function todayBounds(now = new Date()) {
+  const day = todayIso(now);
+  return { startSql: `${day} 00:00:00`, endSql: `${day} 23:59:59` };
 }
 
 async function unlockKiosk(req, res) {
@@ -315,4 +337,5 @@ module.exports = {
   lockKiosk,
   displayName,
   isWithinCheckInWindow,
+  todayBounds,
 };
