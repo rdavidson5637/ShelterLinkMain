@@ -68,12 +68,14 @@ function buildApplicationActions(app, isAccepted, isPast) {
   const actions = document.createElement('div');
   actions.className = 'row-actions';
 
-  const approveBtn = document.createElement('button');
-  approveBtn.type = 'button';
-  approveBtn.textContent = app.status === 'waitlisted' ? 'Accept from waitlist' : 'Approve';
-  approveBtn.classList.add('contrast', 'button-small');
-  approveBtn.addEventListener('click', () => handleStatusChange(app.id, 'accepted'));
-  actions.appendChild(approveBtn);
+  if (!isAccepted) {
+    const approveBtn = document.createElement('button');
+    approveBtn.type = 'button';
+    approveBtn.textContent = app.status === 'waitlisted' ? 'Accept from waitlist' : 'Approve';
+    approveBtn.classList.add('contrast', 'button-small');
+    approveBtn.addEventListener('click', () => handleStatusChange(app.id, 'accepted'));
+    actions.appendChild(approveBtn);
+  }
 
   const menuItems = [{ label: 'Reject', destructive: true, onSelect: () => openModal(app.id) }];
   if (isAccepted && isPast && !Number(app.no_show)) {
@@ -224,8 +226,14 @@ async function handleStatusChange(applicationId, status, notes = null) {
       return;
     }
 
-    setMessage(`Application ${status}.`, 'success');
     await fetchApplications();
+    const sentence =
+      status === 'accepted'
+        ? 'Application accepted.'
+        : status === 'rejected'
+          ? 'Application rejected.'
+          : `Application ${status}.`;
+    setMessage(sentence, 'success');
   } catch (error) {
     console.error('[Admin] handleStatusChange error:', error);
     setMessage('Network error while updating application.', 'error');

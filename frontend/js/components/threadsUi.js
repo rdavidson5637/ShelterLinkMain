@@ -88,10 +88,20 @@ export function createThreadsController({
     if (!threadsListEl) return;
     threadsListEl.innerHTML = '';
     if (!threads.length) {
-      threadsListEl.innerHTML = `<div class="empty-state">
-        <p>No threads yet.</p>
-        <a href="#announcementForm" role="button" class="outline">Post an announcement</a>
-      </div>`;
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      const note = document.createElement('p');
+      note.textContent = 'No threads yet.';
+      empty.appendChild(note);
+      if (announcementForm) {
+        const post = document.createElement('a');
+        post.href = '#announcementForm';
+        post.setAttribute('role', 'button');
+        post.className = 'outline';
+        post.textContent = 'Post an announcement';
+        empty.appendChild(post);
+      }
+      threadsListEl.replaceChildren(empty);
       return;
     }
     threads.forEach((thread) => {

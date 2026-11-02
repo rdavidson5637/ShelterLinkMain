@@ -107,7 +107,15 @@ async function loadOnboardingChecklist() {
       const detail = document.createElement('span');
       detail.className = 'ruled-row-detail';
       detail.textContent = `Onboarding: ${items.length - todo.length} of ${items.length} steps done`;
-      main.append(title, detail);
+      if (label === 'Profile completed') {
+        const go = document.createElement('a');
+        go.href = '/pages/volunteer/complete-profile.html';
+        go.className = 'ruled-row-title';
+        go.textContent = 'Complete your profile';
+        main.append(go, detail);
+      } else {
+        main.append(title, detail);
+      }
       const end = document.createElement('div');
       end.className = 'ruled-row-end';
       const status = document.createElement('span');
@@ -255,14 +263,21 @@ async function fetchProfile() {
 }
 
 function renderProfileIncomplete() {
+  if (!profileStatusBannerEl) return;
   const link = document.createElement('a');
   link.href = '/pages/volunteer/complete-profile.html';
-  link.textContent = 'Complete your profile';
-  const fragment = document.createDocumentFragment();
-  fragment.append('Your profile is incomplete. ');
-  fragment.append(link);
-  fragment.append(' to start volunteering.');
-  setProfileStatus(fragment, 'warning');
+  link.className = 'ruled-row-main';
+  const title = document.createElement('span');
+  title.className = 'ruled-row-title';
+  title.textContent = 'Complete your profile';
+  const detail = document.createElement('span');
+  detail.className = 'ruled-row-detail';
+  detail.textContent = 'Staff review it before you can take shifts.';
+  link.append(title, detail);
+  profileStatusBannerEl.replaceChildren(link);
+  profileStatusBannerEl.hidden = false;
+  profileStatusBannerEl.dataset.tone = 'warning';
+  updateNeedsYou();
 }
 function renderProfilePending() { setProfileStatus('Profile submitted. Waiting for approval from an administrator.', 'info'); }
 function renderProfileApproved() { setProfileStatus('', 'success'); }
@@ -528,7 +543,12 @@ async function fetchAndDisplayIcalFeed() {
     const data = await res.json();
     icalUrl = data.url || '';
     icalFeedDetailsEl.replaceChildren();
-    if (!icalUrl) { icalFeedDetailsEl.textContent = 'Feed unavailable.'; return; }
+    if (!icalUrl) {
+      icalFeedDetailsEl.textContent = 'Feed unavailable.';
+      if (copyIcalButton) copyIcalButton.hidden = true;
+      return;
+    }
+    if (copyIcalButton) copyIcalButton.hidden = false;
     const intro = document.createElement('p');
     intro.textContent = 'Subscribe in your calendar app using the buttons below.';
     const input = document.createElement('input');
@@ -587,8 +607,10 @@ function settleUnloadedSections() {
     [badgesListEl, ''],
     [nextBadgeProgressEl, 'Badges start once your profile is approved.'],
     [helpedAnimalsDetailsEl, 'Animals you help will show here after your first shift.'],
+    [myQualificationsDetailsEl, 'None yet. Staff add these after training.'],
     [icalFeedDetailsEl, 'Your calendar link appears once your profile is approved.'],
   ];
+  if (copyIcalButton) copyIcalButton.hidden = true;
   lines.forEach(([el, text]) => {
     if (el && el.querySelector('.skeleton')) el.textContent = text;
   });
