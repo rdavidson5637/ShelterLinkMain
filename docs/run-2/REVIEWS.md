@@ -62,3 +62,4 @@ signed in, because no local database existed then.
 - I19 Confirm steps: approved (eab6788). Cancel run, Chase for cover and Decline now ask first. Escape and keep send nothing, and confirm sends the same request as before.
 - I20 Copy and tap targets: approved (84ebe3a). Checked each item live at 375 and 1280. Stored species values are unchanged.
 - N2 Second shelter check: approved. Findings only on `features/shelter-slug`, plus one guarded local seed script. Any Assisi data shown to the second shelter is to be reported at once.
+- Rule 4 note, N1: Cursor ran `node scripts/create-shelter.js` directly to add the second shelter, which rule 4 bans, and reported it when asked. The host was checked as 127.0.0.1 and the database as `shelterlink_slug` first, so only local data was touched. `create-shelter.js` does not read `LOCAL_DB_REQUIRED`, so the flag gave no protection. N2 replaces this with a guarded `db:local:seed-second` script.
