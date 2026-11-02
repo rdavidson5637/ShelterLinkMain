@@ -1,6 +1,6 @@
 import { apiRequest, API_URL } from '../config.js';
 import { requireAuth, checkAuth, logout, isStaffOrAdminRole, applyRoleVisibility } from '../auth.js';
-import { formatDayLabel, formatShiftWhen, toIsoDateLocal } from '../utils/dateFormat.js';
+import { formatSheetDay, formatSheetWhen, toIsoDateLocal } from '../utils/dateFormat.js';
 import { createSkeletonRows } from '../components/rows.js';
 
 const weekStartInput = document.getElementById('weekStart');
@@ -27,7 +27,7 @@ function todayMonday() {
 function sheetDay(iso) {
   if (!iso) return '';
   const date = new Date(`${iso}T12:00:00`);
-  return Number.isNaN(date.getTime()) ? String(iso) : formatDayLabel(date);
+  return Number.isNaN(date.getTime()) ? String(iso) : formatSheetDay(date);
 }
 
 function setMessage(type, text) {
@@ -75,7 +75,7 @@ function checkInStatusLabel(status) {
 }
 
 function formatDayHeading(dateIso) {
-  return formatDayLabel(new Date(`${dateIso}T12:00:00`));
+  return formatSheetDay(new Date(`${dateIso}T12:00:00`));
 }
 
 function updateIcsLink(weekStart) {
@@ -115,7 +115,7 @@ function renderShift(opp) {
     <article class="week-sheet-shift">
       <h3>${escapeHtml(opp.title || 'Shift')}${urgent}</h3>
       <p class="week-sheet-meta">
-        ${escapeHtml(formatShiftWhen(opp.start_date, opp.end_date))}
+        ${escapeHtml(formatSheetWhen(opp.start_date, opp.end_date))}
         · ${escapeHtml(opp.location || 'Location TBA')}
         · Code: <code>${escapeHtml(opp.check_in_code || '—')}</code>
         · Waitlist: ${Number(opp.waitlist_count) || 0}

@@ -1,6 +1,6 @@
 import { apiRequest } from '../config.js';
 import { requireAuth, checkAuth, logout, isStaffOrAdminRole, applyRoleVisibility } from '../auth.js';
-import { formatDateOnly, formatDayLabel, formatShiftWhen, formatTimeLabel, toIsoDateLocal } from '../utils/dateFormat.js';
+import { formatDateOnly, formatSheetDay, formatSheetWhen, formatTimeLabel, toIsoDateLocal } from '../utils/dateFormat.js';
 import { createSkeletonRows } from '../components/rows.js';
 
 const sheetDateInput = document.getElementById('sheetDate');
@@ -17,7 +17,7 @@ function todayIso() {
 function sheetDay(iso) {
   if (!iso) return '';
   const date = new Date(`${iso}T12:00:00`);
-  return Number.isNaN(date.getTime()) ? String(iso) : formatDayLabel(date);
+  return Number.isNaN(date.getTime()) ? String(iso) : formatSheetDay(date);
 }
 
 function setMessage(type, text) {
@@ -115,7 +115,7 @@ function renderShift(opp) {
     <article class="day-sheet-shift">
       <h2>${escapeHtml(opp.title || 'Shift')}${urgent}</h2>
       <p class="day-sheet-meta">
-        ${escapeHtml(formatShiftWhen(opp.start_date, opp.end_date))}
+        ${escapeHtml(formatSheetWhen(opp.start_date, opp.end_date))}
         · ${escapeHtml(opp.location || 'Location TBA')}
         · Code: <code>${escapeHtml(opp.check_in_code || '—')}</code>
         · Waitlist: ${Number(opp.waitlist_count) || 0}
@@ -166,7 +166,7 @@ async function loadSheet() {
       return;
     }
     contentEl.innerHTML = `
-      <h2 class="no-print">Roster for ${escapeHtml(sheetDay(sheet.date))}</h2>
+      <h2>Roster for ${escapeHtml(sheetDay(sheet.date))}</h2>
       ${sheet.opportunities.map(renderShift).join('')}
     `;
   } catch (error) {

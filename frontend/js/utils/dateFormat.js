@@ -84,6 +84,43 @@ export function formatDayLabel(date, now = new Date()) {
   return date.toLocaleDateString('en-GB', opts);
 }
 
+/** "Tue 3 Nov 2026". Always a real date, including the year. Used on printed sheets. */
+export function formatSheetDay(value) {
+  const date = value instanceof Date ? value : parseShiftDate(value);
+  if (!date || Number.isNaN(date.getTime())) return value ? String(value) : '';
+  const weekday = date.toLocaleDateString('en-GB', { weekday: 'short' });
+  const rest = date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+  return `${weekday} ${rest}`;
+}
+
+/**
+ * Shift timing for a printed sheet. Never "Today" or "Tomorrow".
+ *   same day  -> "Tue 3 Nov 2026, 09:00 - 12:00"
+ *   overnight -> "Tue 3 Nov 2026, 22:00 - Wed 4 Nov 2026, 02:00"
+ */
+export function formatSheetWhen(startValue, endValue) {
+  const start = parseShiftDate(startValue);
+  if (!start) return startValue ? String(startValue) : 'Flexible dates';
+
+  const end = parseShiftDate(endValue);
+  const day = formatSheetDay(start);
+  const startTime = formatTimeLabel(start);
+
+  if (!end) return `${day}, ${startTime}`;
+
+  const sameDay =
+    start.getFullYear() === end.getFullYear() &&
+    start.getMonth() === end.getMonth() &&
+    start.getDate() === end.getDate();
+
+  if (sameDay) return `${day}, ${startTime} - ${formatTimeLabel(end)}`;
+  return `${day}, ${startTime} - ${formatSheetDay(end)}, ${formatTimeLabel(end)}`;
+}
+
 /** 24-hour time, e.g. "09:00". */
 export function formatTimeLabel(date) {
   return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });

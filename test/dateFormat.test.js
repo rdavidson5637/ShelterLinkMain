@@ -21,6 +21,23 @@ test('upcomingFirst drops finished shifts and sorts urgent then soonest', async 
   );
 });
 
+test('a printed sheet uses a real date, not Today or Tomorrow', async () => {
+  const { formatSheetDay, formatSheetWhen } = await import('../frontend/js/utils/dateFormat.js');
+  const today = new Date();
+  const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1, 9, 0, 0);
+  const end = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 12, 0, 0);
+  const day = formatSheetDay(tomorrow);
+  assert.match(day, /Nov|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Dec/);
+  assert.equal(day.includes('Today'), false);
+  assert.equal(day.includes('Tomorrow'), false);
+  assert.equal(day.includes(String(tomorrow.getFullYear())), true);
+  const line = formatSheetWhen(
+    `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')} 09:00:00`,
+    `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')} 12:00:00`
+  );
+  assert.equal(line.startsWith(`${day}, 09:00 - 12:00`), true);
+});
+
 test('upcomingFirst keeps ISO timestamps and undated shifts', async () => {
   const { upcomingFirst } = await import('../frontend/js/utils/dateFormat.js');
   const now = new Date(2026, 8, 14, 12, 0, 0);
