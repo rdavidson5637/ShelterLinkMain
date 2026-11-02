@@ -8,7 +8,7 @@ The tables below are the ones in `database/schema.pg.sql`, plus columns added by
 
 ## What was checked
 
-Read: `models/Gdpr.js` `anonymiseUser` (lines 133-265), `controllers/gdprController.js` `eraseVolunteer` (lines 77-121), `utils/sessionCookie.js` `destroyUserSessions` (lines 51-63), `models/UserDocument.js` (lines 17-21), `config/retention.js`, `scripts/backup.js` (the 14 day file age), `frontend/pages/privacy.html`, and the table definitions in `database/schema.pg.sql` and the Postgres migrations.
+Read: `models/Gdpr.js` `anonymiseUser` (lines 133-265), `controllers/gdprController.js` `eraseVolunteer` (lines 77-121), `utils/sessionCookie.js` `destroyUserSessions` (lines 51-63), `models/UserDocument.js` (lines 17-21), `config/retention.js`, `scripts/backup.js` (the 14 day file age), `docs/runbooks/backup-and-restore.md` (lines 29 and 78), `frontend/pages/privacy.html`, and the table definitions in `database/schema.pg.sql` and the Postgres migrations. Hosting and database provider backups and logs are outside this code and were not checked.
 
 Not run for this note: `npm test`, `npm run test:local`, and `npm run backup`.
 
@@ -91,7 +91,7 @@ Audit detail. Cleared on the rows named above. The audit row itself stays. Staff
 
 Email already sent. There is no table of sent mail. Erasure cannot recall a message that already went out through SMTP.
 
-Backups. `scripts/backup.js` writes an encrypted dump of the database and deletes dump files older than 14 days. Erasure does not open or rewrite an old dump. A dump taken before the erase still has the old rows until that file ages out.
+Backups. `scripts/backup.js` writes an encrypted dump of the database and deletes files in the server's `backups/` folder that are older than 14 days. That 14 days does not apply to copies taken off the server. `docs/runbooks/backup-and-restore.md` line 29 tells staff to copy each encrypted file off the server before that window closes. Line 78 leaves how long those copies are kept as still to confirm, so off-server copies have no limit yet. Erasure does not open or rewrite an old dump. Hosting and database provider backups and logs are outside this code and were not checked.
 
 Sessions. After the database transaction commits, `destroyUserSessions` deletes from `session` where the stored JSON `userId` matches (`utils/sessionCookie.js` lines 57-60). That table is not in `schema.pg.sql`. If the delete throws, the error is logged and swallowed (lines 61-63). The erase still reports success.
 
@@ -134,7 +134,8 @@ These are choices for you. This file does not make them.
 - A background check keeps its type, dates, and status after the reference number and notes are cleared. Should the whole check row go?
 - Profile flags that stay include approval, foster approval, `away_until`, and the notification preferences. Should those be cleared?
 - A group booking keeps `group_name` when the contact email matches. Should that name be cleared too?
-- Old backup files are not rewritten. They are deleted after 14 days by `scripts/backup.js`. Is that long enough to say the erased data is gone?
+- The 14 days in `scripts/backup.js` only deletes files in the server's `backups/` folder. Off-server copies have no limit yet (`docs/runbooks/backup-and-restore.md` lines 29 and 78). Should a limit be set for those copies?
+- Hosting and database provider backups and logs are outside this code and were not checked. Do you want those looked at separately?
 - Animal photos are not tied to a user and can show a person. Should erasure do anything with them?
 - If the session delete fails, the error is logged and the erase still reports success. Should a failed session delete fail the erase?
 - The privacy notice describes a smaller change than the code. The notice was not edited here.
