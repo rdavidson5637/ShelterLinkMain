@@ -5,7 +5,7 @@ function menuItemsOf(panel) {
   return Array.from(panel.querySelectorAll('[role="menuitem"]'));
 }
 
-function closeAllMenus(except) {
+function closeAllMenus(except, { restoreFocus = true } = {}) {
   document.querySelectorAll('.overflow-menu').forEach((menu) => {
     if (except && menu === except) return;
     const button = menu.querySelector('.overflow-menu-toggle');
@@ -14,6 +14,7 @@ function closeAllMenus(except) {
     if (button) button.setAttribute('aria-expanded', 'false');
     if (panel) panel.hidden = true;
     if (
+      restoreFocus &&
       wasOpen &&
       document.activeElement &&
       menu.contains(document.activeElement) &&
@@ -22,6 +23,10 @@ function closeAllMenus(except) {
       button.focus();
     }
   });
+}
+
+function closeMenusForViewportChange() {
+  closeAllMenus(undefined, { restoreFocus: false });
 }
 
 function bindChrome() {
@@ -33,6 +38,9 @@ function bindChrome() {
   document.addEventListener('click', (event) => {
     if (!event.target.closest('.overflow-menu')) closeAllMenus();
   });
+  document.addEventListener('scroll', closeMenusForViewportChange, true);
+  window.addEventListener('scroll', closeMenusForViewportChange, true);
+  window.addEventListener('resize', closeMenusForViewportChange);
 }
 
 /**

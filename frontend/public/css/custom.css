@@ -3248,9 +3248,6 @@ body.kiosk-body #message {
 }
 
 .privacy-notice-bar {
-  position: sticky;
-  top: var(--header-h);
-  z-index: 900;
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
