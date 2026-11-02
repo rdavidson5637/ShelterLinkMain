@@ -20,11 +20,13 @@ signed in, because no local database existed then.
 - P2 Pico usage: earlier approval stands. Coverage not rerun.
 - P3 Accessibility pass: earlier approval stands. axe not rerun.
 - page-titles: approved (95a72f2). Reviewed in full. The 403 and 500 titles differ a little from their h1s, not blocking.
-- sheet-skeletons: sent back (2cb3965). After a network failure the skeleton rows stay on the page under the error. Otherwise fine at 375 and 1280.
+- sheet-skeletons: sent back (2cb3965), then fixed in sheet-catch (348dac2) below. Skeleton rows stayed under the error after a network failure.
 
 ## Run 2
 
 - H1 Duplicate files: approved (2a14718). The eleven removed files cannot be re-compared now they are gone, so that part rests on Cursor's recorded `cmp` run.
 - A2 Guard setup-db: approved (c760f01), after being sent back at b9d795e because `?host=`, `PGHOST`, a trailing dot and unparseable values got past the guard. Checked against `pg`'s own host resolution and with the real npm scripts on a `.invalid` host. To do: add `pg-connection-string` to `dependencies`.
 - L1 Local Postgres: approved (42d1f7a, c760f01). 452 tests pass on an export with no `.env`. Signed-in sweep of 36 pages at 375 and 1280 clean apart from the two items now in I1. `scripts/pg-connection.sh` still reads `.env` directly for the backup shell scripts.
-- I1 (approved to build): dashboard `?limit=5` is rejected with a 400, so Today always says "Could not load applications". Also on `main`; live site not checked. Certificate copy names a button that does not exist.
+- I1 Today applications: approved (860da31). Dropped the `?limit=5` the API rejected with a 400; the same bug is on `main`, live site not checked. Newest five shown signed in at 375 and 1280. Certificate copy fixed. `/applications` has no server-side limit, so Today downloads them all.
+- sheet-catch: approved (348dac2). Closes the sheet-skeletons finding: a network failure now leaves only the error.
+- pg-conn: approved (36e8b6e). `pg-connection-string` is a direct dependency and LOCAL-DEV.md warns about `scripts/pg-connection.sh`.
