@@ -1,6 +1,7 @@
 import { apiRequest } from '../config.js';
 import { requireAuth, logout } from '../auth.js';
-import { showOpportunityModal, hideOpportunityModal } from '../components/opportunityModal.js';
+import { showOpportunityModal, hideOpportunityModal, setOpportunityModalMessage } from '../components/opportunityModal.js';
+import { missingQualifications } from '../utils/missingQualifications.js';
 
 const calendarEl = document.getElementById('calendar');
 const calendarEmptyState = document.getElementById('calendarEmptyState');
@@ -11,6 +12,7 @@ const viewListButton = document.getElementById('viewListButton');
 
 let calendar = null;
 let myApplications = [];
+let myQualifications = [];
 let profileApproved = true;
 
 function isOpportunityFull(opportunity) {
@@ -90,13 +92,15 @@ function openOpportunityModal(opportunity) {
   const isFull = isOpportunityFull(opportunity);
   const maxVol = opportunity.max_volunteers ?? opportunity.maxVolunteers;
 
+  const missing = missingQualifications(opportunity, myQualifications);
   showOpportunityModal(opportunity, {
     hasApplied,
     isFull,
     profileApproved,
     spotsFilled: opportunity.spots_filled ?? opportunity.spotsFilled,
     spotsTotal: maxVol,
-    onApply: handleApplyFromModal,
+    missingQualifications: missing,
+    onApply: missing.length ? null : handleApplyFromModal,
   });
 }
 
@@ -121,6 +125,11 @@ async function handleApplyFromModal(opportunity, id, options = {}) {
       });
       hideOpportunityModal();
       await loadAndRenderCalendar();
+      showApplyNotice(
+        waitlist
+          ? 'You are on the waitlist. Staff still need to accept it.'
+          : 'Application sent. Staff still need to accept it.'
+      );
       return;
     }
 
@@ -128,15 +137,21 @@ async function handleApplyFromModal(opportunity, id, options = {}) {
       myApplications.push({ opportunity_id: id, status: 'pending' });
       hideOpportunityModal();
       await loadAndRenderCalendar();
+      showApplyNotice('You have already applied for this shift.');
       return;
     }
 
     const err = await res.json().catch(() => ({}));
-    alert(err?.error || 'Unable to apply. Please try again.');
+    setOpportunityModalMessage(err?.error || 'Unable to apply. Please try again.');
   } catch (error) {
     console.error('[Calendar] apply error:', error);
-    alert('Network error. Please try again.');
+    setOpportunityModalMessage('Network error. Please try again.');
   }
+}
+
+function showApplyNotice(text) {
+  const banner = document.getElementById('calendarBanner');
+  if (banner && text) banner.textContent = text;
 }
 
 async function fetchOpportunities() {
@@ -144,6 +159,19 @@ async function fetchOpportunities() {
   if (!res.ok) return [];
   const data = await res.json();
   return Array.isArray(data) ? data : [];
+}
+
+async function fetchMyQualifications() {
+  const res = await apiRequest('/qualifications/mine', { method: 'GET' });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return Array.isArray(data) ? data : [];
+}
+
+async function fetchProfile() {
+  const res = await apiRequest('/volunteer/profile', { method: 'GET' });
+  if (!res.ok) return null;
+  return res.json().catch(() => null);
 }
 
 async function fetchMyApplications() {
@@ -160,10 +188,14 @@ function getAppliedOpportunityIds(applications) {
 }
 
 async function loadAndRenderCalendar() {
-  const [opportunities, applications] = await Promise.all([
+  const [opportunities, applications, qualifications, profile] = await Promise.all([
     fetchOpportunities(),
     fetchMyApplications(),
+    fetchMyQualifications(),
+    fetchProfile(),
   ]);
+  myQualifications = qualifications;
+  profileApproved = Boolean(profile?.approved);
 
   myApplications = applications;
   const appliedIds = getAppliedOpportunityIds(applications);

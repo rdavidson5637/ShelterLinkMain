@@ -5,6 +5,7 @@
  */
 
 import { trapTabKey } from '../utils/focusTrap.js';
+import { missingQualificationSentence } from '../utils/missingQualifications.js';
 import { icon } from './icons.js';
 
 const PROFILE_URL = '/pages/volunteer/complete-profile.html';
@@ -196,13 +197,16 @@ export function showOpportunityModal(opportunity, options = {}) {
   const qualsSection = modalEl.querySelector('.opportunity-modal-quals-section');
   const qualsBody = modalEl.querySelector('.opportunity-modal-qualifications');
   const requiredQuals = opportunity.required_qualifications || [];
-  if (requiredQuals.length) {
-    const names = requiredQuals.map((q) => escapeHtml(q.name)).join(', ');
-    let html = `<p>requires: ${names}</p>`;
+  if (requiredQuals.length || missingQualifications.length) {
+    let html = '';
+    if (requiredQuals.length) {
+      const names = requiredQuals.map((q) => escapeHtml(q.name)).join(', ');
+      html += `<p>requires: ${names}</p>`;
+    }
     if (missingQualifications.length) {
-      html += `<p class="opportunity-modal-unqualified">You are missing: ${missingQualifications
-        .map((q) => escapeHtml(q.name))
-        .join(', ')}</p>`;
+      html += `<p class="opportunity-modal-unqualified">${escapeHtml(
+        missingQualificationSentence(missingQualifications)
+      )}</p>`;
     }
     qualsBody.innerHTML = html;
     qualsSection.hidden = false;
@@ -311,6 +315,9 @@ export function showOpportunityModal(opportunity, options = {}) {
   }
 
   actionsContainer.appendChild(actionButton);
+  if (unqualified) {
+    setOpportunityModalMessage(missingQualificationSentence(missingQualifications));
+  }
 
   // Open shift chat when the volunteer has already applied / is on the shift.
   if (hasApplied && id != null) {
@@ -342,4 +349,22 @@ export function showOpportunityModal(opportunity, options = {}) {
 export function hideOpportunityModal() {
   if (!modalEl) return;
   modalEl.close();
+}
+
+export function setOpportunityModalMessage(text) {
+  if (!modalEl) return;
+  const actions = modalEl.querySelector('.opportunity-modal-actions');
+  if (!actions) return;
+  let note = actions.querySelector('.opportunity-modal-message');
+  if (!text) {
+    note?.remove();
+    return;
+  }
+  if (!note) {
+    note = document.createElement('p');
+    note.className = 'opportunity-modal-message';
+    note.setAttribute('role', 'status');
+    actions.prepend(note);
+  }
+  note.textContent = text;
 }

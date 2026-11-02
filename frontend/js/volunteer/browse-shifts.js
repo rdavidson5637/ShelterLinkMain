@@ -1,7 +1,8 @@
 import { apiRequest } from '../config.js';
 import { createDateBlock, createRuledRow, createSkeletonRows, createStatusLabel } from '../components/rows.js';
 import { requireAuth, logout } from '../auth.js';
-import { showOpportunityModal, hideOpportunityModal } from '../components/opportunityModal.js';
+import { showOpportunityModal, hideOpportunityModal, setOpportunityModalMessage } from '../components/opportunityModal.js';
+import { missingQualifications } from '../utils/missingQualifications.js';
 import { formatShiftWhen, upcomingFirst } from '../utils/dateFormat.js';
 import { groupShiftsByPeriod } from '../utils/groupShifts.js';
 
@@ -35,28 +36,8 @@ function asOpportunityList(data) {
   return [];
 }
 
-function toDateOnly(value) {
-  if (!value) return null;
-  return String(value).slice(0, 10);
-}
-
-function isQualificationValid(award, asOf = new Date()) {
-  if (!award) return false;
-  const expires = toDateOnly(award.expires_at);
-  if (!expires) return true;
-  return expires >= toDateOnly(asOf);
-}
-
 function getMissingQualifications(opportunity) {
-  const required = opportunity.required_qualifications || [];
-  if (!required.length) return [];
-  const heldById = new Map(
-    myQualifications.map((q) => [Number(q.qualification_id), q])
-  );
-  return required.filter((req) => {
-    const held = heldById.get(Number(req.id));
-    return !isQualificationValid(held);
-  });
+  return missingQualifications(opportunity, myQualifications);
 }
 
 function isOpportunityFull(opportunity) {
@@ -218,12 +199,17 @@ async function handleApplyFromModal(opportunity, id, options = {}) {
       });
       hideOpportunityModal();
       applyFiltersAndRender();
+      showApplyNotice(
+        waitlist
+          ? 'You are on the waitlist. Staff still need to accept it.'
+          : 'Application sent. Staff still need to accept it.'
+      );
       return;
     }
 
     if (res.status === 403) {
       const err = await res.json().catch(() => ({}));
-      alert(err?.error || 'You cannot apply for this shift.');
+      setOpportunityModalMessage(err?.error || 'You cannot apply for this shift.');
       return;
     }
 
@@ -231,15 +217,22 @@ async function handleApplyFromModal(opportunity, id, options = {}) {
       myApplications.push({ opportunity_id: id, status: 'pending' });
       hideOpportunityModal();
       applyFiltersAndRender();
+      showApplyNotice('You have already applied for this shift.');
       return;
     }
 
     const err = await res.json().catch(() => ({}));
-    alert(err?.error || 'Unable to apply for this shift. Please try again.');
+    setOpportunityModalMessage(err?.error || 'Unable to apply for this shift. Please try again.');
   } catch (error) {
     console.error('[Volunteer] apply error:', error);
-    alert('Network error while submitting application.');
+    setOpportunityModalMessage('Network error while submitting application.');
   }
+}
+
+function showApplyNotice(text) {
+  if (!shiftsStatus || !text) return;
+  const count = shiftsStatus.textContent;
+  shiftsStatus.textContent = count ? `${count} ${text}` : text;
 }
 
 function renderOpportunityCard(opportunity) {
