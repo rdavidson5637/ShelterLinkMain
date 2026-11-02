@@ -1,6 +1,6 @@
 # Local development
 
-Use this so a dev server talks to Postgres on this Mac. Do not use `npm run dev`. That loads `.env`, which points at the live database.
+Use this so a dev server talks to Postgres on this Mac. Do not use `npm run dev`. That loads `.env`, which points at the live database. Do not use `scripts/pg-connection.sh` for local work either. That script reads `.env` directly.
 
 ## One-time setup
 
