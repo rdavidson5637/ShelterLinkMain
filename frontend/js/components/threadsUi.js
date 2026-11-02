@@ -3,6 +3,7 @@
  */
 
 import { apiRequest } from '../config.js';
+import { formatDateOnly, formatTimeLabel, parseShiftDate } from '../utils/dateFormat.js';
 
 export function setStatus(el, text, tone = 'neutral') {
   if (!el) return;
@@ -22,14 +23,23 @@ export function escapeHtml(text) {
 
 export function formatWhen(value) {
   if (!value) return '';
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return String(value);
-  return d.toLocaleString();
+  const d = parseShiftDate(value);
+  if (!d) return String(value);
+  const day = formatDateOnly(d);
+  const time = formatTimeLabel(d);
+  if (!day) return String(value);
+  return time ? `${day}, ${time}` : day;
+}
+
+function shiftChatLabel(thread) {
+  const subject = String(thread?.subject || '').trim();
+  if (subject && !/^Shift chat #\d+$/.test(subject)) return subject;
+  return 'Shift chat';
 }
 
 export function contextLabel(thread) {
   const type = thread?.context_type || '';
-  if (type === 'opportunity') return `Shift #${thread.context_id || '?'}`;
+  if (type === 'opportunity') return shiftChatLabel(thread);
   if (type === 'announcement') return 'Announcement';
   if (type === 'foster_placement') return `Foster #${thread.context_id || '?'}`;
   if (type === 'transport_run') return `Transport #${thread.context_id || '?'}`;

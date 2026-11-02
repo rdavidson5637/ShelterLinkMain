@@ -52,3 +52,15 @@ Ryan, two choices:
 ## A reference link cannot be sent again (2 Nov 2026)
 
 A reference request stores a hash of the link, not the link itself. If the email does not go, staff cannot send that same link again. The page now says the request was saved and the email did not go, and that the link cannot be sent again. A new request makes a second row and a new link. No resend was built.
+
+## Hours dated before the shift (2 Nov 2026)
+
+The server accepts hours for a date that is before the shift. A walk logged 1 hour on 1 Nov 2026 against a shift on 2 Nov, and it stayed Pending for staff to approve. A future date is already refused. This was not changed.
+
+Ryan: should hours dated before the shift be refused, or is staff approval enough?
+
+## Cover after check-in (2 Nov 2026)
+
+A volunteer who has already checked in can ask someone else to cover the shift. The claim cancels the old application, and that cancelled row still shows as checked in. The new person is accepted and not checked in. This was not changed.
+
+Ryan: should cover be refused once someone has checked in?
