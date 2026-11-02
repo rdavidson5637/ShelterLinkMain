@@ -421,6 +421,13 @@ main article.form-panel {
   border-bottom: 0;
 }
 
+.guide-steps a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  min-width: var(--tap);
+}
+
 .guide-steps > li::before {
   content: counter(guide);
   position: absolute;

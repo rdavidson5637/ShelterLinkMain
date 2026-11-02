@@ -1,4 +1,5 @@
 import { apiRequest } from '../config.js';
+import { speciesLabel } from '../utils/speciesLabel.js';
 import { requireAuth, checkAuth, logout, isStaffOrAdminRole, applyRoleVisibility } from '../auth.js';
 import { showFormErrors, clearFormErrors } from '../utils/formErrors.js';
 
@@ -93,7 +94,7 @@ async function loadAnimals() {
     `;
     const cells = tr.querySelectorAll('td');
     cells[0].textContent = animal.name;
-    cells[1].textContent = animal.species;
+    cells[1].textContent = speciesLabel(animal.species);
     cells[2].textContent = animal.status;
     cells[3].textContent = animal.kennel_ref || 'Not set';
     cells[4].textContent = handling;

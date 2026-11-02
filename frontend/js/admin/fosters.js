@@ -1,4 +1,5 @@
 import { apiRequest } from '../config.js';
+import { speciesLabel } from '../utils/speciesLabel.js';
 import { requireAuth, checkAuth, logout, isStaffOrAdminRole, applyRoleVisibility } from '../auth.js';
 import { escapeHtml } from '../utils/escapeHtml.js';
 
@@ -50,7 +51,7 @@ async function loadAnimals() {
   (animals || []).forEach((a) => {
     const opt = document.createElement('option');
     opt.value = a.id;
-    opt.textContent = `${a.name} (${a.species}), ${a.status}`;
+    opt.textContent = `${a.name} (${speciesLabel(a.species)}), ${a.status}`;
     animalSelect.appendChild(opt);
   });
 }

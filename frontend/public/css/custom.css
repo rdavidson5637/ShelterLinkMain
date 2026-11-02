@@ -934,6 +934,7 @@ th[aria-sort='descending'] .sort-button::after {
 /* Row actions: one line, full tap target. */
 tbody td :is(button, [role='button'], .button) {
   width: auto;
+  min-width: var(--tap);
   margin: 0 0.25rem 0 0;
   padding-inline: 0.75rem;
   font-size: var(--step--1);

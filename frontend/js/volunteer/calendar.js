@@ -245,6 +245,7 @@ function initCalendar() {
       center: 'title',
       right: '',
     },
+    buttonText: { today: 'Today' },
     events: [],
     eventClick: (info) => {
       info.jsEvent.preventDefault();

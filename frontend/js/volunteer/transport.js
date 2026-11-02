@@ -1,6 +1,7 @@
 import { apiRequest } from '../config.js';
 import { requireAuth, checkAuth } from '../auth.js';
 import { createDateBlock, createEmptyState, createRuledRow, createStatusLabel } from '../components/rows.js';
+import { formatDateOnly } from '../utils/dateFormat.js';
 import { openRowForm, textField } from '../components/rowForm.js';
 
 const messageEl = document.getElementById('message');
@@ -22,7 +23,7 @@ function legTitle(leg) {
 }
 
 function legDetails(leg) {
-  const facts = [leg.run_title || 'Transport run'];
+  const facts = [formatDateOnly(leg.run_date), leg.run_title || 'Transport run'].filter(Boolean);
   if (leg.animal_name) facts.push(leg.animal_name);
   facts.push(leg.distance_miles != null ? `about ${leg.distance_miles} miles` : 'mileage to be confirmed');
   return facts.join(', ');

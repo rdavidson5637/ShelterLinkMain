@@ -1,6 +1,8 @@
 import { apiRequest } from '../config.js';
 import { requireAuth, checkAuth, logout, isStaffOrAdminRole, applyRoleVisibility } from '../auth.js';
 import { showConfirm } from '../components/confirmDialog.js';
+import { formatDateOnly } from '../utils/dateFormat.js';
+import { speciesLabel } from '../utils/speciesLabel.js';
 
 const messageEl = document.getElementById('message');
 const runForm = document.getElementById('runForm');
@@ -66,7 +68,7 @@ async function loadAnimals() {
   (animals || []).forEach((a) => {
     const opt = document.createElement('option');
     opt.value = a.id;
-    opt.textContent = `${a.name} (${a.species})`;
+    opt.textContent = `${a.name} (${speciesLabel(a.species)})`;
     animalSelect.appendChild(opt);
   });
 }
@@ -98,7 +100,7 @@ async function loadRuns() {
     `;
     const bits = [
       run.title || 'Transport',
-      String(run.run_date || '').slice(0, 10),
+      formatDateOnly(run.run_date) || String(run.run_date || '').slice(0, 10),
       run.status || '',
       `${run.claimed_count || 0}/${run.leg_count || 0} legs claimed`,
     ];

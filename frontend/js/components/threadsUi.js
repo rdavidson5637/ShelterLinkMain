@@ -37,6 +37,12 @@ function shiftChatLabel(thread) {
   return 'Shift chat';
 }
 
+export function threadListParts(thread) {
+  const title = String(thread?.subject || '').trim() || contextLabel(thread);
+  const context = contextLabel(thread);
+  return { title, meta: context && context !== title ? context : '' };
+}
+
 export function contextLabel(thread) {
   const type = thread?.context_type || '';
   if (type === 'opportunity') return shiftChatLabel(thread);
@@ -119,11 +125,13 @@ export function createThreadsController({
       btn.type = 'button';
       btn.className = `thread-list-item${Number(thread.id) === Number(selectedId) ? ' is-active' : ''}`;
       const unread = Number(thread.unread_count) || 0;
+      const { title, meta } = threadListParts(thread);
+      const bits = [];
+      if (meta) bits.push(escapeHtml(meta));
+      if (unread) bits.push(`<strong>${unread} new</strong>`);
       btn.innerHTML = `
-        <span class="thread-list-title">${escapeHtml(thread.subject || contextLabel(thread))}</span>
-        <span class="thread-list-meta">${escapeHtml(contextLabel(thread))}${
-          unread ? ` · <strong>${unread} new</strong>` : ''
-        }</span>
+        <span class="thread-list-title">${escapeHtml(title)}</span>
+        ${bits.length ? `<span class="thread-list-meta">${bits.join(' · ')}</span>` : ''}
       `;
       btn.addEventListener('click', () => selectThread(thread.id));
       threadsListEl.appendChild(btn);
