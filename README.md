@@ -40,7 +40,7 @@ The site can be installed from the browser. This file does not name a host.
 - Email with nodemailer when `EMAIL_*` is set. Blank email settings leave sending off.
 - HTML, CSS, and JavaScript in `frontend/`, with no build step
 
-Two libraries are stored in the repo:
+Pico 2.1.1 and FullCalendar 6.1.19 are not in git. Installing dependencies runs `scripts/ensure-vendor.js`, which downloads them from jsDelivr when the files are missing. That step needs network access.
 
 - Pico 2.1.1, MIT, `frontend/public/css/vendor/pico-2.1.1.min.css`
 - FullCalendar 6.1.19, MIT, `frontend/public/js/vendor/fullcalendar-6.1.19.min.js`
@@ -119,8 +119,6 @@ Erasure, log out everywhere, and password reset delete sessions outside the tena
 
 Hours dated before the shift are accepted. A volunteer who has already checked in can still ask someone else to cover the shift. A reference link that did not send cannot be sent again. Those three are open questions in the same file.
 
-Five older duplicate files are still in `_to_delete/`.
-
 `session`, `job_runs`, and `schema_migrations` sit outside the tenant policy. Locking those down on a hosted project is still open.
 
 ## Security
@@ -129,4 +127,4 @@ Passwords are hashed with bcrypt. The session cookie is httpOnly. See `docs/SECU
 
 ## Licence
 
-MIT
+MIT, as set in package.json.

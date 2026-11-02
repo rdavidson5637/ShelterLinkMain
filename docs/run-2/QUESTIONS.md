@@ -68,3 +68,7 @@ Ryan: should cover be refused once someone has checked in?
 ## Foster confirm now says whether the email went (2 Nov 2026)
 
 Confirming a foster offer used to return the placement and an emergency phone number. It now also returns `volunteer_emailed`, true only when that email was sent. The page uses it so staff are not told an email went when it did not. This changes the response shape. Say if that field should be removed and the page should use another signal.
+
+## No LICENSE file (2 Nov 2026)
+
+`package.json` sets `"license": "MIT"`. There is no `LICENSE` file in the repo. Ryan: add one if the MIT text should sit in the tree.
