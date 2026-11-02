@@ -24,6 +24,7 @@ Local database guards and the env loader are in. Today loads applications. A fai
 - I3: A throwaway `@example.test` volunteer is erased on the local database. Name, phone, address, the audit row, and the session are checked, then the rows are removed. Commit 7d5404a. Plain `npm test` skips it.
 - I5: `npm run test:local` runs the three local database tests with `ENV_FILE=.env.local` and `LOCAL_DB_REQUIRED=1`. Commit df359ff. It passed (3, none skipped). Plain `npm test` still skips them.
 - I6: A local walk of sign-up, shifts, hours, messages, staff approval, the shift list, the day sheet and the kiosk. Commit 440b506. Notes are in `docs/run-2/WALKTHROUGH.md`. No product code was changed.
+- I7: Apply is not offered when an animal qualification is missing or expired. A future expiry still counts as held. Two animals that need the same qualification are named once on the card. The sent notice stays clear of the top bar. Commits f9ea5d6, eb31d56, f791e42.
 - I8: Volunteer messages no longer offer an announcement when there is no form. Complete your profile goes to the profile. Copy link stays hidden until the calendar address exists. An empty qualifications panel says staff add them after training. Accepted applications do not show Approve, and the page says the application was accepted. Commit ccacba2.
 
 ### A3 audit, 2 Nov 2026
