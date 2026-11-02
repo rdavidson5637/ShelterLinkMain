@@ -30,3 +30,4 @@ signed in, because no local database existed then.
 - I1 Today applications: approved (860da31). Dropped the `?limit=5` the API rejected with a 400; the same bug is on `main`, live site not checked. Newest five shown signed in at 375 and 1280. Certificate copy fixed. `/applications` has no server-side limit, so Today downloads them all.
 - sheet-catch: approved (348dac2). Closes the sheet-skeletons finding: a network failure now leaves only the error.
 - pg-conn: approved (36e8b6e). `pg-connection-string` is a direct dependency and LOCAL-DEV.md warns about `scripts/pg-connection.sh`.
+- F1 Repeating shift dialog: approved (eb8b598). Checked in the browser at 375 and 1280 with DELETE calls intercepted: three choices for a series, two for a single shift, and Keep, Escape and clicking outside send nothing. The tenant isolation test failed once, fast, then passed twice; two runs sharing port 54329 is the likely cause, not proved.
