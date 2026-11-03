@@ -47,10 +47,12 @@ const register = z
     password: optStr(200),
     phone: optStr(40),
     privacy_notice: z.union([z.boolean(), z.literal('on'), z.literal('true')]).optional(),
+    // A public slug, resolved on the server. Never a shelter id.
+    shelter_slug: optStr(100),
   })
   .strict();
 
-const registerAdmin = register.extend({
+const registerAdmin = register.omit({ shelter_slug: true }).extend({
   admin_key: optStr(200),
 });
 
@@ -82,6 +84,7 @@ const groupBooking = z
     notes: optStr(2000),
     fax_extension: optStr(200),
     started_at: z.union([z.number(), z.string().regex(/^\d{10,16}$/)]).optional(),
+    shelter_slug: optStr(100),
   })
   .strict();
 

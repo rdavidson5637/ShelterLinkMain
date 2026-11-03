@@ -2,7 +2,7 @@
 
 const { pool } = require('../config/database');
 const { currentShelterId, runWithShelter } = require('../utils/shelterContext');
-const { assisiShelterId } = require('../middleware/shelter');
+const { publicShelterId } = require('../middleware/shelter');
 
 const LOGO_TYPES = new Set(['image/jpeg', 'image/png']);
 
@@ -12,7 +12,7 @@ async function readBrand() {
   const id = currentShelterId();
   if (!id) return null;
   const [rows] = await pool.execute(
-    `SELECT name, logo_mime,
+    `SELECT name, slug, logo_mime,
             (logo IS NOT NULL AND octet_length(logo) > 0) AS has_logo
        FROM shelters
       WHERE id = ?`,
@@ -31,19 +31,21 @@ async function readLogo() {
   return rows[0] || null;
 }
 
-async function inBrandContext(fn) {
-  if (currentShelterId()) return fn();
-  const id = await assisiShelterId();
+// ?shelter=<slug> names the shelter; otherwise the session, then Assisi.
+async function inBrandContext(req, fn) {
+  const id = await publicShelterId(req);
   if (!id) return null;
   return runWithShelter(id, fn);
 }
 
 async function getBrand(req, res) {
   try {
-    const row = await inBrandContext(readBrand);
+    const row = await inBrandContext(req, readBrand);
     if (!row || !row.name) return res.status(404).json({ error: 'Not found' });
     return res.status(200).json({
       name: row.name,
+      // Lets a page tell whether the slug it asked for was found or fell back.
+      slug: row.slug || null,
       hasLogo: Boolean(row.has_logo),
     });
   } catch (error) {
@@ -55,7 +57,7 @@ async function getBrand(req, res) {
 
 async function getBrandLogo(req, res) {
   try {
-    const row = await inBrandContext(readLogo);
+    const row = await inBrandContext(req, readLogo);
     const mime = String(row && row.logo_mime || '').toLowerCase();
     if (!row || !row.logo || !LOGO_TYPES.has(mime)) {
       return res.status(404).json({ error: 'Not found' });
