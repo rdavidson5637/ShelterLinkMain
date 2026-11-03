@@ -1,11 +1,16 @@
 import { apiRequest } from './config.js';
 import { redirectIfAuthenticated } from './auth.js';
 import { showFormErrors, clearFormErrors } from './utils/formErrors.js';
+import { loadBrand } from './brand.js';
+import { currentShelterSlug } from './shelterSlug.js';
 
 const form = document.getElementById('registerForm');
 const messageEl = document.getElementById('message');
 const passwordInput = document.getElementById('password');
 const submitButton = form?.querySelector('[type="submit"]');
+const shelterSlug = currentShelterSlug();
+const UNKNOWN_SHELTER_TEXT = 'We could not find that shelter. Check the link and try again.';
+let shelterMissing = false;
 
 let meterTextEl = null;
 let checklistItems = null;
@@ -23,6 +28,10 @@ function allPasswordChecksPass(checks) {
 
 function updateSubmitState() {
   if (!submitButton || !passwordInput) return;
+  if (shelterMissing) {
+    submitButton.disabled = true;
+    return;
+  }
   const checks = getPasswordChecks(passwordInput.value);
   submitButton.disabled = !allPasswordChecksPass(checks);
 }
@@ -142,6 +151,7 @@ async function handleRegister(event) {
     password: payload.password,
     privacy_notice: true,
   };
+  if (shelterSlug) data.shelter_slug = shelterSlug;
 
   try {
     const res = await apiRequest('/auth/register', {
@@ -155,6 +165,8 @@ async function handleRegister(event) {
       setTimeout(() => {
         window.location.href = '/login.html';
       }, 2000);
+    } else if (res.status === 404 && shelterSlug) {
+      markShelterMissing();
     } else {
       const errorData = await res.json().catch(() => ({}));
       showFormErrors(form, [
@@ -169,14 +181,29 @@ async function handleRegister(event) {
       },
     ]);
   } finally {
-    if (submitButton) submitButton.removeAttribute('disabled');
+    updateSubmitState();
   }
+}
+
+function markShelterMissing() {
+  shelterMissing = true;
+  showMessage(UNKNOWN_SHELTER_TEXT);
+  updateSubmitState();
+}
+
+// The brand API falls back to the default shelter for an unknown slug, so a
+// mismatch means the slug in this link is not a shelter we know.
+async function checkShelter() {
+  if (!shelterSlug) return;
+  const brand = await loadBrand();
+  if (brand && brand.slug && brand.slug !== shelterSlug) markShelterMissing();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   redirectIfAuthenticated();
   setupPasswordFeedback();
   updateSubmitState();
+  checkShelter();
   if (form) {
     form.addEventListener('submit', handleRegister);
   }
