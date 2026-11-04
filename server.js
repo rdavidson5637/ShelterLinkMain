@@ -69,6 +69,18 @@ app.get('/sw.js', (req, res) => {
   res.send(swBody);
 });
 
+// The platform owner page is only served through the gated /platform/shelters
+// route below. Its file sits under frontend/, so stop express.static serving
+// it directly.
+const PLATFORM_SHELTERS_PAGE = path.join(__dirname, 'frontend', 'pages', 'platform-shelters.html');
+const NOT_FOUND_PAGE = path.join(__dirname, 'frontend', 'pages', 'error', '404.html');
+app.use((req, res, next) => {
+  let p = req.path;
+  try { p = decodeURIComponent(p); } catch { return next(); }
+  if (path.posix.normalize(p).toLowerCase() !== '/pages/platform-shelters.html') return next();
+  return res.status(404).sendFile(NOT_FOUND_PAGE);
+});
+
 app.use(express.static(path.join(__dirname, 'frontend'), {
   setHeaders(res, filePath) {
     const rel = filePath.replace(/\\/g, '/');
@@ -161,6 +173,7 @@ const vettingRoutes = require('./routes/vetting');
 const pushRoutes = require('./routes/push');
 const templateRoutes = require('./routes/templates');
 const platformRoutes = require('./routes/platform');
+const { isPlatformOwnerPage } = require('./middleware/platformOwner');
 const {
   myShiftsIcs,
   getMyIcalToken,
@@ -259,6 +272,13 @@ for (const [suffix, file] of Object.entries(SHELTER_PAGES)) {
 }
 
 app.get('/launch', require('./controllers/launchController').launch);
+
+// Platform owner queue. Anyone not in platform_owners gets the 404 page.
+app.get(
+  '/platform/shelters',
+  isPlatformOwnerPage(NOT_FOUND_PAGE),
+  (req, res) => res.sendFile(PLATFORM_SHELTERS_PAGE)
+);
 
 // Health/test route for API
 app.get('/api', (req, res) => {

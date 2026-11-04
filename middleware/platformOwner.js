@@ -41,4 +41,29 @@ async function isPlatformOwner(req, res, next) {
   }
 }
 
-module.exports = { isPlatformOwner, isPlatformOwnerUser, notFoundError };
+/**
+ * Page version of the gate, for /platform/* HTML routes. A non-owner gets
+ * the normal 404 page with status 404, same as any unknown page.
+ */
+function isPlatformOwnerPage(notFoundPage) {
+  return async function platformOwnerPage(req, res, next) {
+    try {
+      const session = req.session || {};
+      const ok = session.userId && !session.kioskMode
+        && (await isPlatformOwnerUser(session.userId));
+      res.set('Cache-Control', 'no-store');
+      if (!ok) return res.status(404).sendFile(notFoundPage);
+      req.platformOwnerId = Number(session.userId);
+      return next();
+    } catch (error) {
+      return next(error);
+    }
+  };
+}
+
+module.exports = {
+  isPlatformOwner,
+  isPlatformOwnerPage,
+  isPlatformOwnerUser,
+  notFoundError,
+};
