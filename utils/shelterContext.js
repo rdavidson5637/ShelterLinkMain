@@ -5,6 +5,7 @@ const { AsyncLocalStorage } = require('async_hooks');
 const shelterStore = new AsyncLocalStorage();
 
 const TENANT_TABLES = [
+  'admin_invites',
   'admin_messages',
   'animal_activity',
   'animal_photos',
