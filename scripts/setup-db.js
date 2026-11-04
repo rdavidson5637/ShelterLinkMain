@@ -95,6 +95,7 @@ async function run() {
     await applySql(pgPool, loadSql('033_add_shelters.pg.sql'));
     await applySql(pgPool, loadSql('036_self_serve_shelters.pg.sql'));
     await applySql(pgPool, loadSql('037_charity_register_cache.pg.sql'));
+    await applySql(pgPool, loadSql('038_platform_audit.pg.sql'));
     console.log('  ✓ Shelter tenancy applied.');
 
     if (withSeed) {
