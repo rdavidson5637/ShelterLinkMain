@@ -36,6 +36,41 @@ async function assisiShelterId() {
   return assisiId;
 }
 
+// Matches shelters_slug_lowercase_chk and the VARCHAR(100) column.
+const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+const SLUG_MAX = 100;
+const slugCache = new Map();
+
+/**
+ * Shelter id for a public slug, or null. Not wired to any route yet: public
+ * routes still use assisiShelterId() when there is no session.
+ *
+ * "Active" means the row exists. shelters has no status column yet; the
+ * approval gate is a later change and should add its filter to this query.
+ *
+ * Only hits are cached. A miss is not, so a shelter added later is found
+ * without a restart, and unknown slugs from URLs cannot grow the cache.
+ */
+async function shelterIdFromSlug(slug) {
+  if (typeof slug !== 'string') return null;
+  const key = slug.trim().toLowerCase();
+  if (!key || key.length > SLUG_MAX || !SLUG_RE.test(key)) return null;
+  if (slugCache.has(key)) return slugCache.get(key);
+
+  const [rows] = await runWithoutShelter(() => pool.execute(
+    'SELECT id FROM shelters WHERE slug = ? LIMIT 1',
+    [key]
+  ));
+  const id = Number(rows[0] && rows[0].id);
+  if (!Number.isInteger(id) || id <= 0) return null;
+  slugCache.set(key, id);
+  return id;
+}
+
+function _resetSlugCacheForTests() {
+  slugCache.clear();
+}
+
 async function forEachShelter(fn) {
   const [rows] = await runWithoutShelter(() => pool.execute(
     'SELECT id FROM shelters ORDER BY id'
@@ -74,6 +109,8 @@ async function bindShelter(req, res, next) {
 
 module.exports = {
   assisiShelterId,
+  shelterIdFromSlug,
+  _resetSlugCacheForTests,
   forEachShelter,
   bindShelter,
   requestCarriesShelterId,

@@ -6,12 +6,27 @@ const { assisiShelterId } = require('../middleware/shelter');
 
 const LOGO_TYPES = new Set(['image/jpeg', 'image/png']);
 
+// Always name the shelter row. Row level security is a second guard, not the
+// only one: the app role bypasses it unless the tenant role switch runs.
 async function readBrand() {
+  const id = currentShelterId();
+  if (!id) return null;
   const [rows] = await pool.execute(
     `SELECT name, logo_mime,
             (logo IS NOT NULL AND octet_length(logo) > 0) AS has_logo
        FROM shelters
-      LIMIT 1`
+      WHERE id = ?`,
+    [id]
+  );
+  return rows[0] || null;
+}
+
+async function readLogo() {
+  const id = currentShelterId();
+  if (!id) return null;
+  const [rows] = await pool.execute(
+    'SELECT logo, logo_mime FROM shelters WHERE id = ?',
+    [id]
   );
   return rows[0] || null;
 }
@@ -40,12 +55,7 @@ async function getBrand(req, res) {
 
 async function getBrandLogo(req, res) {
   try {
-    const row = await inBrandContext(async () => {
-      const [rows] = await pool.execute(
-        'SELECT logo, logo_mime FROM shelters LIMIT 1'
-      );
-      return rows[0] || null;
-    });
+    const row = await inBrandContext(readLogo);
     const mime = String(row && row.logo_mime || '').toLowerCase();
     if (!row || !row.logo || !LOGO_TYPES.has(mime)) {
       return res.status(404).json({ error: 'Not found' });
