@@ -11,7 +11,11 @@
 require('dotenv').config();
 process.env.NODE_ENV = 'production';
 
-const { collectProductionProblems, collectProductionWarnings } = require('../utils/validateEnv');
+const {
+  collectProductionProblems,
+  collectProductionWarnings,
+  collectCharityRegisterWarnings,
+} = require('../utils/validateEnv');
 
 const missing = collectProductionProblems();
 const warnings = collectProductionWarnings();
@@ -29,6 +33,15 @@ if (warnings.length) {
 } else if (!missing.length) {
   console.log('Optional email, push, emergency phone, backup key, and timezone are set.');
 }
+
+const registerWarnings = collectCharityRegisterWarnings();
+if (registerWarnings.length) {
+  console.warn('Charity register lookups (optional, evidence only):');
+  registerWarnings.forEach((line) => console.warn(`  - ${line}`));
+} else {
+  console.log('Charity register API keys are set (CCEW_API_KEY, OSCR_API_KEY).');
+}
+console.log('CCNI lookups read charity_register_cache: import with scripts/import-charity-register.js.');
 
 console.log('This check does not prove the database password works.');
 process.exit(missing.length ? 1 : 0);

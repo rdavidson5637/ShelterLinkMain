@@ -71,6 +71,24 @@ function collectProductionWarnings() {
   return warnings;
 }
 
+/**
+ * Charity register lookup settings (self-serve brief section 6). Names only,
+ * never values. Kept out of collectProductionWarnings so boot stays quiet
+ * until self-serve onboarding ships; npm run check-prod prints these.
+ * None of these block a boot: without a key the platform owner hand-checks
+ * the register.
+ */
+function collectCharityRegisterWarnings(env = process.env) {
+  const warnings = [];
+  if (isBlank(env.CCEW_API_KEY)) {
+    warnings.push('CCEW_API_KEY is not set: England and Wales charity lookups return not_configured (hand-check the register)');
+  }
+  if (isBlank(env.OSCR_API_KEY)) {
+    warnings.push('OSCR_API_KEY is not set: Scottish lookups are not live yet in any case (hand-check the register)');
+  }
+  return warnings;
+}
+
 function logStartupWarnings() {
   const warnings = collectProductionWarnings();
   if (warnings.length) {
@@ -97,5 +115,6 @@ module.exports = {
   isWeakAppUrl,
   collectProductionProblems,
   collectProductionWarnings,
+  collectCharityRegisterWarnings,
   logStartupWarnings,
 };
