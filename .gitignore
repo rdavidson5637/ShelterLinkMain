@@ -81,3 +81,7 @@ build/
 .claude/
 
 
+
+# Fetched by scripts/ensure-vendor.js on npm install; do not commit.
+frontend/public/css/vendor/pico-2.1.1.min.css
+frontend/public/js/vendor/fullcalendar-6.1.19.min.js
