@@ -20,7 +20,7 @@ const {
   isBypass,
   currentShelterId,
 } = require('../utils/shelterContext');
-const { assisiShelterId } = require('../middleware/shelter');
+const { assisiShelterId, shelterIdFromSlug } = require('../middleware/shelter');
 const { PRIVACY_NOTICE_VERSION } = require('../config/privacyNotice');
 
 function privacyNoticeAccepted(value) {
@@ -34,14 +34,28 @@ function respondSafeUser(row) {
   return safe;
 }
 
-async function insertAssisiUser(sql, params) {
-  const shelterId = await assisiShelterId();
+async function insertUserForShelter(shelterId, sql, params) {
   if (!shelterId) {
-    const err = new Error('Assisi shelter is not configured');
+    const err = new Error('Shelter is not configured');
     err.status = 500;
     throw err;
   }
   return runWithShelter(shelterId, () => pool.execute(sql, params));
+}
+
+const UNKNOWN_SHELTER = Symbol('unknown shelter');
+
+/**
+ * Shelter a new volunteer joins. No shelter_slug (plain /register) keeps the
+ * Assisi default. A shelter_slug that matches no shelter is an error: a
+ * /join/<slug> form must never quietly sign someone up to Assisi instead.
+ * The session is not consulted.
+ */
+async function registrationShelterId(body) {
+  const slug = body && body.shelter_slug;
+  if (slug == null || slug === '') return assisiShelterId();
+  const id = await shelterIdFromSlug(slug);
+  return id || UNKNOWN_SHELTER;
 }
 
 async function register(req, res) {
@@ -49,6 +63,11 @@ async function register(req, res) {
     const { first_name, last_name, email, password, phone } = req.body || {};
     if (!first_name || !last_name || !email || !password) {
       return res.status(400).json({ error: 'first_name, last_name, email, and password are required' });
+    }
+
+    const shelterId = await registrationShelterId(req.body);
+    if (shelterId === UNKNOWN_SHELTER) {
+      return res.status(404).json({ error: 'We could not find that shelter. Check the link and try again.' });
     }
 
     const policyError = await passwordPolicyError(password);
@@ -78,7 +97,7 @@ async function register(req, res) {
       )
       VALUES (?, ?, ?, ?, ?, ?, 'volunteer', NOW(), ?, NOW())
     `;
-    await insertAssisiUser(sql, [
+    await insertUserForShelter(shelterId, sql, [
       first_name,
       last_name,
       name,
@@ -282,7 +301,9 @@ async function registerAdmin(req, res) {
       INSERT INTO users (first_name, last_name, name, phone, email, password, role, created_at)
       VALUES (?, ?, ?, ?, ?, ?, 'admin', NOW())
     `;
-    await insertAssisiUser(sql, [first_name, last_name, name, phone || null, normalizedEmail, passwordHash]);
+    await insertUserForShelter(await assisiShelterId(), sql, [
+      first_name, last_name, name, phone || null, normalizedEmail, passwordHash,
+    ]);
 
     return res.status(201).json({ message: 'Admin registration successful' });
   } catch (error) {

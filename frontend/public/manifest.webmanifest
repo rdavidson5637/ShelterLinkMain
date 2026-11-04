@@ -2,7 +2,7 @@
   "id": "/",
   "name": "ShelterLink",
   "short_name": "ShelterLink",
-  "description": "Volunteer shifts and hours for Assisi Animal Sanctuary",
+  "description": "Volunteer shifts and hours for animal shelters",
   "lang": "en-GB",
   "dir": "ltr",
   "start_url": "/launch?source=pwa",

@@ -6,6 +6,7 @@
 import './skipLink.js';
 import '../pwa.js';
 import { applyShelterBrand, loadBrand } from '../brand.js';
+import { applyShelterLinks } from '../shelterSlug.js';
 
 export function currentFooterYear(now = new Date()) {
   return now.getFullYear();
@@ -43,6 +44,7 @@ export function applySiteFooter(root = document) {
 
 function startFooter() {
   applySiteFooter();
+  applyShelterLinks();
   if (document.body && document.body.dataset.brandLock === 'token') return;
   loadBrand().then((brand) => applyShelterBrand(brand));
 }

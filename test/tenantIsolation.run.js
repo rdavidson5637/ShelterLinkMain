@@ -760,6 +760,121 @@ async function main() {
       }
     }
 
+    // Slug B (anonymous): public brand, opportunities, ICS, group booking and
+    // register for shelter 'second' must never read or write shelter A.
+    await admin.query(`
+      INSERT INTO opportunities (
+        opportunity_id, title, description, location, start_date, end_date, max_volunteers,
+        status, created_by, check_in_code, shelter_id
+      ) VALUES (
+        900, 'Second open shift', 'Second', 'Barn', '2099-06-02 10:00:00', '2099-06-02 12:00:00', 4,
+        'open', 3, 'SEC900', 2
+      )
+    `);
+    const slugChecks = [];
+    const slugCheck = (label, response, ok) => {
+      slugChecks.push(label);
+      if (!ok || leaks(response.text)) {
+        failures.push(`slug ${label} -> ${response.status} ${leaks(response.text) ? `leaked ${leaks(response.text)}` : response.text.slice(0, 180)}`);
+      }
+    };
+
+    const slugBrand = await request(port, 'GET', '/api/public/brand?shelter=second');
+    slugCheck('brand', slugBrand, slugBrand.status === 200
+      && slugBrand.text.includes('Second Shelter') && !slugBrand.text.includes('Assisi'));
+    const slugLogo = await request(port, 'GET', '/api/public/brand/logo?shelter=second');
+    slugCheck('logo', slugLogo, slugLogo.status === 404);
+    const unknownBrand = await request(port, 'GET', '/api/public/brand?shelter=nowhere');
+    slugCheck('unknown brand falls back to Assisi', unknownBrand, unknownBrand.status === 200
+      && unknownBrand.text.includes('Assisi Animal Sanctuary'));
+
+    // The logged-in shelter B request above already filled the 60s cache
+    // entry for shelter 2 (before shift 900 existed), so this is a cache hit
+    // on B's key. It must be a list with nothing from shelter A in it.
+    const slugOpps = await request(port, 'GET', '/api/public/opportunities?shelter=second');
+    let slugOppsList = null;
+    try { slugOppsList = JSON.parse(slugOpps.text); } catch { slugOppsList = null; }
+    slugCheck('opportunities', slugOpps, slugOpps.status === 200 && Array.isArray(slugOppsList)
+      && !slugOpps.text.includes('MarkerA shift'));
+    // The ICS feed is not cached, so it shows B's new shift and only that.
+    const slugIcs = await request(port, 'GET', '/api/public/opportunities.ics?shelter=second');
+    slugCheck('ics', slugIcs, slugIcs.status === 200 && slugIcs.text.includes('Second open shift'));
+    // No slug and no session keeps the Assisi default. Shelter A's shift is
+    // public there by design, so this one is checked by title, not leaks().
+    const assisiOpps = await request(port, 'GET', '/api/public/opportunities');
+    slugChecks.push('no slug -> Assisi');
+    if (assisiOpps.status !== 200 || !assisiOpps.text.includes('MarkerA shift') || assisiOpps.text.includes('Second open shift')) {
+      failures.push(`slug no slug -> Assisi -> ${assisiOpps.status} ${assisiOpps.text.slice(0, 180)}`);
+    }
+
+    const booking = (overrides) => ({
+      group_name: 'Slug group',
+      contact_name: 'Pat',
+      size: 1,
+      started_at: Date.now() - 10000,
+      ...overrides,
+    });
+    const crossBooking = await request(port, 'POST', '/api/group-bookings', {
+      json: booking({ opportunity_id: 1, shelter_slug: 'second', contact_email: 'slug1@example.test' }),
+    });
+    slugCheck('group booking of shelter A shift', crossBooking, [403, 404].includes(crossBooking.status));
+    const ownBooking = await request(port, 'POST', '/api/group-bookings', {
+      json: booking({ opportunity_id: 900, shelter_slug: 'second', contact_email: 'slug2@example.test' }),
+    });
+    slugCheck('group booking of shelter B shift', ownBooking, ownBooking.status === 201);
+    const idBooking = await request(port, 'POST', '/api/group-bookings', {
+      json: booking({ opportunity_id: 900, shelter_id: 1, contact_email: 'slug3@example.test' }),
+    });
+    slugCheck('group booking with shelter_id', idBooking, idBooking.status === 400
+      && idBooking.text.includes('shelter_id is not accepted'));
+    const bookings = await admin.query(
+      `SELECT shelter_id FROM group_bookings WHERE contact_email LIKE 'slug%@example.test'`
+    );
+    if (bookings.rows.length !== 1 || Number(bookings.rows[0].shelter_id) !== 2) {
+      failures.push(`slug group bookings landed in ${JSON.stringify(bookings.rows)}`);
+    }
+
+    const joiner = {
+      first_name: 'Jo',
+      last_name: 'Joiner',
+      password: 'JoinerPassword1',
+      privacy_notice: true,
+    };
+    const joined = await request(port, 'POST', '/api/auth/register', {
+      json: { ...joiner, email: 'joiner.b@example.test', shelter_slug: 'second' },
+    });
+    slugCheck('register', joined, joined.status === 201);
+    const unknownJoin = await request(port, 'POST', '/api/auth/register', {
+      json: { ...joiner, email: 'joiner.none@example.test', shelter_slug: 'nowhere' },
+    });
+    slugCheck('register unknown slug', unknownJoin, unknownJoin.status === 404);
+    const idJoin = await request(port, 'POST', '/api/auth/register', {
+      json: { ...joiner, email: 'joiner.id@example.test', shelter_id: 1 },
+    });
+    slugCheck('register with shelter_id', idJoin, idJoin.status === 400
+      && idJoin.text.includes('shelter_id is not accepted'));
+    const joiners = await admin.query(
+      `SELECT email, shelter_id FROM users WHERE email LIKE 'joiner.%@example.test' ORDER BY email`
+    );
+    if (joiners.rows.length !== 1 || joiners.rows[0].email !== 'joiner.b@example.test'
+      || Number(joiners.rows[0].shelter_id) !== 2) {
+      failures.push(`slug register rows ${JSON.stringify(joiners.rows)}`);
+    }
+
+    const pages = [
+      ['/join/second', 200],
+      ['/join/nowhere', 404],
+      ['/register', 200],
+      ['/s/second', 200],
+      ['/s/second/opportunities', 200],
+      ['/s/second/group-booking', 200],
+    ];
+    for (const [urlPath, status] of pages) {
+      const page = await request(port, 'GET', urlPath);
+      slugChecks.push(urlPath);
+      if (page.status !== status) failures.push(`page ${urlPath} -> ${page.status}, expected ${status}`);
+    }
+
     const afterCounts = await countsForShelter(admin);
     const afterRow = await snapshot(admin);
     if (JSON.stringify(beforeCounts) !== JSON.stringify(afterCounts)) {
@@ -781,7 +896,7 @@ async function main() {
       if (failures.length > 40) console.error(`  ... ${failures.length - 40} more`);
       process.exitCode = 1;
     } else {
-      console.log(`Tenant isolation passed (${cases(feedbackToken).length + 3} requests). Shelter A rows were unchanged.`);
+      console.log(`Tenant isolation passed (${cases(feedbackToken).length + 3} requests, ${slugChecks.length} slug checks). Shelter A rows were unchanged.`);
     }
   } finally {
     if (httpServer) {

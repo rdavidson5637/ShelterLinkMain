@@ -8,8 +8,8 @@ const {
   sendGroupBookingDeclined,
 } = require('../utils/emailService');
 const { isStaffOrAdmin } = require('../middleware/auth');
-const { currentShelterId, runWithShelter } = require('../utils/shelterContext');
-const { assisiShelterId } = require('../middleware/shelter');
+const { runWithShelter } = require('../utils/shelterContext');
+const { publicShelterId } = require('../middleware/shelter');
 
 const MAX_GROUP_SIZE = 40;
 const MAX_NAME_LENGTH = 120;
@@ -50,12 +50,22 @@ function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
 }
 
+// Public form. shelter_slug (or ?shelter=) names the shelter; the
+// opportunity is then looked up inside that shelter only, so a slug B form
+// can never book a shelter A shift.
 async function createGroupBooking(req, res) {
-  if (!currentShelterId()) {
-    const id = await assisiShelterId();
-    if (!id) return res.status(404).json({ error: 'Opportunity not found or not open' });
-    return runWithShelter(id, () => createGroupBooking(req, res));
+  let shelterId;
+  try {
+    shelterId = await publicShelterId(req);
+  } catch (error) {
+    console.error('[GroupBooking] shelter lookup error:', error.message);
+    return res.status(500).json({ error: 'Internal server error' });
   }
+  if (!shelterId) return res.status(404).json({ error: 'Opportunity not found or not open' });
+  return runWithShelter(shelterId, () => createGroupBookingInShelter(req, res));
+}
+
+async function createGroupBookingInShelter(req, res) {
   try {
     const {
       opportunity_id: opportunityId,

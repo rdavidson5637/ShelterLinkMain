@@ -63,7 +63,7 @@ test('getBrand returns the bound shelter, not the first row', async () => {
   const res = makeRes();
   await runWithShelter(2, () => getBrand({}, res));
   assert.equal(res.statusCode, 200);
-  assert.deepEqual(res.body, { name: 'Second Shelter', hasLogo: true });
+  assert.deepEqual(res.body, { name: 'Second Shelter', slug: 'second', hasLogo: true });
 });
 
 test('getBrand with no session falls back to Assisi by id', async () => {

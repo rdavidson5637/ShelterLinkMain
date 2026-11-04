@@ -1,3 +1,5 @@
+import { withShelterQuery } from './shelterSlug.js';
+
 let pending = null;
 
 export function loadBrand() {
@@ -6,7 +8,7 @@ export function loadBrand() {
     pending = Promise.resolve(null);
     return pending;
   }
-  pending = fetch('/api/public/brand', { credentials: 'same-origin' })
+  pending = fetch(withShelterQuery('/api/public/brand'), { credentials: 'same-origin' })
     .then((res) => (res.ok ? res.json() : null))
     .catch(() => null);
   return pending;
@@ -22,7 +24,7 @@ export function applyShelterBrand(brand) {
     el.textContent = pattern.replaceAll('{name}', brand.name);
   });
   if (!brand.hasLogo) return;
-  const logoUrl = brand.logoUrl || '/api/public/brand/logo';
+  const logoUrl = brand.logoUrl || withShelterQuery('/api/public/brand/logo');
   if (/["'()]/.test(logoUrl)) return;
   document.documentElement.style.setProperty('--shelter-logo', `url("${logoUrl}")`);
   document.querySelectorAll('.brand-mark').forEach((el) => {

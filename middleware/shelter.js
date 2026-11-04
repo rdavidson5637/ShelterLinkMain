@@ -42,8 +42,7 @@ const SLUG_MAX = 100;
 const slugCache = new Map();
 
 /**
- * Shelter id for a public slug, or null. Not wired to any route yet: public
- * routes still use assisiShelterId() when there is no session.
+ * Shelter id for a public slug, or null.
  *
  * "Active" means the row exists. shelters has no status column yet; the
  * approval gate is a later change and should add its filter to this query.
@@ -65,6 +64,38 @@ async function shelterIdFromSlug(slug) {
   if (!Number.isInteger(id) || id <= 0) return null;
   slugCache.set(key, id);
   return id;
+}
+
+/**
+ * Slug a public request names, or null. A route :slug param wins, then
+ * ?shelter=, then a shelter_slug body field. Only a slug is ever read here,
+ * never a shelter id. Arrays (?shelter=a&shelter=b) are ignored.
+ */
+function requestedShelterSlug(req) {
+  const candidates = [
+    req && req.params && req.params.slug,
+    req && req.query && req.query.shelter,
+    req && req.body && req.body.shelter_slug,
+  ];
+  for (const value of candidates) {
+    if (typeof value === 'string' && value.trim()) return value;
+  }
+  return null;
+}
+
+/**
+ * Shelter for a public read or form. A known slug wins over the session, so
+ * a page for slug B only ever reads or writes shelter B. With no slug, or a
+ * slug that matches no shelter, this keeps the old fallback: the session's
+ * shelter, then Assisi.
+ */
+async function publicShelterId(req) {
+  const slug = requestedShelterSlug(req);
+  if (slug) {
+    const id = await shelterIdFromSlug(slug);
+    if (id) return id;
+  }
+  return currentShelterId() || assisiShelterId();
 }
 
 function _resetSlugCacheForTests() {
@@ -110,6 +141,8 @@ async function bindShelter(req, res, next) {
 module.exports = {
   assisiShelterId,
   shelterIdFromSlug,
+  requestedShelterSlug,
+  publicShelterId,
   _resetSlugCacheForTests,
   forEachShelter,
   bindShelter,

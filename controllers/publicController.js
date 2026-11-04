@@ -14,9 +14,12 @@ const {
   runWithShelter,
   runWithoutShelter,
 } = require('../utils/shelterContext');
-const { assisiShelterId } = require('../middleware/shelter');
+const { publicShelterId } = require('../middleware/shelter');
 
-let cache = { at: 0, key: null, data: null };
+// One entry per resolved shelter id, so slug A and slug B never share a
+// payload. Keys only come from ids that exist, so this is bounded by the
+// number of shelters.
+const cache = new Map();
 const CACHE_MS = 60 * 1000;
 
 function escapeIcalText(value) {
@@ -154,20 +157,18 @@ async function loadUpcomingPublicOpportunities() {
 
 async function listPublicOpportunities(req, res) {
   try {
-    if (!currentShelterId()) {
-      const id = await assisiShelterId();
-      if (!id) return res.status(404).json({ error: 'Not found' });
-      return runWithShelter(id, () => listPublicOpportunities(req, res));
-    }
+    const shelterId = await publicShelterId(req);
+    if (!shelterId) return res.status(404).json({ error: 'Not found' });
     const now = Date.now();
-    const key = String(currentShelterId());
-    if (cache.data && cache.key === key && now - cache.at < CACHE_MS) {
-      return res.status(200).json(cache.data);
+    const key = String(shelterId);
+    const hit = cache.get(key);
+    if (hit && now - hit.at < CACHE_MS) {
+      return res.status(200).json(hit.data);
     }
 
-    const future = await loadUpcomingPublicOpportunities();
+    const future = await runWithShelter(shelterId, () => loadUpcomingPublicOpportunities());
     const payload = future.map(toPublicOpportunity);
-    cache = { at: now, key, data: payload };
+    cache.set(key, { at: now, data: payload });
     return res.status(200).json(payload);
   } catch (error) {
     console.error('[Public] listPublicOpportunities error:', error.message);
@@ -178,12 +179,9 @@ async function listPublicOpportunities(req, res) {
 
 async function publicOpportunitiesIcs(req, res) {
   try {
-    if (!currentShelterId()) {
-      const id = await assisiShelterId();
-      if (!id) return res.status(404).json({ error: 'Not found' });
-      return runWithShelter(id, () => publicOpportunitiesIcs(req, res));
-    }
-    const future = await loadUpcomingPublicOpportunities();
+    const shelterId = await publicShelterId(req);
+    if (!shelterId) return res.status(404).json({ error: 'Not found' });
+    const future = await runWithShelter(shelterId, () => loadUpcomingPublicOpportunities());
     const events = future.map(opportunityToEvent).filter((e) => e.start);
     const body = buildVCalendar(events, 'ShelterLink Open Shifts');
     res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
@@ -308,5 +306,5 @@ module.exports = {
   buildVCalendar,
   toIcalDate,
   toPublicOpportunity,
-  _resetCacheForTests: () => { cache = { at: 0, key: null, data: null }; },
+  _resetCacheForTests: () => { cache.clear(); },
 };

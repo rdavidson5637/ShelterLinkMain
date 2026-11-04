@@ -1,4 +1,5 @@
 import { formatShiftWhen } from '../utils/dateFormat.js';
+import { currentShelterSlug, shelterLinkFor, withShelterQuery } from '../shelterSlug.js';
 import {
   closedShiftLabel,
   filterPublicBoard,
@@ -10,7 +11,7 @@ const listEl = document.getElementById('opportunitiesList');
 async function load() {
   if (!listEl) return;
   try {
-    const res = await fetch('/api/public/opportunities', { credentials: 'omit' });
+    const res = await fetch(withShelterQuery('/api/public/opportunities'), { credentials: 'omit' });
     if (!res.ok) {
       listEl.replaceChildren();
       const p = document.createElement('p');
@@ -52,7 +53,7 @@ async function load() {
       spotsP.textContent = spots;
       if (isAcceptingSignups(opp)) {
         const apply = document.createElement('a');
-        apply.href = '/register.html';
+        apply.href = shelterLinkFor('/register.html', currentShelterSlug());
         apply.setAttribute('role', 'button');
         apply.textContent = 'Sign up to apply';
         const group = document.createElement('a');

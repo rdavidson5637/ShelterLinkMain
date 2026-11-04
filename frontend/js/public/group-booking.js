@@ -1,5 +1,6 @@
 import { showFormErrors, clearFormErrors } from '../utils/formErrors.js';
 import { filterPublicBoard, isAcceptingSignups } from './publicBoard.js';
+import { currentShelterSlug, withShelterQuery } from '../shelterSlug.js';
 
 const form = document.getElementById('groupBookingForm');
 const opportunitySelect = document.getElementById('opportunityId');
@@ -25,7 +26,7 @@ function formatDate(value) {
 async function loadOpportunities() {
   if (!opportunitySelect) return;
   try {
-    const res = await fetch('/api/public/opportunities', { credentials: 'omit' });
+    const res = await fetch(withShelterQuery('/api/public/opportunities'), { credentials: 'omit' });
     if (!res.ok) throw new Error('Failed to load');
     const rows = filterPublicBoard(await res.json()).filter(isAcceptingSignups);
     opportunitySelect.innerHTML = '<option value="">Select an opportunity</option>';
@@ -83,6 +84,8 @@ async function submitForm(event) {
     fax_extension: document.getElementById('faxExtension')?.value || '',
     started_at: Number(document.getElementById('startedAt')?.value),
   };
+  const shelterSlug = currentShelterSlug();
+  if (shelterSlug) payload.shelter_slug = shelterSlug;
 
   try {
     const res = await fetch('/api/group-bookings', {
