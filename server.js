@@ -160,6 +160,7 @@ const threadRoutes = require('./routes/threads');
 const vettingRoutes = require('./routes/vetting');
 const pushRoutes = require('./routes/push');
 const templateRoutes = require('./routes/templates');
+const platformRoutes = require('./routes/platform');
 const {
   myShiftsIcs,
   getMyIcalToken,
@@ -191,6 +192,7 @@ app.use('/api/threads', threadRoutes);
 app.use('/api/vetting', vettingRoutes);
 app.use('/api/push', pushRoutes);
 app.use('/api/opportunity-templates', templateRoutes);
+app.use('/api/platform', platformRoutes);
 app.get('/api/my-shifts.ics', myShiftsIcs);
 app.get('/api/me/ical-feed', isAuthenticated, getMyIcalToken);
 app.get(
