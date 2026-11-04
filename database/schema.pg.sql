@@ -6,6 +6,7 @@
 -- ============================================================================
 
 DROP TABLE IF EXISTS
+  charity_register_cache,
   admin_invites,
   platform_owners,
   shelter_applications,
@@ -1135,6 +1136,24 @@ CREATE TABLE admin_invites (
 );
 
 CREATE INDEX admin_invites_shelter_id_idx ON admin_invites (shelter_id);
+
+-- ----------------------------------------------------------------------------
+-- Charity register cache (same definition as
+-- database/037_charity_register_cache.pg.sql). Global. 037 still runs after
+-- 033 on a fresh setup to revoke it from shelterlink_tenant.
+-- ----------------------------------------------------------------------------
+CREATE TABLE charity_register_cache (
+  regulator       TEXT NOT NULL,
+  charity_number  VARCHAR(32) NOT NULL,
+  name            VARCHAR(255) NOT NULL,
+  status          TEXT NOT NULL,
+  removed_at      DATE,
+  source          VARCHAR(255) NOT NULL,
+  imported_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT charity_register_cache_pkey PRIMARY KEY (regulator, charity_number),
+  CONSTRAINT charity_register_cache_regulator_chk CHECK (regulator IN ('ccew','oscr','ccni','cri')),
+  CONSTRAINT charity_register_cache_status_chk CHECK (status IN ('registered','removed','unknown'))
+);
 
 -- ----------------------------------------------------------------------------
 -- schema_migrations (used by scripts/migrate.js)
