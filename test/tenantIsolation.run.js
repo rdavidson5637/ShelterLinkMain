@@ -156,9 +156,11 @@ async function dropServiceDatabase() {
 async function applySchema(admin) {
   const schema = fs.readFileSync(path.join(ROOT, 'database', 'schema.pg.sql'), 'utf8');
   const tenancy = fs.readFileSync(path.join(ROOT, 'database', '033_add_shelters.pg.sql'), 'utf8');
+  const selfServe = fs.readFileSync(path.join(ROOT, 'database', '036_self_serve_shelters.pg.sql'), 'utf8');
   await admin.query(schema);
   const { applySql } = require('../scripts/applySql');
   await applySql(admin, tenancy);
+  await applySql(admin, selfServe);
 }
 
 async function seed(admin) {
