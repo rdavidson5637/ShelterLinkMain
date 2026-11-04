@@ -79,3 +79,19 @@ test('non-production does not require secrets', () => {
     assert.strictEqual(result.ok, true);
   });
 });
+
+test('charity register warnings name CCEW_API_KEY and OSCR_API_KEY, never values, never fatal', () => {
+  const { collectCharityRegisterWarnings } = require('../utils/validateEnv');
+  const none = collectCharityRegisterWarnings({});
+  assert.strictEqual(none.length, 2);
+  assert.match(none[0], /^CCEW_API_KEY is not set/);
+  assert.match(none[1], /^OSCR_API_KEY is not set/);
+  assert.deepStrictEqual(collectCharityRegisterWarnings({ CCEW_API_KEY: 'secret-value-1', OSCR_API_KEY: 'secret-value-2' }), []);
+  const one = collectCharityRegisterWarnings({ CCEW_API_KEY: '  ', OSCR_API_KEY: 'secret-value-2' });
+  assert.strictEqual(one.length, 1);
+  assert.doesNotMatch(one.join(' '), /secret-value/);
+  withEnv(
+    { NODE_ENV: 'production', CCEW_API_KEY: undefined, OSCR_API_KEY: undefined },
+    () => assert.ok(!collectProductionProblems().some((n) => /CCEW|OSCR/.test(n)))
+  );
+});

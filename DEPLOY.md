@@ -75,6 +75,8 @@ SMTP or the token is rolled back. Expired reset tokens are cleared by an hourly 
 | `WEB_PUSH_VAPID_PUBLIC_KEY` `WEB_PUSH_VAPID_PRIVATE_KEY` `WEB_PUSH_VAPID_SUBJECT` | Generate once with `npx web-push generate-vapid-keys`. Do not rotate after launch |
 | `EMAIL_HOST` `EMAIL_PORT` `EMAIL_USER` `EMAIL_PASS` `EMAIL_FROM` | Brevo SMTP (or equivalent) |
 | `DATA_RETENTION_YEARS` | Leave blank until Assisi sets a period. A number anonymises inactive volunteer accounts. There is no default |
+| `CCEW_API_KEY` | Optional. Charity Commission for England and Wales Register API key. Without it, E&W lookups report `not_configured` and the platform owner checks the register by hand. `npm run check-prod` reports whether it is set |
+| `OSCR_API_KEY` | Reserved. Scottish lookups are not live yet |
 | `DB_CONNECTION_LIMIT` | `10` (Supabase free-tier budget) |
 
 The app writes no user files to disk, so no persistent volume is required.
