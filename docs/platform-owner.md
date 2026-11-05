@@ -1,0 +1,59 @@
+# Platform owner: local and staging setup
+
+The platform owner approves new shelters at `/platform/shelters`. Being a
+platform owner is separate from `users.role`: a shelter admin is not a
+platform owner unless their user id is in `platform_owners`.
+
+Anyone who is not a platform owner gets the normal 404 page at
+`/platform/shelters` and a 404 from every `/api/platform/*` route. The page
+file cannot be opened directly at `/pages/platform-shelters.html`.
+
+Do not run any of this against production. `scripts/platform-owner.js`
+refuses when `NODE_ENV=production`, refuses a non-localhost `DATABASE_URL`
+unless you pass `--staging`, and refuses Supabase unless
+`CONFIRM_LIVE_SHELTER=yes` is also set.
+
+## 1. Make yourself a platform owner
+
+The user must already exist. Locally, `npm run db:reset` seeds an admin you
+can use, or sign up through `/register` first.
+
+```sh
+# local
+node scripts/platform-owner.js add --email you@example.com
+
+# staging (DATABASE_URL set to the staging database)
+node scripts/platform-owner.js add --email you@example.com --staging
+
+node scripts/platform-owner.js list
+node scripts/platform-owner.js remove --email you@example.com
+```
+
+Same thing in SQL, if you prefer:
+
+```sql
+INSERT INTO platform_owners (user_id)
+SELECT user_id FROM users WHERE lower(email) = lower('you@example.com')
+ON CONFLICT (user_id) DO NOTHING;
+```
+
+Sign in as that user and open `/platform/shelters`.
+
+## 2. Getting an invite link on staging (until PR6)
+
+Approving an application creates the shelter and an admin invite, but the
+raw invite token is never returned to the browser and only its SHA-256 hash
+is stored. So the token from the approval cannot be read back, from the API
+or from the database.
+
+Until PR6 sends invite emails, issue a fresh one from the command line:
+
+```sh
+node scripts/platform-owner.js staging-invite --slug north-paws --staging
+```
+
+This finds the approved application for that slug, expires any older unused
+invites for the applicant's email, creates a new 7-day admin invite, writes an
+`invite.created` row to `platform_audit`, and prints the raw token once.
+There is no accept page until PR6, so keep the token to test that page with.
+Do not paste tokens into tickets or chat.
