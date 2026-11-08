@@ -122,12 +122,10 @@ instance catches up within 30 seconds.
 An unknown slug on a public API still falls back to Assisi, as before. Only
 the page routes (`/s/<slug>`, `/join/<slug>`) 404 for an unknown slug.
 
-There is no reactivate action yet. To undo a suspension on a local or staging
-database:
-
-```sql
-UPDATE shelters SET status = 'active' WHERE slug = 'north-paws';
-```
-
-Restart the app, or wait 30 seconds, for the change to be picked up.
-
+**Reactivate** on a suspended shelter (`POST
+/api/platform/shelters/:id/reactivate`) sets it back to `active`, writes a
+`shelter.reactivated` row with the optional reason, and clears this
+instance's cache. Its people can sign in again, its pages and feeds come
+back, and jobs pick it up on their next run. Sessions ended by the
+suspension stay ended, so people sign in again. Needs migration
+`039_platform_audit_reactivate.pg.sql` (`npm run migrate`).

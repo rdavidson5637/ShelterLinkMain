@@ -298,6 +298,35 @@ function suspendForm(shelter) {
   return el('details', {}, [el('summary', { textContent: 'Suspend...' }), form]);
 }
 
+function reactivateButton(shelter) {
+  const button = el('button', { type: 'button', className: 'secondary', textContent: 'Reactivate' });
+  button.addEventListener('click', () => {
+    showConfirm({
+      heading: `Reactivate ${shelter.name}?`,
+      body: `Its people can sign in again, /s/${shelter.slug} comes back online, and reminder emails restart.`,
+      confirmText: 'Reactivate',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        button.disabled = true;
+        try {
+          const res = await apiRequest(`/platform/shelters/${shelter.id}/reactivate`, { method: 'POST', body: {} });
+          if (!res.ok) {
+            setMessage(await errorText(res, 'Could not reactivate this shelter'), 'error');
+            button.disabled = false;
+            return;
+          }
+          setMessage(`Reactivated ${shelter.name}.`, 'success');
+          await loadShelters();
+        } catch (error) {
+          setMessage(error.message || 'Could not reactivate this shelter', 'error');
+          button.disabled = false;
+        }
+      },
+    });
+  });
+  return button;
+}
+
 async function loadShelters() {
   try {
     const res = await apiRequest('/platform/shelters', { method: 'GET' });
@@ -320,7 +349,7 @@ async function loadShelters() {
       }),
       el('td', {}, createStatusBadge(s.status)),
       el('td', { textContent: formatDateOnly(s.created_at) }),
-      el('td', {}, s.status === 'active' ? suspendForm(s) : null),
+      el('td', {}, s.status === 'active' ? suspendForm(s) : reactivateButton(s)),
     ])));
   } catch (error) {
     rowMessage(sheltersBody, 6, error.message || 'Could not load shelters');
