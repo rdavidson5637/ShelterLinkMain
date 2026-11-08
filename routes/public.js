@@ -1,5 +1,6 @@
 const express = require('express');
-const { apiLimiter } = require('../middleware/rateLimiter');
+const { apiLimiter, shelterApplyLimiter } = require('../middleware/rateLimiter');
+const { submitShelterApplication } = require('../controllers/shelterApplicationController');
 const {
   listPublicOpportunities,
   publicOpportunitiesIcs,
@@ -27,6 +28,12 @@ router.get('/brand/logo', apiLimiter, getBrandLogo);
 router.get('/demo-info', apiLimiter, getDemoInfo);
 router.get('/opportunities', apiLimiter, listPublicOpportunities);
 router.get('/opportunities.ics', apiLimiter, publicOpportunitiesIcs);
+router.post(
+  '/shelter-applications',
+  shelterApplyLimiter,
+  validateBody(bodies.shelterApplication),
+  submitShelterApplication
+);
 router.get('/references/:token/logo', apiLimiter, getPublicReferenceLogo);
 router.get('/references/:token', apiLimiter, getPublicReference);
 router.post('/references/:token', apiLimiter, validateBody(bodies.publicReference), submitPublicReference);
