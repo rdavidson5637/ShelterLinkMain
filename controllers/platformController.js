@@ -282,12 +282,50 @@ async function suspendShelter(req, res, next) {
   }
 }
 
+/**
+ * Set a suspended shelter back to active. Its people can sign in again,
+ * its public pages and feeds come back, and jobs pick it up on their next
+ * run. Audited as shelter.reactivated with the optional reason.
+ */
+async function reactivateShelter(req, res, next) {
+  const shelterId = Number(req.params.id);
+  const ownerId = req.platformOwnerId;
+  try {
+    const reason = readReason(req.body, { required: false });
+    const shelter = await inPlatformTransaction(async (conn) => {
+      const [rows] = await conn.execute(
+        'SELECT id, slug, status FROM shelters WHERE id = ? FOR UPDATE',
+        [shelterId]
+      );
+      const row = rows[0];
+      if (!row) throw fail(404, 'Shelter not found');
+      if (row.status === 'active') throw fail(409, 'Shelter is already active');
+      await conn.execute(
+        `UPDATE shelters SET status = 'active' WHERE id = ? AND status = 'suspended'`,
+        [shelterId]
+      );
+      await recordPlatformAudit(conn, {
+        actorUserId: ownerId,
+        action: 'shelter.reactivated',
+        targetShelterId: shelterId,
+        detail: { slug: row.slug, reason },
+      });
+      return row;
+    });
+    forgetShelter({ id: shelterId, slug: shelter.slug });
+    return res.json({ shelter: { id: shelterId, slug: shelter.slug, status: 'active' } });
+  } catch (error) {
+    return sendError(res, next, error);
+  }
+}
+
 module.exports = {
   listApplications,
   approveApplication,
   rejectApplication,
   listShelters,
   suspendShelter,
+  reactivateShelter,
   recordPlatformAudit,
   inPlatformTransaction,
 };

@@ -15,6 +15,7 @@ const {
   rejectApplication,
   listShelters,
   suspendShelter,
+  reactivateShelter,
 } = require('../controllers/platformController');
 
 const router = express.Router();
@@ -27,6 +28,7 @@ router.post('/applications/:id/approve', approveApplication);
 router.post('/applications/:id/reject', rejectApplication);
 router.get('/shelters', listShelters);
 router.post('/shelters/:id/suspend', suspendShelter);
+router.post('/shelters/:id/reactivate', reactivateShelter);
 
 // Unknown paths under /api/platform 404 here, after the owner check.
 router.use((req, res, next) => next({ type: 'not_found', message: 'API endpoint not found' }));
