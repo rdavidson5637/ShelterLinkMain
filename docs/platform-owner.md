@@ -57,3 +57,38 @@ invites for the applicant's email, creates a new 7-day admin invite, writes an
 `invite.created` row to `platform_audit`, and prints the raw token once.
 There is no accept page until PR6, so keep the token to test that page with.
 Do not paste tokens into tickets or chat.
+
+## 3. Suspending a shelter
+
+**Suspend** on `/platform/shelters` (`POST /api/platform/shelters/:id/suspend`)
+sets `shelters.status` to `suspended` and writes a `shelter.suspended` row to
+`platform_audit`, with the optional reason. Nothing is deleted. You cannot
+suspend the shelter your own account belongs to.
+
+From then on:
+
+| What | Behaviour |
+|---|---|
+| Signed-in staff and volunteers | Signed out on their next request: 403 `shelter_suspended`, session destroyed, cookie cleared |
+| Sign-in | The right password gets 403 `shelter_suspended` and no session. A wrong password still gets the usual 401, so it never reveals the status |
+| `/s/<slug>`, `/s/<slug>/opportunities`, `/s/<slug>/group-booking`, `/join/<slug>` | Normal 404 page |
+| `?shelter=<slug>` on public APIs (board, ICS feed, brand, group booking, sign-up) | 404. A suspended slug never falls back to Assisi, so an ICS subscriber or embedded board does not start showing another shelter's shifts |
+| Invite links (PR6) | Not valid, and accepting is refused |
+| Scheduled jobs | Reminders, digests, expiry notices and feedback requests skip the shelter. Data retention and expired-token cleanup keep running |
+
+Slug and status lookups are cached for 30 seconds per server instance. The
+instance that handles the suspend clears its cache at once; any other
+instance catches up within 30 seconds.
+
+An unknown slug on a public API still falls back to Assisi, as before. Only
+the page routes (`/s/<slug>`, `/join/<slug>`) 404 for an unknown slug.
+
+There is no reactivate action yet. To undo a suspension on a local or staging
+database:
+
+```sql
+UPDATE shelters SET status = 'active' WHERE slug = 'north-paws';
+```
+
+Restart the app, or wait 30 seconds, for the change to be picked up.
+

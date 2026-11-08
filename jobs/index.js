@@ -14,6 +14,11 @@ const { runResetTokenCleanup } = require('./resetTokenCleanup');
 const { runWeeklyDigest } = require('./weeklyDigest');
 const { forEachShelter } = require('../middleware/shelter');
 
+// Suspended shelters get no reminders, digests or other email and push.
+// Retention and expired-token cleanup still run for them: suspension stops
+// activity, it does not pause data protection.
+const HOUSEKEEPING = { includeSuspended: true };
+
 /**
  * Register all scheduled jobs. Importing this module must be safe under test
  * (no timers started — server.js calls scheduler.start()).
@@ -38,9 +43,9 @@ function registerAllJobs() {
   // Monday 07:00: weekly volunteer digest (shifts, open matches, fosters, unread).
   scheduler.registerJob('weeklyDigest', '0 7 * * 1', () => forEachShelter(() => runWeeklyDigest()));
   // Hourly: drop password-reset tokens whose one-hour expiry has passed.
-  scheduler.registerJob('resetTokenCleanup', '40 * * * *', () => forEachShelter(() => runResetTokenCleanup()));
+  scheduler.registerJob('resetTokenCleanup', '40 * * * *', () => forEachShelter(() => runResetTokenCleanup(), HOUSEKEEPING));
   // Daily: anonymise inactive volunteers only when a retention period is set. Blank means skip.
-  scheduler.registerJob('dataRetention', '30 3 * * *', () => forEachShelter(() => runDataRetentionJob()));
+  scheduler.registerJob('dataRetention', '30 3 * * *', () => forEachShelter(() => runDataRetentionJob(), HOUSEKEEPING));
   // Daily: keep a paused-after-inactivity Supabase project awake (app host must be always-on).
   scheduler.registerJob('dbKeepAlive', '0 6 * * *', () => runDbKeepAlive());
 }
