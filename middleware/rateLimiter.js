@@ -20,6 +20,7 @@ const LIMITS = {
   forgotAccount: positiveInt('RATE_LIMIT_FORGOT_ACCOUNT', 5),
   resetPassword: positiveInt('RATE_LIMIT_RESET', 8),
   invite: positiveInt('RATE_LIMIT_INVITE', 8),
+  shelterApply: positiveInt('RATE_LIMIT_SHELTER_APPLY', 5),
   message: positiveInt('RATE_LIMIT_MESSAGE', 10),
   groupBooking: positiveInt('RATE_LIMIT_GROUP_BOOKING', 8),
   groupBookingEmail: positiveInt('RATE_LIMIT_GROUP_BOOKING_EMAIL', 3),
@@ -108,6 +109,16 @@ const inviteLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Public shelter applications. Real charities apply once; this keeps the
+// platform owner's queue free of floods.
+const shelterApplyLimiter = rateLimit({
+  windowMs: WINDOW_MS,
+  max: LIMITS.shelterApply,
+  message: 'Too many applications from this connection. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 const messageLimiter = rateLimit({
   windowMs: WINDOW_MS,
   max: LIMITS.message,
@@ -163,6 +174,7 @@ module.exports = {
   forgotAccountLimiter,
   resetPasswordLimiter,
   inviteLimiter,
+  shelterApplyLimiter,
   groupBookingLimiter,
   groupBookingEmailLimiter,
   messageLimiter,

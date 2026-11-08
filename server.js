@@ -280,6 +280,12 @@ app.get('/invite/:token', inviteLimiter, (req, res) => {
   res.sendFile(INVITE_PAGE);
 });
 
+
+// Public form for a charity to ask to join. Applications wait for a
+// platform owner at /platform/shelters; nothing goes live from here.
+const APPLY_PAGE = path.join(__dirname, 'frontend', 'apply.html');
+app.get('/apply', (req, res) => res.sendFile(APPLY_PAGE));
+
 app.get('/launch', require('./controllers/launchController').launch);
 
 // Platform owner queue. Anyone not in platform_owners gets the 404 page.

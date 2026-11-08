@@ -39,6 +39,28 @@ ON CONFLICT (user_id) DO NOTHING;
 
 Sign in as that user and open `/platform/shelters`.
 
+## Where applications come from
+
+Charities apply at `/apply` (`POST /api/public/shelter-applications`). The
+form asks for the shelter name, a web address (slug), the regulator, the
+charity number, and a contact name and email.
+
+- Only `ccni` and `ccew` are accepted for now. Scottish and Irish charities
+  are told they cannot apply yet.
+- The charity number is checked against the register's format and
+  normalised (`nic 100123` becomes `NIC100123`). The register lookup
+  result is saved in `register_snapshot` for you to read. It never
+  approves anything, and an unavailable register does not block the
+  application.
+- A slug used by a shelter or a pending application, a reserved slug
+  (`admin`, `platform`, `invite`, `join` and so on), a charity that already
+  has a shelter, and a charity with a pending application are all refused.
+- A hidden honeypot field catches simple bots: they get the normal
+  "thanks" answer and nothing is stored. `RATE_LIMIT_SHELTER_APPLY`
+  (default 5 per window) limits each connection.
+- No email is sent when an application arrives. Check the queue at
+  `/platform/shelters`.
+
 ## 2. Invite emails and the accept page
 
 Approving an application creates the shelter and a 7-day, single-use admin
