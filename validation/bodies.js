@@ -86,6 +86,14 @@ const acceptInvite = z
   })
   .strict();
 
+// An admin inviting someone to their own shelter. Never a shelter id.
+const staffInvite = z
+  .object({
+    email: optStr(254),
+    role: optStr(20),
+  })
+  .strict();
+
 // A charity asking to join. Never a shelter id; the row is global.
 const shelterApplication = z
   .object({
@@ -611,6 +619,7 @@ const bodies = {
   reset,
   acceptInvite,
   shelterApplication,
+  staffInvite,
   groupBooking,
   opportunity,
   shiftNote,

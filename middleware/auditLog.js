@@ -33,6 +33,9 @@ function inferFromRequest(req) {
   else if (segments.includes('erase')) action = 'gdpr.erase';
   else if (segments.includes('gdpr') && method === 'GET') action = 'gdpr.export';
   else if (segments.includes('retention')) action = 'gdpr.retention';
+  else if (resource === 'admin' && segments[1] === 'invites') {
+    action = segments.includes('revoke') ? 'invite.revoke' : 'invite.create';
+  }
   else if (segments.includes('qualifications') && resource === 'admin') {
     action = method === 'POST' ? 'volunteer.qualification.award' : 'volunteer.qualification.revoke';
   }
@@ -40,6 +43,8 @@ function inferFromRequest(req) {
   const entityType =
     resource === 'admin' && segments[1] === 'volunteers'
       ? 'volunteer'
+      : resource === 'admin' && segments[1] === 'invites'
+        ? 'invite'
       : resource === 'hours'
         ? 'hours'
         : resource.replace(/s$/, '') || resource;

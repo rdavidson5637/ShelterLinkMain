@@ -28,6 +28,7 @@ export const ADMIN_INSIGHT = [
   { id: 'reports', label: 'Reports', href: '/pages/admin/reports.html', adminOnly: true },
   { id: 'feedback', label: 'Feedback', href: '/pages/admin/feedback.html' },
   { id: 'staff-guide', label: 'Staff guide', href: '/pages/admin/staff-guide.html' },
+  { id: 'team', label: 'Team invites', href: '/pages/admin/team.html', adminOnly: true },
   { id: 'audit', label: 'Audit log', href: '/pages/admin/audit-log.html', adminOnly: true },
   { id: 'privacy', label: 'Privacy and GDPR', href: '/pages/admin/privacy.html', adminOnly: true },
 ];
