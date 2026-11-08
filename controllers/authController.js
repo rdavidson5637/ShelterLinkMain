@@ -20,7 +20,13 @@ const {
   isBypass,
   currentShelterId,
 } = require('../utils/shelterContext');
-const { assisiShelterId, shelterIdFromSlug } = require('../middleware/shelter');
+const {
+  assisiShelterId,
+  shelterIdFromSlug,
+  shelterStatus,
+  isActiveStatus,
+  SUSPENDED_MESSAGE,
+} = require('../middleware/shelter');
 const { PRIVACY_NOTICE_VERSION } = require('../config/privacyNotice');
 
 function privacyNoticeAccepted(value) {
@@ -145,6 +151,12 @@ async function login(req, res) {
     if (!match) {
       console.warn('[Auth] failed login', req.ip || '');
       return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    // Checked only after the password matches, so a wrong password never
+    // learns whether a shelter is suspended. No session is created.
+    if (user.shelter_id != null && !isActiveStatus(await shelterStatus(user.shelter_id))) {
+      return res.status(403).json({ error: SUSPENDED_MESSAGE, code: 'shelter_suspended' });
     }
 
     await regenerateSession(req, {
