@@ -79,6 +79,12 @@ function isNeverCacheApi(pathname) {
   return NEVER_CACHE_API.some((prefix) => pathname.startsWith(prefix));
 }
 
+const NEVER_CACHE_PAGES = ['/invite/'];
+
+function isNeverCachePage(pathname) {
+  return NEVER_CACHE_PAGES.some((prefix) => pathname.startsWith(prefix));
+}
+
 function isNetworkFirstApi(pathname) {
   return NETWORK_FIRST_API.some((path) => pathname === path);
 }
@@ -173,6 +179,9 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;
 
   if (request.mode === 'navigate') {
+    // Invite links carry a one-time token in the path. Never put them in
+    // the pages cache; let the browser load them straight from the network.
+    if (isNeverCachePage(url.pathname)) return;
     event.respondWith(networkFirstPage(request));
     return;
   }

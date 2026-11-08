@@ -19,6 +19,7 @@ const LIMITS = {
   forgotPassword: positiveInt('RATE_LIMIT_FORGOT', 5),
   forgotAccount: positiveInt('RATE_LIMIT_FORGOT_ACCOUNT', 5),
   resetPassword: positiveInt('RATE_LIMIT_RESET', 8),
+  invite: positiveInt('RATE_LIMIT_INVITE', 8),
   message: positiveInt('RATE_LIMIT_MESSAGE', 10),
   groupBooking: positiveInt('RATE_LIMIT_GROUP_BOOKING', 8),
   groupBookingEmail: positiveInt('RATE_LIMIT_GROUP_BOOKING_EMAIL', 3),
@@ -97,6 +98,16 @@ const resetPasswordLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Invite link checks and accepts. Tokens are 256-bit, so this is about load
+// and noise, not guessing.
+const inviteLimiter = rateLimit({
+  windowMs: WINDOW_MS,
+  max: LIMITS.invite,
+  message: 'Too many invite attempts. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 const messageLimiter = rateLimit({
   windowMs: WINDOW_MS,
   max: LIMITS.message,
@@ -151,6 +162,7 @@ module.exports = {
   forgotPasswordLimiter,
   forgotAccountLimiter,
   resetPasswordLimiter,
+  inviteLimiter,
   groupBookingLimiter,
   groupBookingEmailLimiter,
   messageLimiter,

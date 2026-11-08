@@ -8,9 +8,11 @@ const {
   forgotPasswordLimiter,
   forgotAccountLimiter,
   resetPasswordLimiter,
+  inviteLimiter,
 } = require('../middleware/rateLimiter');
 const { validateBody, boundedParam } = require('../middleware/validate');
 const { bodies } = require('../validation/bodies');
+const inviteController = require('../controllers/inviteController');
 
 const router = express.Router();
 router.param('token', boundedParam('token', 128));
@@ -39,5 +41,10 @@ router.post(
 router.post('/forgot-password', forgotAccountLimiter, forgotPasswordLimiter, validateBody(bodies.forgot), authController.forgotPassword);
 router.get('/reset-password/:token', resetPasswordLimiter, authController.validateResetToken);
 router.post('/reset-password', resetPasswordLimiter, validateBody(bodies.reset), authController.resetPassword);
+
+// One-time shelter invites (admin or staff). Signed out; the shelter, email
+// and role all come from the invite row.
+router.get('/invite/:token', inviteLimiter, inviteController.checkInvite);
+router.post('/accept-invite', inviteLimiter, validateBody(bodies.acceptInvite), inviteController.acceptInvite);
 
 module.exports = router;

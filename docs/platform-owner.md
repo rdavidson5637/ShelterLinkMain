@@ -39,14 +39,53 @@ ON CONFLICT (user_id) DO NOTHING;
 
 Sign in as that user and open `/platform/shelters`.
 
-## 2. Getting an invite link on staging (until PR6)
+## 2. Invite emails and the accept page
 
-Approving an application creates the shelter and an admin invite, but the
-raw invite token is never returned to the browser and only its SHA-256 hash
-is stored. So the token from the approval cannot be read back, from the API
-or from the database.
+Approving an application creates the shelter and a 7-day, single-use admin
+invite for the applicant's email. Once the transaction commits, the invite is
+emailed with a link to `<APP_URL>/invite/<token>`. The raw token is never
+returned to the browser, never logged, and only its SHA-256 hash is stored.
 
-Until PR6 sends invite emails, issue a fresh one from the command line:
+A failed email does not undo the approval. The approve response carries
+`inviteEmail: { sent, reason }` and the page says what happened:
+
+| reason | meaning |
+|---|---|
+| `email_not_configured` | `EMAIL_HOST` and `EMAIL_FROM`/`EMAIL_USER` are not set |
+| `app_url_missing` | production without an https `APP_URL`, so no safe link |
+| `send_failed` | the SMTP server refused the message |
+
+**Resend invite** on an approved application (`POST
+/api/platform/applications/:id/resend-invite`) expires the unused invite,
+issues a new one, writes an `invite.created` row with `source: resend`, and
+emails it. It refuses before changing anything when email cannot be sent, and
+refuses once the invite has been accepted.
+
+### Accepting
+
+`/invite/<token>` checks the link (`GET /api/auth/invite/:token`) and shows the
+shelter name and the invited email, read only. The applicant enters their
+name, an optional phone number, a password, and confirms the privacy notice.
+`POST /api/auth/accept-invite` then, in one transaction:
+
+1. marks the invite used (one `UPDATE`, so the link works once even if two
+   requests race)
+2. refuses a suspended shelter
+3. refuses an email that already has an account (the invite stays unused)
+4. creates the user on the invite's shelter with the invite's role, and
+   records privacy-notice consent
+5. writes `invite.accepted` to that shelter's `audit_log`
+
+The shelter, email, and role all come from the invite row. The request never
+names them. The page then sends the new admin to sign in.
+
+The page is served with `Referrer-Policy: no-referrer` and `Cache-Control:
+no-store`, and the service worker does not cache `/invite/` pages, so the
+token does not leak into Referer headers or caches.
+
+### Staging without email
+
+Where email is not set up, issue a fresh link from the command line:
 
 ```sh
 node scripts/platform-owner.js staging-invite --slug north-paws --staging
@@ -54,6 +93,6 @@ node scripts/platform-owner.js staging-invite --slug north-paws --staging
 
 This finds the approved application for that slug, expires any older unused
 invites for the applicant's email, creates a new 7-day admin invite, writes an
-`invite.created` row to `platform_audit`, and prints the raw token once.
-There is no accept page until PR6, so keep the token to test that page with.
-Do not paste tokens into tickets or chat.
+`invite.created` row to `platform_audit`, and prints the raw token once. Open
+`<APP_URL>/invite/<token>` to accept it. Do not paste tokens into tickets or
+chat.

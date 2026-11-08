@@ -571,6 +571,36 @@ async function sendShiftNoteUpdate(volunteerEmail, details = {}) {
   );
 }
 
+/**
+ * One-time invite to set up an account on a shelter. Sent by the platform
+ * owner flow, which runs outside any shelter context, so the shelter name is
+ * passed in rather than read from brandBits. The link carries the raw token;
+ * it is never logged or stored, only its hash is.
+ */
+async function sendShelterInvite(to, { shelterName, link, role = 'admin', expiresInDays = 7 } = {}) {
+  if (!link) throw new Error('Invite link is required');
+  const safeShelter = escapeHtml(shelterName || 'your shelter');
+  const safeLink = escapeHtml(link).replace(/"/g, '&quot;');
+  const what = role === 'staff' ? 'a staff account' : 'the admin account';
+  return sendEmail(
+    to,
+    `Set up ${headerValue(shelterName || 'your shelter')} on ShelterLink`,
+    `
+    <p>Hello,</p>
+    <p>You have been invited to set up ${what} for <strong>${safeShelter}</strong> on ShelterLink.</p>
+    <p>
+      <a href="${safeLink}" style="display:inline-block;padding:0.6rem 1.4rem;background:#0f766e;color:#ffffff;border-radius:6px;text-decoration:none;font-weight:600;">
+        Set up my account
+      </a>
+    </p>
+    <p>Or copy this link into your browser:<br/><small>${safeLink}</small></p>
+    <p>This link works once and expires in <strong>${Number(expiresInDays) || 7} days</strong>.
+    If you were not expecting it, you can ignore this email and nothing will be set up.</p>
+    <p>Thanks,<br/>The ShelterLink Team</p>
+    `
+  );
+}
+
 module.exports = {
   currentShelterName,
   brandBits,
@@ -600,4 +630,5 @@ module.exports = {
   sendWeeklyDigest,
   sendThreadDigest,
   sendShiftNoteUpdate,
+  sendShelterInvite,
 };

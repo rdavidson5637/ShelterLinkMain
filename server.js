@@ -271,6 +271,21 @@ for (const [suffix, file] of Object.entries(SHELTER_PAGES)) {
   app.get(`/s/:slug${suffix}`, (req, res) => res.sendFile(file));
 }
 
+// One-time invite link from the platform owner's approval email. The page
+// reads the token from its own path. no-referrer keeps the token out of the
+// Referer header on any request the page makes; no-store keeps it out of
+// the HTTP cache. The service worker skips /invite/ too.
+const INVITE_PAGE = path.join(__dirname, 'frontend', 'invite.html');
+const { inviteLimiter } = require('./middleware/rateLimiter');
+app.get('/invite/:token', inviteLimiter, (req, res) => {
+  res.set({
+    'Referrer-Policy': 'no-referrer',
+    'Cache-Control': 'no-store',
+    'X-Robots-Tag': 'noindex',
+  });
+  res.sendFile(INVITE_PAGE);
+});
+
 app.get('/launch', require('./controllers/launchController').launch);
 
 // Platform owner queue. Anyone not in platform_owners gets the 404 page.
