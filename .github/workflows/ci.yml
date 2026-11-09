@@ -35,6 +35,12 @@ jobs:
       # Vendor Pico/FullCalendar (postinstall) and render A2 icons so tests
       # that stat files under frontend/public pass without committed blobs.
       - run: npm run icons
+      # Migration 039 must apply cleanly on top of a database at 038 (what
+      # an existing install looks like). Throwaway database on the service
+      # container; the script refuses any non-local host.
+      - run: node scripts/check-migration-039.js
+        env:
+          MIGRATION_CHECK_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
       # Unit tests use an in-process mock DB. The tenant isolation test uses the
       # Postgres service above and refuses any host that is not localhost.
       - run: npm test

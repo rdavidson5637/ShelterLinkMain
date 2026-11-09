@@ -16,7 +16,7 @@
  * just the SHA-256 of the invite token, so the original link cannot be read
  * back. This issues a fresh admin invite for the shelter's applicant, expires
  * any older unused ones, writes an invite.created audit row, and prints the
- * raw token once. Open /invite/<token> to accept it. Where email works, use
+ * raw token once. Open /invite#<token> to accept it. Where email works, use
  * Resend invite on /platform/shelters instead.
  *
  * Refuses to run when NODE_ENV=production. Refuses any DATABASE_URL that is
@@ -160,7 +160,7 @@ async function stagingInvite(pool, slug) {
   console.log('Older unused invites for this email were expired.');
   console.log('Raw token (shown once, only its hash is stored):');
   console.log(result.token);
-  console.log('Accept it at <APP_URL>/invite/<token>. Do not paste the token into tickets or chat.');
+  console.log('Accept it at <APP_URL>/invite#<token>. Do not paste the token into tickets or chat.');
 }
 
 async function main() {

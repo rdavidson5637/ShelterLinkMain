@@ -74,6 +74,13 @@ const reset = z
   })
   .strict();
 
+// Check an invite link. Only the token; it comes from the page's #fragment.
+const inviteCheck = z
+  .object({
+    token: optStr(200),
+  })
+  .strict();
+
 // Accept an invite. No email, role, or shelter: those come from the invite.
 const acceptInvite = z
   .object({
@@ -83,6 +90,16 @@ const acceptInvite = z
     phone: optStr(40),
     password: optStr(200),
     privacy_notice: z.union([z.boolean(), z.literal('on'), z.literal('true')]).optional(),
+  })
+  .strict();
+
+// An admin inviting someone to their own shelter. Never a shelter id.
+const staffInvite = z
+  .object({
+    email: optStr(254),
+    role: optStr(20),
+    // Required (true) when role is admin: the page asks before sending.
+    confirm_admin: z.boolean().optional(),
   })
   .strict();
 
@@ -97,6 +114,8 @@ const shelterApplication = z
     contact_email: optStr(254),
     // Honeypot, hidden from people.
     website: optStr(200),
+    // When the page loaded (ms since epoch), for the minimum fill time.
+    started_at: z.union([z.number(), z.string().regex(/^\d{10,16}$/)]).optional(),
   })
   .strict();
 
@@ -609,8 +628,10 @@ const bodies = {
   login,
   forgot,
   reset,
+  inviteCheck,
   acceptInvite,
   shelterApplication,
+  staffInvite,
   groupBooking,
   opportunity,
   shiftNote,

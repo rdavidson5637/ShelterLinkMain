@@ -787,8 +787,11 @@ async function main() {
     const slugLogo = await request(port, 'GET', '/api/public/brand/logo?shelter=second');
     slugCheck('logo', slugLogo, slugLogo.status === 404);
     const unknownBrand = await request(port, 'GET', '/api/public/brand?shelter=nowhere');
-    slugCheck('unknown brand falls back to Assisi', unknownBrand, unknownBrand.status === 200
-      && unknownBrand.text.includes('Assisi Animal Sanctuary'));
+    slugCheck('unknown brand is 404, never Assisi', unknownBrand, unknownBrand.status === 404
+      && !unknownBrand.text.includes('Assisi Animal Sanctuary'));
+    const unknownIcs = await request(port, 'GET', '/api/public/opportunities.ics?shelter=nowhere');
+    slugCheck('unknown slug ICS is 404, never Assisi shifts', unknownIcs, unknownIcs.status === 404
+      && !unknownIcs.text.includes('MarkerA'));
 
     // The logged-in shelter B request above already filled the 60s cache
     // entry for shelter 2 (before shift 900 existed), so this is a cache hit
@@ -875,6 +878,86 @@ async function main() {
       const page = await request(port, 'GET', urlPath);
       slugChecks.push(urlPath);
       if (page.status !== status) failures.push(`page ${urlPath} -> ${page.status}, expected ${status}`);
+    }
+
+    // Invite accept on real Postgres (PR6): the page check, a race of
+    // parallel accepts on one token (exactly one wins), reuse refused, the
+    // new account signs in on the invite's shelter, and two invites for the
+    // same email racing on different shelters create only one account.
+    {
+      const { createInvite } = require('../services/shelterProvision');
+      const { pool } = require('../config/database');
+      const { runWithoutShelter } = require('../utils/shelterContext');
+      const issue = (shelterId, email, role) => runWithoutShelter(
+        () => createInvite(pool, { shelterId, email, role })
+      );
+      const acceptBody = (token) => ({
+        token,
+        first_name: 'Ivy',
+        last_name: 'Invite',
+        password: 'InvitedStaff1!',
+        privacy_notice: true,
+      });
+
+      const invite = await issue(created.shelterId, 'ivy.staff@example.test', 'staff');
+      const check = await request(port, 'POST', '/api/auth/invite/check', { json: { token: invite.token } });
+      if (check.status !== 200 || !check.text.includes('"valid":true') || !check.text.includes('North Shelter')) {
+        failures.push(`invite check -> ${check.status} ${check.text.slice(0, 180)}`);
+      }
+
+      const racers = await Promise.all(Array.from({ length: 5 }, () => request(
+        port, 'POST', '/api/auth/accept-invite', { json: acceptBody(invite.token) }
+      )));
+      const wins = racers.filter((r) => r.status === 201);
+      const losses = racers.filter((r) => r.status === 400 && /invite link is not valid/.test(r.text));
+      if (wins.length !== 1 || losses.length !== 4) {
+        failures.push(`invite race -> ${racers.map((r) => r.status).join(',')}`);
+      }
+      const ivy = await admin.query(
+        `SELECT shelter_id, role, privacy_notice_version IS NOT NULL AS consent
+         FROM users WHERE lower(email) = 'ivy.staff@example.test'`
+      );
+      if (ivy.rows.length !== 1 || Number(ivy.rows[0].shelter_id) !== created.shelterId
+        || ivy.rows[0].role !== 'staff' || !ivy.rows[0].consent) {
+        failures.push(`invite race users ${JSON.stringify(ivy.rows)}`);
+      }
+      const accepted = await admin.query(
+        `SELECT count(*)::int AS n FROM audit_log
+         WHERE action = 'invite.accepted' AND shelter_id = $1`,
+        [created.shelterId]
+      );
+      if (accepted.rows[0].n !== 1) failures.push(`invite.accepted audit rows ${accepted.rows[0].n}`);
+      const usedRow = await admin.query('SELECT used_at FROM admin_invites WHERE id = $1', [invite.inviteId]);
+      if (!usedRow.rows[0] || !usedRow.rows[0].used_at) failures.push('invite not marked used');
+
+      const recheck = await request(port, 'POST', '/api/auth/invite/check', { json: { token: invite.token } });
+      if (recheck.status !== 200 || !recheck.text.includes('"valid":false')) {
+        failures.push(`used invite check -> ${recheck.status} ${recheck.text.slice(0, 180)}`);
+      }
+      const ivyLogin = await request(port, 'POST', '/api/auth/login', {
+        json: { email: 'ivy.staff@example.test', password: 'InvitedStaff1!' },
+      });
+      if (ivyLogin.status !== 200) failures.push(`invited login -> ${ivyLogin.status} ${ivyLogin.text.slice(0, 180)}`);
+
+      // Same email invited to two shelters, accepted at the same moment: the
+      // users email index lets one through and the other gets a 409, with
+      // its invite left unused.
+      const toNorth = await issue(created.shelterId, 'dual@example.test', 'admin');
+      const toB = await issue(2, 'dual@example.test', 'staff');
+      const dual = await Promise.all([toNorth, toB].map((inv) => request(
+        port, 'POST', '/api/auth/accept-invite', { json: acceptBody(inv.token) }
+      )));
+      const dualStatuses = dual.map((r) => r.status).sort();
+      if (JSON.stringify(dualStatuses) !== JSON.stringify([201, 409])) {
+        failures.push(`dual-email race -> ${dual.map((r) => `${r.status} ${r.text.slice(0, 80)}`).join(' | ')}`);
+      }
+      const dualUsers = await admin.query(`SELECT count(*)::int AS n FROM users WHERE lower(email) = 'dual@example.test'`);
+      if (dualUsers.rows[0].n !== 1) failures.push(`dual-email users ${dualUsers.rows[0].n}`);
+      const dualUsed = await admin.query(
+        `SELECT count(*)::int AS n FROM admin_invites WHERE lower(email) = 'dual@example.test' AND used_at IS NOT NULL`
+      );
+      if (dualUsed.rows[0].n !== 1) failures.push(`dual-email used invites ${dualUsed.rows[0].n} (the loser must be rolled back)`);
+      slugChecks.push('invite accept', 'invite race', 'invite dual-email race');
     }
 
     const afterCounts = await countsForShelter(admin);
