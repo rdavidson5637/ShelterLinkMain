@@ -382,6 +382,23 @@ test('suspend sets status to suspended, deletes nothing, and audits it', async (
   assert.ok(sqlCalls().includes('COMMIT'));
 });
 
+test('suspend clears this instance\'s shelter cache so the slug stops resolving at once', async () => {
+  const { shelterIdFromSlug, shelterStatus, _resetSlugCacheForTests } = require('../middleware/shelter');
+  _resetSlugCacheForTests();
+  scenario({ slugTaken: true });
+  assert.equal(await shelterIdFromSlug('north-paws'), 2);
+  const slugLookups = () => mock.calls.filter((c) => /FROM shelters WHERE slug = \?/.test(c.sql)).length;
+  assert.equal(await shelterIdFromSlug('north-paws'), 2);
+  assert.equal(slugLookups(), 1, 'second lookup came from the cache');
+
+  const res = await call('POST', '/shelters/5/suspend', { session: OWNER });
+  assert.equal(res.status, 200);
+  await shelterIdFromSlug('north-paws');
+  assert.equal(slugLookups(), 2, 'the slug is read again after the suspension');
+  await shelterStatus(5);
+  assert.ok(mock.calls.some((c) => /SELECT status FROM shelters WHERE id = \?/.test(c.sql)), 'status is read again');
+});
+
 test('suspend: 404 for an unknown shelter, 409 when already suspended or own shelter', async () => {
   scenario({ shelter: null });
   assert.equal((await call('POST', '/shelters/5/suspend', { session: OWNER })).status, 404);

@@ -14,6 +14,7 @@
 const { pool } = require('../config/database');
 const { runWithoutShelter } = require('../utils/shelterContext');
 const { createShelter, createInvite } = require('../services/shelterProvision');
+const { forgetShelter } = require('../middleware/shelter');
 
 const APPLICATION_STATUSES = new Set(['pending', 'approved', 'rejected']);
 const REASON_MIN = 3;
@@ -239,9 +240,10 @@ async function listShelters(req, res, next) {
 }
 
 /**
- * Set shelters.status to suspended. Nothing is deleted. Blocking sign-in
- * and public pages for a suspended shelter is PR7 (bindShelter); this
- * records the status and the audit row.
+ * Set shelters.status to suspended. Nothing is deleted. From then on the
+ * shelter's people cannot sign in and are signed out on their next request
+ * (bindShelter), its public pages, feeds and forms answer 404, and jobs
+ * stop emailing them. Retention still runs.
  */
 async function suspendShelter(req, res, next) {
   const shelterId = Number(req.params.id);
@@ -271,6 +273,9 @@ async function suspendShelter(req, res, next) {
       });
       return row;
     });
+    // Takes effect on this instance at once; other instances within the
+    // shelter cache's 30 seconds.
+    forgetShelter({ id: shelterId, slug: shelter.slug });
     return res.json({ shelter: { id: shelterId, slug: shelter.slug, status: 'suspended' } });
   } catch (error) {
     return sendError(res, next, error);
