@@ -203,6 +203,7 @@ const ROUTES = [
   ['POST', '/applications/not-a-number/approve'],
   ['GET', '/shelters'],
   ['POST', '/shelters/5/suspend'],
+  ['POST', '/shelters/5/reactivate'],
   ['GET', '/does-not-exist'],
 ];
 
@@ -581,6 +582,23 @@ test('suspend sets status to suspended, deletes nothing, and audits it', async (
   assert.ok(sqlCalls().includes('COMMIT'));
 });
 
+test('suspend clears this instance\'s shelter cache so the slug stops resolving at once', async () => {
+  const { shelterIdFromSlug, shelterStatus, _resetSlugCacheForTests } = require('../middleware/shelter');
+  _resetSlugCacheForTests();
+  scenario({ slugTaken: true });
+  assert.equal(await shelterIdFromSlug('north-paws'), 2);
+  const slugLookups = () => mock.calls.filter((c) => /FROM shelters WHERE slug = \?/.test(c.sql)).length;
+  assert.equal(await shelterIdFromSlug('north-paws'), 2);
+  assert.equal(slugLookups(), 1, 'second lookup came from the cache');
+
+  const res = await call('POST', '/shelters/5/suspend', { session: OWNER });
+  assert.equal(res.status, 200);
+  await shelterIdFromSlug('north-paws');
+  assert.equal(slugLookups(), 2, 'the slug is read again after the suspension');
+  await shelterStatus(5);
+  assert.ok(mock.calls.some((c) => /SELECT status FROM shelters WHERE id = \?/.test(c.sql)), 'status is read again');
+});
+
 test('suspend: 404 for an unknown shelter, 409 when already suspended or own shelter', async () => {
   scenario({ shelter: null });
   assert.equal((await call('POST', '/shelters/5/suspend', { session: OWNER })).status, 404);
@@ -593,6 +611,39 @@ test('suspend: 404 for an unknown shelter, 409 when already suspended or own she
   const own = await call('POST', `/shelters/${OWNER_SHELTER}/suspend`, { session: OWNER });
   assert.equal(own.status, 409);
   assert.ok(!sqlCalls().some((s) => /UPDATE shelters/.test(s)));
+});
+
+test('reactivate sets a suspended shelter active, audits it, and clears the cache', async () => {
+  const { shelterIdFromSlug, _resetSlugCacheForTests } = require('../middleware/shelter');
+  _resetSlugCacheForTests();
+  scenario({ shelter: { id: 5, slug: 'north-paws', status: 'suspended' }, slugTaken: true });
+  await shelterIdFromSlug('north-paws');
+  const res = await call('POST', '/shelters/5/reactivate', { session: OWNER, body: { reason: 'Back on the register' } });
+  assert.equal(res.status, 200);
+  assert.deepEqual(res.body.shelter, { id: 5, slug: 'north-paws', status: 'active' });
+
+  const update = mock.calls.find((c) => /UPDATE shelters/.test(c.sql));
+  assert.match(update.sql, /SET status = 'active' WHERE id = \? AND status = 'suspended'/);
+  assert.deepEqual(update.params, [5]);
+  const audit = mock.calls.find((c) => /INSERT INTO platform_audit/.test(c.sql));
+  assert.equal(audit.params[1], 'shelter.reactivated');
+  assert.equal(audit.params[3], 5);
+  assert.deepEqual(JSON.parse(audit.params[4]), { slug: 'north-paws', reason: 'Back on the register' });
+  assert.ok(sqlCalls().includes('COMMIT'));
+
+  const lookups = mock.calls.filter((c) => /FROM shelters WHERE slug = \?/.test(c.sql)).length;
+  await shelterIdFromSlug('north-paws');
+  assert.equal(mock.calls.filter((c) => /FROM shelters WHERE slug = \?/.test(c.sql)).length, lookups + 1, 'slug re-read');
+});
+
+test('reactivate: 404 for an unknown shelter, 409 when already active', async () => {
+  scenario({ shelter: null });
+  assert.equal((await call('POST', '/shelters/5/reactivate', { session: OWNER })).status, 404);
+
+  scenario();
+  const res = await call('POST', '/shelters/5/reactivate', { session: OWNER });
+  assert.equal(res.status, 409);
+  assert.ok(!sqlCalls().some((s) => /UPDATE shelters|platform_audit/.test(s)));
 });
 
 test('GET /shelters lists shelters without logos or tenant data', async () => {

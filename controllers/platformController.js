@@ -23,6 +23,7 @@ const {
 } = require('../services/shelterProvision');
 const { deliverInvite, inviteDeliveryBlocker } = require('../services/inviteDelivery');
 const { emailsWithAccounts } = require('../services/accountLookup');
+const { forgetShelter } = require('../middleware/shelter');
 
 const APPLICATION_STATUSES = new Set(['pending', 'approved', 'rejected']);
 const REASON_MIN = 3;
@@ -360,9 +361,10 @@ async function listShelters(req, res, next) {
 }
 
 /**
- * Set shelters.status to suspended. Nothing is deleted. Blocking sign-in
- * and public pages for a suspended shelter is PR7 (bindShelter); this
- * records the status and the audit row.
+ * Set shelters.status to suspended. Nothing is deleted. From then on the
+ * shelter's people cannot sign in and are signed out on their next request
+ * (bindShelter), its public pages, feeds and forms answer 404, and jobs
+ * stop emailing them. Retention still runs.
  */
 async function suspendShelter(req, res, next) {
   const shelterId = Number(req.params.id);
@@ -392,7 +394,47 @@ async function suspendShelter(req, res, next) {
       });
       return row;
     });
+    // Takes effect on this instance at once; other instances within the
+    // shelter cache's 30 seconds.
+    forgetShelter({ id: shelterId, slug: shelter.slug });
     return res.json({ shelter: { id: shelterId, slug: shelter.slug, status: 'suspended' } });
+  } catch (error) {
+    return sendError(res, next, error);
+  }
+}
+
+/**
+ * Set a suspended shelter back to active. Its people can sign in again,
+ * its public pages and feeds come back, and jobs pick it up on their next
+ * run. Audited as shelter.reactivated with the optional reason.
+ */
+async function reactivateShelter(req, res, next) {
+  const shelterId = Number(req.params.id);
+  const ownerId = req.platformOwnerId;
+  try {
+    const reason = readReason(req.body, { required: false });
+    const shelter = await inPlatformTransaction(async (conn) => {
+      const [rows] = await conn.execute(
+        'SELECT id, slug, status FROM shelters WHERE id = ? FOR UPDATE',
+        [shelterId]
+      );
+      const row = rows[0];
+      if (!row) throw fail(404, 'Shelter not found');
+      if (row.status === 'active') throw fail(409, 'Shelter is already active');
+      await conn.execute(
+        `UPDATE shelters SET status = 'active' WHERE id = ? AND status = 'suspended'`,
+        [shelterId]
+      );
+      await recordPlatformAudit(conn, {
+        actorUserId: ownerId,
+        action: 'shelter.reactivated',
+        targetShelterId: shelterId,
+        detail: { slug: row.slug, reason },
+      });
+      return row;
+    });
+    forgetShelter({ id: shelterId, slug: shelter.slug });
+    return res.json({ shelter: { id: shelterId, slug: shelter.slug, status: 'active' } });
   } catch (error) {
     return sendError(res, next, error);
   }
@@ -405,6 +447,7 @@ module.exports = {
   rejectApplication,
   listShelters,
   suspendShelter,
+  reactivateShelter,
   recordPlatformAudit,
   inPlatformTransaction,
 };
