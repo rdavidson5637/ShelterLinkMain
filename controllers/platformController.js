@@ -4,8 +4,10 @@
  * Platform owner actions: the shelter approval queue and suspension.
  *
  * These handlers read and write only shelters, shelter_applications,
- * admin_invites, platform_owners and platform_audit. They never read users,
- * volunteer_profiles or any other tenant volunteer data. Every query runs
+ * admin_invites, platform_owners and platform_audit. They never read
+ * volunteer_profiles or any other tenant volunteer data. The one exception
+ * is services/accountLookup.js, which tells the queue yes or no for whether
+ * an applicant's email already has an account, and reads nothing else. Every query runs
  * outside shelter context (runWithoutShelter), and no shelter id is read
  * from the client: shelter ids come from route params naming a shelter row
  * the owner acts on, or from the row just inserted.
@@ -13,7 +15,14 @@
 
 const { pool } = require('../config/database');
 const { runWithoutShelter } = require('../utils/shelterContext');
-const { createShelter, createInvite } = require('../services/shelterProvision');
+const {
+  createShelter,
+  createInvite,
+  reissueApplicationInvite,
+  INVITE_TTL_DAYS,
+} = require('../services/shelterProvision');
+const { deliverInvite, inviteDeliveryBlocker } = require('../services/inviteDelivery');
+const { emailsWithAccounts } = require('../services/accountLookup');
 
 const APPLICATION_STATUSES = new Set(['pending', 'approved', 'rejected']);
 const REASON_MIN = 3;
@@ -110,10 +119,55 @@ async function listApplications(req, res, next) {
          WHERE status = ? ORDER BY created_at ASC, id ASC LIMIT ${LIST_LIMIT}`,
         [requested]
       )));
-    return res.json(rows.map((row) => ({ ...row, register_snapshot: parseSnapshot(row.register_snapshot) })));
+    const flags = await runWithoutShelter(() => applicationFlags(rows));
+    return res.json(rows.map((row) => ({
+      ...row,
+      register_snapshot: parseSnapshot(row.register_snapshot),
+      ...flags(row),
+    })));
   } catch (error) {
     return next(error);
   }
+}
+
+function emailKey(email) {
+  return String(email || '').trim().toLowerCase();
+}
+
+/**
+ * Per-row flags for the queue, in two queries for the whole list:
+ *   contact_has_account (pending)  the applicant's email already has an
+ *                                  account, so accepting the invite will be
+ *                                  refused; warn before approving.
+ *   invite_accepted (approved)     the admin invite has been used; there is
+ *                                  nothing to resend.
+ */
+async function applicationFlags(rows) {
+  const pending = rows.filter((row) => row.status === 'pending');
+  const approved = rows.filter((row) => row.status === 'approved');
+  const withAccounts = pending.length
+    ? await emailsWithAccounts(pool, pending.map((row) => row.contact_email))
+    : new Set();
+  const accepted = new Set();
+  if (approved.length) {
+    const [used] = await pool.execute(
+      `SELECT DISTINCT s.slug, lower(i.email) AS email
+       FROM admin_invites i
+       JOIN shelters s ON s.id = i.shelter_id
+       WHERE i.used_at IS NOT NULL AND s.slug = ANY(?::text[])`,
+      [[...new Set(approved.map((row) => row.desired_slug))]]
+    );
+    for (const row of used) accepted.add(`${row.slug}|${emailKey(row.email)}`);
+  }
+  return (row) => {
+    if (row.status === 'pending') {
+      return { contact_has_account: withAccounts.has(emailKey(row.contact_email)) };
+    }
+    if (row.status === 'approved') {
+      return { invite_accepted: accepted.has(`${row.desired_slug}|${emailKey(row.contact_email)}`) };
+    }
+    return {};
+  };
 }
 
 async function lockPendingApplication(conn, id) {
@@ -131,7 +185,10 @@ async function lockPendingApplication(conn, id) {
  * Approve: create the shelter, issue its first admin invite, mark the
  * application approved, and audit both, all in one transaction. No user
  * or password is created; the applicant sets a password when they accept
- * the invite (PR6). The raw invite token is not returned to the browser.
+ * the invite at /invite#<token>. The raw invite token is not returned to the
+ * browser: it goes only into the invite email, sent after the commit. A
+ * failed email does not undo the approval; the response says so and the
+ * owner can resend.
  */
 async function approveApplication(req, res, next) {
   const applicationId = Number(req.params.id);
@@ -178,6 +235,14 @@ async function approveApplication(req, res, next) {
       return { shelter, invite };
     });
 
+    const inviteEmail = await deliverInvite({
+      email: result.invite.email,
+      token: result.invite.token,
+      shelterName: result.shelter.name,
+      role: result.invite.role,
+      expiresInDays: INVITE_TTL_DAYS,
+    });
+
     return res.status(201).json({
       application: { id: applicationId, status: 'approved' },
       shelter: {
@@ -192,6 +257,62 @@ async function approveApplication(req, res, next) {
         role: result.invite.role,
         expiresAt: result.invite.expiresAt,
       },
+      inviteEmail,
+    });
+  } catch (error) {
+    return sendError(res, next, error);
+  }
+}
+
+/**
+ * Resend the admin invite for an approved application: expire the unused
+ * invite, issue a new one, audit invite.created, then email it. Refused
+ * before anything changes when email cannot be sent, so a working link is
+ * never expired for nothing. Refused once the invite has been accepted.
+ */
+async function resendInvite(req, res, next) {
+  const applicationId = Number(req.params.id);
+  const ownerId = req.platformOwnerId;
+  try {
+    const blocker = inviteDeliveryBlocker();
+    if (blocker) {
+      throw fail(409, blocker === 'app_url_missing'
+        ? 'Invite emails need an https APP_URL before they can be sent'
+        : 'Email is not configured, so the invite cannot be sent');
+    }
+    const result = await inPlatformTransaction(async (conn) => {
+      const reissued = await reissueApplicationInvite(conn, applicationId);
+      await recordPlatformAudit(conn, {
+        actorUserId: ownerId,
+        action: 'invite.created',
+        applicationId,
+        targetShelterId: reissued.shelter.id,
+        detail: {
+          inviteId: reissued.invite.inviteId,
+          role: reissued.invite.role,
+          expiresAt: reissued.invite.expiresAt,
+          source: 'resend',
+        },
+      });
+      return reissued;
+    });
+
+    const inviteEmail = await deliverInvite({
+      email: result.invite.email,
+      token: result.invite.token,
+      shelterName: result.shelter.name,
+      role: result.invite.role,
+      expiresInDays: INVITE_TTL_DAYS,
+    });
+
+    return res.status(201).json({
+      invite: {
+        id: result.invite.inviteId,
+        email: result.invite.email,
+        role: result.invite.role,
+        expiresAt: result.invite.expiresAt,
+      },
+      inviteEmail,
     });
   } catch (error) {
     return sendError(res, next, error);
@@ -280,6 +401,7 @@ async function suspendShelter(req, res, next) {
 module.exports = {
   listApplications,
   approveApplication,
+  resendInvite,
   rejectApplication,
   listShelters,
   suspendShelter,
