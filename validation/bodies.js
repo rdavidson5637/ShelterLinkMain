@@ -85,6 +85,8 @@ const shelterApplication = z
     contact_email: optStr(254),
     // Honeypot, hidden from people.
     website: optStr(200),
+    // When the page loaded (ms since epoch), for the minimum fill time.
+    started_at: z.union([z.number(), z.string().regex(/^\d{10,16}$/)]).optional(),
   })
   .strict();
 
