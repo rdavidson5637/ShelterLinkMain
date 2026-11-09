@@ -71,6 +71,8 @@ From then on:
 |---|---|
 | Signed-in staff and volunteers | Signed out on their next request: 403 `shelter_suspended`, session destroyed, cookie cleared |
 | Sign-in | The right password gets 403 `shelter_suspended` and no session. A wrong password still gets the usual 401, so it never reveals the status |
+| Forgot password | The usual generic 200, but no reset email is sent and no token is issued |
+| A platform owner whose own account is in the suspended shelter | Can still sign in and reset their password, and keeps `/platform` and `/api/platform/*` (plus `/api/auth/me` and logout). The shelter's own API answers 403 `shelter_suspended` without signing them out |
 | `/s/<slug>`, `/s/<slug>/opportunities`, `/s/<slug>/group-booking`, `/join/<slug>` | Normal 404 page |
 | `?shelter=<slug>` on public APIs (board, ICS feed, brand, group booking, sign-up) | 404. A suspended slug never falls back to Assisi, so an ICS subscriber or embedded board does not start showing another shelter's shifts |
 | Invite links (PR6) | Not valid, and accepting is refused |
@@ -80,8 +82,9 @@ Slug and status lookups are cached for 30 seconds per server instance. The
 instance that handles the suspend clears its cache at once; any other
 instance catches up within 30 seconds.
 
-An unknown slug on a public API still falls back to Assisi, as before. Only
-the page routes (`/s/<slug>`, `/join/<slug>`) 404 for an unknown slug.
+An unknown slug on a public API is also a 404 now, the same as the page
+routes (`/s/<slug>`, `/join/<slug>`). Only a request with no slug at all
+falls back to the signed-in shelter, then Assisi.
 
 There is no reactivate action yet. To undo a suspension on a local or staging
 database:
