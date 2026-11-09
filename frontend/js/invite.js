@@ -9,8 +9,9 @@
  */
 import { apiRequest } from '/js/config.js';
 import { showFormErrors, clearFormErrors } from '/js/utils/formErrors.js';
+import { tokenFromHash, roleLabel, validateAcceptForm } from '/js/utils/inviteAccept.js';
 
-const TOKEN_RE = /^[A-Za-z0-9_-]{43}$/;
+export { tokenFromHash };
 
 const form = document.getElementById('inviteForm');
 const heading = document.getElementById('heading');
@@ -18,18 +19,7 @@ const intro = document.getElementById('intro');
 const messageEl = document.getElementById('message');
 const submitButton = document.getElementById('submitButton');
 const loginLink = document.getElementById('loginLink');
-
-export function tokenFromHash(hash) {
-  const raw = String(hash || '').replace(/^#/, '');
-  if (!raw) return null;
-  let token;
-  try {
-    token = decodeURIComponent(raw);
-  } catch {
-    return null;
-  }
-  return TOKEN_RE.test(token) ? token : null;
-}
+const card = document.getElementById('inviteCard');
 
 /** Drop the token from the address bar and this history entry. */
 function forgetTokenInUrl() {
@@ -45,18 +35,24 @@ function showMessage(text, tone = 'info') {
   messageEl.replaceChildren(p);
 }
 
+/**
+ * The page changed state (dead end or done): move focus to the new heading
+ * so screen reader users hear it, instead of staying on a hidden form.
+ */
+function announceHeading() {
+  heading.focus();
+}
+
 function deadEnd(text) {
   heading.textContent = 'This invite link does not work';
   intro.textContent = text;
   form.hidden = true;
   loginLink.hidden = false;
-}
-
-function roleLabel(role) {
-  return role === 'staff' ? 'a staff account' : 'the admin account';
+  announceHeading();
 }
 
 async function checkToken(token) {
+  card.setAttribute('aria-busy', 'true');
   try {
     const res = await apiRequest('/auth/invite/check', { method: 'POST', body: { token } });
     const data = await res.json().catch(() => ({ valid: false }));
@@ -71,11 +67,15 @@ async function checkToken(token) {
     document.getElementById('first_name').focus();
   } catch {
     deadEnd('We could not check this link just now. Please try again in a moment.');
+  } finally {
+    card.removeAttribute('aria-busy');
   }
 }
 
 function setBusy(busy) {
   submitButton.disabled = busy;
+  if (busy) form.setAttribute('aria-busy', 'true');
+  else form.removeAttribute('aria-busy');
   submitButton.textContent = busy ? 'Creating your account…' : 'Create my account';
 }
 
@@ -91,12 +91,7 @@ async function submit(token, event) {
   const confirm = document.getElementById('confirm_password').value;
   const privacy = document.getElementById('privacy_notice').checked;
 
-  const errors = [];
-  if (!firstName) errors.push({ field: 'first_name', message: 'Enter your first name.' });
-  if (!lastName) errors.push({ field: 'last_name', message: 'Enter your last name.' });
-  if (password.length < 10) errors.push({ field: 'password', message: 'Use at least 10 characters.' });
-  if (password !== confirm) errors.push({ field: 'confirm_password', message: 'Passwords do not match.' });
-  if (!privacy) errors.push({ field: 'privacy_notice', message: 'Please confirm you have read the privacy notice.' });
+  const errors = validateAcceptForm({ firstName, lastName, password, confirm, privacy });
   if (errors.length) {
     showFormErrors(form, errors);
     return;
@@ -117,11 +112,13 @@ async function submit(token, event) {
     });
     const data = await res.json().catch(() => ({}));
     if (res.ok) {
+      setBusy(false);
       form.hidden = true;
       heading.textContent = 'Your account is ready';
       intro.textContent = `Sign in with ${data.email || 'your email address'} and the password you just chose.`;
       loginLink.hidden = false;
       showMessage(data.message || 'Your account is ready.', 'success');
+      announceHeading();
       return;
     }
     if (res.status === 400 && /invite link/i.test(String(data.error || ''))) {

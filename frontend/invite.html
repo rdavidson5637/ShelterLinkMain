@@ -25,8 +25,8 @@
     </header>
 
     <main class="container">
-      <article class="auth-card">
-        <h1 id="heading">Set up your account</h1>
+      <article class="auth-card" id="inviteCard" aria-labelledby="heading">
+        <h1 id="heading" tabindex="-1">Set up your account</h1>
         <p id="intro">Checking your invite link…</p>
 
         <div id="message" role="status" aria-live="polite"></div>
@@ -34,7 +34,7 @@
         <form id="inviteForm" hidden>
           <label for="email">
             Email address
-            <input type="email" id="email" name="email" readonly aria-describedby="emailHint" />
+            <input type="email" id="email" name="email" readonly autocomplete="username" aria-describedby="emailHint" />
             <small id="emailHint">This is the address the invite was sent to. You will sign in with it.</small>
           </label>
 
@@ -64,6 +64,7 @@
                 name="password"
                 required
                 minlength="10"
+                maxlength="200"
                 autocomplete="new-password"
                 aria-describedby="passwordHint"
               />
@@ -78,14 +79,18 @@
                 name="confirm_password"
                 required
                 minlength="10"
+                maxlength="200"
                 autocomplete="new-password"
               />
             </label>
           </div>
 
           <label for="privacy_notice">
-            <input type="checkbox" id="privacy_notice" name="privacy_notice" />
-            I have read the <a href="/pages/privacy.html" target="_blank" rel="noopener noreferrer">privacy notice</a>
+            <input type="checkbox" id="privacy_notice" name="privacy_notice" required />
+            I have read the
+            <a href="/pages/privacy.html" target="_blank" rel="noopener noreferrer"
+              >privacy notice<span class="visually-hidden"> (opens in a new tab)</span></a
+            >
           </label>
 
           <button type="submit" id="submitButton">Create my account</button>
