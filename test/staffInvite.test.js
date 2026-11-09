@@ -163,7 +163,7 @@ test('an admin invites a staff member to their own shelter, and the email goes a
   assert.equal(sent[0].to, 'sam@hope.test');
   assert.equal(sent[0].shelterName, 'Hope Rescue');
   assert.equal(sent[0].role, 'staff');
-  const token = /\/invite\/([A-Za-z0-9_-]{43})$/.exec(sent[0].link)[1];
+  const token = /\/invite#([A-Za-z0-9_-]{43})$/.exec(sent[0].link)[1];
   assert.equal(hashInviteToken(token), tokenHash);
   const sql = sqlCalls();
   assert.ok(sql.indexOf('EMAIL') > sql.indexOf('COMMIT'));

@@ -9,7 +9,7 @@
  * Admin only. Every query runs in the admin's own shelter context, set by
  * bindShelter from the user row, and also names that shelter id, so an
  * admin can only ever see or change their own shelter's invites. The
- * invite is accepted at /invite/<token> (PR6), which creates the account on
+ * invite is accepted at /invite#<token> (PR6), which creates the account on
  * this shelter with the invited role.
  */
 
