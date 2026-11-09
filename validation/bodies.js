@@ -74,6 +74,13 @@ const reset = z
   })
   .strict();
 
+// Check an invite link. Only the token; it comes from the page's #fragment.
+const inviteCheck = z
+  .object({
+    token: optStr(200),
+  })
+  .strict();
+
 // Accept an invite. No email, role, or shelter: those come from the invite.
 const acceptInvite = z
   .object({
@@ -107,6 +114,8 @@ const shelterApplication = z
     contact_email: optStr(254),
     // Honeypot, hidden from people.
     website: optStr(200),
+    // When the page loaded (ms since epoch), for the minimum fill time.
+    started_at: z.union([z.number(), z.string().regex(/^\d{10,16}$/)]).optional(),
   })
   .strict();
 
@@ -619,6 +628,7 @@ const bodies = {
   login,
   forgot,
   reset,
+  inviteCheck,
   acceptInvite,
   shelterApplication,
   staffInvite,

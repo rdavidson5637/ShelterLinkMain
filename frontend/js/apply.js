@@ -32,6 +32,9 @@ export function slugFromName(name) {
     .replace(/-+$/g, '');
 }
 
+// For the server's minimum fill time.
+const startedAt = Date.now();
+
 let slugEdited = false;
 
 function updatePreview() {
@@ -88,6 +91,7 @@ form.addEventListener('submit', async (event) => {
     contact_name: value('contact_name'),
     contact_email: value('contact_email'),
     website: document.getElementById('website').value,
+    started_at: startedAt,
   };
 
   const errors = localErrors(data);

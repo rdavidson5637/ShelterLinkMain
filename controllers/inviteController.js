@@ -2,8 +2,12 @@
 
 /**
  * Invite accept flow (PR6). Public, signed-out routes:
- *   GET  /api/auth/invite/:token   is this link still good, and for whom
+ *   POST /api/auth/invite/check    is this link still good, and for whom
  *   POST /api/auth/accept-invite   set a name and password, create the account
+ *
+ * The token is in the POST body in both. The page reads it from the link's
+ * #fragment, which browsers never send to a server, so it is not in any URL
+ * that reaches access logs, proxies or Referer headers.
  *
  * Both run outside shelter context: the shelter is unknown until the invite
  * row is read, and it always comes from that row. The request never names a
@@ -30,7 +34,7 @@ function invalid(res) {
 
 async function checkInvite(req, res) {
   try {
-    const token = String(req.params.token || '');
+    const token = String((req.body && req.body.token) || '');
     if (!looksLikeInviteToken(token)) return invalid(res);
     const invite = await runWithoutShelter(() => findOpenInvite(pool, token));
     if (!invite || invite.shelter_status !== 'active') return invalid(res);

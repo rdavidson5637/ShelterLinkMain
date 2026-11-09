@@ -1,9 +1,11 @@
 /**
- * Invite accept page, served at /invite/<token>.
+ * Invite accept page, served at /invite#<token>.
  *
- * The token is read from this page's own path and sent only to the
- * ShelterLink API. The email, shelter and role shown here come from the
- * server's check of the token; the form never sends them back.
+ * The token is in the #fragment, which the browser never sends to a server.
+ * This page reads it, removes it from the address bar and history at once,
+ * and sends it only in POST bodies to the ShelterLink API. The email,
+ * shelter and role shown here come from the server's check of the token;
+ * the form never sends them back.
  */
 import { apiRequest } from '/js/config.js';
 import { showFormErrors, clearFormErrors } from '/js/utils/formErrors.js';
@@ -17,16 +19,23 @@ const messageEl = document.getElementById('message');
 const submitButton = document.getElementById('submitButton');
 const loginLink = document.getElementById('loginLink');
 
-export function tokenFromPath(pathname) {
-  const match = /^\/invite\/([^/?#]+)\/?$/.exec(String(pathname || ''));
-  if (!match) return null;
+export function tokenFromHash(hash) {
+  const raw = String(hash || '').replace(/^#/, '');
+  if (!raw) return null;
   let token;
   try {
-    token = decodeURIComponent(match[1]);
+    token = decodeURIComponent(raw);
   } catch {
     return null;
   }
   return TOKEN_RE.test(token) ? token : null;
+}
+
+/** Drop the token from the address bar and this history entry. */
+function forgetTokenInUrl() {
+  try {
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+  } catch { /* old browser: the fragment still never reaches a server */ }
 }
 
 function showMessage(text, tone = 'info') {
@@ -49,7 +58,7 @@ function roleLabel(role) {
 
 async function checkToken(token) {
   try {
-    const res = await apiRequest(`/auth/invite/${encodeURIComponent(token)}`);
+    const res = await apiRequest('/auth/invite/check', { method: 'POST', body: { token } });
     const data = await res.json().catch(() => ({ valid: false }));
     if (!data.valid) {
       deadEnd('It may have been used already or have expired. Ask the person who invited you for a new link.');
@@ -128,9 +137,10 @@ async function submit(token, event) {
   }
 }
 
-const token = tokenFromPath(window.location.pathname);
+const token = tokenFromHash(window.location.hash);
+forgetTokenInUrl();
 if (!token) {
-  deadEnd('The link is incomplete. Open it straight from the invite email, or ask for a new one.');
+  deadEnd('The link is incomplete. Open it straight from the invite email (reloading this page will not work), or ask for a new one.');
 } else {
   form.addEventListener('submit', (event) => submit(token, event));
   checkToken(token);

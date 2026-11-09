@@ -2,6 +2,7 @@
 
 const { pool } = require('../config/database');
 const { findById } = require('../models/User');
+const { isPlatformOwnerUser } = require('./platformOwner');
 const { clearSessionCookie } = require('../utils/sessionCookie');
 const {
   currentShelterId,
@@ -154,21 +155,20 @@ function requestedShelterSlug(req) {
 }
 
 /**
- * Shelter for a public read or form. A known slug wins over the session, so
- * a page for slug B only ever reads or writes shelter B. With no slug, or a
- * slug that matches no shelter, this keeps the old fallback: the session's
+ * Shelter for a public read or form. A slug, when given, decides: it must
+ * name an active shelter, or the answer is null (callers send 404). Only a
+ * request with no slug at all keeps the old fallback: the session's
  * shelter, then Assisi.
+ *
+ * An unknown or suspended slug must never fall back to another shelter: an
+ * ICS subscriber, an embedded board or a typo'd /s/<slug> link would quietly
+ * start showing (or booking) someone else's shifts.
  */
 async function publicShelterId(req) {
   const slug = requestedShelterSlug(req);
   if (slug) {
     const shelter = await shelterFromSlug(slug);
-    if (shelter) {
-      // A suspended shelter's public pages, feeds and forms answer 404. They
-      // must not fall back to another shelter: an ICS subscriber or an
-      // embedded board would quietly start showing someone else's shifts.
-      return isActiveStatus(shelter.status) ? shelter.id : null;
-    }
+    return shelter && isActiveStatus(shelter.status) ? shelter.id : null;
   }
   return currentShelterId() || assisiShelterId();
 }
@@ -215,6 +215,10 @@ function activeShelterPage(file) {
   };
 }
 
+// Paths (under the /api mount) a platform owner may still use while their
+// own shelter is suspended: the platform console and their own sign-in state.
+const PLATFORM_OWNER_SUSPENDED_PATHS = /^\/(platform(\/|$)|auth\/(me|logout)$)/;
+
 const SUSPENDED_MESSAGE = 'This shelter is not active on ShelterLink at the moment. Contact the shelter for more information.';
 
 function endSuspendedSession(req, res) {
@@ -246,9 +250,17 @@ async function bindShelter(req, res, next) {
     }
 
     // A suspended shelter's people are signed out on their next request.
-    // Nothing is deleted; the session simply ends.
+    // Nothing is deleted; the session simply ends. A platform owner whose
+    // own shelter is suspended keeps the session and /api/platform (so they
+    // can reactivate it), but the shelter's own API answers 403.
     if (!isActiveStatus(await shelterStatus(user.shelter_id))) {
-      return endSuspendedSession(req, res);
+      if (await isPlatformOwnerUser(req.session.userId)) {
+        if (!PLATFORM_OWNER_SUSPENDED_PATHS.test(req.path || '')) {
+          return res.status(403).json({ error: SUSPENDED_MESSAGE, code: 'shelter_suspended' });
+        }
+      } else {
+        return endSuspendedSession(req, res);
+      }
     }
 
     req.session.shelterId = user.shelter_id;
