@@ -93,6 +93,22 @@ const acceptInvite = z
   })
   .strict();
 
+// A charity asking to join. Never a shelter id; the row is global.
+const shelterApplication = z
+  .object({
+    shelter_name: optStr(255),
+    desired_slug: optStr(100),
+    regulator: optStr(10),
+    charity_number: optStr(32),
+    contact_name: optStr(200),
+    contact_email: optStr(254),
+    // Honeypot, hidden from people.
+    website: optStr(200),
+    // When the page loaded (ms since epoch), for the minimum fill time.
+    started_at: z.union([z.number(), z.string().regex(/^\d{10,16}$/)]).optional(),
+  })
+  .strict();
+
 const groupBooking = z
   .object({
     opportunity_id: optId,
@@ -604,6 +620,7 @@ const bodies = {
   reset,
   inviteCheck,
   acceptInvite,
+  shelterApplication,
   groupBooking,
   opportunity,
   shiftNote,
