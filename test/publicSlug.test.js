@@ -102,18 +102,18 @@ test('requestedShelterSlug reads :slug, then ?shelter=, then shelter_slug; ignor
   assert.equal(requestedShelterSlug({ query: { shelter: '   ' } }), null);
 });
 
-test('publicShelterId: no slug -> Assisi, known slug -> that shelter, unknown -> Assisi', async () => {
+test('publicShelterId: no slug -> Assisi, known slug -> that shelter, unknown -> null (404)', async () => {
   assert.equal(await publicShelterId({}), 1);
   assert.equal(await publicShelterId({ query: { shelter: 'second' } }), 2);
-  assert.equal(await publicShelterId({ query: { shelter: 'nowhere' } }), 1);
-  assert.equal(await publicShelterId({ query: { shelter: "x' OR '1'='1" } }), 1);
+  assert.equal(await publicShelterId({ query: { shelter: 'nowhere' } }), null);
+  assert.equal(await publicShelterId({ query: { shelter: "x' OR '1'='1" } }), null);
 });
 
 test('publicShelterId: a known slug wins over the session; no slug keeps the session', async () => {
   await runWithShelter(2, async () => {
     assert.equal(await publicShelterId({}), 2);
     assert.equal(await publicShelterId({ query: { shelter: 'assisi' } }), 1);
-    assert.equal(await publicShelterId({ query: { shelter: 'nowhere' } }), 2);
+    assert.equal(await publicShelterId({ query: { shelter: 'nowhere' } }), null, 'an unknown slug never falls back to the session');
   });
 });
 
@@ -180,11 +180,21 @@ test('brand and logo for slug B name shelter B by id', async () => {
   }
 });
 
-test('brand for an unknown slug falls back to Assisi and reports the Assisi slug', async () => {
+test('brand for an unknown slug is a 404, never Assisi\'s brand', async () => {
   const res = makeRes();
   await getBrand({ query: { shelter: 'nowhere' } }, res);
-  assert.equal(res.body.name, 'Assisi Animal Sanctuary');
-  assert.equal(res.body.slug, 'assisi');
+  assert.equal(res.statusCode, 404);
+  assert.notEqual(res.body && res.body.name, 'Assisi Animal Sanctuary');
+});
+
+test('public opportunities and ICS for an unknown slug are 404, never Assisi\'s shifts', async () => {
+  const list = makeRes();
+  await publicCtrl.listPublicOpportunities({ query: { shelter: 'nowhere' } }, list);
+  assert.equal(list.statusCode, 404);
+  const ics = makeRes();
+  await publicCtrl.publicOpportunitiesIcs({ query: { shelter: 'nowhere' } }, ics);
+  assert.equal(ics.statusCode, 404);
+  assert.doesNotMatch(String(ics.body || ''), /MarkerA/);
 });
 
 function bookingBody(overrides = {}) {

@@ -28,6 +28,7 @@ const {
   SUSPENDED_MESSAGE,
 } = require('../middleware/shelter');
 const { PRIVACY_NOTICE_VERSION } = require('../config/privacyNotice');
+const { isPlatformOwnerUser } = require('../middleware/platformOwner');
 
 function privacyNoticeAccepted(value) {
   return value === true || value === 'on' || value === 'true';
@@ -155,7 +156,10 @@ async function login(req, res) {
 
     // Checked only after the password matches, so a wrong password never
     // learns whether a shelter is suspended. No session is created.
-    if (user.shelter_id != null && !isActiveStatus(await shelterStatus(user.shelter_id))) {
+    // A platform owner can still sign in, so they can reach /platform and
+    // reactivate the shelter; bindShelter keeps them out of its own API.
+    if (user.shelter_id != null && !isActiveStatus(await shelterStatus(user.shelter_id))
+      && !(await isPlatformOwnerUser(user.user_id))) {
       return res.status(403).json({ error: SUSPENDED_MESSAGE, code: 'shelter_suspended' });
     }
 
@@ -384,6 +388,14 @@ async function forgotPassword(req, res) {
       return generic();
     }
     const user = rows[0];
+
+    // People at a suspended shelter cannot sign in, so they get no reset
+    // email either. Same generic 200, so the response never reveals the
+    // shelter's status. A platform owner can still reset.
+    if (user.shelter_id != null && !isActiveStatus(await shelterStatus(user.shelter_id))
+      && !(await isPlatformOwnerUser(user.user_id))) {
+      return generic();
+    }
 
     const { raw, hash } = createResetToken();
     const expires = new Date(Date.now() + 60 * 60 * 1000);

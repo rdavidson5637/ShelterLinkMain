@@ -143,8 +143,10 @@ test('a suspended slug never falls back to another shelter', async () => {
   assert.equal(await publicShelterId({ body: { shelter_slug: 'paws' } }), null);
 });
 
-test('an unknown slug keeps the old Assisi fallback, and an active slug resolves', async () => {
-  assert.equal(await publicShelterId({ query: { shelter: 'nowhere' } }), 1);
+test('an unknown slug is a 404 too; only a request with no slug falls back to Assisi', async () => {
+  assert.equal(await publicShelterId({ query: { shelter: 'nowhere' } }), null);
+  assert.equal(await publicShelterId({ params: { slug: 'nowhere' } }), null);
+  assert.equal(await publicShelterId({ body: { shelter_slug: 'Bad_Slug!' } }), null);
   assert.equal(await publicShelterId({ query: { shelter: 'hope' } }), 3);
   assert.equal(await publicShelterId({ query: {} }), 1);
 });
@@ -299,6 +301,127 @@ test('bindShelter still binds an active shelter', async () => {
   assert.equal(boundTo, 3);
   assert.equal(req.session.shelterId, 3);
   assert.ok(!req.session.destroyed);
+});
+
+// ---------------------------------------------------------------------------
+// Password reset
+// ---------------------------------------------------------------------------
+
+function withResetUser(shelterId, { owner = false } = {}) {
+  const sent = [];
+  useDb((sql) => {
+    if (/FROM users WHERE lower\(email\)/.test(sql)) {
+      return [[{ user_id: 7, email: 'alex@example.test', first_name: 'Alex', shelter_id: shelterId }]];
+    }
+    if (/FROM platform_owners/.test(sql)) return [owner ? [{ user_id: 7 }] : []];
+    if (/UPDATE users SET reset_token/.test(sql)) return [{ affectedRows: 1 }];
+    return undefined;
+  });
+  return sent;
+}
+
+async function forgot() {
+  const res = makeRes();
+  const prev = { APP_URL: process.env.APP_URL };
+  process.env.APP_URL = 'https://shelterlink.example';
+  try {
+    await auth.forgotPassword({ body: { email: 'alex@example.test' } }, res);
+  } finally {
+    if (prev.APP_URL === undefined) delete process.env.APP_URL;
+    else process.env.APP_URL = prev.APP_URL;
+  }
+  return res;
+}
+
+test('forgot-password for a suspended shelter\'s user sends nothing and answers the generic 200', async () => {
+  withResetUser(2);
+  const res = await forgot();
+  assert.equal(res.statusCode, 200);
+  assert.ok(!sqlCalls().some((s) => /UPDATE users SET reset_token = \?/.test(s)), 'no reset token is issued');
+});
+
+test('forgot-password for an active shelter\'s user still issues a token, with the same body', async () => {
+  withResetUser(3);
+  const suspended = await (async () => { withResetUser(2); return forgot(); })();
+  mock.resetCalls();
+  withResetUser(3);
+  const res = await forgot();
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(res.body, suspended.body, 'responses are identical');
+  assert.ok(sqlCalls().some((s) => /UPDATE users SET reset_token = \?/.test(s)), 'a reset token is issued');
+});
+
+test('forgot-password still works for a platform owner whose shelter is suspended', async () => {
+  withResetUser(2, { owner: true });
+  await forgot();
+  assert.ok(sqlCalls().some((s) => /UPDATE users SET reset_token = \?/.test(s)));
+});
+
+// ---------------------------------------------------------------------------
+// Platform owner whose own shelter is suspended
+// ---------------------------------------------------------------------------
+
+function ownerDb(shelterId) {
+  useDb((sql) => {
+    if (/FROM users\s+WHERE lower\(email\)/.test(sql)) {
+      return [[{
+        user_id: 7, first_name: 'Alex', last_name: 'J', name: 'Alex J', email: 'alex@example.test',
+        password: PASSWORD_HASH, role: 'admin', shelter_id: shelterId, created_at: '2026-01-01',
+        privacy_notice_version: null,
+      }]];
+    }
+    if (/FROM users\s+WHERE user_id = \?/.test(sql)) {
+      return [[{ user_id: 7, name: 'Alex', email: 'alex@example.test', role: 'admin', shelter_id: shelterId }]];
+    }
+    if (/FROM platform_owners/.test(sql)) return [[{ user_id: 7 }]];
+    if (/UPDATE users SET/.test(sql)) return [{ affectedRows: 1 }];
+    return undefined;
+  });
+}
+
+function ownerReq(path) {
+  return {
+    path,
+    body: {},
+    query: {},
+    params: {},
+    session: { userId: 7, role: 'admin', destroy(cb) { this.destroyed = true; cb(); } },
+  };
+}
+
+test('a platform owner whose shelter is suspended can still sign in', async () => {
+  ownerDb(2);
+  const req = loginReq({ email: 'alex@example.test', password: 'Password1' });
+  const res = makeRes();
+  await auth.login(req, res);
+  assert.equal(res.statusCode, 200);
+  assert.equal(req.session.userId, 7);
+});
+
+test('a platform owner whose shelter is suspended keeps /api/platform and /auth/me', async () => {
+  for (const p of ['/platform/applications', '/platform/shelters/2/reactivate', '/platform', '/auth/me', '/auth/logout']) {
+    ownerDb(2);
+    const req = ownerReq(p);
+    const res = makeRes();
+    let boundTo = null;
+    await bindShelter(req, res, () => { boundTo = currentShelterId(); });
+    assert.equal(boundTo, 2, p);
+    assert.ok(!req.session.destroyed, `${p}: session kept`);
+  }
+});
+
+test('a platform owner whose shelter is suspended gets 403 on that shelter\'s own API, without being signed out', async () => {
+  for (const p of ['/admin/volunteers', '/opportunities', '/platformx', '/auth/me/extra']) {
+    ownerDb(2);
+    const req = ownerReq(p);
+    const res = makeRes();
+    let nextCalled = false;
+    await bindShelter(req, res, () => { nextCalled = true; });
+    assert.equal(nextCalled, false, p);
+    assert.equal(res.statusCode, 403, p);
+    assert.equal(res.body.code, 'shelter_suspended');
+    assert.ok(!req.session.destroyed, `${p}: session kept`);
+  }
 });
 
 // ---------------------------------------------------------------------------
