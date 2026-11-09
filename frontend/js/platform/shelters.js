@@ -170,9 +170,14 @@ function decisionCell(app) {
     if (app.reason) bits.push(el('div', { textContent: `Reason: ${app.reason}` }));
     return el('td', {}, bits);
   }
+  // Every row has an Approve and a Reject; name the shelter so a screen
+  // reader's list of buttons says which one is which.
   const approveButton = el('button', { type: 'button', textContent: 'Approve' });
+  approveButton.setAttribute('aria-label', `Approve ${app.shelter_name}`);
   approveButton.addEventListener('click', () => approve(app, approveButton));
-  return el('td', {}, [approveButton, rejectForm(app)]);
+  const reject = rejectForm(app);
+  reject.querySelector('summary').setAttribute('aria-label', `Reject ${app.shelter_name}`);
+  return el('td', {}, [approveButton, reject]);
 }
 
 async function loadApplications() {
