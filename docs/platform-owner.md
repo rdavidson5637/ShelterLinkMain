@@ -86,12 +86,10 @@ An unknown slug on a public API is also a 404 now, the same as the page
 routes (`/s/<slug>`, `/join/<slug>`). Only a request with no slug at all
 falls back to the signed-in shelter, then Assisi.
 
-There is no reactivate action yet. To undo a suspension on a local or staging
-database:
-
-```sql
-UPDATE shelters SET status = 'active' WHERE slug = 'north-paws';
-```
-
-Restart the app, or wait 30 seconds, for the change to be picked up.
-
+**Reactivate** on a suspended shelter (`POST
+/api/platform/shelters/:id/reactivate`) sets it back to `active`, writes a
+`shelter.reactivated` row with the optional reason, and clears this
+instance's cache. Its people can sign in again, its pages and feeds come
+back, and jobs pick it up on their next run. Sessions ended by the
+suspension stay ended, so people sign in again. Needs migration
+`039_platform_audit_reactivate.pg.sql` (`npm run migrate`).
