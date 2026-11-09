@@ -74,6 +74,13 @@ const reset = z
   })
   .strict();
 
+// Check an invite link. Only the token; it comes from the page's #fragment.
+const inviteCheck = z
+  .object({
+    token: optStr(200),
+  })
+  .strict();
+
 // Accept an invite. No email, role, or shelter: those come from the invite.
 const acceptInvite = z
   .object({
@@ -595,6 +602,7 @@ const bodies = {
   login,
   forgot,
   reset,
+  inviteCheck,
   acceptInvite,
   groupBooking,
   opportunity,

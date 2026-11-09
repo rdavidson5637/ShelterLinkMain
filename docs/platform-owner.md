@@ -43,8 +43,10 @@ Sign in as that user and open `/platform/shelters`.
 
 Approving an application creates the shelter and a 7-day, single-use admin
 invite for the applicant's email. Once the transaction commits, the invite is
-emailed with a link to `<APP_URL>/invite/<token>`. The raw token is never
-returned to the browser, never logged, and only its SHA-256 hash is stored.
+emailed with a link to `<APP_URL>/invite#<token>`. The token is in the
+`#fragment`, which browsers never send to a server, so it never appears in
+access logs, proxies or Referer headers. The raw token is never returned to
+the owner's browser, never logged, and only its SHA-256 hash is stored.
 
 A failed email does not undo the approval. The approve response carries
 `inviteEmail: { sent, reason }` and the page says what happened:
@@ -59,11 +61,20 @@ A failed email does not undo the approval. The approve response carries
 /api/platform/applications/:id/resend-invite`) expires the unused invite,
 issues a new one, writes an `invite.created` row with `source: resend`, and
 emails it. It refuses before changing anything when email cannot be sent, and
-refuses once the invite has been accepted.
+refuses once the invite has been accepted. The queue hides the Resend
+button and shows "Invite accepted" once it has been.
+
+If the applicant's email already has a ShelterLink account (at any
+shelter), the queue says so next to the application and the Approve
+confirmation warns that accepting the invite will fail for that address.
+The owner can still approve, then sort it out with the applicant. The
+queue only learns yes or no for that email; it reads nothing else from
+`users`.
 
 ### Accepting
 
-`/invite/<token>` checks the link (`GET /api/auth/invite/:token`) and shows the
+`/invite#<token>` reads the token from the fragment, removes it from the
+address bar, checks it (`POST /api/auth/invite/check` with `{ token }`) and shows the
 shelter name and the invited email, read only. The applicant enters their
 name, an optional phone number, a password, and confirms the privacy notice.
 `POST /api/auth/accept-invite` then, in one transaction:
@@ -80,8 +91,16 @@ The shelter, email, and role all come from the invite row. The request never
 names them. The page then sends the new admin to sign in.
 
 The page is served with `Referrer-Policy: no-referrer` and `Cache-Control:
-no-store`, and the service worker does not cache `/invite/` pages, so the
-token does not leak into Referer headers or caches.
+no-store`, and the service worker does not cache `/invite`, as extra cover.
+
+Rate limits are separate so that loading or checking a link never uses up
+the attempts for creating the account (per IP, per `RATE_LIMIT_WINDOW_MS`):
+
+| What | Env var | Default |
+|---|---|---|
+| `GET /invite` page | `RATE_LIMIT_INVITE_PAGE` | 60 |
+| `POST /api/auth/invite/check` | `RATE_LIMIT_INVITE_CHECK` | 30 |
+| `POST /api/auth/accept-invite` | `RATE_LIMIT_INVITE` | 8 |
 
 ### Staging without email
 
@@ -94,5 +113,5 @@ node scripts/platform-owner.js staging-invite --slug north-paws --staging
 This finds the approved application for that slug, expires any older unused
 invites for the applicant's email, creates a new 7-day admin invite, writes an
 `invite.created` row to `platform_audit`, and prints the raw token once. Open
-`<APP_URL>/invite/<token>` to accept it. Do not paste tokens into tickets or
+`<APP_URL>/invite#<token>` to accept it. Do not paste tokens into tickets or
 chat.
