@@ -21,6 +21,13 @@ const { deliverInvite, inviteDeliveryBlocker } = require('../services/inviteDeli
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ROLES = new Set(['staff', 'admin']);
 
+// Deliberately vague. Saying "this address already has an account" would
+// let any shelter admin test whether someone uses ShelterLink anywhere,
+// at any other shelter.
+const CANNOT_INVITE = 'This address cannot be invited. Ask the person for a different email address, or contact ShelterLink support.';
+
+const ADMIN_CONFIRM = 'Confirm that this person should be an admin. Admins can invite other admins, change roles and use privacy tools.';
+
 function fail(status, message, field = null) {
   const error = new Error(message);
   error.status = status;
@@ -83,6 +90,9 @@ async function createStaffInvite(req, res) {
       throw fail(400, 'Enter an email address like name@example.org.', 'email');
     }
     if (!ROLES.has(role)) throw fail(400, 'Choose staff or admin.', 'role');
+    // Making another admin is the one invite that hands over the keys, so
+    // the page asks first and the API requires the answer.
+    if (role === 'admin' && req.body?.confirm_admin !== true) throw fail(400, ADMIN_CONFIRM, 'role');
 
     // The token cannot be read back later, so an invite that cannot be
     // emailed is useless. Refuse before creating anything.
@@ -100,7 +110,7 @@ async function createStaffInvite(req, res) {
       [email]
     ));
     if (existing.length) {
-      throw fail(409, 'This email address already has a ShelterLink account, so it cannot be invited.', 'email');
+      throw fail(409, CANNOT_INVITE, 'email');
     }
 
     const result = await inShelterTransaction(async (conn) => {
@@ -158,6 +168,8 @@ async function revokeStaffInvite(req, res) {
 }
 
 module.exports = {
+  CANNOT_INVITE,
+  ADMIN_CONFIRM,
   listStaffInvites,
   createStaffInvite,
   revokeStaffInvite,

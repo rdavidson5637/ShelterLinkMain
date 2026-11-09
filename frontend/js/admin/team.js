@@ -103,19 +103,13 @@ async function loadInvites() {
   }
 }
 
-form.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  clearFormErrors(form);
-  setMessage('');
-  const email = emailInput.value.trim();
-  if (!EMAIL_RE.test(email)) {
-    showFormErrors(form, [{ field: 'email', message: 'Enter an email address like name@example.org.' }]);
-    return;
-  }
+async function sendInvite(email, role) {
   inviteButton.disabled = true;
   inviteButton.textContent = 'Sending…';
   try {
-    const res = await apiRequest('/admin/invites', { method: 'POST', body: { email, role: roleInput.value } });
+    const body = { email, role };
+    if (role === 'admin') body.confirm_admin = true;
+    const res = await apiRequest('/admin/invites', { method: 'POST', body });
     if (!res.ok) {
       const { message, field } = await errorBody(res, 'Could not send the invite');
       showFormErrors(form, [{ field, message }]);
@@ -136,6 +130,31 @@ form.addEventListener('submit', async (event) => {
     inviteButton.disabled = false;
     inviteButton.textContent = 'Send invite';
   }
+}
+
+form.addEventListener('submit', (event) => {
+  event.preventDefault();
+  clearFormErrors(form);
+  setMessage('');
+  const email = emailInput.value.trim();
+  if (!EMAIL_RE.test(email)) {
+    showFormErrors(form, [{ field: 'email', message: 'Enter an email address like name@example.org.' }]);
+    return;
+  }
+  const role = roleInput.value;
+  if (role !== 'admin') {
+    sendInvite(email, role);
+    return;
+  }
+  // Another admin can do everything you can, including inviting more
+  // admins and changing your role. Ask first.
+  showConfirm({
+    heading: `Make ${email} an admin?`,
+    body: 'Admins can invite other admins, change anyone\'s role (including yours) and use privacy tools. Choose Staff if they only need to run shifts.',
+    confirmText: 'Invite as admin',
+    cancelText: 'Go back',
+    onConfirm: () => sendInvite(email, role),
+  });
 });
 
 async function init() {

@@ -27,6 +27,7 @@ require.cache[emailPath] = {
 
 const { errorHandler } = require('../middleware/errorHandler');
 const adminRoutes = require('../routes/admin');
+const { CANNOT_INVITE, ADMIN_CONFIRM } = require('../controllers/staffInviteController');
 
 const SHELTER = 3;
 const ADMIN = { userId: 9, role: 'admin', shelterId: SHELTER };
@@ -170,9 +171,34 @@ test('an admin invites a staff member to their own shelter, and the email goes a
 
 test('an admin can invite another admin', async () => {
   scenario();
-  const res = await call('POST', '/invites', { body: { email: 'ada@hope.test', role: 'admin' } });
+  const res = await call('POST', '/invites', { body: { email: 'ada@hope.test', role: 'admin', confirm_admin: true } });
   assert.equal(res.status, 201);
   assert.equal(mock.calls.find((c) => /INSERT INTO admin_invites/.test(c.sql)).params[3], 'admin');
+});
+
+test('inviting an admin needs confirm_admin: true, and nothing is created without it', async () => {
+  for (const extra of [{}, { confirm_admin: false }]) {
+    scenario();
+    const res = await call('POST', '/invites', { body: { email: 'ada@hope.test', role: 'admin', ...extra } });
+    assert.equal(res.status, 400, JSON.stringify(extra));
+    assert.equal(res.body.field, 'role');
+    assert.equal(res.body.error, ADMIN_CONFIRM);
+    assert.ok(!sqlCalls().some((s) => /admin_invites|lower\(email\)/.test(s)), 'checked before the account lookup or any invite query');
+  }
+  scenario();
+  const notBool = await call('POST', '/invites', { body: { email: 'ada@hope.test', role: 'admin', confirm_admin: 'yes' } });
+  assert.equal(notBool.status, 400);
+  scenario();
+  const staff = await call('POST', '/invites', { body: { email: 'sam@hope.test', role: 'staff' } });
+  assert.equal(staff.status, 201, 'staff invites need no confirmation');
+});
+
+test('the team page asks before inviting an admin and sends confirm_admin only then', () => {
+  const source = require('fs').readFileSync(require('path').join(__dirname, '..', 'frontend', 'js', 'admin', 'team.js'), 'utf8');
+  assert.match(source, /if \(role !== 'admin'\) \{\s*sendInvite\(email, role\);\s*return;/);
+  assert.match(source, /showConfirm\(\{\s*heading: `Make \$\{email\} an admin\?`/);
+  assert.match(source, /onConfirm: \(\) => sendInvite\(email, role\)/);
+  assert.match(source, /if \(role === 'admin'\) body\.confirm_admin = true;/);
 });
 
 test('bad input is refused before anything is created', async () => {
@@ -207,6 +233,8 @@ test('an address that already has an account cannot be invited', async () => {
   const res = await call('POST', '/invites', { body: { email: 'sam@hope.test' } });
   assert.equal(res.status, 409);
   assert.equal(res.body.field, 'email');
+  assert.equal(res.body.error, CANNOT_INVITE);
+  assert.doesNotMatch(res.body.error, /account|already|exists|registered/i, 'never says the address is in use');
   assert.ok(!sqlCalls().some((s) => /INSERT INTO admin_invites/.test(s)));
 });
 

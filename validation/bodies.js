@@ -91,6 +91,8 @@ const staffInvite = z
   .object({
     email: optStr(254),
     role: optStr(20),
+    // Required (true) when role is admin: the page asks before sending.
+    confirm_admin: z.boolean().optional(),
   })
   .strict();
 
