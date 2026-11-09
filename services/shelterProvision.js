@@ -175,6 +175,172 @@ async function consumeInvite(db, token) {
   return Array.isArray(rows) && rows.length ? rows[0] : null;
 }
 
+// base64url of INVITE_TOKEN_BYTES random bytes. Anything else is not ours.
+const INVITE_TOKEN_RE = /^[A-Za-z0-9_-]{43}$/;
+
+function looksLikeInviteToken(token) {
+  return typeof token === 'string' && INVITE_TOKEN_RE.test(token);
+}
+
+/**
+ * The open invite for a raw token, with its shelter's name and status, or
+ * null when the token is unknown, used, or expired. Read only; nothing is
+ * marked used. The caller runs this outside shelter context.
+ */
+async function findOpenInvite(db, token) {
+  if (!looksLikeInviteToken(token)) return null;
+  const [rows] = await db.execute(
+    `SELECT i.id, i.shelter_id, i.email, i.role, i.expires_at,
+            s.name AS shelter_name, s.slug AS shelter_slug, s.status AS shelter_status
+     FROM admin_invites i
+     JOIN shelters s ON s.id = i.shelter_id
+     WHERE i.token_hash = ? AND i.used_at IS NULL AND i.expires_at > NOW()
+     LIMIT 1`,
+    [hashInviteToken(token)]
+  );
+  return rows[0] || null;
+}
+
+/**
+ * Replace the admin invite for an approved application: expire its unused
+ * invites for the applicant's email, then issue a new one. Runs inside the
+ * caller's transaction, outside shelter context. Returns the new invite
+ * (with its raw token) plus the shelter and application rows.
+ */
+async function reissueApplicationInvite(conn, applicationId) {
+  const id = Number(applicationId);
+  if (!Number.isInteger(id) || id <= 0) throw fail(400, 'Application is required');
+  const [apps] = await conn.execute(
+    `SELECT id, status, desired_slug, contact_email FROM shelter_applications
+     WHERE id = ? FOR UPDATE`,
+    [id]
+  );
+  const application = apps[0];
+  if (!application) throw fail(404, 'Application not found');
+  if (application.status !== 'approved') {
+    throw fail(409, 'Only an approved application has an invite to resend');
+  }
+  const [shelters] = await conn.execute(
+    'SELECT id, name, slug, status FROM shelters WHERE slug = ? LIMIT 1',
+    [application.desired_slug]
+  );
+  const shelter = shelters[0];
+  if (!shelter) throw fail(404, 'Shelter not found for this application');
+  if (shelter.status !== 'active') throw fail(409, 'This shelter is suspended');
+
+  const [used] = await conn.execute(
+    `SELECT id FROM admin_invites
+     WHERE shelter_id = ? AND lower(email) = lower(?) AND used_at IS NOT NULL
+     LIMIT 1`,
+    [shelter.id, application.contact_email]
+  );
+  if (used.length) throw fail(409, 'This invite has already been accepted');
+
+  await conn.execute(
+    `UPDATE admin_invites SET expires_at = NOW()
+     WHERE shelter_id = ? AND lower(email) = lower(?) AND used_at IS NULL AND expires_at > NOW()`,
+    [shelter.id, application.contact_email]
+  );
+  const invite = await createInvite(conn, {
+    shelterId: shelter.id,
+    email: application.contact_email,
+    role: 'admin',
+  });
+  return { invite, shelter, application };
+}
+
+function cleanName(value, label) {
+  const name = typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : '';
+  if (!name) throw fail(400, `${label} is required`);
+  if (name.length > 80) throw fail(400, `${label} must be at most 80 characters`);
+  return name;
+}
+
+const INVALID_INVITE = 'This invite link is not valid. It may have been used already or have expired.';
+
+/**
+ * Turn an invite into an account, once. Runs in the caller's transaction,
+ * outside shelter context, so a failure at any step leaves the invite
+ * unused:
+ *   1. mark the invite used (single UPDATE, so two requests cannot both win)
+ *   2. refuse a suspended shelter
+ *   3. refuse an email that already has an account
+ *   4. create the user on the invite's shelter, with the invite's role
+ *   5. write invite.accepted to that shelter's audit_log
+ * The shelter, email, and role all come from the invite row, never from the
+ * request. passwordHash is already hashed by the caller.
+ */
+async function acceptInviteAccount(conn, {
+  token,
+  firstName,
+  lastName,
+  phone = null,
+  passwordHash,
+  privacyNoticeVersion,
+} = {}) {
+  if (!looksLikeInviteToken(token)) throw fail(400, INVALID_INVITE);
+  const first = cleanName(firstName, 'First name');
+  const last = cleanName(lastName, 'Last name');
+  if (!passwordHash) throw fail(500, 'Password hash is missing');
+
+  const invite = await consumeInvite(conn, token);
+  if (!invite) throw fail(400, INVALID_INVITE);
+
+  const shelterId = Number(invite.shelter_id);
+  const [shelters] = await conn.execute(
+    'SELECT id, name, slug, status FROM shelters WHERE id = ? LIMIT 1',
+    [shelterId]
+  );
+  const shelter = shelters[0];
+  if (!shelter) throw fail(400, INVALID_INVITE);
+  if (shelter.status !== 'active') {
+    throw fail(403, 'This shelter is not active on ShelterLink at the moment.');
+  }
+
+  const email = String(invite.email).trim().toLowerCase();
+  const [existing] = await conn.execute(
+    'SELECT user_id FROM users WHERE lower(email) = lower(?) LIMIT 1',
+    [email]
+  );
+  if (existing.length) {
+    throw fail(409, 'An account already uses this email address. Sign in instead, or ask for an invite to a different address.');
+  }
+
+  let created;
+  try {
+    [created] = await conn.execute(
+      `INSERT INTO users (
+         first_name, last_name, name, phone, email, password, role, shelter_id,
+         consent_given_at, privacy_notice_version, created_at
+       )
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, NOW())
+       RETURNING user_id`,
+      [first, last, `${first} ${last}`, phone || null, email, passwordHash, invite.role,
+        shelterId, privacyNoticeVersion || null]
+    );
+  } catch (error) {
+    if (error && error.code === '23505') {
+      throw fail(409, 'An account already uses this email address. Sign in instead, or ask for an invite to a different address.');
+    }
+    throw error;
+  }
+  const userId = Number(created.insertId || (created[0] && created[0].user_id));
+  if (!userId) throw fail(500, 'Account was not created');
+
+  await conn.execute(
+    `INSERT INTO audit_log (user_id, action, entity_type, entity_id, detail_json, shelter_id)
+     VALUES (?, 'invite.accepted', 'user', ?, ?, ?)`,
+    [userId, String(userId), JSON.stringify({ inviteId: Number(invite.id), role: invite.role }), shelterId]
+  );
+
+  return {
+    userId,
+    email,
+    role: invite.role,
+    shelter: { id: shelterId, name: shelter.name, slug: shelter.slug },
+  };
+}
+
 async function createShelterWithAdmin({
   name,
   slug,
@@ -263,6 +429,10 @@ module.exports = {
   createShelter,
   createInvite,
   consumeInvite,
+  findOpenInvite,
+  reissueApplicationInvite,
+  acceptInviteAccount,
+  looksLikeInviteToken,
   hashInviteToken,
   createShelterWithAdmin,
   updateShelterBrand,

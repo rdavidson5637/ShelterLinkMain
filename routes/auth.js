@@ -8,9 +8,12 @@ const {
   forgotPasswordLimiter,
   forgotAccountLimiter,
   resetPasswordLimiter,
+  inviteCheckLimiter,
+  inviteAcceptLimiter,
 } = require('../middleware/rateLimiter');
 const { validateBody, boundedParam } = require('../middleware/validate');
 const { bodies } = require('../validation/bodies');
+const inviteController = require('../controllers/inviteController');
 
 const router = express.Router();
 router.param('token', boundedParam('token', 128));
@@ -39,5 +42,12 @@ router.post(
 router.post('/forgot-password', forgotAccountLimiter, forgotPasswordLimiter, validateBody(bodies.forgot), authController.forgotPassword);
 router.get('/reset-password/:token', resetPasswordLimiter, authController.validateResetToken);
 router.post('/reset-password', resetPasswordLimiter, validateBody(bodies.reset), authController.resetPassword);
+
+// One-time shelter invites (admin or staff). Signed out; the shelter, email
+// and role all come from the invite row.
+// The token travels in the POST body only, never in a URL, so it stays out
+// of access logs, proxies and Referer headers.
+router.post('/invite/check', inviteCheckLimiter, validateBody(bodies.inviteCheck), inviteController.checkInvite);
+router.post('/accept-invite', inviteAcceptLimiter, validateBody(bodies.acceptInvite), inviteController.acceptInvite);
 
 module.exports = router;

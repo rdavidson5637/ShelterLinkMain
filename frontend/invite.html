@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <meta name="referrer" content="no-referrer" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <title>Set up your account - ShelterLink</title>
+    <meta name="robots" content="noindex" />
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body data-brand-lock="token">
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Main navigation">
+        <a class="site-brand" href="/index.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+      </nav>
+    </header>
+
+    <main class="container">
+      <article class="auth-card">
+        <h1 id="heading">Set up your account</h1>
+        <p id="intro">Checking your invite link…</p>
+
+        <div id="message" role="status" aria-live="polite"></div>
+
+        <form id="inviteForm" hidden>
+          <label for="email">
+            Email address
+            <input type="email" id="email" name="email" readonly aria-describedby="emailHint" />
+            <small id="emailHint">This is the address the invite was sent to. You will sign in with it.</small>
+          </label>
+
+          <div class="form-grid">
+            <label for="first_name">
+              First name
+              <input type="text" id="first_name" name="first_name" required maxlength="80" autocomplete="given-name" />
+            </label>
+
+            <label for="last_name">
+              Last name
+              <input type="text" id="last_name" name="last_name" required maxlength="80" autocomplete="family-name" />
+            </label>
+          </div>
+
+          <label for="phone">
+            Phone number <span class="muted">(optional)</span>
+            <input type="tel" id="phone" name="phone" maxlength="40" autocomplete="tel" />
+          </label>
+
+          <div class="form-grid">
+            <label for="password">
+              Password
+              <input
+                type="password"
+                id="password"
+                name="password"
+                required
+                minlength="10"
+                autocomplete="new-password"
+                aria-describedby="passwordHint"
+              />
+              <small id="passwordHint">At least 10 characters.</small>
+            </label>
+
+            <label for="confirm_password">
+              Confirm password
+              <input
+                type="password"
+                id="confirm_password"
+                name="confirm_password"
+                required
+                minlength="10"
+                autocomplete="new-password"
+              />
+            </label>
+          </div>
+
+          <label for="privacy_notice">
+            <input type="checkbox" id="privacy_notice" name="privacy_notice" />
+            I have read the <a href="/pages/privacy.html" target="_blank" rel="noopener noreferrer">privacy notice</a>
+          </label>
+
+          <button type="submit" id="submitButton">Create my account</button>
+        </form>
+
+        <p class="auth-links" id="loginLink" hidden>
+          <a href="/login.html">Go to sign in</a>
+        </p>
+      </article>
+    </main>
+
+    <footer class="container">
+      <small>&copy; <span data-footer-year>2026</span> ShelterLink</small>
+    </footer>
+
+    <script type="module" src="/js/invite.js"></script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+  </body>
+</html>

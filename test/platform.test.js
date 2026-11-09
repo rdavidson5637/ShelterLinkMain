@@ -7,6 +7,38 @@ const express = require('express');
 process.env.NODE_ENV = 'test';
 
 const mock = require('./helpers/mockDb');
+
+// Capture invite emails instead of sending them. inviteDelivery requires the
+// email module when it sends, so this stand-in is what it gets. Each send is
+// also pushed onto mock.calls as 'EMAIL' so tests can check it ran after
+// COMMIT.
+const sentEmails = [];
+let emailFailure = null;
+const emailPath = require.resolve('../utils/emailService');
+require.cache[emailPath] = {
+  id: emailPath,
+  filename: emailPath,
+  loaded: true,
+  exports: {
+    async sendShelterInvite(to, options) {
+      mock.calls.push({ sql: 'EMAIL', params: [to] });
+      if (emailFailure) throw emailFailure;
+      sentEmails.push({ to, ...options });
+    },
+  },
+};
+
+function emailOn() {
+  process.env.EMAIL_HOST = 'smtp.example.test';
+  process.env.EMAIL_FROM = 'noreply@example.test';
+  process.env.APP_URL = 'http://localhost:3000';
+}
+
+function emailOff() {
+  delete process.env.EMAIL_HOST;
+  delete process.env.EMAIL_FROM;
+  delete process.env.EMAIL_USER;
+}
 const { errorHandler } = require('../middleware/errorHandler');
 const platformRoutes = require('../routes/platform');
 const { hashInviteToken } = require('../services/shelterProvision');
@@ -55,11 +87,20 @@ function scenario({
   owners = [OWNER_ID],
   application = pendingApplication(),
   slugTaken = false,
+  slugRow = { id: 2 },
   charityTaken = false,
   shelter = { id: 5, slug: 'north-paws', status: 'active' },
+  usedInvite = false,
+  accountEmails = [],
+  acceptedInvites = [],
   failOn = null,
+  email = false,
+  emailError = null,
 } = {}) {
   mock.resetCalls();
+  sentEmails.length = 0;
+  emailFailure = emailError;
+  if (email) emailOn(); else emailOff();
   mock.setHandler(async (sql, params) => {
     if (failOn && failOn.test(sql)) throw new Error('boom');
     if (/FROM platform_owners/i.test(sql)) {
@@ -68,7 +109,13 @@ function scenario({
     if (/FROM shelter_applications WHERE id = \?/i.test(sql)) return [application ? [application] : []];
     if (/FROM shelter_applications/i.test(sql)) return [application ? [application] : []];
     if (/UPDATE shelter_applications/i.test(sql)) return [{ affectedRows: 1 }];
-    if (/FROM shelters WHERE slug = \?/i.test(sql)) return [slugTaken ? [{ id: 2 }] : []];
+    if (/FROM shelters WHERE slug = \?/i.test(sql)) return [slugTaken ? [slugRow] : []];
+    if (sql === ACCOUNT_LOOKUP_SQL) {
+      return [accountEmails.filter((e) => params[0].includes(e)).map((email) => ({ email }))];
+    }
+    if (/used_at IS NOT NULL AND s\.slug = ANY/.test(sql)) return [acceptedInvites];
+    if (/FROM admin_invites/i.test(sql)) return [usedInvite ? [{ id: 9 }] : []];
+    if (/UPDATE admin_invites/i.test(sql)) return [{ affectedRows: 1 }];
     if (/FROM shelters WHERE charity_regulator/i.test(sql)) return [charityTaken ? [{ id: 3 }] : []];
     if (/INSERT INTO shelters/i.test(sql)) {
       const rows = [{ id: 42 }];
@@ -128,9 +175,14 @@ function sqlCalls() {
   return mock.calls.map((c) => c.sql);
 }
 
+// The one users query the queue may make (services/accountLookup.js): yes
+// or no per applicant email, nothing else.
+const ACCOUNT_LOOKUP_SQL = 'SELECT DISTINCT lower(email) AS email FROM users WHERE lower(email) = ANY(?::text[])';
+
 function tablesTouched() {
   const tables = new Set();
   for (const sql of sqlCalls()) {
+    if (sql === ACCOUNT_LOOKUP_SQL) continue;
     for (const m of sql.matchAll(/\b(?:FROM|JOIN|INTO|UPDATE)\s+([a-z_]+)/gi)) {
       tables.add(m[1].toLowerCase());
     }
@@ -147,6 +199,7 @@ const ROUTES = [
   ['GET', '/applications?status=all'],
   ['POST', '/applications/7/approve'],
   ['POST', '/applications/7/reject'],
+  ['POST', '/applications/7/resend-invite'],
   ['POST', '/applications/not-a-number/approve'],
   ['GET', '/shelters'],
   ['POST', '/shelters/5/suspend'],
@@ -215,6 +268,34 @@ test('GET /applications?status=all lists decided ones too; bad status is 400', a
   assert.equal((await call('GET', '/applications?status=deleted', { session: OWNER })).status, 400);
 });
 
+test('pending applications say whether the applicant email already has an account', async () => {
+  scenario();
+  let res = await call('GET', '/applications', { session: OWNER });
+  assert.equal(res.body[0].contact_has_account, false);
+  const lookup = mock.calls.find((c) => c.sql === ACCOUNT_LOOKUP_SQL);
+  assert.ok(lookup, 'one account lookup for the list');
+  assert.deepEqual(lookup.params, [['ada@north.example']], 'lower-cased, de-duplicated');
+
+  scenario({ accountEmails: ['ada@north.example'] });
+  res = await call('GET', '/applications', { session: OWNER });
+  assert.equal(res.body[0].contact_has_account, true);
+  assert.doesNotMatch(JSON.stringify(res.body), /user_id|role|shelter_id/, 'nothing else about the account');
+});
+
+test('approved applications say whether the invite was accepted, so Resend can be hidden', async () => {
+  scenario({ application: pendingApplication({ status: 'approved' }), acceptedInvites: [{ slug: 'north-paws', email: 'ada@north.example' }] });
+  let res = await call('GET', '/applications?status=all', { session: OWNER });
+  assert.equal(res.body[0].invite_accepted, true);
+
+  scenario({ application: pendingApplication({ status: 'approved' }) });
+  res = await call('GET', '/applications?status=all', { session: OWNER });
+  assert.equal(res.body[0].invite_accepted, false);
+  assert.equal(res.body[0].contact_has_account, undefined, 'only pending rows are checked for an account');
+  assert.ok(!mock.calls.some((c) => c.sql === ACCOUNT_LOOKUP_SQL), 'no users lookup without pending rows');
+  const used = mock.calls.find((c) => /used_at IS NOT NULL AND s\.slug = ANY/.test(c.sql));
+  assert.deepEqual(used.params, [['north-paws']]);
+});
+
 // ---------------------------------------------------------------------------
 // POST /applications/:id/approve
 // ---------------------------------------------------------------------------
@@ -260,6 +341,48 @@ test('approve creates the shelter and an admin invite in one transaction, with n
   assert.match(decided.sql, /status = 'approved'/);
   assert.match(decided.sql, /decided_at = NOW\(\)/);
   assert.deepEqual(decided.params, [OWNER_ID, 7]);
+});
+
+test('approve emails the invite after the commit, with a link that matches the stored hash', async () => {
+  scenario({ email: true });
+  const res = await call('POST', '/applications/7/approve', { session: OWNER });
+  assert.equal(res.status, 201);
+  assert.deepEqual(res.body.inviteEmail, { sent: true });
+  assert.equal(sentEmails.length, 1);
+  const [mail] = sentEmails;
+  assert.equal(mail.to, 'ada@north.example');
+  assert.equal(mail.shelterName, 'North Paws');
+  assert.equal(mail.role, 'admin');
+  assert.equal(mail.expiresInDays, 7);
+
+  const match = /^http:\/\/localhost:3000\/invite#([A-Za-z0-9_-]{43})$/.exec(mail.link);
+  assert.ok(match, `link shape: ${mail.link}`);
+  const invite = mock.calls.find((c) => /INSERT INTO admin_invites/.test(c.sql));
+  assert.equal(hashInviteToken(match[1]), invite.params[2], 'the emailed token is the one whose hash was stored');
+  assert.ok(!JSON.stringify(res.body).includes(match[1]), 'the token is not in the response');
+
+  const sql = sqlCalls();
+  assert.ok(sql.indexOf('EMAIL') > sql.indexOf('COMMIT'), 'email goes only after the commit');
+});
+
+test('approve still succeeds when email is not configured, and says the invite was not sent', async () => {
+  scenario({ email: false });
+  const res = await call('POST', '/applications/7/approve', { session: OWNER });
+  assert.equal(res.status, 201);
+  assert.deepEqual(res.body.inviteEmail, { sent: false, reason: 'email_not_configured' });
+  assert.equal(sentEmails.length, 0);
+  assert.ok(!sqlCalls().includes('EMAIL'));
+  assert.ok(sqlCalls().includes('COMMIT'));
+});
+
+test('approve still succeeds when the email server refuses the invite', async () => {
+  scenario({ email: true, emailError: new Error('550 relay denied') });
+  const res = await call('POST', '/applications/7/approve', { session: OWNER });
+  assert.equal(res.status, 201);
+  assert.deepEqual(res.body.inviteEmail, { sent: false, reason: 'send_failed' });
+  const sql = sqlCalls();
+  assert.ok(sql.includes('COMMIT'));
+  assert.ok(!sql.includes('ROLLBACK'), 'the approval is not undone');
 });
 
 test('approve writes application.approved and invite.created audit rows', async () => {
@@ -361,6 +484,82 @@ test('reject refuses an application that is already decided', async () => {
 });
 
 // ---------------------------------------------------------------------------
+// POST /applications/:id/resend-invite
+// ---------------------------------------------------------------------------
+
+const APPROVED = pendingApplication({ status: 'approved', decided_at: '2026-11-02 10:00:00', decided_by: OWNER_ID });
+const NEW_SHELTER = { id: 42, name: 'North Paws', slug: 'north-paws', status: 'active' };
+
+test('resend expires the unused invite, issues a new one, audits it, and emails it after commit', async () => {
+  scenario({ email: true, application: APPROVED, slugTaken: true, slugRow: NEW_SHELTER });
+  const res = await call('POST', '/applications/7/resend-invite', { session: OWNER });
+  assert.equal(res.status, 201);
+  assert.deepEqual(res.body.inviteEmail, { sent: true });
+  assert.equal(res.body.invite.email, 'ada@north.example');
+  assert.equal(res.body.invite.token, undefined);
+
+  const sql = sqlCalls();
+  const begin = sql.indexOf('BEGIN');
+  const commit = sql.indexOf('COMMIT');
+  assert.ok(begin > 0 && commit > begin);
+  const inTx = sql.slice(begin + 1, commit);
+  assert.ok(inTx.some((s) => /FROM shelter_applications[\s\S]*FOR UPDATE/.test(s)), 'application row is locked');
+
+  const expire = mock.calls.find((c) => /UPDATE admin_invites SET expires_at = NOW\(\)/.test(c.sql));
+  assert.ok(expire, 'older invites are expired');
+  assert.match(expire.sql, /used_at IS NULL/);
+  assert.deepEqual(expire.params, [42, 'Ada@North.example']);
+
+  const invite = mock.calls.find((c) => /INSERT INTO admin_invites/.test(c.sql));
+  assert.equal(invite.params[0], 42);
+  assert.equal(invite.params[3], 'admin');
+  assert.ok(sql.indexOf(expire.sql) < sql.indexOf(invite.sql), 'expire runs before the new invite');
+
+  const audit = mock.calls.find((c) => /INSERT INTO platform_audit/.test(c.sql));
+  assert.equal(audit.params[1], 'invite.created');
+  assert.equal(audit.params[2], 7);
+  assert.equal(audit.params[3], 42);
+  assert.equal(JSON.parse(audit.params[4]).source, 'resend');
+
+  const token = /\/invite#([A-Za-z0-9_-]{43})$/.exec(sentEmails[0].link)[1];
+  assert.equal(hashInviteToken(token), invite.params[2]);
+  assert.ok(sql.indexOf('EMAIL') > commit, 'email goes only after the commit');
+});
+
+test('resend changes nothing when email cannot be sent', async () => {
+  scenario({ email: false, application: APPROVED, slugTaken: true, slugRow: NEW_SHELTER });
+  const res = await call('POST', '/applications/7/resend-invite', { session: OWNER });
+  assert.equal(res.status, 409);
+  assert.match(res.body.error, /Email is not configured/);
+  assert.ok(!sqlCalls().some((s) => /admin_invites|shelter_applications|BEGIN/.test(s)));
+});
+
+test('resend refuses a pending application, an accepted invite, and a suspended shelter', async () => {
+  scenario({ email: true, slugTaken: true, slugRow: NEW_SHELTER });
+  let res = await call('POST', '/applications/7/resend-invite', { session: OWNER });
+  assert.equal(res.status, 409);
+  assert.match(res.body.error, /Only an approved application/);
+  assert.ok(sqlCalls().includes('ROLLBACK'));
+  assert.ok(!sqlCalls().some((s) => /INSERT INTO admin_invites|UPDATE admin_invites/.test(s)));
+  assert.equal(sentEmails.length, 0);
+
+  scenario({ email: true, application: APPROVED, slugTaken: true, slugRow: NEW_SHELTER, usedInvite: true });
+  res = await call('POST', '/applications/7/resend-invite', { session: OWNER });
+  assert.equal(res.status, 409);
+  assert.match(res.body.error, /already been accepted/);
+  assert.ok(!sqlCalls().some((s) => /INSERT INTO admin_invites|UPDATE admin_invites/.test(s)));
+
+  scenario({ email: true, application: APPROVED, slugTaken: true, slugRow: { ...NEW_SHELTER, status: 'suspended' } });
+  res = await call('POST', '/applications/7/resend-invite', { session: OWNER });
+  assert.equal(res.status, 409);
+  assert.match(res.body.error, /suspended/);
+
+  scenario({ email: true, application: null });
+  res = await call('POST', '/applications/7/resend-invite', { session: OWNER });
+  assert.equal(res.status, 404);
+});
+
+// ---------------------------------------------------------------------------
 // Shelters list and suspend
 // ---------------------------------------------------------------------------
 
@@ -426,6 +625,7 @@ test('owner routes touch only platform tables and never users or volunteer_profi
       assert.ok(ALLOWED_TABLES.has(table), `owner route touched ${table}`);
     }
     for (const sql of sqlCalls()) {
+      if (sql === ACCOUNT_LOOKUP_SQL) continue;
       assert.doesNotMatch(sql, /\busers\b|\bvolunteer_profiles\b/i);
     }
     // Responses carry no volunteer profile fields.

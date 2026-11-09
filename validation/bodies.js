@@ -74,6 +74,25 @@ const reset = z
   })
   .strict();
 
+// Check an invite link. Only the token; it comes from the page's #fragment.
+const inviteCheck = z
+  .object({
+    token: optStr(200),
+  })
+  .strict();
+
+// Accept an invite. No email, role, or shelter: those come from the invite.
+const acceptInvite = z
+  .object({
+    token: optStr(200),
+    first_name: optStr(80),
+    last_name: optStr(80),
+    phone: optStr(40),
+    password: optStr(200),
+    privacy_notice: z.union([z.boolean(), z.literal('on'), z.literal('true')]).optional(),
+  })
+  .strict();
+
 const groupBooking = z
   .object({
     opportunity_id: optId,
@@ -583,6 +602,8 @@ const bodies = {
   login,
   forgot,
   reset,
+  inviteCheck,
+  acceptInvite,
   groupBooking,
   opportunity,
   shiftNote,
