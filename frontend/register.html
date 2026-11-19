@@ -17,25 +17,26 @@
     <link rel="stylesheet" href="/public/css/custom.css" />
   </head>
   <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
     <header class="site-header">
       <nav class="site-nav container" aria-label="Main navigation">
         <a class="site-brand" href="/index.html">
           <span class="brand-mark" aria-hidden="true"></span>
           <strong>ShelterLink</strong>
         </a>
-        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">☰</button>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">Menu</button>
         <ul class="nav-menu" id="navMenu">
           <li><a class="nav-link" href="/login.html"><span class="nav-icon" aria-hidden="true">&#128274;</span><span>Login</span></a></li>
         </ul>
       </nav>
     </header>
 
-    <main class="container">
+    <main id="main" class="container">
       <article class="auth-card">
         <h1>Create an Account</h1>
         <p>Sign up to volunteer with <span data-shelter-name>your shelter</span> on ShelterLink.</p>
 
-        <div id="message"></div>
+        <div id="message" role="status" aria-live="polite"></div>
 
         <form id="registerForm">
           <div class="form-grid">
@@ -43,12 +44,12 @@
               <div class="form-grid">
                 <label for="first_name">
                   First Name
-                  <input type="text" id="first_name" name="first_name" required />
+                  <input type="text" id="first_name" name="first_name" required autocomplete="given-name" />
                 </label>
 
                 <label for="last_name">
                   Last Name
-                  <input type="text" id="last_name" name="last_name" required />
+                  <input type="text" id="last_name" name="last_name" required autocomplete="family-name" />
                 </label>
               </div>
             </div>
@@ -57,12 +58,12 @@
               <div class="form-grid">
                 <label for="email">
                   Email Address
-                  <input type="email" id="email" name="email" required />
+                  <input type="email" id="email" name="email" required autocomplete="email" />
                 </label>
 
                 <label for="phone">
                   Phone Number
-                  <input type="tel" id="phone" name="phone" required />
+                  <input type="tel" id="phone" name="phone" required autocomplete="tel" />
                 </label>
               </div>
             </div>
@@ -71,12 +72,13 @@
               <div class="form-grid">
                 <label for="password">
                   Password
-                  <input type="password" id="password" name="password" required minlength="8" />
+                  <input type="password" id="password" name="password" required minlength="10" autocomplete="new-password" aria-describedby="passwordHint" />
                 </label>
+                <small id="passwordHint">Use at least 10 characters.</small>
 
                 <label for="confirm_password">
                   Confirm Password
-                  <input type="password" id="confirm_password" name="confirm_password" required minlength="8" />
+                  <input type="password" id="confirm_password" name="confirm_password" required minlength="10" autocomplete="new-password" />
                 </label>
               </div>
             </div>

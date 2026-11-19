@@ -8,8 +8,14 @@ import {
 
 const listEl = document.getElementById('opportunitiesList');
 
+function setListBusy(busy) {
+  if (!listEl) return;
+  listEl.setAttribute('aria-busy', busy ? 'true' : 'false');
+}
+
 async function load() {
   if (!listEl) return;
+  setListBusy(true);
   try {
     const res = await fetch(withShelterQuery('/api/public/opportunities'), { credentials: 'omit' });
     if (!res.ok) {
@@ -76,6 +82,8 @@ async function load() {
     const p = document.createElement('p');
     p.textContent = 'Network error while loading opportunities.';
     listEl.appendChild(p);
+  } finally {
+    setListBusy(false);
   }
 }
 
