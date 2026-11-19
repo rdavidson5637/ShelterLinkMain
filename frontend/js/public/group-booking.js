@@ -1,10 +1,12 @@
 import { showFormErrors, clearFormErrors } from '../utils/formErrors.js';
 import { filterPublicBoard, isAcceptingSignups } from './publicBoard.js';
 import { currentShelterSlug, withShelterQuery } from '../shelterSlug.js';
+import { renderEmptyState, renderErrorState } from '../utils/listState.js';
 
 const form = document.getElementById('groupBookingForm');
 const opportunitySelect = document.getElementById('opportunityId');
 const messageEl = document.getElementById('message');
+const submitButton = form?.querySelector('[type="submit"]');
 
 function setMessage(text, tone = 'neutral') {
   if (!messageEl) return;
@@ -16,6 +18,44 @@ function setMessage(text, tone = 'neutral') {
   messageEl.appendChild(p);
 }
 
+function setFormEnabled(enabled) {
+  if (!form) return;
+  for (const control of form.querySelectorAll('input, select, textarea, button')) {
+    if (control.name === 'fax_extension' || control.id === 'faxExtension' || control.id === 'startedAt') {
+      continue;
+    }
+    control.disabled = !enabled;
+  }
+  if (submitButton) submitButton.disabled = !enabled;
+}
+
+function showSelectEmpty() {
+  setMessage('');
+  if (!messageEl) return;
+  messageEl.replaceChildren(
+    renderEmptyState({
+      title: 'No open group slots',
+      body: 'There are no open opportunities accepting a group visit right now. Check the open shifts board and try again later.',
+      actionHref: '/pages/opportunities.html',
+      actionLabel: 'Browse open shifts',
+    })
+  );
+}
+
+function showSelectError() {
+  setMessage('');
+  if (!messageEl) return;
+  messageEl.replaceChildren(
+    renderErrorState({
+      title: 'Could not load opportunities',
+      body: 'The list of open shifts could not be loaded. Try again in a moment.',
+      onRetry: () => {
+        loadOpportunities();
+      },
+    })
+  );
+}
+
 function formatDate(value) {
   if (!value) return 'Date TBA';
   const d = new Date(value);
@@ -25,6 +65,8 @@ function formatDate(value) {
 
 async function loadOpportunities() {
   if (!opportunitySelect) return;
+  setFormEnabled(false);
+  opportunitySelect.innerHTML = '<option value="">Loading opportunities…</option>';
   try {
     const res = await fetch(withShelterQuery('/api/public/opportunities'), { credentials: 'omit' });
     if (!res.ok) throw new Error('Failed to load');
@@ -32,8 +74,11 @@ async function loadOpportunities() {
     opportunitySelect.innerHTML = '<option value="">Select an opportunity</option>';
     if (!Array.isArray(rows) || !rows.length) {
       opportunitySelect.innerHTML = '<option value="">No open opportunities</option>';
+      showSelectEmpty();
       return;
     }
+    setMessage('');
+    setFormEnabled(true);
     rows.forEach((opp) => {
       const opt = document.createElement('option');
       opt.value = opp.id;
@@ -49,6 +94,7 @@ async function loadOpportunities() {
   } catch (error) {
     console.error('[GroupBooking] load opportunities error:', error);
     opportunitySelect.innerHTML = '<option value="">Unable to load opportunities</option>';
+    showSelectError();
   }
 }
 

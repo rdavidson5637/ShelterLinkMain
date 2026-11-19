@@ -17,10 +17,17 @@
   </head>
   <body>
     <main class="container">
-      <article class="auth-card" style="max-width: 680px; margin-top: 2rem;">
-        <p><a href="/launch">Back to ShelterLink</a></p>
-        <h1>You do not have permission to view this page.</h1>
-        <button id="dashboardButton" type="button">Return to Dashboard</button>
+      <article class="auth-card state-page">
+        <div class="empty-state">
+          <h1>You do not have permission</h1>
+          <p>This page is only available to signed-in people with the right role.</p>
+          <p class="empty-state-actions">
+            <a class="text-link" href="/launch">Back to ShelterLink</a>
+          </p>
+          <p class="empty-state-actions">
+            <button id="dashboardButton" type="button">Return to Dashboard</button>
+          </p>
+        </div>
       </article>
     </main>
 
