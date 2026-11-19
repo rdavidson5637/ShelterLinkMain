@@ -35,3 +35,15 @@ test('clearSessionCookie passes the same attributes', () => {
   });
   process.env.NODE_ENV = prev;
 });
+
+test('non-production session cookie is HttpOnly, not Secure, SameSite=lax', () => {
+  const prev = process.env.NODE_ENV;
+  process.env.NODE_ENV = 'test';
+  assert.deepStrictEqual(sessionCookieOptions(), {
+    httpOnly: true,
+    secure: false,
+    sameSite: 'lax',
+    path: '/',
+  });
+  process.env.NODE_ENV = prev;
+});
