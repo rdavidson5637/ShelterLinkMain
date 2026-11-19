@@ -8,10 +8,11 @@ const {
   isAcceptingApplications,
 } = require('../utils/publicOpportunityFilter');
 
-test('public board hides cancelled, closed, and test-titled shifts', () => {
+test('public board hides cancelled, closed, completed, and test-titled shifts', () => {
   assert.equal(isHiddenFromPublicBoard({ title: 'Kennel clean', status: 'open' }), false);
   assert.equal(isHiddenFromPublicBoard({ title: 'Walk dogs', status: 'cancelled' }), true);
   assert.equal(isHiddenFromPublicBoard({ title: 'Walk dogs', status: 'closed' }), true);
+  assert.equal(isHiddenFromPublicBoard({ title: 'Walk dogs', status: 'completed' }), true);
   assert.equal(isHiddenFromPublicBoard({ title: 'Smoke Test Shift 9', status: 'open' }), true);
   assert.equal(isHiddenFromPublicBoard({ title: 'Night runthrough', status: 'open' }), true);
   assert.equal(isHiddenFromPublicBoard({ title: 'E2E test cover', status: 'open' }), true);
@@ -22,12 +23,15 @@ test('filterPublicBoardOpportunities is defence-in-depth even if DB returns mixe
     { title: 'Cattery Care', status: 'open' },
     { title: 'Closed deep-clean', status: 'closed' },
     { title: 'Cancelled walk', status: 'cancelled' },
+    { title: 'Done walk', status: 'completed' },
     { title: 'Smoke kennel test', status: 'open' },
   ]);
   assert.deepEqual(
     filtered.map((o) => o.title),
     ['Cattery Care']
   );
+  assert.deepEqual(filterPublicBoardOpportunities(null), []);
+  assert.deepEqual(filterPublicBoardOpportunities(undefined), []);
 });
 
 test('full shifts stay visible but are not accepting applications', () => {
@@ -43,14 +47,24 @@ test('full shifts stay visible but are not accepting applications', () => {
     isAcceptingApplications({ title: 'Walk', status: 'open', max_volunteers: 4, spots_filled: 1 }),
     true
   );
+  assert.equal(
+    isAcceptingApplications({ title: 'Walk', status: 'open', max_volunteers: null, spots_filled: 99 }),
+    true
+  );
+  assert.equal(
+    isAcceptingApplications({ title: 'Walk', status: 'open', max_volunteers: 0, spots_filled: 99 }),
+    true
+  );
 });
 
 test('frontend public board filter matches the API helper', async () => {
   const board = await import('../frontend/js/public/publicBoard.js');
   assert.equal(board.isHiddenFromPublicBoard({ title: 'Smoke Test Shift', status: 'open' }), true);
+  assert.equal(board.isHiddenFromPublicBoard({ title: 'Walk', status: 'completed' }), true);
   assert.equal(board.isAcceptingSignups({ title: 'Walk', spots_remaining: 0 }), false);
   assert.equal(board.isAcceptingSignups({ title: 'Walk', spots_remaining: 2 }), true);
   assert.equal(board.closedShiftLabel({ status: 'closed' }), 'This shift is closed');
+  assert.equal(board.closedShiftLabel({ status: 'cancelled' }), 'This shift was cancelled');
   assert.equal(board.closedShiftLabel({ spots_remaining: 0 }), 'Shift full');
 });
 
