@@ -27,7 +27,7 @@ function showWarningBanner() {
     color: #7a4f01;
     border-bottom: 1px solid #ffb300;
     padding: 0.85rem 1rem;
-    font-size: 1rem;
+    font-size: var(--text-md);
   `;
 
   const text = document.createElement('span');

@@ -13,6 +13,13 @@
         --kiosk-panel: #163828;
         --kiosk-accent: #7cb342;
         --kiosk-text: #f4f7f5;
+        /* Same six-step scale as custom.css (#28) so kiosk stays on-token. */
+        --text-xs: 0.8125rem;
+        --text-sm: 0.875rem;
+        --text-md: 1rem;
+        --text-lg: 1.125rem;
+        --text-xl: 1.375rem;
+        --text-2xl: 1.75rem;
       }
       html, body {
         height: 100%;
@@ -43,7 +50,7 @@
       }
       .kiosk-header h1 {
         margin: 0;
-        font-size: clamp(1.8rem, 4vw, 2.6rem);
+        font-size: clamp(var(--text-2xl), 4vw, 2.6rem);
         letter-spacing: 0.02em;
       }
       .kiosk-panel {
@@ -58,7 +65,7 @@
       }
       .shift-card h2 {
         margin: 0 0 0.35rem;
-        font-size: 1.35rem;
+        font-size: var(--text-xl);
       }
       .volunteer-grid {
         display: grid;
@@ -68,7 +75,7 @@
       }
       .volunteer-btn {
         min-height: 4.5rem;
-        font-size: 1.1rem;
+        font-size: var(--text-lg);
         margin: 0;
         background: #214f36;
         border: 1px solid rgba(255,255,255,0.12);
@@ -88,7 +95,7 @@
         margin: 1rem auto 0;
       }
       .code-form input {
-        font-size: 1.5rem;
+        font-size: var(--text-xl);
         letter-spacing: 0.2em;
         text-align: center;
         text-transform: uppercase;
