@@ -320,6 +320,16 @@ test('migration 040 adds pending-only unique indexes and refuses existing duplic
   assert.match(sql, /Rollback:/);
 });
 
+test('setup-db applies migration 040 after the self-serve tables it needs', () => {
+  const setupDb = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'setup-db.js'), 'utf8');
+  const at036 = setupDb.indexOf("loadSql('036_self_serve_shelters.pg.sql')");
+  const at038 = setupDb.indexOf("loadSql('038_platform_audit.pg.sql')");
+  const at040 = setupDb.indexOf("loadSql('040_shelter_applications_pending_unique.pg.sql')");
+  assert.ok(at036 > 0, '036 is applied');
+  assert.ok(at040 > at036, '040 runs after 036');
+  assert.ok(at040 > at038, '040 runs after 038, so fresh installs apply migrations in order');
+});
+
 test('the apply page sends started_at and leaves the privacy wording as a TODO', () => {
   const js = fs.readFileSync(path.join(__dirname, '..', 'frontend', 'js', 'apply.js'), 'utf8');
   assert.match(js, /const startedAt = Date\.now\(\);/);
