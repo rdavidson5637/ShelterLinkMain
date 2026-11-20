@@ -1248,6 +1248,103 @@ legend {
   text-decoration: underline;
 }
 
+.calendar-empty-state {
+  font-family: var(--pp-font-text);
+  font-size: var(--pp-t-18) !important;
+  color: var(--text-secondary) !important;
+  padding: var(--pp-s-6) var(--pp-s-2) !important;
+}
+
+/*
+  custom.css (and PR #26) sets `table { display: block }` below 768px so data
+  tables can scroll. That collapses FullCalendar's day grid to two thin rules.
+  Restore the table layout model inside .fc only — do not touch custom.css.
+*/
+@media (max-width: 768px) {
+  .fc table {
+    display: table !important;
+    width: 100% !important;
+    table-layout: fixed !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    background: transparent !important;
+  }
+
+  .fc thead {
+    display: table-header-group !important;
+  }
+
+  .fc tbody {
+    display: table-row-group !important;
+  }
+
+  .fc colgroup {
+    display: table-column-group !important;
+  }
+
+  .fc col {
+    display: table-column !important;
+  }
+
+  .fc tr {
+    display: table-row !important;
+  }
+
+  .fc th,
+  .fc td {
+    display: table-cell !important;
+    white-space: normal !important;
+  }
+
+  /* custom.css gives last action columns 15rem; day cells with events would blow out. */
+  .fc table td:last-child:has([role='button']),
+  .fc table td:last-child:has(button),
+  .fc table th:last-child {
+    min-width: 0 !important;
+  }
+
+  .fc .fc-daygrid-day-frame {
+    min-height: 4.5rem;
+  }
+
+  .fc .fc-daygrid-body-unbalanced .fc-daygrid-day-events {
+    min-height: 2.5em;
+  }
+
+  .fc .fc-daygrid-day-events,
+  .fc .fc-daygrid-event-harness,
+  .fc .fc-daygrid-event-harness-abs {
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .fc .fc-daygrid-event,
+  .fc .fc-event {
+    max-width: 100%;
+    box-sizing: border-box;
+    font-size: 0.65rem;
+    line-height: 1.2;
+    padding: 0.15em 0.25em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .fc .fc-event-title {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .fc .fc-daygrid-day-events {
+    margin: 0 1px;
+  }
+
+  .fc tbody tr:hover {
+    background: transparent;
+  }
+}
+
 @media (max-width: 900px) {
   .browse-filters .grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1286,6 +1383,16 @@ legend {
 
   .fc .fc-toolbar-title {
     font-size: var(--pp-t-22);
+  }
+
+  .fc .fc-col-header-cell-cushion {
+    font-size: 0.65rem;
+    letter-spacing: 0.04em;
+    padding: 4px 0;
+  }
+
+  .fc .fc-daygrid-day-number {
+    font-size: var(--pp-t-14);
   }
 }
 
