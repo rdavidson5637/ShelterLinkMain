@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <title>Apply to join ShelterLink</title>
+    <meta name="description" content="Animal rescue charities in Northern Ireland and England and Wales can apply to run their volunteers on ShelterLink." />
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body data-brand-lock="token">
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Main navigation">
+        <a class="site-brand" href="/index.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+      </nav>
+    </header>
+
+    <main class="container">
+      <article class="auth-card">
+        <h1 id="heading">Apply to join ShelterLink</h1>
+        <p id="intro">
+          ShelterLink runs volunteer rotas, animal records and messaging for animal rescues. Registered charities in
+          Northern Ireland or England and Wales can apply. Every application is checked against the charity register
+          and reviewed by a person before a shelter goes live.
+        </p>
+
+        <div id="message" role="status" aria-live="polite"></div>
+
+        <form id="applyForm" novalidate>
+          <fieldset>
+            <legend>Your shelter</legend>
+            <label for="shelter_name">
+              Shelter name
+              <input type="text" id="shelter_name" name="shelter_name" required maxlength="255" autocomplete="organization" />
+            </label>
+
+            <label for="desired_slug">
+              Web address
+              <input
+                type="text"
+                id="desired_slug"
+                name="desired_slug"
+                required
+                minlength="3"
+                maxlength="60"
+                pattern="[a-z0-9]+(-[a-z0-9]+)*"
+                autocapitalize="none"
+                spellcheck="false"
+                aria-describedby="slugHint"
+              />
+              <small id="slugHint">Your public page will be at <span id="slugPreview">/s/your-shelter</span>. Lowercase letters, numbers and hyphens.</small>
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Charity registration</legend>
+            <label for="regulator">
+              Registered with
+              <select id="regulator" name="regulator" required>
+                <option value="">Choose a regulator</option>
+                <option value="ccni">Charity Commission for Northern Ireland</option>
+                <option value="ccew">Charity Commission for England and Wales</option>
+              </select>
+              <small>Charities registered in Scotland or Ireland cannot apply yet.</small>
+            </label>
+
+            <label for="charity_number">
+              Charity number
+              <input type="text" id="charity_number" name="charity_number" required maxlength="32" autocapitalize="characters" aria-describedby="numberHint" />
+              <small id="numberHint">Northern Ireland numbers look like NIC100001. England and Wales numbers are 6 or 7 digits.</small>
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>You</legend>
+            <label for="contact_name">
+              Your name
+              <input type="text" id="contact_name" name="contact_name" required maxlength="200" autocomplete="name" />
+            </label>
+
+            <label for="contact_email">
+              Your email
+              <input type="email" id="contact_email" name="contact_email" required maxlength="254" autocomplete="email" aria-describedby="emailHint" />
+              <small id="emailHint">If we approve the application, the link to set up your shelter's admin account goes here.</small>
+            </label>
+          </fieldset>
+
+          <!-- Honeypot. Hidden from people and screen readers; bots fill it in. -->
+          <div class="visually-hidden" aria-hidden="true">
+            <label for="website">Leave this empty <input type="text" id="website" name="website" tabindex="-1" autocomplete="off" /></label>
+          </div>
+
+          <!-- TODO(Ryan): final privacy wording for applicants (lawful basis, how long
+               applications are kept, link to the privacy notice). Placeholder below. -->
+          <p><small>We use these details only to review your application and to contact you about it.</small></p>
+
+          <button type="submit" id="submitButton">Send application</button>
+        </form>
+      </article>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2026 ShelterLink</small>
+    </footer>
+
+    <script type="module" src="/js/apply.js"></script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+  </body>
+</html>
