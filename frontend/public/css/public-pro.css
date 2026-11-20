@@ -1,0 +1,1542 @@
+/* ============================================================================
+   ShelterLink public pages: typography and layout layer ("DESIGN-PRO")
+   ----------------------------------------------------------------------------
+   Linked ONLY from the public pages, the auth pages and the volunteer
+   shift views, always after custom.css (and after any inline <style> block),
+   so it never changes admin screens.
+
+   Rules (keep them when editing):
+   - Brand colours are untouched. Every colour comes from the custom.css
+     tokens (--green, --text, --surface ...), so dark mode and future
+     per-shelter colours keep working. No new hex values below.
+   - Type: Fraunces (display) + Public Sans (text), self-hosted under
+     /public/fonts (SIL OFL, licences next to the files). CSP font-src 'self'
+     already allows them.
+   - Fixed type scale 12/14/16/18/22/28/36/48/64 px (--pp-t-*).
+   - Spacing on an 8px grid (--pp-s-*), 4px for fine adjustments.
+   - One radius scale: 2px tags, 4px controls, 6px panels. No pills.
+   - One accent per view: the teal fill is kept for the single primary
+     action; repeated row actions use the teal outline.
+   - Motion: colour/background/border only, 150ms, off under
+     prefers-reduced-motion.
+   - Tokens use a --pp- prefix so they cannot collide with the type tokens
+     proposed for custom.css in PR #28.
+   ============================================================================ */
+
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('/public/fonts/fraunces-latin-wght.woff2') format('woff2-variations'),
+    url('/public/fonts/fraunces-latin-wght.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('/public/fonts/public-sans-latin-wght.woff2') format('woff2-variations'),
+    url('/public/fonts/public-sans-latin-wght.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+
+:root,
+:root:not([data-theme]) {
+  /* Type scale (px / 16) */
+  --pp-t-12: 0.75rem;
+  --pp-t-14: 0.875rem;
+  --pp-t-16: 1rem;
+  --pp-t-18: 1.125rem;
+  --pp-t-22: 1.375rem;
+  --pp-t-28: 1.75rem;
+  --pp-t-36: 2.25rem;
+  --pp-t-48: 3rem;
+  --pp-t-64: 4rem;
+
+  /* 8px spacing grid */
+  --pp-s-1: 0.5rem;
+  --pp-s-2: 1rem;
+  --pp-s-3: 1.5rem;
+  --pp-s-4: 2rem;
+  --pp-s-5: 2.5rem;
+  --pp-s-6: 3rem;
+  --pp-s-8: 4rem;
+  --pp-s-10: 5rem;
+  --pp-s-12: 6rem;
+
+  /* One radius scale */
+  --pp-r-tag: 2px;
+  --pp-r-control: 4px;
+  --pp-r-panel: 6px;
+
+  --pp-font-display: 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  --pp-font-text: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --pp-measure: 62ch;
+  --pp-target: 44px;
+  --pp-ease: 150ms ease;
+
+  /* Re-point the shared tokens for these pages only. */
+  --font-stack: var(--pp-font-text);
+  --radius-card: var(--pp-r-panel);
+  --radius-control: var(--pp-r-control);
+  --pico-font-family: var(--pp-font-text);
+  --pico-font-family-sans-serif: var(--pp-font-text);
+  --pico-border-radius: var(--pp-r-control);
+  --pico-form-element-spacing-vertical: 0.75rem;
+  --pico-form-element-spacing-horizontal: 1rem;
+  --transition: background-color var(--pp-ease), border-color var(--pp-ease), color var(--pp-ease);
+}
+
+/* --------------------------------------------------------------------------
+   Base type
+   -------------------------------------------------------------------------- */
+body {
+  font-family: var(--pp-font-text);
+  font-size: var(--pp-t-16);
+  line-height: 1.6;
+  font-feature-settings: 'kern', 'liga';
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--pp-font-display);
+  font-optical-sizing: auto;
+  color: var(--text);
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: var(--pp-t-36);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--pp-s-2);
+}
+
+h2 {
+  font-size: var(--pp-t-28);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  margin-bottom: var(--pp-s-2);
+}
+
+h3 {
+  font-size: var(--pp-t-22);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin-bottom: var(--pp-s-1);
+}
+
+p,
+li {
+  max-width: var(--pp-measure);
+}
+
+p {
+  margin-bottom: var(--pp-s-2);
+}
+
+small {
+  font-size: var(--pp-t-14);
+}
+
+a {
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: 1px;
+}
+
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* Visible focus on everything interactive, both schemes. */
+:is(a, button, [role='button'], input, select, textarea, summary):focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+main,
+main.container {
+  padding-top: var(--pp-s-5);
+  padding-bottom: var(--pp-s-8);
+}
+
+main.container:has(> .hero:first-child) {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+body:has(main > .hero:first-child) > footer {
+  margin-top: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Header and footer
+   -------------------------------------------------------------------------- */
+header.site-header {
+  margin-bottom: 0;
+}
+
+.site-brand {
+  min-height: var(--pp-target);
+  height: auto;
+}
+
+.site-brand strong {
+  font-family: var(--pp-font-display);
+  font-size: var(--pp-t-22);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.site-nav .nav-menu {
+  font-size: var(--pp-t-16);
+  gap: var(--pp-s-1);
+}
+
+.site-nav .nav-link {
+  min-height: var(--pp-target);
+  padding: 0 var(--pp-s-2);
+  border-radius: var(--pp-r-control);
+}
+
+.site-nav .nav-menu .nav-link[aria-current='page'] {
+  background: transparent;
+  color: var(--text) !important;
+  box-shadow: inset 0 -3px 0 var(--green);
+  border-radius: 0;
+}
+
+.nav-toggle {
+  border-radius: var(--pp-r-control);
+  width: auto;
+  min-width: var(--pp-target);
+  padding: 0 12px;
+  font-family: var(--pp-font-text);
+  font-size: var(--pp-t-14);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+#logoutButton {
+  min-height: var(--pp-target);
+}
+
+/* The volunteer "More" panel sets display:flex !important, which beats the
+   hidden attribute, so on desktop it showed open over the page. Restore the
+   intended closed state above the 600px mobile breakpoint, where the panel is
+   meant to toggle. Mobile keeps its always-expanded list. */
+@media (min-width: 601px) {
+  .site-nav .nav-menu .nav-more-panel[hidden] {
+    display: none !important;
+  }
+}
+
+.nav-more-toggle {
+  min-height: var(--pp-target);
+}
+
+.nav-more-link {
+  min-height: var(--pp-target);
+  display: flex !important;
+  align-items: center;
+}
+
+body > footer {
+  margin-top: var(--pp-s-6);
+  padding-block: var(--pp-s-4);
+  font-size: var(--pp-t-14);
+}
+
+/* --------------------------------------------------------------------------
+   Controls: 44px targets, 4px radius
+   -------------------------------------------------------------------------- */
+button,
+[type='submit'],
+[role='button'],
+.button,
+.cta {
+  min-height: var(--pp-target);
+  padding: 0 var(--pp-s-3);
+  border-radius: var(--pp-r-control);
+  font-family: var(--pp-font-text);
+  font-size: var(--pp-t-16);
+  font-weight: 600;
+  letter-spacing: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--pp-s-1);
+  line-height: 1.2;
+}
+
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='tel'],
+input[type='date'],
+input[type='number'],
+input[type='search'],
+textarea,
+select {
+  min-height: 48px;
+  border-radius: var(--pp-r-control);
+  font-size: var(--pp-t-16);
+  font-family: var(--pp-font-text);
+  line-height: 1.4;
+}
+
+input:not([type='checkbox']):not([type='radio']),
+select {
+  padding-block: 0;
+  height: 48px;
+}
+
+label {
+  font-size: var(--pp-t-14);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* Checkbox and radio rows: the whole label is the 44px target. Block, not
+   flex, so inline links inside the label text keep normal word spacing. */
+label:has(> input[type='checkbox']),
+label:has(> input[type='radio']) {
+  display: block;
+  position: relative;
+  min-height: var(--pp-target);
+  padding: 10px 0 10px 2rem;
+  font-size: var(--pp-t-16);
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0;
+  cursor: pointer;
+}
+
+label > input[type='checkbox'],
+label > input[type='radio'] {
+  position: absolute;
+  left: 0;
+  top: 12px;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0;
+}
+
+input[type='checkbox'] {
+  border-radius: var(--pp-r-tag);
+}
+
+/* --------------------------------------------------------------------------
+   Landing page (index.html)
+   -------------------------------------------------------------------------- */
+
+/* Hero: left-aligned editorial opening, no box. Large serif headline on the
+   column grid, measure-limited intro, primary action beside a quiet link. */
+.hero {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: var(--pp-s-3);
+  place-items: initial;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: var(--pp-s-8) 0 var(--pp-s-8);
+  margin: 0;
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.hero h1 {
+  grid-column: 1 / span 10;
+  font-size: clamp(var(--pp-t-48), 6.4vw, var(--pp-t-64));
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  margin: 0 0 var(--pp-s-4);
+}
+
+.hero p {
+  grid-column: 1 / span 6;
+  font-size: var(--pp-t-22);
+  line-height: 1.45;
+  color: var(--text-secondary);
+  max-width: 34ch;
+  margin: 0;
+}
+
+.hero-actions {
+  grid-column: 7 / span 6;
+  align-self: end;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--pp-s-3);
+}
+
+.hero .cta {
+  min-height: 52px;
+  padding: 0 var(--pp-s-4);
+  font-size: var(--pp-t-18);
+}
+
+.hero .text-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--pp-target);
+  font-size: var(--pp-t-18);
+}
+
+/* "How it works": asymmetric 4/8 split. Heading column left, numbered
+   editorial rows right with large serif numerals and hairline rules. */
+.how-it-works {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: var(--pp-s-3);
+  margin: 0;
+  padding: var(--pp-s-10) 0;
+}
+
+.how-it-works > h2,
+.how-it-works > p {
+  grid-column: 1 / span 4;
+  text-align: left;
+}
+
+.how-it-works > h2 {
+  font-size: var(--pp-t-36);
+  line-height: 1.1;
+  margin: 0 0 var(--pp-s-2);
+}
+
+.how-it-works > p {
+  font-size: var(--pp-t-18);
+  margin: 0;
+  max-width: 28ch;
+}
+
+.how-it-works > ol,
+.how-it-works > .choice-list {
+  grid-column: 6 / span 7;
+  grid-row: 1 / span 3;
+  max-width: none;
+  margin: 0;
+  border-top: 1px solid var(--text);
+}
+
+.how-it-works li {
+  grid-template-columns: var(--pp-s-8) 1fr;
+  gap: var(--pp-s-3);
+  padding: var(--pp-s-3) 0;
+  font-size: var(--pp-t-16);
+  max-width: none;
+}
+
+.how-it-works li::before {
+  font-family: var(--pp-font-display);
+  font-size: var(--pp-t-48);
+  font-weight: 500;
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  font-variant-numeric: lining-nums;
+}
+
+.how-it-works li strong {
+  font-family: var(--pp-font-display);
+  font-size: var(--pp-t-22);
+  font-weight: 600;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+/* Second band ("If you are not signing up yourself"): full-bleed surface
+   band so the page has a change of ground, and plain link rows (no
+   numbers, the custom.css counter applied to these by accident). */
+.how-it-works + .how-it-works {
+  position: relative;
+  background: var(--surface);
+  box-shadow: 0 0 0 100vmax var(--surface);
+  clip-path: inset(0 -100vmax);
+}
+
+.how-it-works + .how-it-works > h2 {
+  grid-row: 1;
+}
+
+.choice-list li {
+  counter-increment: none;
+  display: block;
+  padding: 0;
+}
+
+.choice-list li::before {
+  content: none;
+}
+
+.choice-list a {
+  min-height: var(--pp-s-10);
+  padding: var(--pp-s-3) 0;
+  gap: var(--pp-s-3);
+}
+
+.choice-list a strong {
+  font-family: var(--pp-font-display);
+  font-size: var(--pp-t-22);
+  font-weight: 600;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+.choice-list a > span:first-child {
+  color: var(--text-secondary);
+}
+
+.choice-list a:hover strong,
+.choice-list a:focus-visible strong {
+  color: var(--green);
+}
+
+.choice-arrow {
+  font-size: var(--pp-t-22);
+  transition: transform var(--pp-ease);
+}
+
+.choice-list a:hover .choice-arrow {
+  transform: translateX(4px);
+}
+
+@media (max-width: 900px) {
+  .hero h1 {
+    grid-column: 1 / -1;
+  }
+
+  .hero p {
+    grid-column: 1 / -1;
+    margin-bottom: var(--pp-s-4);
+  }
+
+  .hero-actions {
+    grid-column: 1 / -1;
+  }
+
+  .how-it-works > h2,
+  .how-it-works > p,
+  .how-it-works > ol,
+  .how-it-works > .choice-list {
+    grid-column: 1 / -1;
+    grid-row: auto;
+  }
+
+  .how-it-works > p {
+    margin-bottom: var(--pp-s-4);
+  }
+
+  .how-it-works + .how-it-works > h2 {
+    margin-bottom: var(--pp-s-3);
+  }
+}
+
+@media (max-width: 600px) {
+  .hero {
+    padding: var(--pp-s-5) 0 var(--pp-s-6);
+  }
+
+  .hero h1 {
+    font-size: var(--pp-t-48);
+    font-size: clamp(var(--pp-t-36), 11vw, var(--pp-t-48));
+  }
+
+  .hero p {
+    font-size: var(--pp-t-18);
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--pp-s-1);
+  }
+
+  .hero-actions .text-link {
+    justify-content: center;
+  }
+
+  .how-it-works {
+    padding: var(--pp-s-6) 0;
+  }
+
+  .how-it-works > h2 {
+    font-size: var(--pp-t-28);
+  }
+
+  .how-it-works li {
+    grid-template-columns: var(--pp-s-5) 1fr;
+    gap: var(--pp-s-2);
+  }
+
+  .how-it-works li::before {
+    font-size: var(--pp-t-36);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Auth pages (sign in, register, forgot, reset)
+   Desktop: 5/7 split inside one sheet. Title and intro on the left, the form
+   on the right. Phone: a single flat column, no card frame.
+   -------------------------------------------------------------------------- */
+.auth-card {
+  max-width: 1040px;
+  margin: var(--pp-s-6) auto var(--pp-s-4);
+  padding: var(--pp-s-6);
+  border-radius: var(--pp-r-panel);
+  box-shadow: none;
+  display: grid;
+  grid-template-columns: 5fr 7fr;
+  column-gap: var(--pp-s-8);
+  align-items: start;
+}
+
+.auth-card > * {
+  grid-column: 2;
+}
+
+.auth-card > h1,
+.auth-card > h1 + p {
+  grid-column: 1;
+}
+
+.auth-card > h1 {
+  grid-row: 1;
+  font-size: var(--pp-t-48);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin: 0 0 var(--pp-s-2);
+  padding-top: var(--pp-s-2);
+  border-top: 3px solid var(--text);
+}
+
+.auth-card > h1 + p {
+  grid-row: 2 / span 8;
+  font-size: var(--pp-t-18);
+  line-height: 1.5;
+  max-width: 30ch;
+}
+
+/* The message slot sits directly above the form in column 2. */
+.auth-card > #message {
+  grid-row: 1;
+}
+
+.auth-card > #message:empty {
+  display: none;
+}
+
+.auth-card > form {
+  grid-row: 2;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+.auth-card > #message:empty + form {
+  grid-row: 1 / span 2;
+}
+
+.auth-card form .form-grid {
+  gap: var(--pp-s-3) var(--pp-s-3);
+}
+
+.auth-card form .form-section {
+  margin-bottom: 0;
+}
+
+.auth-card form .form-grid > .form-section + .form-section {
+  margin-top: 0;
+}
+
+.auth-card form > .form-grid {
+  margin-bottom: var(--pp-s-3);
+}
+
+.auth-card form > label {
+  margin-bottom: var(--pp-s-3);
+}
+
+.auth-card form label > input:not([type='checkbox']):not([type='radio']) {
+  margin-top: var(--pp-s-1);
+  margin-bottom: 0;
+}
+
+/* Hint under the "keep me signed in" row belongs to it: pull it up. */
+.auth-card form label:has(> input[type='checkbox']) + small {
+  margin-top: calc(-1 * var(--pp-s-3));
+  padding-left: 2rem;
+}
+
+.auth-card form small {
+  display: block;
+  margin-top: 4px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.auth-card form [type='submit'] {
+  width: 100%;
+  min-height: 52px;
+  margin-top: var(--pp-s-2);
+  font-size: var(--pp-t-18);
+}
+
+.auth-links {
+  font-size: var(--pp-t-14);
+  color: var(--text-secondary);
+  margin-top: var(--pp-s-3);
+  padding-top: var(--pp-s-2);
+  border-top: 1px solid var(--border);
+}
+
+.auth-links + .auth-links {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.auth-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--pp-target);
+}
+
+/* Dev-only demo accounts card under sign in: keep it plainly secondary. */
+#demoAccountsCard {
+  display: block;
+  max-width: 1040px;
+  margin-inline: auto;
+}
+
+#demoAccountsCard[hidden] {
+  display: none;
+}
+
+#demoAccountsCard > h2 {
+  font-size: var(--pp-t-22);
+}
+
+@media (max-width: 900px) {
+  .auth-card {
+    grid-template-columns: 1fr;
+    max-width: 560px;
+    padding: var(--pp-s-4);
+  }
+
+  .auth-card > *,
+  .auth-card > h1,
+  .auth-card > h1 + p,
+  .auth-card > #message,
+  .auth-card > form,
+  .auth-card > #message:empty + form {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .auth-card > h1 + p {
+    margin-bottom: var(--pp-s-3);
+  }
+}
+
+@media (max-width: 600px) {
+  .auth-card {
+    margin: var(--pp-s-2) 0 0;
+    padding: var(--pp-s-1) 0 0;
+    background: transparent;
+    border: 0;
+  }
+
+  .auth-card > h1 {
+    font-size: var(--pp-t-36);
+  }
+
+  .auth-card > h1 + p {
+    font-size: var(--pp-t-16);
+  }
+}
+
+/* Error pages (403 / 404 / 500): same .auth-card shell, no form.
+   Flex column so auth-card grid-row rules cannot reorder the back link. */
+.auth-card:not(:has(form)) {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--pp-s-2);
+  max-width: 40rem;
+  margin-top: var(--pp-s-8);
+  padding-top: var(--pp-s-4);
+  border: 0;
+  border-top: 3px solid var(--text);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.auth-card:not(:has(form)) > * {
+  grid-column: unset;
+  grid-row: unset;
+  width: 100%;
+}
+
+.auth-card:not(:has(form)) > p:first-child {
+  margin: 0;
+  font-size: var(--pp-t-14);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.auth-card:not(:has(form)) > p:first-child a {
+  color: var(--text-secondary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.auth-card:not(:has(form)) > p:first-child a:hover {
+  color: var(--green);
+}
+
+.auth-card:not(:has(form)) > h1 {
+  grid-column: 1;
+  font-size: var(--pp-t-36);
+  max-width: 22ch;
+  margin: 0;
+  /* Auth split puts a top rule on h1; error sheets already have the sheet rule. */
+  border-top: 0;
+  padding-top: 0;
+}
+
+.auth-card:not(:has(form)) > h1 + p {
+  grid-column: 1;
+  font-size: var(--pp-t-18);
+  color: var(--text-secondary);
+  max-width: var(--pp-measure);
+  margin: 0 0 var(--pp-s-2);
+}
+
+.auth-card:not(:has(form)) > button,
+.auth-card:not(:has(form)) > #goButton,
+.auth-card:not(:has(form)) > #dashboardButton {
+  width: 100%;
+  max-width: 22rem;
+  min-height: 52px;
+  margin-top: var(--pp-s-1);
+}
+
+@media (max-width: 600px) {
+  .auth-card:not(:has(form)) {
+    margin-top: var(--pp-s-4);
+    padding-top: var(--pp-s-3);
+    /* Re-assert after the generic .auth-card { border: 0 } mobile rule. */
+    border: 0;
+    border-top: 3px solid var(--text);
+    background: transparent;
+  }
+
+  .auth-card:not(:has(form)) > p:first-child a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--pp-target);
+  }
+
+  .auth-card:not(:has(form)) > h1 {
+    font-size: var(--pp-t-28);
+    max-width: none;
+  }
+
+  .auth-card:not(:has(form)) > button,
+  .auth-card:not(:has(form)) > #goButton,
+  .auth-card:not(:has(form)) > #dashboardButton {
+    max-width: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Public open shifts (pages/opportunities.html)
+   Shifts are comparable items, so they stay a list, set as editorial rows
+   (rule above, details left, availability and actions right) instead of a
+   stack of boxed cards. Row actions use the teal outline so the page has
+   one filled accent at most.
+   -------------------------------------------------------------------------- */
+main > section:first-child > h1:only-of-type {
+  font-size: var(--pp-t-48);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+#opportunitiesList {
+  border-top: 1px solid var(--text);
+  margin-top: var(--pp-s-4);
+}
+
+#opportunitiesList > article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(200px, 16rem);
+  column-gap: var(--pp-s-6);
+  align-items: start;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--border-strong);
+  border-radius: 0;
+  box-shadow: none;
+  padding: var(--pp-s-4) 0;
+  margin: 0;
+}
+
+#opportunitiesList > article > * {
+  grid-column: 1;
+  margin: 0;
+}
+
+#opportunitiesList > article > h2 {
+  font-size: var(--pp-t-28);
+  margin-bottom: var(--pp-s-1);
+}
+
+#opportunitiesList > article > h2 > span {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: var(--pp-s-1);
+  font-family: var(--pp-font-text);
+  font-size: var(--pp-t-14) !important;
+  letter-spacing: 0.02em;
+}
+
+#opportunitiesList > article > p:nth-of-type(1) {
+  color: var(--text-secondary);
+  margin-bottom: var(--pp-s-2);
+}
+
+/* Date, time and place line. */
+#opportunitiesList > article > p:nth-of-type(2) {
+  font-size: var(--pp-t-16);
+}
+
+/* Spots line + actions: right column. */
+#opportunitiesList > article > p:nth-of-type(3) {
+  grid-column: 2;
+  grid-row: 1;
+  font-size: var(--pp-t-14);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  padding-top: var(--pp-s-1);
+  margin-bottom: var(--pp-s-2);
+}
+
+#opportunitiesList > article > :is(a, button) {
+  grid-column: 2;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+#opportunitiesList > article > a[role='button'],
+#opportunitiesList > article > button {
+  grid-row: 2;
+}
+
+#opportunitiesList > article > a.secondary {
+  grid-row: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--pp-target);
+  margin-top: 4px;
+}
+
+/* Repeated row action: outline, fills on hover/focus. */
+#opportunitiesList > article > a[role='button']:not(.secondary) {
+  background: transparent;
+  color: var(--green);
+  border: 2px solid var(--green);
+}
+
+#opportunitiesList > article > a[role='button']:not(.secondary):hover,
+#opportunitiesList > article > a[role='button']:not(.secondary):focus-visible {
+  background: var(--green);
+  color: var(--on-primary);
+}
+
+#opportunitiesList > article > button:disabled {
+  background: var(--row-stripe);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-strong);
+  opacity: 1;
+}
+
+/* Loading / empty / error copy inside the list. */
+#opportunitiesList > p {
+  padding: var(--pp-s-4) 0;
+  color: var(--text-secondary);
+  font-size: var(--pp-t-18);
+}
+
+@media (max-width: 700px) {
+  #opportunitiesList > article {
+    grid-template-columns: 1fr;
+    padding: var(--pp-s-3) 0;
+  }
+
+  #opportunitiesList > article > *,
+  #opportunitiesList > article > p:nth-of-type(3),
+  #opportunitiesList > article > :is(a, button),
+  #opportunitiesList > article > a[role='button'],
+  #opportunitiesList > article > button,
+  #opportunitiesList > article > a.secondary {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  #opportunitiesList > article > p:nth-of-type(2) {
+    margin-bottom: var(--pp-s-2);
+  }
+
+  #opportunitiesList > article > p:nth-of-type(3) {
+    padding-top: 0;
+    margin-bottom: var(--pp-s-2);
+  }
+
+  #opportunitiesList > article > h2 {
+    font-size: var(--pp-t-22);
+  }
+
+  main > section:first-child > h1:only-of-type {
+    font-size: var(--pp-t-36);
+  }
+}
+
+/* Calendar / group links under the page intro: 44px rows. */
+main > section:first-child > p > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--pp-target);
+}
+
+/* --------------------------------------------------------------------------
+   Reference form (pages/public/reference.html)
+   -------------------------------------------------------------------------- */
+fieldset {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--pp-r-panel);
+  padding: var(--pp-s-2) var(--pp-s-3) var(--pp-s-1);
+  margin-bottom: var(--pp-s-3);
+}
+
+legend {
+  font-family: var(--pp-font-display);
+  font-size: var(--pp-t-18);
+  font-weight: 600;
+  line-height: 1.3;
+  padding: 0 var(--pp-s-1);
+}
+
+/* --------------------------------------------------------------------------
+   Volunteer shift views (browse-shifts, calendar)
+   -------------------------------------------------------------------------- */
+.browse-filters {
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--text);
+  border-bottom: 1px solid var(--border-strong);
+  border-radius: 0;
+  padding: var(--pp-s-3) 0 var(--pp-s-2);
+  margin-bottom: var(--pp-s-3);
+}
+
+.browse-filters .grid {
+  grid-template-columns: 2fr repeat(4, minmax(0, 1fr));
+  gap: var(--pp-s-2);
+}
+
+.browse-filters .grid > label {
+  margin-bottom: 0;
+}
+
+.browse-filters .grid > label > :is(input, select) {
+  margin-top: var(--pp-s-1);
+  margin-bottom: 0;
+}
+
+.browse-filters .search-input {
+  font-size: var(--pp-t-16);
+}
+
+.browse-status {
+  font-size: var(--pp-t-14) !important;
+  color: var(--text-secondary) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.shift-group {
+  margin-bottom: var(--pp-s-6);
+}
+
+.shift-group h2 {
+  font-size: var(--pp-t-28);
+  border-bottom-color: var(--border-strong);
+  padding-bottom: var(--pp-s-1);
+}
+
+.shift-group-count {
+  font-size: var(--pp-t-14);
+}
+
+.opportunities-grid {
+  gap: var(--pp-s-2);
+}
+
+.opportunity-card {
+  border: 1px solid var(--border) !important;
+  border-radius: var(--pp-r-panel) !important;
+  background: var(--surface) !important;
+  padding: var(--pp-s-3) !important;
+  box-shadow: none !important;
+  transition: border-color var(--pp-ease) !important;
+}
+
+.opportunity-card:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  border-color: var(--green) !important;
+}
+
+.opportunity-card h3 {
+  font-size: var(--pp-t-22) !important;
+  margin-bottom: var(--pp-s-1) !important;
+}
+
+.opportunity-card h3 .status-badge {
+  font-family: var(--pp-font-text);
+  font-size: var(--pp-t-12);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  padding: 2px var(--pp-s-1);
+  border-radius: var(--pp-r-tag);
+}
+
+.opportunity-card .meta {
+  font-size: var(--pp-t-14) !important;
+  color: var(--text-secondary) !important;
+  gap: 4px var(--pp-s-2) !important;
+}
+
+.opportunity-card .description {
+  font-size: var(--pp-t-16) !important;
+  margin-top: var(--pp-s-1) !important;
+}
+
+/* Repeated card action: teal outline, not a solid fill per card. */
+.opportunity-card .actions button:not(.secondary):not(.button-secondary) {
+  background: transparent;
+  color: var(--green);
+  border: 2px solid var(--green);
+  font-size: var(--pp-t-16) !important;
+  padding: 0 var(--pp-s-3) !important;
+}
+
+.opportunity-card .actions button:not(.secondary):not(.button-secondary):hover,
+.opportunity-card .actions button:not(.secondary):not(.button-secondary):focus-visible {
+  background: var(--green);
+  color: var(--on-primary);
+}
+
+.tag-chip-display,
+.tag-chip {
+  border-radius: var(--pp-r-tag) !important;
+}
+
+/* Calendar view */
+.calendar-banner {
+  border-radius: 0 !important;
+  border: 0 !important;
+  border-left: 4px solid var(--green) !important;
+  font-size: var(--pp-t-16) !important;
+  padding: var(--pp-s-2) var(--pp-s-3) !important;
+}
+
+.calendar-view-toggles {
+  gap: 0 !important;
+  margin-bottom: var(--pp-s-2) !important;
+}
+
+.calendar-view-toggles button {
+  border-radius: 0;
+  margin-left: -1px !important;
+}
+
+.calendar-view-toggles button:first-child {
+  border-radius: var(--pp-r-control) 0 0 var(--pp-r-control);
+  margin-left: 0 !important;
+}
+
+.calendar-view-toggles button:last-child {
+  border-radius: 0 var(--pp-r-control) var(--pp-r-control) 0;
+}
+
+.calendar-wrapper {
+  border-radius: var(--pp-r-panel) !important;
+  padding: var(--pp-s-3) !important;
+}
+
+.fc {
+  font-family: var(--pp-font-text);
+}
+
+.fc .fc-toolbar-title {
+  font-family: var(--pp-font-display);
+  font-size: var(--pp-t-28);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.fc .fc-button {
+  min-height: var(--pp-target);
+  min-width: var(--pp-target);
+  border-radius: var(--pp-r-control);
+}
+
+.fc .fc-col-header-cell-cushion {
+  font-size: var(--pp-t-12);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.fc .fc-event {
+  border-radius: var(--pp-r-tag);
+}
+
+.fc .fc-daygrid-day-number {
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  text-decoration: none;
+  padding: 4px var(--pp-s-1);
+}
+
+.fc .fc-daygrid-day-number:hover {
+  color: var(--green);
+  text-decoration: underline;
+}
+
+.calendar-empty-state {
+  font-family: var(--pp-font-text);
+  font-size: var(--pp-t-18) !important;
+  color: var(--text-secondary) !important;
+  padding: var(--pp-s-6) var(--pp-s-2) !important;
+}
+
+/*
+  custom.css (and PR #26) sets `table { display: block }` below 768px so data
+  tables can scroll. That collapses FullCalendar's day grid to two thin rules.
+  Restore the table layout model inside .fc only — do not touch custom.css.
+*/
+@media (max-width: 768px) {
+  .fc table {
+    display: table !important;
+    width: 100% !important;
+    table-layout: fixed !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    background: transparent !important;
+  }
+
+  .fc thead {
+    display: table-header-group !important;
+  }
+
+  .fc tbody {
+    display: table-row-group !important;
+  }
+
+  .fc colgroup {
+    display: table-column-group !important;
+  }
+
+  .fc col {
+    display: table-column !important;
+  }
+
+  .fc tr {
+    display: table-row !important;
+  }
+
+  .fc th,
+  .fc td {
+    display: table-cell !important;
+    white-space: normal !important;
+  }
+
+  /* custom.css gives last action columns 15rem; day cells with events would blow out. */
+  .fc table td:last-child:has([role='button']),
+  .fc table td:last-child:has(button),
+  .fc table th:last-child {
+    min-width: 0 !important;
+  }
+
+  .fc .fc-daygrid-day-frame {
+    min-height: 4.5rem;
+  }
+
+  .fc .fc-daygrid-body-unbalanced .fc-daygrid-day-events {
+    min-height: 2.5em;
+  }
+
+  .fc .fc-daygrid-day-events,
+  .fc .fc-daygrid-event-harness,
+  .fc .fc-daygrid-event-harness-abs {
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .fc .fc-daygrid-event,
+  .fc .fc-event {
+    max-width: 100%;
+    box-sizing: border-box;
+    font-size: 0.65rem;
+    line-height: 1.2;
+    padding: 0.15em 0.25em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .fc .fc-event-title {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .fc .fc-daygrid-day-events {
+    margin: 0 1px;
+  }
+
+  .fc tbody tr:hover {
+    background: transparent;
+  }
+}
+
+@media (max-width: 900px) {
+  .browse-filters .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .browse-filters .grid > label:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 600px) {
+  .browse-filters .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-wrapper {
+    padding: var(--pp-s-1) !important;
+  }
+
+  /* Three toggles do not fit one row at 390px: drop the joined style. */
+  .calendar-view-toggles {
+    gap: var(--pp-s-1) !important;
+  }
+
+  .calendar-view-toggles button,
+  .calendar-view-toggles button:first-child,
+  .calendar-view-toggles button:last-child {
+    border-radius: var(--pp-r-control);
+    margin-left: 0 !important;
+  }
+
+  .fc .fc-toolbar {
+    flex-wrap: wrap;
+    gap: var(--pp-s-1);
+  }
+
+  .fc .fc-toolbar-title {
+    font-size: var(--pp-t-22);
+  }
+
+  .fc .fc-col-header-cell-cushion {
+    font-size: 0.65rem;
+    letter-spacing: 0.04em;
+    padding: 4px 0;
+  }
+
+  .fc .fc-daygrid-day-number {
+    font-size: var(--pp-t-14);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Narrow phone (360–390): stop overflow, keep 44px targets, tighter rhythm
+   -------------------------------------------------------------------------- */
+@media (max-width: 390px) {
+  html {
+    overflow-x: clip;
+  }
+
+  body {
+    overflow-x: clip;
+  }
+
+  .container,
+  main.container,
+  header .container,
+  footer.container {
+    padding-inline: var(--pp-s-2);
+    max-width: 100%;
+  }
+
+  .hero {
+    padding: var(--pp-s-4) 0 var(--pp-s-5);
+  }
+
+  .hero h1 {
+    font-size: clamp(var(--pp-t-28), 10vw, var(--pp-t-36));
+  }
+
+  .hero p {
+    font-size: var(--pp-t-16);
+    max-width: none;
+  }
+
+  .how-it-works {
+    padding: var(--pp-s-5) 0;
+  }
+
+  .how-it-works > h2 {
+    font-size: var(--pp-t-22);
+  }
+
+  .how-it-works li {
+    grid-template-columns: var(--pp-s-4) 1fr;
+    gap: var(--pp-s-1);
+    padding: var(--pp-s-2) 0;
+  }
+
+  .how-it-works li::before {
+    font-size: var(--pp-t-28);
+  }
+
+  .choice-list a {
+    padding-block: var(--pp-s-2);
+  }
+
+  .auth-card {
+    margin-inline: 0;
+  }
+
+  .auth-card form [type='submit'],
+  .hero .cta {
+    width: 100%;
+  }
+
+  .opportunity-card .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .opportunity-card .actions button {
+    width: 100%;
+  }
+
+  .browse-filters {
+    padding: var(--pp-s-2) !important;
+  }
+
+  .calendar-wrapper {
+    padding: 4px !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .fc .fc-toolbar-title {
+    font-size: var(--pp-t-18);
+  }
+
+  .fc .fc-button {
+    padding-inline: var(--pp-s-1);
+  }
+
+  .site-nav {
+    gap: var(--pp-s-1);
+  }
+
+  .site-nav .site-brand strong {
+    font-size: var(--pp-t-16);
+  }
+
+  #logoutButton {
+    padding-inline: var(--pp-s-2);
+  }
+}
+
+@media (max-width: 360px) {
+  .container,
+  main.container,
+  header .container,
+  footer.container {
+    padding-inline: var(--pp-s-1);
+  }
+
+  .hero h1 {
+    font-size: var(--pp-t-28);
+    letter-spacing: -0.025em;
+  }
+
+  .auth-card > h1,
+  .auth-card:not(:has(form)) > h1 {
+    font-size: var(--pp-t-22);
+  }
+
+  .nav-toggle {
+    padding-inline: var(--pp-s-1);
+    font-size: var(--pp-t-12);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Motion
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+
+  .choice-list a:hover .choice-arrow {
+    transform: none;
+  }
+}
