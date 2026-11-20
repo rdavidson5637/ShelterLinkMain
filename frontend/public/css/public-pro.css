@@ -775,6 +775,102 @@ input[type='checkbox'] {
   }
 }
 
+/* Error pages (403 / 404 / 500): same .auth-card shell, no form.
+   Flex column so auth-card grid-row rules cannot reorder the back link. */
+.auth-card:not(:has(form)) {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--pp-s-2);
+  max-width: 40rem;
+  margin-top: var(--pp-s-8);
+  padding-top: var(--pp-s-4);
+  border: 0;
+  border-top: 3px solid var(--text);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.auth-card:not(:has(form)) > * {
+  grid-column: unset;
+  grid-row: unset;
+  width: 100%;
+}
+
+.auth-card:not(:has(form)) > p:first-child {
+  margin: 0;
+  font-size: var(--pp-t-14);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.auth-card:not(:has(form)) > p:first-child a {
+  color: var(--text-secondary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.auth-card:not(:has(form)) > p:first-child a:hover {
+  color: var(--green);
+}
+
+.auth-card:not(:has(form)) > h1 {
+  grid-column: 1;
+  font-size: var(--pp-t-36);
+  max-width: 22ch;
+  margin: 0;
+  /* Auth split puts a top rule on h1; error sheets already have the sheet rule. */
+  border-top: 0;
+  padding-top: 0;
+}
+
+.auth-card:not(:has(form)) > h1 + p {
+  grid-column: 1;
+  font-size: var(--pp-t-18);
+  color: var(--text-secondary);
+  max-width: var(--pp-measure);
+  margin: 0 0 var(--pp-s-2);
+}
+
+.auth-card:not(:has(form)) > button,
+.auth-card:not(:has(form)) > #goButton,
+.auth-card:not(:has(form)) > #dashboardButton {
+  width: 100%;
+  max-width: 22rem;
+  min-height: 52px;
+  margin-top: var(--pp-s-1);
+}
+
+@media (max-width: 600px) {
+  .auth-card:not(:has(form)) {
+    margin-top: var(--pp-s-4);
+    padding-top: var(--pp-s-3);
+    /* Re-assert after the generic .auth-card { border: 0 } mobile rule. */
+    border: 0;
+    border-top: 3px solid var(--text);
+    background: transparent;
+  }
+
+  .auth-card:not(:has(form)) > p:first-child a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--pp-target);
+  }
+
+  .auth-card:not(:has(form)) > h1 {
+    font-size: var(--pp-t-28);
+    max-width: none;
+  }
+
+  .auth-card:not(:has(form)) > button,
+  .auth-card:not(:has(form)) > #goButton,
+  .auth-card:not(:has(form)) > #dashboardButton {
+    max-width: none;
+  }
+}
+
 /* --------------------------------------------------------------------------
    Public open shifts (pages/opportunities.html)
    Shifts are comparable items, so they stay a list, set as editorial rows
@@ -1190,6 +1286,134 @@ legend {
 
   .fc .fc-toolbar-title {
     font-size: var(--pp-t-22);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Narrow phone (360–390): stop overflow, keep 44px targets, tighter rhythm
+   -------------------------------------------------------------------------- */
+@media (max-width: 390px) {
+  html {
+    overflow-x: clip;
+  }
+
+  body {
+    overflow-x: clip;
+  }
+
+  .container,
+  main.container,
+  header .container,
+  footer.container {
+    padding-inline: var(--pp-s-2);
+    max-width: 100%;
+  }
+
+  .hero {
+    padding: var(--pp-s-4) 0 var(--pp-s-5);
+  }
+
+  .hero h1 {
+    font-size: clamp(var(--pp-t-28), 10vw, var(--pp-t-36));
+  }
+
+  .hero p {
+    font-size: var(--pp-t-16);
+    max-width: none;
+  }
+
+  .how-it-works {
+    padding: var(--pp-s-5) 0;
+  }
+
+  .how-it-works > h2 {
+    font-size: var(--pp-t-22);
+  }
+
+  .how-it-works li {
+    grid-template-columns: var(--pp-s-4) 1fr;
+    gap: var(--pp-s-1);
+    padding: var(--pp-s-2) 0;
+  }
+
+  .how-it-works li::before {
+    font-size: var(--pp-t-28);
+  }
+
+  .choice-list a {
+    padding-block: var(--pp-s-2);
+  }
+
+  .auth-card {
+    margin-inline: 0;
+  }
+
+  .auth-card form [type='submit'],
+  .hero .cta {
+    width: 100%;
+  }
+
+  .opportunity-card .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .opportunity-card .actions button {
+    width: 100%;
+  }
+
+  .browse-filters {
+    padding: var(--pp-s-2) !important;
+  }
+
+  .calendar-wrapper {
+    padding: 4px !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .fc .fc-toolbar-title {
+    font-size: var(--pp-t-18);
+  }
+
+  .fc .fc-button {
+    padding-inline: var(--pp-s-1);
+  }
+
+  .site-nav {
+    gap: var(--pp-s-1);
+  }
+
+  .site-nav .site-brand strong {
+    font-size: var(--pp-t-16);
+  }
+
+  #logoutButton {
+    padding-inline: var(--pp-s-2);
+  }
+}
+
+@media (max-width: 360px) {
+  .container,
+  main.container,
+  header .container,
+  footer.container {
+    padding-inline: var(--pp-s-1);
+  }
+
+  .hero h1 {
+    font-size: var(--pp-t-28);
+    letter-spacing: -0.025em;
+  }
+
+  .auth-card > h1,
+  .auth-card:not(:has(form)) > h1 {
+    font-size: var(--pp-t-22);
+  }
+
+  .nav-toggle {
+    padding-inline: var(--pp-s-1);
+    font-size: var(--pp-t-12);
   }
 }
 

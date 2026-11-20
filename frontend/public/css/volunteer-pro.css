@@ -985,6 +985,122 @@ body.kiosk-body .muted {
   }
 }
 
+/* Narrow phone (360–390): clip overflow, stack actions, keep 44px targets */
+@media (max-width: 390px) {
+  html,
+  body {
+    overflow-x: clip;
+  }
+
+  .container,
+  main.container,
+  header .container,
+  footer.container {
+    padding-inline: var(--vp-s-2);
+    max-width: 100%;
+  }
+
+  h1,
+  main > section:first-child > h1:first-child,
+  main > article > h1:first-child,
+  .dashboard-main > section:has(> h1) > h1 {
+    font-size: var(--vp-t-28);
+  }
+
+  .stat-card,
+  .next-shift-panel {
+    padding-inline: var(--vp-s-2);
+  }
+
+  .dashboard-main .grid > a[role='button'],
+  .dashboard-main .grid > button,
+  .next-shift-actions a,
+  .next-shift-actions button {
+    width: 100%;
+  }
+
+  table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tabs button {
+    font-size: var(--vp-t-14);
+    min-width: 0;
+  }
+
+  #groupBookingForm [type='submit'],
+  #logHoursForm [type='submit'],
+  #profileForm [type='submit'],
+  #feedbackForm [type='submit'],
+  #claimButton {
+    width: 100%;
+  }
+
+  body.kiosk-body .kiosk-shell {
+    padding: var(--vp-s-2);
+  }
+
+  body.kiosk-body .kiosk-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  body.kiosk-body h1 {
+    font-size: var(--vp-t-28);
+  }
+
+  body.kiosk-body .kiosk-panel {
+    padding: var(--vp-s-3);
+  }
+
+  body.kiosk-body .volunteer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body:has(> main:only-child) main {
+    padding: var(--vp-s-3);
+  }
+
+  .site-nav {
+    gap: var(--vp-s-1);
+  }
+
+  #logoutButton {
+    padding-inline: var(--vp-s-2);
+  }
+}
+
+@media (max-width: 360px) {
+  .container,
+  main.container,
+  header .container,
+  footer.container {
+    padding-inline: var(--vp-s-1);
+  }
+
+  h1,
+  main > section:first-child > h1:first-child,
+  main > article > h1:first-child {
+    font-size: var(--vp-t-22);
+  }
+
+  .nav-toggle {
+    padding-inline: var(--vp-s-1);
+    font-size: var(--vp-t-12);
+  }
+
+  body.kiosk-body h1 {
+    font-size: var(--vp-t-22);
+  }
+
+  .certificate-sheet {
+    padding: var(--vp-s-2) !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
