@@ -1,0 +1,995 @@
+/* ============================================================================
+   ShelterLink volunteer + visitor pages: typography and layout layer ("DESIGN-PRO")
+   ----------------------------------------------------------------------------
+   Linked ONLY from volunteer-facing pages and the visitor pages listed in the
+   DESIGN-PRO-VOLUNTEER pass, always after custom.css (and after any page-local
+   stylesheet or inline <style> block). Admin screens are untouched.
+
+   Rules (keep them when editing):
+   - Brand colours are untouched. Every colour comes from the custom.css
+     tokens (--green, --text, --surface ...) or from the kiosk page's own
+     --kiosk-* variables. No new brand hex values below.
+   - Type: Fraunces (display) + Public Sans (text), self-hosted under
+     /public/fonts (SIL OFL). CSP font-src 'self' already allows them.
+   - Fixed type scale 12/14/16/18/22/28/36/48/64 px (--vp-t-*).
+   - Spacing on an 8px grid (--vp-s-*), 4px for fine adjustments.
+   - One radius scale: 2px tags, 4px controls, 6px panels. No pills.
+   - One accent per view: teal fill for the single primary action;
+     repeated row actions use the teal outline / secondary.
+   - Motion: colour/background/border only, 150ms, off under
+     prefers-reduced-motion.
+   - Tokens use a --vp- prefix so they cannot collide with --pp- (public-pro)
+     or the type tokens proposed for custom.css in PR #28.
+   ============================================================================ */
+
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('/public/fonts/fraunces-latin-wght.woff2') format('woff2-variations'),
+    url('/public/fonts/fraunces-latin-wght.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('/public/fonts/public-sans-latin-wght.woff2') format('woff2-variations'),
+    url('/public/fonts/public-sans-latin-wght.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+
+:root,
+:root:not([data-theme]) {
+  --vp-t-12: 0.75rem;
+  --vp-t-14: 0.875rem;
+  --vp-t-16: 1rem;
+  --vp-t-18: 1.125rem;
+  --vp-t-22: 1.375rem;
+  --vp-t-28: 1.75rem;
+  --vp-t-36: 2.25rem;
+  --vp-t-48: 3rem;
+  --vp-t-64: 4rem;
+
+  --vp-s-1: 0.5rem;
+  --vp-s-2: 1rem;
+  --vp-s-3: 1.5rem;
+  --vp-s-4: 2rem;
+  --vp-s-5: 2.5rem;
+  --vp-s-6: 3rem;
+  --vp-s-8: 4rem;
+  --vp-s-10: 5rem;
+  --vp-s-12: 6rem;
+
+  --vp-r-tag: 2px;
+  --vp-r-control: 4px;
+  --vp-r-panel: 6px;
+
+  --vp-font-display: 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  --vp-font-text: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --vp-measure: 62ch;
+  --vp-target: 44px;
+  --vp-ease: 150ms ease;
+
+  --font-stack: var(--vp-font-text);
+  --radius-card: var(--vp-r-panel);
+  --radius-control: var(--vp-r-control);
+  --pico-font-family: var(--vp-font-text);
+  --pico-font-family-sans-serif: var(--vp-font-text);
+  --pico-border-radius: var(--vp-r-control);
+  --pico-form-element-spacing-vertical: 0.75rem;
+  --pico-form-element-spacing-horizontal: 1rem;
+  --transition: background-color var(--vp-ease), border-color var(--vp-ease), color var(--vp-ease);
+}
+
+/* --------------------------------------------------------------------------
+   Base type
+   -------------------------------------------------------------------------- */
+body {
+  font-family: var(--vp-font-text);
+  font-size: var(--vp-t-16);
+  line-height: 1.6;
+  font-feature-settings: 'kern', 'liga';
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--vp-font-display);
+  font-optical-sizing: auto;
+  color: var(--text);
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: var(--vp-t-36);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--vp-s-2);
+}
+
+h2 {
+  font-size: var(--vp-t-28);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  margin-bottom: var(--vp-s-2);
+}
+
+h3 {
+  font-size: var(--vp-t-22);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin-bottom: var(--vp-s-1);
+}
+
+p,
+li {
+  max-width: var(--vp-measure);
+}
+
+p {
+  margin-bottom: var(--vp-s-2);
+}
+
+small {
+  font-size: var(--vp-t-14);
+}
+
+a {
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: 1px;
+}
+
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+:is(a, button, [role='button'], input, select, textarea, summary):focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+main,
+main.container {
+  padding-top: var(--vp-s-5);
+  padding-bottom: var(--vp-s-8);
+}
+
+/* Page intros: larger Fraunces title with a short measure. */
+main > section:first-child > h1:first-child,
+main > article > h1:first-child,
+main.container > h1:first-child {
+  font-size: clamp(var(--vp-t-36), 5vw, var(--vp-t-48));
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+main > section:first-child > h1:first-child + p,
+main > article > h1:first-child + p,
+main.container > h1:first-child + p {
+  font-size: var(--vp-t-18);
+  color: var(--text-secondary);
+  max-width: 48ch;
+}
+
+/* --------------------------------------------------------------------------
+   Header and footer
+   -------------------------------------------------------------------------- */
+header.site-header {
+  margin-bottom: 0;
+}
+
+.site-brand {
+  min-height: var(--vp-target);
+  height: auto;
+  display: inline-flex;
+  align-items: center;
+}
+
+.site-nav .nav-menu a,
+.site-nav .nav-link {
+  min-height: var(--vp-target);
+  display: inline-flex;
+  align-items: center;
+}
+
+.site-brand strong {
+  font-family: var(--vp-font-display);
+  font-size: var(--vp-t-22);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.site-nav .nav-menu {
+  font-size: var(--vp-t-16);
+  gap: var(--vp-s-1);
+}
+
+.site-nav .nav-link {
+  min-height: var(--vp-target);
+  padding: 0 var(--vp-s-2);
+  border-radius: var(--vp-r-control);
+}
+
+.site-nav .nav-menu .nav-link[aria-current='page'] {
+  background: transparent;
+  color: var(--text) !important;
+  box-shadow: inset 0 -3px 0 var(--green);
+  border-radius: 0;
+}
+
+.nav-toggle {
+  border-radius: var(--vp-r-control);
+  width: auto;
+  min-width: var(--vp-target);
+  padding: 0 12px;
+  font-family: var(--vp-font-text);
+  font-size: var(--vp-t-14);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+#logoutButton {
+  min-height: var(--vp-target);
+}
+
+/* volunteerNav.js sets .nav-more-panel { display:flex !important }, which
+   beats [hidden]. Restore the closed state on desktop; mobile stays open. */
+@media (min-width: 601px) {
+  .site-nav .nav-menu .nav-more-panel[hidden] {
+    display: none !important;
+  }
+}
+
+.nav-more-toggle,
+.nav-more-link {
+  min-height: var(--vp-target);
+}
+
+.nav-more-link {
+  display: flex !important;
+  align-items: center;
+}
+
+body > footer,
+footer.container {
+  margin-top: var(--vp-s-6);
+  padding-block: var(--vp-s-4);
+  font-size: var(--vp-t-14);
+}
+
+/* --------------------------------------------------------------------------
+   Controls: 44px targets, 4px radius
+   -------------------------------------------------------------------------- */
+button,
+[type='submit'],
+[role='button'],
+.button,
+.cta {
+  min-height: var(--vp-target);
+  padding: 0 var(--vp-s-3);
+  border-radius: var(--vp-r-control);
+  font-family: var(--vp-font-text);
+  font-size: var(--vp-t-16);
+  font-weight: 600;
+  letter-spacing: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--vp-s-1);
+  line-height: 1.2;
+}
+
+.button-small,
+button.button-small,
+.secondary.button-small {
+  min-height: var(--vp-target) !important;
+  height: auto;
+  padding: 0 var(--vp-s-2);
+  font-size: var(--vp-t-14);
+  line-height: 1.2;
+}
+
+/* Compact action links rendered by JS inside cards/lists. */
+.stat-card a[role='button'],
+.next-shift-actions a,
+.next-shift-actions button,
+#applications-container a,
+#applications-container button {
+  min-height: var(--vp-target);
+  display: inline-flex;
+  align-items: center;
+}
+
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='tel'],
+input[type='date'],
+input[type='number'],
+input[type='search'],
+input[type='file'],
+textarea,
+select {
+  min-height: 48px;
+  border-radius: var(--vp-r-control);
+  font-size: var(--vp-t-16);
+  font-family: var(--vp-font-text);
+  line-height: 1.4;
+}
+
+input:not([type='checkbox']):not([type='radio']):not([type='file']),
+select {
+  padding-block: 0;
+  height: 48px;
+}
+
+label {
+  font-size: var(--vp-t-14);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+label:has(> input[type='checkbox']),
+label:has(> input[type='radio']) {
+  display: block;
+  position: relative;
+  min-height: var(--vp-target);
+  padding: 10px 0 10px 2rem;
+  font-size: var(--vp-t-16);
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0;
+  cursor: pointer;
+}
+
+label > input[type='checkbox'],
+label > input[type='radio'] {
+  position: absolute;
+  left: 0;
+  top: 12px;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0;
+}
+
+input[type='checkbox'] {
+  border-radius: var(--vp-r-tag);
+}
+
+fieldset {
+  border: 0;
+  border-top: 1px solid var(--border-strong, var(--border));
+  padding: var(--vp-s-3) 0 0;
+  margin: var(--vp-s-3) 0;
+}
+
+legend {
+  font-family: var(--vp-font-display);
+  font-size: var(--vp-t-22);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  padding: 0;
+  float: none;
+}
+
+.form-grid {
+  gap: var(--vp-s-3);
+}
+
+.form-section {
+  margin-bottom: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Shared panels: flat ruled blocks instead of lifted cards
+   -------------------------------------------------------------------------- */
+.stat-card,
+.next-shift-panel,
+.status-banner,
+main .grid > article,
+#applications-container > article,
+#matchingList > article,
+#placementsList > article,
+#openLegsList > article,
+#myLegsList > article {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--vp-r-panel);
+  box-shadow: none;
+  padding: var(--vp-s-3);
+}
+
+.stat-card {
+  min-height: 0;
+  place-content: start;
+  text-align: left;
+}
+
+.stat-card h3,
+.stat-card > strong:first-child {
+  font-family: var(--vp-font-text);
+  font-size: var(--vp-t-12);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  text-align: left;
+  white-space: normal;
+  margin: 0 0 var(--vp-s-1);
+}
+
+.stats-grid {
+  gap: var(--vp-s-2);
+  margin-bottom: var(--vp-s-4);
+}
+
+.next-shift-panel {
+  border-left: 3px solid var(--green);
+  padding: var(--vp-s-4);
+  margin-bottom: var(--vp-s-4);
+}
+
+.next-shift-panel h2 {
+  font-size: var(--vp-t-28);
+  margin: 0 0 var(--vp-s-2);
+}
+
+.next-shift-actions {
+  gap: var(--vp-s-2);
+  margin-top: var(--vp-s-3);
+}
+
+.status-banner {
+  border-radius: var(--vp-r-panel);
+  padding: var(--vp-s-2) var(--vp-s-3);
+  margin-bottom: var(--vp-s-3);
+}
+
+.dashboard-main > section {
+  margin-bottom: var(--vp-s-3);
+}
+
+.dashboard-main .grid {
+  gap: var(--vp-s-2);
+}
+
+/* Welcome band: title + short intro on a ruled top edge. */
+.dashboard-main > section:has(> h1) {
+  padding-top: var(--vp-s-2);
+  border-top: 3px solid var(--text);
+  margin-bottom: var(--vp-s-4);
+}
+
+.dashboard-main > section:has(> h1) > h1 {
+  font-size: clamp(var(--vp-t-36), 5vw, var(--vp-t-48));
+  margin-bottom: var(--vp-s-1);
+}
+
+.dashboard-main > section:has(> h1) > p {
+  color: var(--text-secondary);
+  font-size: var(--vp-t-18);
+  margin-bottom: 0;
+}
+
+/* Quick Actions: one filled accent (Find shifts); Calendar is quieter. */
+.dashboard-main section:has(> h2) .grid > a[role='button']:not(.secondary):not(#browseShiftsButton) {
+  background: transparent;
+  border: 1px solid var(--green);
+  color: var(--green);
+}
+
+.dashboard-main section:has(> h2) .grid > a[role='button']:not(.secondary):not(#browseShiftsButton):hover {
+  background: var(--green-tint);
+  color: var(--green-hover);
+  border-color: var(--green-hover);
+}
+
+@media (min-width: 901px) {
+  .dashboard-main > section:has(> .stat-card + .stat-card),
+  .dashboard-main > section:has(> article.stat-card + article.stat-card) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--vp-s-2);
+  }
+
+  .dashboard-main > section:has(> .stat-card + .stat-card + .stat-card),
+  .dashboard-main > section:has(> article.stat-card + article.stat-card + article.stat-card) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Tables
+   -------------------------------------------------------------------------- */
+table {
+  font-size: var(--vp-t-14);
+  border-collapse: collapse;
+}
+
+thead th {
+  font-family: var(--vp-font-text);
+  font-size: var(--vp-t-12);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--text);
+  background: transparent;
+  padding: var(--vp-s-1) var(--vp-s-2);
+}
+
+tbody td {
+  padding: var(--vp-s-2);
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* --------------------------------------------------------------------------
+   Filter tabs (my-applications)
+   -------------------------------------------------------------------------- */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  border-bottom: 1px solid var(--border-strong, var(--border));
+  padding-bottom: var(--vp-s-1);
+  margin-bottom: var(--vp-s-3);
+}
+
+.tabs button {
+  min-height: var(--vp-target);
+  border-radius: var(--vp-r-control);
+  font-size: var(--vp-t-14);
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.tabs button[aria-pressed='true'],
+.tabs button.is-active,
+.tabs button.primary {
+  background: transparent;
+  color: var(--text);
+  border-color: transparent;
+  box-shadow: inset 0 -3px 0 var(--green);
+  border-radius: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Stat values (my-hours summary)
+   -------------------------------------------------------------------------- */
+.stat-value {
+  font-family: var(--vp-font-display);
+  font-size: var(--vp-t-36) !important;
+  font-weight: 600 !important;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin: 0;
+}
+
+main > section.grid > article {
+  text-align: left;
+  place-content: start;
+}
+
+main > section.grid > article > header,
+main > section.grid > article > header strong {
+  font-family: var(--vp-font-text);
+  font-size: var(--vp-t-12);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Complete profile: centred form sheet without a heavy card frame
+   -------------------------------------------------------------------------- */
+main > article[style*='max-width'] {
+  max-width: 720px !important;
+  margin-inline: auto !important;
+  padding-top: var(--vp-s-2);
+  border-top: 3px solid var(--text);
+  background: transparent;
+  box-shadow: none;
+}
+
+.tag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--vp-s-1);
+  margin-top: var(--vp-s-1);
+}
+
+.tag-chips label,
+.tag-chips button,
+.tag-chips .chip,
+#interestTags button,
+#interestTags label {
+  min-height: var(--vp-target);
+  min-width: var(--vp-target);
+  padding: 0 var(--vp-s-2);
+  border-radius: var(--vp-r-tag);
+  font-size: var(--vp-t-14);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* --------------------------------------------------------------------------
+   Messages (threads layout inherits threads.css; type + targets only)
+   -------------------------------------------------------------------------- */
+.threads-layout {
+  gap: var(--vp-s-3);
+  margin-top: var(--vp-s-3);
+}
+
+.threads-panel-heading {
+  font-size: var(--vp-t-18);
+  margin: 0 0 var(--vp-s-2);
+}
+
+.threads-list-panel,
+.threads-detail-panel {
+  border-radius: var(--vp-r-panel);
+}
+
+.compose-form button[type='submit'] {
+  min-height: 52px;
+}
+
+/* --------------------------------------------------------------------------
+   Accept waiver
+   -------------------------------------------------------------------------- */
+.waiver-block {
+  max-width: 720px;
+  margin: 0 auto;
+  padding-top: var(--vp-s-2);
+  border-top: 3px solid var(--text);
+}
+
+.waiver-scroll {
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--vp-r-panel);
+  padding: var(--vp-s-3);
+  white-space: pre-wrap;
+  background: var(--surface);
+  margin-bottom: var(--vp-s-3);
+  font-size: var(--vp-t-16);
+  line-height: 1.6;
+  color: var(--text);
+}
+
+/* --------------------------------------------------------------------------
+   Certificate (screen only; print rules stay on the page)
+   -------------------------------------------------------------------------- */
+.cert-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--vp-s-2);
+  margin: var(--vp-s-2) 0 var(--vp-s-3);
+}
+
+.certificate-sheet {
+  box-shadow: none !important;
+  border-radius: var(--vp-r-panel);
+  border-width: 2px;
+  padding: var(--vp-s-6) !important;
+}
+
+.certificate-sheet .brand {
+  font-family: var(--vp-font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.certificate-sheet .volunteer-name {
+  font-family: var(--vp-font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.certificate-sheet .stat strong {
+  font-family: var(--vp-font-display);
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   Claim swap / feedback: narrow single-column sheets
+   -------------------------------------------------------------------------- */
+main.container[style*='max-width'] {
+  max-width: 560px !important;
+  margin: var(--vp-s-4) auto !important;
+  padding-top: var(--vp-s-4);
+  border-top: 3px solid var(--text);
+}
+
+#claimButton {
+  min-height: 52px;
+  width: 100%;
+  margin-top: var(--vp-s-3);
+}
+
+/* Star rating: keep functional ★ faces; enlarge hit area. */
+.star-rating label {
+  min-width: var(--vp-target);
+  min-height: var(--vp-target);
+}
+
+.star-rating .star-face {
+  font-size: var(--vp-t-28);
+}
+
+/* --------------------------------------------------------------------------
+   Group booking + privacy + foster + transport
+   -------------------------------------------------------------------------- */
+#groupBookingForm [type='submit'],
+#logHoursForm [type='submit'],
+#profileForm [type='submit'],
+#feedbackForm [type='submit'] {
+  min-height: 52px;
+  margin-top: var(--vp-s-2);
+}
+
+/* Privacy: long-form reading measure, serif headings already set. */
+main.container[style*='42rem'] {
+  max-width: 42rem !important;
+}
+
+main.container[style*='42rem'] article > h1 {
+  border-top: 3px solid var(--text);
+  padding-top: var(--vp-s-2);
+}
+
+main.container[style*='42rem'] article h2 {
+  margin-top: var(--vp-s-5);
+  padding-top: var(--vp-s-2);
+  border-top: 1px solid var(--border);
+}
+
+/* Foster / transport section rhythm */
+#matchingList,
+#placementsList,
+#openLegsList,
+#myLegsList,
+#applications-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-top: 1px solid var(--text);
+}
+
+#matchingList > article,
+#placementsList > article,
+#openLegsList > article,
+#myLegsList > article,
+#applications-container > article {
+  border: 0;
+  border-bottom: 1px solid var(--border-strong, var(--border));
+  border-radius: 0;
+  background: transparent;
+  padding: var(--vp-s-3) 0;
+  margin: 0;
+}
+
+#matchingList > article h2,
+#matchingList > article h3,
+#placementsList > article h2,
+#placementsList > article h3,
+#openLegsList > article h2,
+#openLegsList > article h3,
+#myLegsList > article h2,
+#myLegsList > article h3,
+#applications-container > article h2,
+#applications-container > article h3 {
+  font-size: var(--vp-t-22);
+  margin: 0 0 var(--vp-s-1);
+}
+
+/* --------------------------------------------------------------------------
+   Offline page (no pico; body uses an inline flex centre rule)
+   -------------------------------------------------------------------------- */
+body:has(> main:only-child) {
+  text-align: left;
+  align-items: stretch;
+  justify-content: center;
+}
+
+body:has(> main:only-child) main {
+  width: min(28rem, 100%);
+  max-width: 28rem;
+  margin-inline: auto;
+  text-align: left;
+  padding: var(--vp-s-4);
+  border-top: 3px solid var(--text);
+}
+
+body:has(> main:only-child) h1 {
+  font-size: var(--vp-t-36);
+  color: var(--text);
+  margin-bottom: var(--vp-s-2);
+}
+
+body:has(> main:only-child) button,
+body:has(> main:only-child) button[type='button'] {
+  min-height: 52px !important;
+  height: auto;
+  width: 100% !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: var(--vp-s-2);
+  padding: 0 var(--vp-s-3);
+  border-radius: var(--vp-r-control);
+  font-family: var(--vp-font-text);
+  font-size: var(--vp-t-16);
+  font-weight: 600;
+  background: var(--green);
+  border: 1px solid var(--green);
+  color: #fff;
+}
+
+/* --------------------------------------------------------------------------
+   Kiosk: keep existing --kiosk-* colours; flatten the radial blob;
+   apply type + larger targets. Does not load custom.css.
+   -------------------------------------------------------------------------- */
+body.kiosk-body {
+  font-family: var(--vp-font-text);
+  background: var(--kiosk-bg) !important;
+  color: var(--kiosk-text);
+}
+
+body.kiosk-body h1,
+body.kiosk-body h2 {
+  font-family: var(--vp-font-display);
+  color: var(--kiosk-text);
+  letter-spacing: -0.02em;
+}
+
+body.kiosk-body h1 {
+  font-size: var(--vp-t-36);
+  line-height: 1.1;
+  margin: 0;
+}
+
+body.kiosk-body h2 {
+  font-size: var(--vp-t-28);
+  line-height: 1.15;
+}
+
+body.kiosk-body .kiosk-shell {
+  padding: var(--vp-s-4);
+  max-width: 1100px;
+}
+
+body.kiosk-body .kiosk-header {
+  align-items: flex-end;
+  gap: var(--vp-s-2);
+  margin-bottom: var(--vp-s-4);
+  padding-bottom: var(--vp-s-3);
+  border-bottom: 1px solid color-mix(in srgb, var(--kiosk-text) 24%, transparent);
+}
+
+body.kiosk-body .kiosk-panel {
+  background: var(--kiosk-panel);
+  border-radius: var(--vp-r-panel);
+  box-shadow: none;
+  padding: var(--vp-s-4);
+}
+
+body.kiosk-body label {
+  color: var(--kiosk-text);
+  font-size: var(--vp-t-14);
+  font-weight: 600;
+}
+
+body.kiosk-body button,
+body.kiosk-body [type='submit'] {
+  min-height: 52px;
+  border-radius: var(--vp-r-control);
+  font-family: var(--vp-font-text);
+  font-weight: 600;
+}
+
+/* Pico's default primary is blue; keep the kiosk on its own accent. */
+body.kiosk-body button:not(.secondary),
+body.kiosk-body [type='submit'] {
+  background: var(--kiosk-accent);
+  border-color: var(--kiosk-accent);
+  color: #0f2a1f;
+}
+
+body.kiosk-body button:not(.secondary):hover,
+body.kiosk-body [type='submit']:hover {
+  background: color-mix(in srgb, var(--kiosk-accent) 88%, white);
+  border-color: color-mix(in srgb, var(--kiosk-accent) 88%, white);
+}
+
+body.kiosk-body input {
+  min-height: 52px;
+  height: 52px;
+  border-radius: var(--vp-r-control);
+  font-size: var(--vp-t-18);
+  font-family: var(--vp-font-text);
+  background: color-mix(in srgb, var(--kiosk-panel) 70%, black);
+  border: 1px solid color-mix(in srgb, var(--kiosk-text) 28%, transparent);
+  color: var(--kiosk-text);
+}
+
+body.kiosk-body :is(a, button, input, select, textarea):focus-visible {
+  outline: 3px solid var(--kiosk-accent);
+  outline-offset: 2px;
+}
+
+body.kiosk-body .shift-list > * {
+  border-radius: var(--vp-r-panel);
+}
+
+body.kiosk-body .muted {
+  color: color-mix(in srgb, var(--kiosk-text) 72%, transparent);
+}
+
+/* --------------------------------------------------------------------------
+   Mobile
+   -------------------------------------------------------------------------- */
+@media (max-width: 600px) {
+  main,
+  main.container {
+    padding-top: var(--vp-s-3);
+    padding-bottom: var(--vp-s-6);
+  }
+
+  h1,
+  main > section:first-child > h1:first-child,
+  main > article > h1:first-child,
+  .dashboard-main > section:has(> h1) > h1 {
+    font-size: var(--vp-t-36);
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .certificate-sheet {
+    padding: var(--vp-s-3) !important;
+  }
+
+  .tabs {
+    gap: 0;
+  }
+
+  .tabs button {
+    flex: 1 1 auto;
+    padding: 0 var(--vp-s-1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
