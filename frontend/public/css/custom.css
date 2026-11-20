@@ -1796,6 +1796,62 @@ p {
   outline-offset: 2px;
 }
 
+.empty-state,
+.error-state {
+  margin: 0 0 1rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  text-align: left;
+}
+
+.empty-state h1,
+.empty-state h2,
+.error-state h1,
+.error-state h2 {
+  margin: 0 0 0.4rem;
+  font-size: 1.15rem;
+  color: var(--text);
+}
+
+.empty-state p,
+.error-state p {
+  margin: 0 0 0.75rem;
+  color: var(--text-secondary);
+}
+
+.empty-state-actions,
+.error-state-actions {
+  margin: 0 0 0.5rem;
+}
+
+.empty-state a[role='button'] {
+  width: auto;
+  display: inline-block;
+}
+
+.error-state {
+  border-color: var(--danger-border);
+  background: var(--danger-tint);
+}
+
+.error-state h1,
+.error-state h2 {
+  color: var(--danger);
+}
+
+.state-page {
+  max-width: 680px;
+  margin-top: 2rem;
+}
+
+.badge-urgent {
+  color: var(--danger);
+  font-weight: 600;
+  font-size: 0.85em;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -1806,21 +1862,6 @@ p {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
-}
-
-/* Empty list CTAs on staff pages */
-.empty-state {
-  padding: 0.75rem 0;
-  text-align: left;
-}
-
-.empty-state p {
-  margin-bottom: 0.75rem;
-}
-
-.empty-state a[role='button'] {
-  width: auto;
-  display: inline-block;
 }
 
 .opportunity-modal-animal {
