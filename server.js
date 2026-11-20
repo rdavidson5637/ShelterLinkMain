@@ -271,6 +271,11 @@ for (const [suffix, file] of Object.entries(SHELTER_PAGES)) {
   app.get(`/s/:slug${suffix}`, (req, res) => res.sendFile(file));
 }
 
+// Public form for a charity to ask to join. Applications wait for a
+// platform owner at /platform/shelters; nothing goes live from here.
+const APPLY_PAGE = path.join(__dirname, 'frontend', 'apply.html');
+app.get('/apply', (req, res) => res.sendFile(APPLY_PAGE));
+
 app.get('/launch', require('./controllers/launchController').launch);
 
 // Platform owner queue. Anyone not in platform_owners gets the 404 page.

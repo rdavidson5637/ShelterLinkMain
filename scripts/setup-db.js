@@ -98,6 +98,10 @@ async function run() {
     await applySql(pgPool, loadSql('038_platform_audit.pg.sql'));
     console.log('  ✓ Shelter tenancy applied.');
 
+    console.log('→ Applying shelter application indexes...');
+    await applySql(pgPool, loadSql('040_shelter_applications_pending_unique.pg.sql'));
+    console.log('  ✓ Shelter application indexes applied.');
+
     if (withSeed) {
       console.log('\n  Seeded logins are documented at the top of database/seed.pg.sql.');
     }
