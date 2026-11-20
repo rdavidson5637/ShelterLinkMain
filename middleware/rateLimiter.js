@@ -19,6 +19,10 @@ const LIMITS = {
   forgotPassword: positiveInt('RATE_LIMIT_FORGOT', 5),
   forgotAccount: positiveInt('RATE_LIMIT_FORGOT_ACCOUNT', 5),
   resetPassword: positiveInt('RATE_LIMIT_RESET', 8),
+  invitePage: positiveInt('RATE_LIMIT_INVITE_PAGE', 60),
+  inviteCheck: positiveInt('RATE_LIMIT_INVITE_CHECK', 30),
+  inviteAccept: positiveInt('RATE_LIMIT_INVITE', 8),
+  shelterApply: positiveInt('RATE_LIMIT_SHELTER_APPLY', 5),
   message: positiveInt('RATE_LIMIT_MESSAGE', 10),
   groupBooking: positiveInt('RATE_LIMIT_GROUP_BOOKING', 8),
   groupBookingEmail: positiveInt('RATE_LIMIT_GROUP_BOOKING_EMAIL', 3),
@@ -97,6 +101,44 @@ const resetPasswordLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Invite links. Tokens are 256-bit, so these are about load and noise, not
+// guessing. Separate counters so loading the page and checking the link
+// (which a person may do several times, or several people behind one NAT)
+// never use up the attempts left for actually creating the account.
+const invitePageLimiter = rateLimit({
+  windowMs: WINDOW_MS,
+  max: LIMITS.invitePage,
+  message: 'Too many requests. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const inviteCheckLimiter = rateLimit({
+  windowMs: WINDOW_MS,
+  max: LIMITS.inviteCheck,
+  message: 'Too many invite checks. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const inviteAcceptLimiter = rateLimit({
+  windowMs: WINDOW_MS,
+  max: LIMITS.inviteAccept,
+  message: 'Too many invite attempts. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Public shelter applications. Real charities apply once; this keeps the
+// platform owner's queue free of floods.
+const shelterApplyLimiter = rateLimit({
+  windowMs: WINDOW_MS,
+  max: LIMITS.shelterApply,
+  message: 'Too many applications from this connection. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 const messageLimiter = rateLimit({
   windowMs: WINDOW_MS,
   max: LIMITS.message,
@@ -151,6 +193,10 @@ module.exports = {
   forgotPasswordLimiter,
   forgotAccountLimiter,
   resetPasswordLimiter,
+  invitePageLimiter,
+  inviteCheckLimiter,
+  inviteAcceptLimiter,
+  shelterApplyLimiter,
   groupBookingLimiter,
   groupBookingEmailLimiter,
   messageLimiter,

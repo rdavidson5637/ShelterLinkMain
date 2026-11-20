@@ -22,7 +22,7 @@
         border-radius: var(--radius-card);
         padding: 1rem 1.5rem;
         margin-bottom: 1.25rem;
-        font-size: 1.1rem;
+        font-size: var(--text-lg);
         font-weight: 500;
         color: var(--green);
       }
@@ -50,10 +50,10 @@
         color: var(--text) !important;
       }
       .fc {
-        font-size: 1rem;
+        font-size: var(--text-md);
       }
       .fc-event {
-        font-size: 0.85rem;
+        font-size: var(--text-xs);
         padding: 0.2em 0.4em;
         cursor: pointer;
         white-space: nowrap;
@@ -69,12 +69,13 @@
       .calendar-empty-state {
         text-align: center;
         padding: 4rem 2rem;
-        font-size: 1.5rem;
+        font-size: var(--text-xl);
         color: var(--text-muted);
       }
     </style>
   </head>
   <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
         <header class="site-header">
       <nav class="site-nav container" aria-label="Volunteer navigation">
         <a class="site-brand" href="/pages/volunteer/dashboard.html">
@@ -87,7 +88,7 @@
       </nav>
     </header>
 
-    <main class="container">
+    <main id="main" class="container">
       <section>
         <h1>Shift Calendar</h1>
         <p>View available shifts at a glance. Click an open shift to apply.</p>

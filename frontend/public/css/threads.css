@@ -27,7 +27,7 @@
 }
 
 .threads-panel-heading {
-  font-size: 1rem;
+  font-size: var(--text-md);
   margin: 0 0 0.75rem;
 }
 
@@ -63,7 +63,7 @@
 }
 
 .thread-list-meta {
-  font-size: 0.85rem;
+  font-size: var(--text-xs);
   color: var(--text-muted, #5b6670);
 }
 
@@ -83,17 +83,17 @@
 
 .thread-view-header h2 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--text-lg);
 }
 
 .threads-meta {
   margin: 0.25rem 0 0;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   color: var(--text-muted, #5b6670);
 }
 
 .thread-participants {
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   margin-bottom: 0.75rem;
   color: var(--text-muted, #555);
 }
@@ -124,7 +124,7 @@
   display: flex;
   justify-content: space-between;
   gap: 0.5rem;
-  font-size: 0.85rem;
+  font-size: var(--text-xs);
   margin-bottom: 0.35rem;
 }
 
@@ -138,7 +138,7 @@
 .message-delete {
   margin-top: 0.5rem;
   padding: 0.25rem 0.6rem;
-  font-size: 0.85rem;
+  font-size: var(--text-xs);
 }
 
 .compose-form textarea {
@@ -159,7 +159,7 @@
   margin-left: 0.35rem;
   padding: 0.05rem 0.4rem;
   border-radius: 999px;
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   font-weight: 700;
   line-height: 1.2;
   background: #c62828;

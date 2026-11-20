@@ -24,19 +24,19 @@
         border: 1px solid var(--border);
       }
       .browse-filters .search-input {
-        font-size: 1.125rem;
+        font-size: var(--text-lg);
         min-height: 48px;
         padding: 0.75rem 1rem;
       }
       .browse-status {
-        font-size: 1rem;
+        font-size: var(--text-md);
         margin-bottom: 1rem;
         color: #555;
       }
       .browse-empty-state {
         text-align: center;
         padding: 3rem 2rem;
-        font-size: 1.25rem;
+        font-size: var(--text-lg);
         color: var(--text-muted);
       }
       .browse-empty-state button {
@@ -70,11 +70,11 @@
 
       .opportunity-card h3 {
         margin: 0 0 0.5rem;
-        font-size: 1.25rem;
+        font-size: var(--text-lg);
       }
 
       .opportunity-card p {
-        font-size: 0.9rem;
+        font-size: var(--text-sm);
         margin: 0.25rem 0;
       }
 
@@ -89,7 +89,7 @@
         display: flex;
         gap: 1rem;
         flex-wrap: wrap;
-        font-size: 0.85rem;
+        font-size: var(--text-xs);
         color: var(--text-muted);
         margin: 0.5rem 0;
       }
@@ -102,7 +102,7 @@
 
       .opportunity-card button {
         padding: 0.5rem 1.5rem;
-        font-size: 0.9rem;
+        font-size: var(--text-sm);
         margin-top: 0;
       }
 
@@ -114,6 +114,7 @@
     </style>
   </head>
   <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
         <header class="site-header">
       <nav class="site-nav container" aria-label="Volunteer navigation">
         <a class="site-brand" href="/pages/volunteer/dashboard.html">
@@ -126,7 +127,7 @@
       </nav>
     </header>
 
-    <main class="container">
+    <main id="main" class="container">
       <section>
         <h1>Browse Volunteer Shifts</h1>
         <p>Filter and explore open opportunities at the shelter.</p>

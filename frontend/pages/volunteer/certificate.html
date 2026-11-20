@@ -34,7 +34,7 @@
         box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
       }
       .certificate-sheet .brand {
-        font-size: 1.75rem;
+        font-size: var(--text-2xl);
         color: var(--green);
         letter-spacing: 0.02em;
         margin: 0;
@@ -44,11 +44,11 @@
         margin: 0.25rem 0 1.5rem;
       }
       .certificate-sheet h1 {
-        font-size: 1.5rem;
+        font-size: var(--text-xl);
         margin: 0 0 0.5rem;
       }
       .certificate-sheet .volunteer-name {
-        font-size: 2rem;
+        font-size: var(--text-2xl);
         font-weight: 700;
         margin: 0.75rem 0;
       }
@@ -60,12 +60,12 @@
       }
       .certificate-sheet .stat strong {
         display: block;
-        font-size: 1.75rem;
+        font-size: var(--text-2xl);
         color: var(--green);
       }
       .certificate-sheet .verify {
         margin-top: 1.5rem;
-        font-size: 0.9rem;
+        font-size: var(--text-sm);
         color: var(--text-secondary);
       }
       .certificate-sheet .badges {
@@ -101,6 +101,7 @@
     </style>
   </head>
   <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
     <header class="site-header no-print">
       <nav class="site-nav container" aria-label="Volunteer navigation">
         <a class="site-brand" href="/pages/volunteer/dashboard.html">
@@ -113,7 +114,7 @@
       </nav>
     </header>
 
-    <main class="container">
+    <main id="main" class="container">
       <section class="no-print">
         <h1>Hours certificate</h1>
         <p>Download a printable certificate of your approved volunteer hours.</p>

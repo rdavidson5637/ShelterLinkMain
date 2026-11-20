@@ -12,9 +12,11 @@ const { positiveParam } = require('../middleware/validate');
 const {
   listApplications,
   approveApplication,
+  resendInvite,
   rejectApplication,
   listShelters,
   suspendShelter,
+  reactivateShelter,
 } = require('../controllers/platformController');
 
 const router = express.Router();
@@ -25,8 +27,10 @@ router.param('id', positiveParam('id'));
 router.get('/applications', listApplications);
 router.post('/applications/:id/approve', approveApplication);
 router.post('/applications/:id/reject', rejectApplication);
+router.post('/applications/:id/resend-invite', resendInvite);
 router.get('/shelters', listShelters);
 router.post('/shelters/:id/suspend', suspendShelter);
+router.post('/shelters/:id/reactivate', reactivateShelter);
 
 // Unknown paths under /api/platform 404 here, after the owner check.
 router.use((req, res, next) => next({ type: 'not_found', message: 'API endpoint not found' }));

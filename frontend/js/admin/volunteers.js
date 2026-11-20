@@ -166,7 +166,7 @@ function renderTable() {
     statusTd.appendChild(createStatusBadge(isApproved ? 'approved' : 'pending'));
     if (volunteer.away_until) {
       const away = document.createElement('div');
-      away.style.cssText = 'font-size:0.85rem;margin-top:0.25rem;color:var(--pico-muted-color,#55605a);';
+      away.style.cssText = 'font-size:var(--text-xs);margin-top:0.25rem;color:var(--pico-muted-color,#55605a);';
       away.textContent = `Away until ${String(volunteer.away_until).slice(0, 10)}`;
       statusTd.appendChild(away);
     }
