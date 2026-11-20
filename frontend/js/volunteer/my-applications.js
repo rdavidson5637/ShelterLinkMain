@@ -70,7 +70,7 @@ async function loadAnimalsForApplication(app, container) {
     block.appendChild(title);
     if (animal.handling_notes) {
       const notes = document.createElement('p');
-      notes.style.cssText = 'margin:0.35rem 0;font-size:0.9rem;';
+      notes.style.cssText = 'margin:0.35rem 0;font-size:var(--text-sm);';
       notes.textContent = `Handling: ${animal.handling_notes}`;
       block.appendChild(notes);
     }
@@ -286,7 +286,7 @@ function renderApplications() {
       const animalWrap = document.createElement('div');
       animalWrap.style.cssText = 'margin-top:0.75rem;';
       animalWrap.dataset.animalSlot = '1';
-      animalWrap.innerHTML = '<p style="font-size:0.875rem;color:var(--text-muted)">Loading animals…</p>';
+      animalWrap.innerHTML = '<p style="font-size:var(--text-sm);color:var(--text-muted)">Loading animals…</p>';
       card.appendChild(animalWrap);
       loadAnimalsForApplication(app, animalWrap).catch(() => {
         animalWrap.innerHTML = '';
@@ -315,7 +315,7 @@ function renderApplications() {
       const notesWrap = document.createElement('div');
       notesWrap.style.cssText = 'margin-top:0.75rem;';
       notesWrap.innerHTML =
-        '<p style="font-size:0.875rem;color:var(--text-muted)">Loading shift notes…</p>';
+        '<p style="font-size:var(--text-sm);color:var(--text-muted)">Loading shift notes…</p>';
       card.appendChild(notesWrap);
       loadShiftNotesForApplication(app, notesWrap).catch(() => {
         notesWrap.innerHTML = '';
@@ -331,7 +331,7 @@ function renderApplications() {
         background: var(--danger-tint);
         border-left: 3px solid var(--danger);
         border-radius: 4px;
-        font-size: 0.9rem;
+        font-size: var(--text-sm);
       `;
       const reasonLabel = document.createElement('strong');
       reasonLabel.textContent = 'Reason: ';
@@ -433,7 +433,7 @@ function renderApplications() {
       card.appendChild(swapBtn);
     } else if (isAccepted && app.open_swap_id) {
       const swapNote = document.createElement('p');
-      swapNote.style.cssText = 'margin-top:0.5rem;font-size:0.9rem;color:#1565c0;';
+      swapNote.style.cssText = 'margin-top:0.5rem;font-size:var(--text-sm);color:#1565c0;';
       swapNote.textContent = 'Swap request open — waiting for cover.';
       card.appendChild(swapNote);
     }
