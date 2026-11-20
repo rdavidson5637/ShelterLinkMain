@@ -286,7 +286,6 @@ app.get('/invite', invitePageLimiter, (req, res) => {
 const APPLY_PAGE = path.join(__dirname, 'frontend', 'apply.html');
 app.get('/apply', (req, res) => res.sendFile(APPLY_PAGE));
 
-
 app.get('/launch', require('./controllers/launchController').launch);
 
 // Platform owner queue. Anyone not in platform_owners gets the 404 page.

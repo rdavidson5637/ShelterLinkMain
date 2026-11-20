@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Team invites - ShelterLink</title>
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+        <header class="site-header">
+      <nav class="site-nav container" aria-label="Account">
+        <a class="site-brand" href="/pages/admin/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" aria-label="Toggle navigation">Menu</button>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main class="container dashboard-layout">
+      <aside id="admin-nav" class="sidebar-nav"></aside>
+      <div class="dashboard-main">
+      <section>
+        <h1>Team invites</h1>
+        <p>Invite staff and other admins to your shelter. They get an email with a link that works once and lasts 7 days, and choose their own password.</p>
+      </section>
+
+      <div id="message" role="status" aria-live="polite"></div>
+
+      <section>
+        <h2>Invite someone</h2>
+        <form id="inviteForm" novalidate>
+          <div class="grid">
+            <label for="email">
+              Email address
+              <input type="email" id="email" name="email" required maxlength="254" autocomplete="off" />
+            </label>
+            <label for="role">
+              Role
+              <select id="role" name="role">
+                <option value="staff">Staff</option>
+                <option value="admin">Admin</option>
+              </select>
+              <small>Admins can also invite people, change roles and use privacy tools.</small>
+            </label>
+          </div>
+          <button type="submit" id="inviteButton">Send invite</button>
+        </form>
+      </section>
+
+      <section class="table-wrapper">
+        <table>
+          <caption>Invites waiting to be accepted</caption>
+          <thead>
+            <tr>
+              <th scope="col">Email</th>
+              <th scope="col">Role</th>
+              <th scope="col">Sent</th>
+              <th scope="col">Expires</th>
+              <th scope="col">Action</th>
+            </tr>
+          </thead>
+          <tbody id="invitesBody">
+            <tr><td colspan="5">Loading…</td></tr>
+          </tbody>
+        </table>
+      </section>
+      </div>
+    </main>
+
+    <footer class="container" data-site-footer></footer>
+<script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/admin/team.js"></script>
+      <script type="module" src="/js/utils/footerYear.js"></script>
+      <script type="module" src="/js/components/adminNav.js"></script>
+  </body>
+</html>

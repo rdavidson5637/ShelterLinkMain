@@ -75,7 +75,6 @@ charity number, and a contact name and email.
 
 ## 2. Invite emails and the accept page
 
-
 Approving an application creates the shelter and a 7-day, single-use admin
 invite for the applicant's email. Once the transaction commits, the invite is
 emailed with a link to `<APP_URL>/invite#<token>`. The token is in the
