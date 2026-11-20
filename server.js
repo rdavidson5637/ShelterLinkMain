@@ -255,7 +255,8 @@ app.get('/join/:slug', apiLimiter, activeShelterPage(REGISTER_PAGE));
 
 // Public shelter pages. The page reads the slug from its own path and sends
 // it to the API as ?shelter=<slug>; the API resolves it. Same rule as
-// /join: unknown or suspended shelters get the 404 page.
+// /join: unknown or suspended shelters get the 404 page, never a board or
+// form that would quietly fall back to Assisi.
 const SHELTER_PAGES = {
   '': path.join(__dirname, 'frontend', 'index.html'),
   '/opportunities': path.join(__dirname, 'frontend', 'pages', 'opportunities.html'),

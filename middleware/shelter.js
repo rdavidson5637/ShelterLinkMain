@@ -162,14 +162,12 @@ function requestedShelterSlug(req) {
  *
  * An unknown or suspended slug must never fall back to another shelter: an
  * ICS subscriber, an embedded board or a typo'd /s/<slug> link would quietly
- * start showing (or booking) someone else's shifts.
+ * start showing (or booking) someone else's shifts. shelterIdFromSlug already
+ * rejects suspended rows.
  */
 async function publicShelterId(req) {
   const slug = requestedShelterSlug(req);
-  if (slug) {
-    const shelter = await shelterFromSlug(slug);
-    return shelter && isActiveStatus(shelter.status) ? shelter.id : null;
-  }
+  if (slug) return shelterIdFromSlug(slug);
   return currentShelterId() || assisiShelterId();
 }
 

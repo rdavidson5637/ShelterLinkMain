@@ -180,21 +180,36 @@ test('brand and logo for slug B name shelter B by id', async () => {
   }
 });
 
-test('brand for an unknown slug is a 404, never Assisi\'s brand', async () => {
+test('brand for an unknown slug returns 404 without reading another shelter', async () => {
   const res = makeRes();
   await getBrand({ query: { shelter: 'nowhere' } }, res);
   assert.equal(res.statusCode, 404);
-  assert.notEqual(res.body && res.body.name, 'Assisi Animal Sanctuary');
+  assert.deepEqual(res.body, { error: 'Not found' });
+  assert.equal(ran.some((r) => /FROM\s+shelters\s+WHERE id/.test(r.sql)), false);
 });
 
-test('public opportunities and ICS for an unknown slug are 404, never Assisi\'s shifts', async () => {
-  const list = makeRes();
-  await publicCtrl.listPublicOpportunities({ query: { shelter: 'nowhere' } }, list);
-  assert.equal(list.statusCode, 404);
-  const ics = makeRes();
-  await publicCtrl.publicOpportunitiesIcs({ query: { shelter: 'nowhere' } }, ics);
-  assert.equal(ics.statusCode, 404);
-  assert.doesNotMatch(String(ics.body || ''), /MarkerA/);
+test('public opportunities and calendar return 404 for an unknown slug', async () => {
+  const opportunities = makeRes();
+  await publicCtrl.listPublicOpportunities({ query: { shelter: 'nowhere' } }, opportunities);
+  assert.equal(opportunities.statusCode, 404);
+  assert.deepEqual(opportunities.body, { error: 'Not found' });
+
+  const calendar = makeRes();
+  await publicCtrl.publicOpportunitiesIcs({ query: { shelter: 'nowhere' } }, calendar);
+  assert.equal(calendar.statusCode, 404);
+  assert.deepEqual(calendar.body, { error: 'Not found' });
+  assert.equal(tenantQueries().length, 0, 'must not read Assisi or another shelter');
+});
+
+test('group booking with an unknown slug returns 404 without creating a booking', async () => {
+  const res = makeRes();
+  await groupCtrl.createGroupBooking(
+    { body: bookingBody({ opportunity_id: 1, shelter_slug: 'nowhere' }), query: {} },
+    res
+  );
+  assert.equal(res.statusCode, 404);
+  assert.ok(!ran.some((r) => /INSERT INTO group_bookings/i.test(r.sql)));
+  assert.equal(tenantQueries().length, 0, 'must not read Assisi or another shelter');
 });
 
 function bookingBody(overrides = {}) {
