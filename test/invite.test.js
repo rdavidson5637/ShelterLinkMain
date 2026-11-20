@@ -112,12 +112,12 @@ function acceptBody(overrides = {}) {
 }
 
 // ---------------------------------------------------------------------------
-// GET /api/auth/invite/:token
+// POST /api/auth/invite/check  (token in the body, never the URL)
 // ---------------------------------------------------------------------------
 
 test('checking a good invite returns the shelter, email and role, looked up by token hash', async () => {
   scenario();
-  const res = await call('GET', `/invite/${TOKEN}`);
+  const res = await call('POST', '/invite/check', { token: TOKEN });
   assert.equal(res.status, 200);
   assert.deepEqual(res.body, {
     valid: true,
@@ -137,7 +137,7 @@ test('checking a good invite returns the shelter, email and role, looked up by t
 test('checking a malformed token answers valid:false without touching the database', async () => {
   for (const bad of ['short', 'x'.repeat(44), `${TOKEN.slice(0, 42)}!`]) {
     scenario();
-    const res = await call('GET', `/invite/${encodeURIComponent(bad)}`);
+    const res = await call('POST', '/invite/check', { token: bad });
     assert.equal(res.status, 200, bad);
     assert.deepEqual(res.body, { valid: false });
     assert.equal(mock.calls.length, 0, bad);
@@ -146,14 +146,30 @@ test('checking a malformed token answers valid:false without touching the databa
 
 test('checking a used, expired, or unknown invite answers valid:false', async () => {
   scenario({ invite: null });
-  const res = await call('GET', `/invite/${TOKEN}`);
+  const res = await call('POST', '/invite/check', { token: TOKEN });
   assert.equal(res.status, 200);
   assert.deepEqual(res.body, { valid: false });
 });
 
+test('the old GET /invite/:token check is gone, so a token never has to sit in a URL', async () => {
+  scenario();
+  const res = await fetch(`${base}/invite/${TOKEN}`);
+  assert.equal(res.status, 404);
+  assert.equal(mock.calls.length, 0);
+});
+
+test('the check refuses extra fields and a missing token without touching the database', async () => {
+  scenario();
+  let res = await call('POST', '/invite/check', { token: TOKEN, email: 'x@example.test' });
+  assert.equal(res.status, 400);
+  res = await call('POST', '/invite/check', {});
+  assert.deepEqual(res.body, { valid: false });
+  assert.equal(mock.calls.length, 0);
+});
+
 test('checking an invite for a suspended shelter answers valid:false', async () => {
   scenario({ shelter: { id: 5, name: 'North Paws', slug: 'north-paws', status: 'suspended' } });
-  const res = await call('GET', `/invite/${TOKEN}`);
+  const res = await call('POST', '/invite/check', { token: TOKEN });
   assert.deepEqual(res.body, { valid: false });
 });
 

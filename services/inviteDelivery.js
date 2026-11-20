@@ -26,8 +26,12 @@ function inviteBaseUrl() {
   return productionResetBaseUrl();
 }
 
+/**
+ * The token goes in the #fragment: browsers never send a fragment to the
+ * server, so it is not written to access logs or sent on in a Referer.
+ */
 function inviteLink(baseUrl, token) {
-  return `${String(baseUrl).replace(/\/$/, '')}/invite/${encodeURIComponent(token)}`;
+  return `${String(baseUrl).replace(/\/$/, '')}/invite#${encodeURIComponent(token)}`;
 }
 
 /**
