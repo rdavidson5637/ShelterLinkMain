@@ -127,7 +127,7 @@ function renderTable() {
     if (entry.verified_by_checkin) {
       const mark = document.createElement('div');
       mark.textContent = 'verified by check-in';
-      mark.style.cssText = 'font-size:0.75rem;color:#1565c0;';
+      mark.style.cssText = 'font-size:var(--text-xs);color:#1565c0;';
       hoursTd.appendChild(mark);
     }
 
