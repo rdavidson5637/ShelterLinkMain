@@ -1,5 +1,6 @@
 import { formatShiftWhen } from '../utils/dateFormat.js';
 import { currentShelterSlug, shelterLinkFor, withShelterQuery } from '../shelterSlug.js';
+import { renderEmptyState, renderErrorState } from '../utils/listState.js';
 import {
   closedShiftLabel,
   filterPublicBoard,
@@ -13,24 +14,46 @@ function setListBusy(busy) {
   listEl.setAttribute('aria-busy', busy ? 'true' : 'false');
 }
 
+function showEmpty() {
+  listEl.replaceChildren(
+    renderEmptyState({
+      title: 'No open shifts right now',
+      body: 'Nothing is listed at the moment. Check back soon, or create an account so you are ready when a shift opens.',
+      actionHref: shelterLinkFor('/register.html', currentShelterSlug()),
+      actionLabel: 'Create an account',
+    })
+  );
+}
+
+function showError(body) {
+  listEl.replaceChildren(
+    renderErrorState({
+      title: 'Could not load open shifts',
+      body,
+      onRetry: () => {
+        load();
+      },
+    })
+  );
+}
+
 async function load() {
   if (!listEl) return;
   setListBusy(true);
+  listEl.replaceChildren();
+  const loading = document.createElement('p');
+  loading.textContent = 'Loading open shifts…';
+  listEl.appendChild(loading);
+
   try {
     const res = await fetch(withShelterQuery('/api/public/opportunities'), { credentials: 'omit' });
     if (!res.ok) {
-      listEl.replaceChildren();
-      const p = document.createElement('p');
-      p.textContent = 'Unable to load opportunities right now.';
-      listEl.appendChild(p);
+      showError('The shift list could not be loaded. Try again in a moment.');
       return;
     }
     const rows = filterPublicBoard(await res.json());
     if (!Array.isArray(rows) || !rows.length) {
-      listEl.replaceChildren();
-      const p = document.createElement('p');
-      p.textContent = 'No open shifts at the moment. Please check back soon.';
-      listEl.appendChild(p);
+      showEmpty();
       return;
     }
     listEl.replaceChildren();
@@ -45,8 +68,8 @@ async function load() {
       h2.textContent = opp.title || 'Volunteer shift';
       if (opp.is_urgent) {
         const badge = document.createElement('span');
+        badge.className = 'badge-urgent';
         badge.textContent = ' Urgent cover needed';
-        badge.style.cssText = 'color:#7a1f1f;font-weight:600;font-size:0.85em;';
         h2.appendChild(badge);
       }
       const desc = document.createElement('p');
@@ -78,10 +101,7 @@ async function load() {
     });
   } catch (error) {
     console.error('[Public] load opportunities error:', error);
-    listEl.replaceChildren();
-    const p = document.createElement('p');
-    p.textContent = 'Network error while loading opportunities.';
-    listEl.appendChild(p);
+    showError('Network error while loading opportunities. Check your connection and try again.');
   } finally {
     setListBusy(false);
   }
