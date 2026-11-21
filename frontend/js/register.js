@@ -191,12 +191,12 @@ function markShelterMissing() {
   updateSubmitState();
 }
 
-// The brand API falls back to the default shelter for an unknown slug, so a
-// mismatch means the slug in this link is not a shelter we know.
+// Brand returns 404 for an unknown slug (no Assisi fallback). A mismatch
+// means the same: the slug in this link is not a shelter we know.
 async function checkShelter() {
   if (!shelterSlug) return;
   const brand = await loadBrand();
-  if (brand && brand.slug && brand.slug !== shelterSlug) markShelterMissing();
+  if (!brand || (brand.slug && brand.slug !== shelterSlug)) markShelterMissing();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
