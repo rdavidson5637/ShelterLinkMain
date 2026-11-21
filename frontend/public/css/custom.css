@@ -56,8 +56,19 @@
   --shadow-card: 0 1px 2px rgba(20, 30, 22, 0.04);
   --transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
   --content-max-width: 1160px;
-  --section-gap: 1.5rem;
+  --section-gap: 2rem;
   --shelter-logo: url('/public/images/shelterlink-logo.png');
+
+  /* Six-step type scale. Prefer these over one-off rem sizes. */
+  --text-xs: 0.8125rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --leading-body: 1.6;
+  --leading-heading: 1.15;
+  --measure: 40rem;
 
   --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter,
     "Helvetica Neue", Arial, sans-serif;
@@ -195,8 +206,8 @@ body {
   min-height: 100vh;
   color: var(--text);
   font-family: var(--font-stack);
-  font-size: 16px;
-  line-height: 1.55;
+  font-size: var(--text-md);
+  line-height: var(--leading-body);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -274,7 +285,7 @@ header.site-header {
 }
 
 .site-brand strong {
-  font-size: 1.1rem;
+  font-size: var(--text-lg);
   color: var(--text);
   font-weight: 650;
   letter-spacing: -0.01em;
@@ -288,7 +299,7 @@ header.site-header {
   border-radius: var(--radius-control);
   background: var(--surface);
   color: var(--text);
-  font-size: 1.05rem;
+  font-size: var(--text-md);
   line-height: 1;
 }
 
@@ -301,7 +312,7 @@ header.site-header {
   gap: 0.15rem;
   margin: 0;
   padding: 0;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   min-width: 0;
 }
 
@@ -354,7 +365,7 @@ header.site-header {
 .site-nav #logoutButton {
   margin: 0;
   padding: 0.4rem 0.75rem;
-  font-size: 0.88rem;
+  font-size: var(--text-xs);
 }
 
 .nav-disclosure {
@@ -371,7 +382,7 @@ header.site-header {
   border: 0;
   background: transparent;
   color: var(--text-secondary);
-  font-size: 0.92rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   text-align: left;
   cursor: pointer;
@@ -424,7 +435,7 @@ header.site-header {
 .identity-cell small {
   display: block;
   color: var(--text-muted);
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
 }
 
 .numeric-cell {
@@ -466,7 +477,7 @@ header.site-header {
   text-align: left;
   padding: 0.55rem 0.85rem;
   color: var(--text);
-  font-size: 0.92rem;
+  font-size: var(--text-sm);
   cursor: pointer;
 }
 
@@ -509,7 +520,7 @@ header.site-header {
 
 .person-card-meta {
   color: var(--text-secondary);
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   margin: 0.35rem 0 0;
 }
 
@@ -559,26 +570,29 @@ section {
   display: grid;
   place-items: center;
   text-align: center;
-  padding: 3.5rem 1.5rem;
+  padding: 3rem 1.5rem;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
-  margin: 0.5rem 0 1.5rem;
+  margin: 0.5rem 0 var(--section-gap);
 }
 
 .hero h1 {
   color: var(--text);
-  font-size: 2.25rem;
+  font-size: clamp(var(--text-2xl), 4vw, 2.25rem);
   font-weight: 700;
   letter-spacing: -0.02em;
-  margin-bottom: 0.75rem;
+  line-height: var(--leading-heading);
+  margin: 0 0 0.75rem;
+  max-width: var(--measure);
 }
 
 .hero p {
-  font-size: 1.1rem;
+  font-size: var(--text-lg);
+  line-height: var(--leading-body);
   color: var(--text-secondary);
-  max-width: 560px;
-  margin: 0 auto 1.75rem;
+  max-width: var(--measure);
+  margin: 0 auto 1.5rem;
 }
 
 .hero a[role='button'] {
@@ -587,7 +601,7 @@ section {
   border: none;
   font-weight: 600;
   padding: 0.8rem 2rem;
-  font-size: 1rem;
+  font-size: var(--text-md);
   border-radius: var(--radius-control);
   transition: var(--transition);
 }
@@ -627,13 +641,22 @@ section {
 }
 
 .how-it-works {
-  margin: 0 0 2rem;
-  padding: 1.5rem 0 0;
+  margin: 0 0 var(--section-gap);
+  padding: var(--section-gap) 0 0;
 }
 
 .how-it-works h2 {
   text-align: center;
-  margin-bottom: 0.25rem;
+  margin: 0 0 0.35rem;
+}
+
+.how-it-works > p {
+  text-align: center;
+  max-width: var(--measure);
+  margin: 0 auto 1.25rem;
+  color: var(--text-secondary);
+  font-size: var(--text-md);
+  line-height: var(--leading-body);
 }
 
 .how-it-works > p {
@@ -666,7 +689,7 @@ section {
   content: counter(how);
   font-weight: 700;
   color: var(--text);
-  font-size: 1.25rem;
+  font-size: var(--text-lg);
   line-height: 1.2;
 }
 
@@ -735,12 +758,12 @@ article header {
 
 article header strong {
   color: var(--text);
-  font-size: 1rem;
+  font-size: var(--text-md);
   font-weight: 650;
 }
 
 .stat-number {
-  font-size: 2.25rem;
+  font-size: var(--text-2xl);
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text);
@@ -749,7 +772,7 @@ article header strong {
 }
 
 .stat-value {
-  font-size: 1.75rem;
+  font-size: var(--text-2xl);
   font-weight: 650;
   color: var(--text);
   font-variant-numeric: tabular-nums;
@@ -830,7 +853,7 @@ label {
   font-weight: 500;
   color: var(--text);
   margin-bottom: 0.4rem;
-  font-size: 0.92rem;
+  font-size: var(--text-sm);
 }
 
 input[type="text"],
@@ -846,7 +869,7 @@ select {
   background: var(--surface);
   color: var(--text);
   padding: 0.55rem 0.75rem;
-  font-size: 0.95rem;
+  font-size: var(--text-sm);
   transition: var(--transition);
 }
 
@@ -871,7 +894,7 @@ button,
 [role='button'],
 .button {
   padding: 0.55rem 1.25rem;
-  font-size: 0.95rem;
+  font-size: var(--text-sm);
   border-radius: var(--radius-control);
   font-weight: 550;
   border: 1px solid transparent;
@@ -910,7 +933,7 @@ button.secondary:hover {
 
 .button-small {
   padding: 0.3rem 0.9rem;
-  font-size: 0.85rem;
+  font-size: var(--text-xs);
 }
 
 /* --------------------------------------------------------------------------
@@ -942,7 +965,7 @@ button.close {
   border-radius: 50%;
   background: transparent;
   border: none;
-  font-size: 1.4rem;
+  font-size: var(--text-xl);
   line-height: 1;
   color: var(--text-secondary);
   cursor: pointer;
@@ -970,7 +993,7 @@ button.close:hover {
 
 table {
   background: var(--surface);
-  font-size: 0.92rem;
+  font-size: var(--text-sm);
   width: 100%;
   border-collapse: collapse;
 }
@@ -985,7 +1008,7 @@ thead th {
   background: var(--page-bg);
   color: var(--text-secondary);
   font-weight: 600;
-  font-size: 0.82rem;
+  font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   padding: 0.6rem 0.75rem;
@@ -1022,7 +1045,7 @@ tbody td a[role='button'] {
   width: auto;
   margin: 0.1rem 0.2rem 0.1rem 0;
   padding: 0.28rem 0.7rem;
-  font-size: 0.82rem;
+  font-size: var(--text-xs);
   white-space: nowrap;
   vertical-align: middle;
 }
@@ -1061,7 +1084,7 @@ footer {
   padding: 1.25rem 0;
   text-align: center;
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
 }
 
 .strip {
@@ -1075,7 +1098,7 @@ footer {
   display: inline-block;
   padding: 0.2rem 0.7rem;
   border-radius: 999px;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   line-height: 1.3;
   background: var(--page-bg);
@@ -1089,7 +1112,7 @@ footer {
   margin-left: 0.35rem;
   padding: 0.05rem 0.4rem;
   border-radius: 999px;
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   font-weight: 700;
   line-height: 1.2;
   background: var(--unread);
@@ -1147,27 +1170,28 @@ dialog article {
    -------------------------------------------------------------------------- */
 h1 {
   color: var(--text);
-  font-size: 1.75rem;
+  font-size: var(--text-2xl);
   font-weight: 700;
   letter-spacing: -0.02em;
-  margin-bottom: 1rem;
-  line-height: 1.2;
+  margin: 0 0 0.85rem;
+  line-height: var(--leading-heading);
 }
 
 h2 {
   color: var(--text);
-  font-size: 1.25rem;
+  font-size: var(--text-xl);
   font-weight: 650;
   letter-spacing: -0.01em;
-  margin-bottom: 0.75rem;
-  line-height: 1.25;
+  margin: 0 0 0.65rem;
+  line-height: var(--leading-heading);
 }
 
 h3 {
   color: var(--text);
-  font-size: 1.02rem;
+  font-size: var(--text-lg);
   font-weight: 600;
-  margin-bottom: 0.5rem;
+  margin: 0 0 0.5rem;
+  line-height: var(--leading-heading);
 }
 
 a {
@@ -1180,21 +1204,39 @@ a:hover {
 }
 
 p {
-  margin-bottom: 0.75rem;
+  margin: 0 0 0.75rem;
+  max-width: var(--measure);
+  line-height: var(--leading-body);
+}
+
+small,
+.muted {
+  font-size: var(--text-sm);
+  line-height: var(--leading-body);
 }
 
 /* --------------------------------------------------------------------------
    Auth pages
    -------------------------------------------------------------------------- */
 .auth-card {
-  max-width: 460px;
+  max-width: 28rem;
   margin-inline: auto;
 }
 
+.auth-card > h1 {
+  margin-bottom: 0.5rem;
+}
+
+.auth-card > p:first-of-type {
+  margin-bottom: 1.25rem;
+  color: var(--text-secondary);
+}
+
 .auth-links {
-  margin-top: 0.85rem;
+  margin-top: 1rem;
   margin-bottom: 0;
-  font-size: 0.92rem;
+  font-size: var(--text-sm);
+  line-height: var(--leading-body);
 }
 
 #quickActions {
@@ -1226,7 +1268,7 @@ p {
 }
 
 .sidebar-nav h3 {
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted);
@@ -1240,7 +1282,7 @@ p {
   border-radius: var(--radius-control);
   text-decoration: none;
   color: var(--text-secondary);
-  font-size: 0.92rem;
+  font-size: var(--text-sm);
   transition: var(--transition);
 }
 
@@ -1268,7 +1310,7 @@ p {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--section-gap);
 }
 
 .stat-card {
@@ -1285,7 +1327,7 @@ p {
 
 .stat-card h3 {
   width: 100%;
-  font-size: 0.82rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -1324,7 +1366,7 @@ p {
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
   padding: 1.25rem 1.25rem 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--section-gap);
 }
 
 .next-shift-panel h2 {
@@ -1342,7 +1384,7 @@ p {
 }
 
 .next-shift-code code {
-  font-size: 1.1rem;
+  font-size: var(--text-lg);
   letter-spacing: 0.08em;
 }
 
@@ -1355,7 +1397,7 @@ p {
 }
 
 .shift-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--section-gap);
 }
 
 .shift-group h2 {
@@ -1366,7 +1408,7 @@ p {
 
 .shift-group-count {
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   margin: 0 0 0.75rem;
 }
 
@@ -1401,6 +1443,73 @@ p {
 }
 
 @media (max-width: 600px) {
+  /* Keep the page from sideways-scrolling at phone widths (~390px).
+     Tables still scroll inside their own overflow-x:auto wrappers. */
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  img,
+  video,
+  canvas,
+  svg {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .container {
+    padding-inline: 0.75rem;
+  }
+
+  /* iOS zooms inputs under 16px; keep fields readable and stable. */
+  input[type='text'],
+  input[type='email'],
+  input[type='password'],
+  input[type='tel'],
+  input[type='date'],
+  input[type='number'],
+  textarea,
+  select {
+    font-size: 1rem;
+    min-height: 44px;
+  }
+
+  button,
+  [type='submit'],
+  [role='button'],
+  .button,
+  .cta {
+    min-height: 44px;
+  }
+
+  .hero-actions {
+    width: 100%;
+  }
+
+  .hero-actions .cta,
+  .hero-actions .text-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .auth-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    align-items: flex-start;
+  }
+
+  .auth-links a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
   .site-nav {
     height: 56px;
     min-height: 56px;
@@ -1475,11 +1584,11 @@ p {
   }
 
   .hero h1 {
-    font-size: 1.6rem;
+    font-size: var(--text-2xl);
   }
 
   .hero p {
-    font-size: 1rem;
+    font-size: var(--text-md);
   }
 
   article {
@@ -1506,13 +1615,13 @@ p {
 .opportunity-card .requires-tag {
   display: block;
   margin-top: 0.35rem;
-  font-size: 0.88rem;
+  font-size: var(--text-xs);
   color: var(--text-secondary);
 }
 
 .opportunity-card .unqualified-reason {
   margin: 0.5rem 0 0;
-  font-size: 0.92rem;
+  font-size: var(--text-sm);
   color: var(--warning-text);
 }
 
@@ -1533,7 +1642,7 @@ p {
   background: var(--surface);
   color: var(--text-secondary);
   border-radius: 999px;
-  font-size: 0.88rem;
+  font-size: var(--text-xs);
   cursor: pointer;
   line-height: 1.2;
   transition: var(--transition);
@@ -1558,7 +1667,7 @@ p {
 
 .tag-chips-empty {
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
 }
 
 .tag-chip-display {
@@ -1568,7 +1677,7 @@ p {
   background: var(--green-tint);
   border: 1px solid var(--green-tint-border);
   border-radius: 999px;
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   color: var(--green);
 }
 
@@ -1665,7 +1774,7 @@ p {
 .field-error {
   margin: 0.35rem 0 0;
   color: var(--danger);
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
 }
 
 .waitlist-group-heading {
@@ -1704,7 +1813,7 @@ p {
   justify-content: center;
   width: 100%;
   height: 100%;
-  font-size: 1.5rem;
+  font-size: var(--text-xl);
   line-height: 1;
   border-radius: var(--radius-control);
   border: 1px solid var(--border-strong);
@@ -1729,6 +1838,62 @@ p {
   outline-offset: 2px;
 }
 
+.empty-state,
+.error-state {
+  margin: 0 0 1rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  text-align: left;
+}
+
+.empty-state h1,
+.empty-state h2,
+.error-state h1,
+.error-state h2 {
+  margin: 0 0 0.4rem;
+  font-size: 1.15rem;
+  color: var(--text);
+}
+
+.empty-state p,
+.error-state p {
+  margin: 0 0 0.75rem;
+  color: var(--text-secondary);
+}
+
+.empty-state-actions,
+.error-state-actions {
+  margin: 0 0 0.5rem;
+}
+
+.empty-state a[role='button'] {
+  width: auto;
+  display: inline-block;
+}
+
+.error-state {
+  border-color: var(--danger-border);
+  background: var(--danger-tint);
+}
+
+.error-state h1,
+.error-state h2 {
+  color: var(--danger);
+}
+
+.state-page {
+  max-width: 680px;
+  margin-top: 2rem;
+}
+
+.badge-urgent {
+  color: var(--danger);
+  font-weight: 600;
+  font-size: 0.85em;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -1739,21 +1904,6 @@ p {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
-}
-
-/* Empty list CTAs on staff pages */
-.empty-state {
-  padding: 0.75rem 0;
-  text-align: left;
-}
-
-.empty-state p {
-  margin-bottom: 0.75rem;
-}
-
-.empty-state a[role='button'] {
-  width: auto;
-  display: inline-block;
 }
 
 .opportunity-modal-animal {

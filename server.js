@@ -261,14 +261,24 @@ app.get('/join/:slug', apiLimiter, async (req, res, next) => {
 });
 
 // Public shelter pages. The page reads the slug from its own path and sends
-// it to the API as ?shelter=<slug>; the API resolves it.
+// it to the API as ?shelter=<slug>; the API resolves it. Same rule as
+// /join: an unknown slug gets the 404 page, never a board or form that
+// would quietly fall back to Assisi.
 const SHELTER_PAGES = {
   '': path.join(__dirname, 'frontend', 'index.html'),
   '/opportunities': path.join(__dirname, 'frontend', 'pages', 'opportunities.html'),
   '/group-booking': path.join(__dirname, 'frontend', 'pages', 'group-booking.html'),
 };
 for (const [suffix, file] of Object.entries(SHELTER_PAGES)) {
-  app.get(`/s/:slug${suffix}`, (req, res) => res.sendFile(file));
+  app.get(`/s/:slug${suffix}`, apiLimiter, async (req, res, next) => {
+    try {
+      const id = await shelterIdFromSlug(req.params.slug);
+      if (!id) return next();
+      return res.sendFile(file);
+    } catch (error) {
+      return next(error);
+    }
+  });
 }
 
 app.get('/launch', require('./controllers/launchController').launch);

@@ -69,3 +69,15 @@ test('isCurrentPath treats hours subpages as Hours, and More detects those paths
   assert.equal(volunteerMoreContainsPath('/pages/volunteer/log-hours.html'), true);
   assert.equal(volunteerMoreContainsPath('/pages/volunteer/dashboard.html'), false);
 });
+
+test('isCurrentPath treats create-opportunity as Shifts; ADMIN_PRIMARY has no adminOnly items', async () => {
+  const { ADMIN_PRIMARY, isCurrentPath } = await import('../frontend/js/components/navConfig.js');
+  assert.equal(
+    isCurrentPath('/pages/admin/opportunities.html', '/pages/admin/create-opportunity.html'),
+    true
+  );
+  assert.equal(
+    ADMIN_PRIMARY.every((item) => !item.adminOnly),
+    true
+  );
+});

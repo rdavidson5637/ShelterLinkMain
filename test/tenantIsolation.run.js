@@ -787,8 +787,8 @@ async function main() {
     const slugLogo = await request(port, 'GET', '/api/public/brand/logo?shelter=second');
     slugCheck('logo', slugLogo, slugLogo.status === 404);
     const unknownBrand = await request(port, 'GET', '/api/public/brand?shelter=nowhere');
-    slugCheck('unknown brand falls back to Assisi', unknownBrand, unknownBrand.status === 200
-      && unknownBrand.text.includes('Assisi Animal Sanctuary'));
+    slugCheck('unknown brand fail closed', unknownBrand, unknownBrand.status === 404
+      && !unknownBrand.text.includes('Assisi Animal Sanctuary'));
 
     // The logged-in shelter B request above already filled the 60s cache
     // entry for shelter 2 (before shift 900 existed), so this is a cache hit

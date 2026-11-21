@@ -85,16 +85,13 @@ function requestedShelterSlug(req) {
 
 /**
  * Shelter for a public read or form. A known slug wins over the session, so
- * a page for slug B only ever reads or writes shelter B. With no slug, or a
- * slug that matches no shelter, this keeps the old fallback: the session's
- * shelter, then Assisi.
+ * a page for slug B only ever reads or writes shelter B. A supplied slug that
+ * matches no shelter fails closed; only requests without a slug use the
+ * session shelter, then Assisi.
  */
 async function publicShelterId(req) {
   const slug = requestedShelterSlug(req);
-  if (slug) {
-    const id = await shelterIdFromSlug(slug);
-    if (id) return id;
-  }
+  if (slug) return shelterIdFromSlug(slug);
   return currentShelterId() || assisiShelterId();
 }
 

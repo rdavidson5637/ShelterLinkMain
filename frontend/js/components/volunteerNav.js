@@ -19,7 +19,7 @@ function ensureVolunteerNavStyles() {
       margin: 0; padding: 0.4rem 0.65rem; width: auto; height: auto;
       line-height: 1.2; border: 0; border-radius: var(--radius-control);
       background: transparent; box-shadow: none; color: var(--text-secondary);
-      font: inherit; font-size: 0.9rem; font-weight: 500; cursor: pointer;
+      font: inherit; font-size: var(--text-sm); font-weight: 500; cursor: pointer;
       white-space: nowrap;
     }
     .nav-more-toggle::after {
@@ -53,7 +53,7 @@ function ensureVolunteerNavStyles() {
       .nav-more { display: block; }
       button.nav-more-toggle.secondary {
         width: 100%; justify-content: flex-start; min-height: 44px; padding: 0.75rem 0.65rem;
-        pointer-events: none; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.04em;
+        pointer-events: none; font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.04em;
         text-transform: uppercase; color: var(--text-muted); background: transparent;
       }
       .nav-more-toggle::after { display: none; }

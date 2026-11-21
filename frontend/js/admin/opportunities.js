@@ -407,7 +407,7 @@ function renderOpportunitiesTable() {
         if (!w) return;
         w.document.write(`<!DOCTYPE html><html><head><title>Check-in code</title>
           <style>body{font-family:system-ui,sans-serif;text-align:center;padding:3rem}
-          h1{font-size:1.25rem}code{font-size:3rem;letter-spacing:0.2em}</style></head><body>
+          h1{font-size:var(--text-lg)}code{font-size:3rem;letter-spacing:0.2em}</style></head><body>
           <h1>${escapeHtml(opportunity.title || 'Shift')}</h1>
           <p>${escapeHtml(formatDateRange(opportunity))}</p>
           <p>Check-in code</p>
