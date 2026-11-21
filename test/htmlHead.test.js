@@ -33,3 +33,12 @@ test('every HTML page except kiosk declares lang=en', () => {
     assert.match(html, /<html[^>]*\slang=["']en["']/i, file);
   }
 });
+
+test('every HTML page except kiosk has a skip link to #main', () => {
+  const files = walk(path.join(__dirname, '..', 'frontend'));
+  for (const file of files) {
+    const html = fs.readFileSync(file, 'utf8');
+    assert.match(html, /class=["']skip-link["'][^>]*href=["']#main["']/i, file);
+    assert.match(html, /<main[^>]*\bid=["']main["']/i, file);
+  }
+});
