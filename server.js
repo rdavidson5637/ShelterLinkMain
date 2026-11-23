@@ -8,7 +8,7 @@ const dotenv = require('dotenv');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-const { testConnection, pgPool, closePool, pool } = require('./config/database');
+const { testConnection, pgPool, sessionPool, closePool, pool } = require('./config/database');
 const { sanitizeInput } = require('./middleware/sanitize');
 const { bindShelter, activeShelterPage } = require('./middleware/shelter');
 const { apiLimiter } = require('./middleware/rateLimiter');
@@ -128,8 +128,8 @@ if (!SESSION_SECRET) {
 }
 
 const sessionStore = new PgSession({
-  pool: pgPool,
-  createTableIfMissing: true,
+  pool: sessionPool,
+  createTableIfMissing: false,
   pruneSessionInterval: 900,
 });
 

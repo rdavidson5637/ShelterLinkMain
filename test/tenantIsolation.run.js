@@ -136,6 +136,8 @@ async function resetServiceDatabase() {
        WHERE datname = 'shelterlink_tenant_test' AND pid <> pg_backend_pid()`
     );
     await client.query('DROP DATABASE IF EXISTS shelterlink_tenant_test');
+    await client.query('DROP ROLE IF EXISTS shelterlink_app');
+    await client.query('DROP ROLE IF EXISTS shelterlink_platform');
     await client.query('DROP ROLE IF EXISTS shelterlink_tenant');
     await client.query('CREATE DATABASE shelterlink_tenant_test');
   });
@@ -149,6 +151,8 @@ async function dropServiceDatabase() {
        WHERE datname = 'shelterlink_tenant_test' AND pid <> pg_backend_pid()`
     );
     await client.query('DROP DATABASE IF EXISTS shelterlink_tenant_test');
+    await client.query('DROP ROLE IF EXISTS shelterlink_app');
+    await client.query('DROP ROLE IF EXISTS shelterlink_platform');
     await client.query('DROP ROLE IF EXISTS shelterlink_tenant');
   });
 }
@@ -157,10 +161,12 @@ async function applySchema(admin) {
   const schema = fs.readFileSync(path.join(ROOT, 'database', 'schema.pg.sql'), 'utf8');
   const tenancy = fs.readFileSync(path.join(ROOT, 'database', '033_add_shelters.pg.sql'), 'utf8');
   const selfServe = fs.readFileSync(path.join(ROOT, 'database', '036_self_serve_shelters.pg.sql'), 'utf8');
+  const appRoles = fs.readFileSync(path.join(ROOT, 'database', '062_app_roles_no_bypass.pg.sql'), 'utf8');
   await admin.query(schema);
   const { applySql } = require('../scripts/applySql');
   await applySql(admin, tenancy);
   await applySql(admin, selfServe);
+  await applySql(admin, appRoles);
 }
 
 async function seed(admin) {
@@ -384,6 +390,74 @@ async function assertRls(admin) {
     if (users.rows[0].n !== 2) {
       throw new Error(`RLS user count for shelter 2 was ${users.rows[0].n}, expected 2`);
     }
+  } finally {
+    await admin.query('ROLLBACK');
+  }
+}
+
+// Database-level fail-closed: the default app role, used when applyTenant is
+// skipped or no shelter context is set, cannot read or write tenant rows.
+async function assertAppRoleBlocked(admin) {
+  await admin.query('BEGIN');
+  try {
+    await admin.query('SET LOCAL ROLE shelterlink_app');
+    for (const table of ['opportunities', 'applications', 'animals', 'volunteer_hours', 'users']) {
+      await admin.query('SAVEPOINT app_role_read');
+      try {
+        const result = await admin.query(`SELECT count(*)::int AS n FROM ${table}`);
+        await admin.query('RELEASE SAVEPOINT app_role_read');
+        if (result.rows[0].n !== 0) {
+          throw new Error(`shelterlink_app could read ${result.rows[0].n} rows from ${table} without applyTenant`);
+        }
+      } catch (err) {
+        await admin.query('ROLLBACK TO SAVEPOINT app_role_read');
+        if (err.code !== '42501') throw err;
+      }
+    }
+    await admin.query('SAVEPOINT app_role_write');
+    let writeBlocked = false;
+    try {
+      await admin.query(
+        `INSERT INTO opportunities (
+           title, description, location, start_date, end_date, max_volunteers, status, created_by, shelter_id
+         ) VALUES ('leak', 'leak', 'Yard', '2099-01-01', '2099-01-01', 1, 'open', 1, 1)`
+      );
+    } catch (err) {
+      writeBlocked = true;
+      await admin.query('ROLLBACK TO SAVEPOINT app_role_write');
+    }
+    if (!writeBlocked) {
+      throw new Error('shelterlink_app was allowed to insert a tenant opportunity without applyTenant');
+    }
+  } finally {
+    await admin.query('ROLLBACK');
+  }
+}
+
+async function assertPlatformLoginAndSession(admin) {
+  await admin.query('BEGIN');
+  try {
+    await admin.query('SET LOCAL ROLE shelterlink_platform');
+    const users = await admin.query(
+      `SELECT email FROM users WHERE email = 'b.admin@example.test'`
+    );
+    if (users.rows.length !== 1) {
+      throw new Error(`platform login lookup returned ${users.rows.length} rows`);
+    }
+  } finally {
+    await admin.query('ROLLBACK');
+  }
+  await admin.query('BEGIN');
+  try {
+    await admin.query('SET LOCAL ROLE shelterlink_app');
+    await admin.query(
+      `INSERT INTO session (sid, sess, expire) VALUES ('rls-app-test', '{"userId":"4"}', '2099-01-01 00:00:00')`
+    );
+    const rows = await admin.query(`SELECT sid FROM session WHERE sid = 'rls-app-test'`);
+    if (rows.rows.length !== 1) {
+      throw new Error('shelterlink_app could not read a session row it just wrote');
+    }
+    await admin.query(`DELETE FROM session WHERE sid = 'rls-app-test'`);
   } finally {
     await admin.query('ROLLBACK');
   }
@@ -663,6 +737,8 @@ async function main() {
     await applySchema(admin);
     await seed(admin);
     await assertRls(admin);
+    await assertAppRoleBlocked(admin);
+    await assertPlatformLoginAndSession(admin);
 
     await admin.query(`
       CREATE TABLE IF NOT EXISTS "session" (

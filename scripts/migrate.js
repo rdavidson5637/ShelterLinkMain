@@ -16,7 +16,7 @@
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
-const { pgPool, pool, closePool } = require('../config/database');
+const { pgPool, closePool } = require('../config/database');
 const { applySql } = require('./applySql');
 
 const dryRun = process.argv.includes('--dry-run');
@@ -51,8 +51,8 @@ async function run() {
       )
     `);
 
-    const [rows] = await pool.query('SELECT filename FROM schema_migrations');
-    const applied = new Set(rows.map((r) => r.filename));
+    const listed = await pgPool.query('SELECT filename FROM schema_migrations');
+    const applied = new Set(listed.rows.map((r) => r.filename));
     const pending = files.filter((f) => !applied.has(f));
 
     if (pending.length === 0) {
@@ -80,16 +80,16 @@ async function run() {
       process.stdout.write(`→ Applying ${file}... `);
       try {
         await applySql(pgPool, sql);
-        await pool.execute(
-          'INSERT INTO schema_migrations (filename) VALUES (?) ON CONFLICT (filename) DO NOTHING',
+        await pgPool.query(
+          'INSERT INTO schema_migrations (filename) VALUES ($1) ON CONFLICT (filename) DO NOTHING',
           [file]
         );
         console.log('✓');
       } catch (err) {
         // Already present (folded into schema.pg.sql): record and continue.
         if (err.code === '42701' || err.code === '42P07' || err.code === '42710') {
-          await pool.execute(
-            'INSERT INTO schema_migrations (filename) VALUES (?) ON CONFLICT (filename) DO NOTHING',
+          await pgPool.query(
+            'INSERT INTO schema_migrations (filename) VALUES ($1) ON CONFLICT (filename) DO NOTHING',
             [file]
           );
           console.log('already in schema, recorded as applied');
