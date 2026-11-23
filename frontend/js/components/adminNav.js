@@ -113,7 +113,9 @@ export function renderAdminNav(root, role, pathname = window.location.pathname) 
   root.innerHTML = '';
   root.setAttribute('aria-label', 'Admin');
 
-  const heading = document.createElement('h3');
+  // Label only — never a heading. The page h1 must stay the first heading.
+  const heading = document.createElement('p');
+  heading.className = 'sidebar-nav-label';
   heading.textContent = 'Admin';
   root.appendChild(heading);
 
