@@ -13,12 +13,16 @@ function optionalNumber(name) {
 function cutoffFrom(now, amount, unit) {
   const cutoff = new Date(now);
   if (unit === 'hours') cutoff.setHours(cutoff.getHours() - amount);
+  else if (unit === 'months') cutoff.setMonth(cutoff.getMonth() - amount);
   else cutoff.setFullYear(cutoff.getFullYear() - amount);
   return cutoff;
 }
 
 function periods() {
   return {
+    // Inactive volunteer anonymisation is per shelter
+    // (shelter_settings.retention_inactive_months). These env vars remain for
+    // the manual sweep of other categories only.
     inactiveVolunteerYears:
       optionalNumber('RETENTION_INACTIVE_VOLUNTEER_YEARS')
       ?? optionalNumber('DATA_RETENTION_YEARS'),

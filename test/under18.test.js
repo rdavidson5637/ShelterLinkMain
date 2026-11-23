@@ -376,7 +376,24 @@ function tableBody(sql, table) {
 
 for (const table of ['shelter_settings', 'guardian_consents']) {
   test(`041 ${table}: matches schema.pg.sql, row level security, tenant table`, () => {
-    assert.deepEqual(tableBody(schema, table), tableBody(migration, table));
+    if (table === 'guardian_consents') {
+      assert.deepEqual(tableBody(schema, table), tableBody(migration, table));
+    } else {
+      // 053 (SL-LATER-19) adds retention_inactive_months on top of 041.
+      const schemaCols = tableBody(schema, table);
+      const migCols = tableBody(migration, table);
+      for (const col of migCols) {
+        const name = col.split(/\s+/)[0];
+        assert.ok(
+          schemaCols.some((c) => c.split(/\s+/)[0] === name),
+          `schema.pg.sql shelter_settings must still include 041 column ${name}`
+        );
+      }
+      assert.ok(
+        schemaCols.some((c) => c.split(/\s+/)[0] === 'retention_inactive_months'),
+        'schema.pg.sql shelter_settings includes retention_inactive_months from 053'
+      );
+    }
     assert.match(migration, new RegExp(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`));
     assert.match(migration, new RegExp(`CREATE POLICY tenant_isolation ON ${table}`));
     assert.match(migration, new RegExp(`CREATE TRIGGER trg_same_shelter\\s+BEFORE INSERT OR UPDATE ON ${table}`));

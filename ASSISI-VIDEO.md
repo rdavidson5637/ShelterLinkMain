@@ -8,7 +8,7 @@ they can rewatch and forward to a colleague.
 
 ## Before you record
 
-- [ ] `DATABASE_URL` set, `npm run db:reset`, `npm run dev`, `npm run smoke` clean
+- [ ] `DATABASE_URL` set, `npm run db:reset`, `npm run dev`, `npm run smoke:e2e` clean
 - [ ] Seed data reviewed: animal names and photos should look like a real rescue,
       not `Test Dog 1`. This is the single biggest thing that makes it land.
 - [ ] One shift deliberately left understaffed, for the urgent cover beat

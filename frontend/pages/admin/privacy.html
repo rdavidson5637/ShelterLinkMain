@@ -78,12 +78,26 @@
           <div>
             <h2>Data retention</h2>
             <p>
-              No retention period is set. The daily job skips volunteer accounts until one is configured.
-              This button does the same check and changes nothing while the period is empty.
+              Off by default. When set, a daily job anonymises volunteers in this shelter who have not signed in for that many months.
+              Approved hours stay. Preview the list before running anything.
             </p>
+            <form id="retentionSettingsForm" class="staff-toolbar retention-id-row">
+              <label>
+                Inactive months (blank = off)
+                <input type="number" id="retentionMonths" name="retention_inactive_months" min="1" max="120" step="1" />
+              </label>
+              <button type="submit" id="retentionSaveBtn" class="secondary">Save period</button>
+            </form>
+            <p id="retentionStatus" class="retention-status"></p>
+            <div id="retentionPreviewWrap" class="retention-preview" hidden>
+              <h3>Preview</h3>
+              <p id="retentionPreviewMeta"></p>
+              <ul id="retentionPreviewList" class="export-list"></ul>
+            </div>
             <pre id="retentionResult" class="retention-result"></pre>
           </div>
           <div class="export-actions">
+            <button type="button" id="retentionPreviewBtn" class="secondary">Preview list</button>
             <button type="button" id="retentionBtn">Run retention now</button>
           </div>
         </li>

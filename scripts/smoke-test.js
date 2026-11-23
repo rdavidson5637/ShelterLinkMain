@@ -12,11 +12,14 @@
  *   2. Server running in another terminal: npm run dev
  *
  * Run:
- *   npm run smoke
+ *   npm run smoke:e2e
  *   # or target a different host/creds:
  *   SMOKE_BASE_URL=http://localhost:3000 \
  *   SMOKE_ADMIN_EMAIL=admin@shelterlink.org SMOKE_ADMIN_PASSWORD='(set this)' \
  *   node scripts/smoke-test.js
+ *
+ * For a read-only post-deploy check against production, use `npm run smoke`
+ * (scripts/post-deploy-smoke.js) instead.
  *
  * Exit code 0 = all steps passed, 1 = one or more failed.
  * Note: each run creates one new volunteer + one opportunity in the database.

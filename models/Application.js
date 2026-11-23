@@ -491,7 +491,10 @@ async function findAcceptedNeedingReminder(now = new Date()) {
         o.title AS opportunity_title,
         o.location AS opportunity_location,
         o.start_date AS opportunity_start_date,
-        o.end_date AS opportunity_end_date
+        o.end_date AS opportunity_end_date,
+        COALESCE(vp.prefer_reminders, 1) AS prefer_reminders,
+        vp.quiet_hours_start,
+        vp.quiet_hours_end
       FROM ${TABLE} a
       INNER JOIN opportunities o ON o.opportunity_id = a.opportunity_id
       INNER JOIN users u ON u.user_id = a.user_id
@@ -502,6 +505,7 @@ async function findAcceptedNeedingReminder(now = new Date()) {
         AND o.start_date >= ?
         AND o.start_date < (?::timestamp + interval '24 hours')
         AND (vp.away_until IS NULL OR vp.away_until < CURRENT_DATE)
+        AND COALESCE(vp.prefer_reminders, 1) = 1
       ORDER BY o.start_date ASC
     `;
     const nowSql = nowLocalSql(now);

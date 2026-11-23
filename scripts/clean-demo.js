@@ -6,7 +6,7 @@
  * hours) and volunteers whose email matches 'smoke+%' (plus the older
  * 'smoke.vol.%' pattern used before plus-addressing).
  *
- * Use this after repeated `npm run smoke` runs so the demo stays clean
+ * Use this after repeated `npm run smoke:e2e` runs so the demo stays clean
  * without a full `npm run db:reset`.
  *
  * Usage:

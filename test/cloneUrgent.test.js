@@ -21,11 +21,29 @@ require.cache[emailPath] = {
   },
 };
 
+const jobLogPath = require.resolve('../utils/jobLog');
+const claims = [];
+require.cache[jobLogPath] = {
+  id: jobLogPath,
+  filename: jobLogPath,
+  loaded: true,
+  exports: {
+    recordJobRun: async () => 1,
+    claimJobRun: async (name, runKey) => {
+      const key = `${name}:${runKey}`;
+      if (claims.includes(key)) return false;
+      claims.push(key);
+      return true;
+    },
+  },
+};
+
 delete require.cache[require.resolve('../models/Opportunity')];
 delete require.cache[require.resolve('../models/Qualification')];
 delete require.cache[require.resolve('../models/Tag')];
 delete require.cache[require.resolve('../models/Animal')];
 delete require.cache[require.resolve('../models/AdminMessage')];
+delete require.cache[require.resolve('../models/GuardianConsent')];
 delete require.cache[require.resolve('../controllers/opportunityController')];
 
 const Opportunity = require('../models/Opportunity');
@@ -207,18 +225,34 @@ test('canReflagUrgent blocks within 24h', () => {
 test('urgent email excludes existing applicants and unqualified volunteers', async () => {
   mock.resetCalls();
   emails.length = 0;
+  claims.length = 0;
   mock.setHandler(async (sql, params) => {
-    if (/WHERE opportunity_id = \?/i.test(sql) && /SELECT/i.test(sql) && !/users/i.test(sql)) {
+    if (/WHERE opportunity_id = \?/i.test(sql) && /SELECT/i.test(sql) && !/users/i.test(sql) && !/guardian/i.test(sql)) {
       return [[baseOpp({ spots_filled: 1 })]];
     }
     if (/FROM users u/i.test(sql) && /volunteer_profiles/i.test(sql)) {
       assert.match(sql, /NOT EXISTS[\s\S]*applications/i);
       assert.match(sql, /opportunity_qualifications/i);
+      assert.match(sql, /prefer_urgent/i);
       return [[
-        { user_id: 9, email: 'ok@example.com', first_name: 'Ok', last_name: 'Vol' },
+        {
+          user_id: 9,
+          email: 'ok@example.com',
+          first_name: 'Ok',
+          last_name: 'Vol',
+          date_of_birth: '1990-01-01',
+          prefer_urgent: 1,
+        },
       ]];
     }
+    if (/FROM shelter_settings/i.test(sql)) {
+      return [[{ min_volunteer_age: null }]];
+    }
+    if (/FROM guardian_consents/i.test(sql)) {
+      return [[]];
+    }
     if (/UPDATE opportunities/i.test(sql) && /is_urgent/i.test(sql)) {
+      assert.match(sql, /urgent_flagged_at IS NULL|interval '24 hours'/i);
       return [{ affectedRows: 1 }];
     }
     if (/INSERT INTO admin_messages/i.test(sql)) return [{ insertId: 1 }];
@@ -237,10 +271,57 @@ test('urgent email excludes existing applicants and unqualified volunteers', asy
   assert.strictEqual(emails.length, 1);
   assert.strictEqual(emails[0].to, 'ok@example.com');
   assert.strictEqual(res.body.sent, 1);
+  assert.ok(claims.some((c) => c.startsWith('urgentCoverBroadcast:opp:7:')));
+});
+
+test('urgent cover drops under-age volunteers', async () => {
+  mock.resetCalls();
+  emails.length = 0;
+  claims.length = 0;
+  mock.setHandler(async (sql) => {
+    if (/WHERE opportunity_id = \?/i.test(sql) && /SELECT/i.test(sql) && !/users/i.test(sql) && !/guardian/i.test(sql)) {
+      return [[baseOpp({ spots_filled: 1 })]];
+    }
+    if (/FROM users u/i.test(sql) && /volunteer_profiles/i.test(sql)) {
+      return [[
+        {
+          user_id: 11,
+          email: 'young@example.com',
+          first_name: 'Young',
+          last_name: 'Vol',
+          date_of_birth: '2015-01-01',
+          prefer_urgent: 1,
+        },
+      ]];
+    }
+    if (/FROM shelter_settings/i.test(sql)) {
+      return [[{ min_volunteer_age: 18 }]];
+    }
+    if (/FROM guardian_consents/i.test(sql)) return [[]];
+    if (/UPDATE opportunities/i.test(sql) && /is_urgent/i.test(sql)) {
+      return [{ affectedRows: 1 }];
+    }
+    if (/INSERT INTO admin_messages/i.test(sql)) return [{ insertId: 1 }];
+    if (/FROM admin_messages/i.test(sql)) {
+      return [[{ id: 1, subject: 'Cover needed', recipient_count: 0 }]];
+    }
+    if (/opportunity_qualifications|opportunity_tags|opportunity_animals|FROM animals|FROM qualifications|FROM tags/i.test(sql)) {
+      return [[]];
+    }
+    return [[]];
+  });
+
+  const res = makeRes();
+  await flagOpportunityUrgent(makeReq({ params: { id: '7' } }), res);
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(emails.length, 0);
+  assert.strictEqual(res.body.sent, 0);
+  assert.strictEqual(res.body.recipients, 0);
 });
 
 test('urgent re-flag within 24h returns 429', async () => {
   mock.resetCalls();
+  claims.length = 0;
   mock.setHandler(async (sql) => {
     if (/WHERE opportunity_id = \?/i.test(sql) && /SELECT/i.test(sql)) {
       return [[

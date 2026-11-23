@@ -141,15 +141,23 @@ npm test
 Test files live in `test/`; `test/helpers/mockDb.js` installs an in-memory mock
 in place of the real connection pool.
 
-### End-to-end smoke test
-For a full-stack confidence check against a **running** server (real DB, auth,
-sessions and business rules), use the smoke test. It registers a volunteer,
-creates and staffs a shift, logs and approves hours, checks badges, and exports
-a CSV — reporting pass/fail per step:
+### Post-deploy smoke (read-only)
+After a deploy, confirm public pages and APIs respond. Defaults to
+`https://shelterlink.online`. See `docs/runbooks/post-deploy-smoke.md`.
+```bash
+npm run smoke
+SMOKE_BASE_URL=http://localhost:3000 npm run smoke
+```
+
+### End-to-end smoke test (local only)
+For a full-stack confidence check against a **running** local server (real DB,
+auth, sessions and business rules), use the lifecycle smoke. It registers a
+volunteer, creates and staffs a shift, logs and approves hours, checks badges,
+and exports a CSV — reporting pass/fail per step. It refuses production.
 ```bash
 npm run db:reset     # seed data (provides the admin account it signs in as)
 npm run dev          # in one terminal
-npm run smoke        # in another terminal
+npm run smoke:e2e    # needs SMOKE_ADMIN_PASSWORD
 ```
 Each run adds one volunteer and one opportunity to the database.
 Remove those rows without wiping the demo seed: `npm run db:clean-demo`.

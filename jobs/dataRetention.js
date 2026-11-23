@@ -3,10 +3,12 @@
 const Gdpr = require('../models/Gdpr');
 const AuditLog = require('../models/AuditLog');
 const { recordJobRun } = require('../utils/jobLog');
+const { currentShelterId } = require('../utils/shelterContext');
 
 const JOB_NAME = 'dataRetention';
 
 async function runDataRetentionJob(now = new Date()) {
+  const shelterId = currentShelterId();
   const summary = await Gdpr.runDataRetention(now);
 
   try {
@@ -14,11 +16,13 @@ async function runDataRetentionJob(now = new Date()) {
       userId: null,
       action: 'gdpr.retention.job',
       entityType: 'system',
-      entityId: null,
+      entityId: summary.shelter_id || shelterId || null,
       detail: {
-        retention_years: summary.retention_years,
+        shelter_id: summary.shelter_id || shelterId || null,
+        retention_inactive_months: summary.retention_inactive_months,
         scanned: summary.scanned,
         anonymised: summary.anonymised,
+        skipped: Boolean(summary.skipped),
         cutoff: summary.cutoff,
       },
     });
@@ -26,7 +30,13 @@ async function runDataRetentionJob(now = new Date()) {
     console.error('[Job:dataRetention] audit log failed:', err.message);
   }
 
-  const detail = `years=${summary.retention_years};scanned=${summary.scanned};anonymised=${summary.anonymised}`;
+  const detail = [
+    `shelter=${summary.shelter_id || shelterId || 'none'}`,
+    `months=${summary.retention_inactive_months}`,
+    `scanned=${summary.scanned}`,
+    `anonymised=${summary.anonymised}`,
+    summary.skipped ? 'skipped=1' : 'skipped=0',
+  ].join(';');
   const failed = summary.results.filter((r) => !r.ok).length;
   try {
     await recordJobRun(JOB_NAME, failed && !summary.anonymised ? 'error' : 'ok', detail);

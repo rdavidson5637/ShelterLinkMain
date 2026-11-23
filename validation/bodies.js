@@ -222,6 +222,8 @@ const profile = z
     prefer_reminders: optFlag,
     prefer_threads: optFlag,
     prefer_fosters: optFlag,
+    quiet_hours_start: z.union([z.string().max(12), z.null(), z.literal('')]).optional(),
+    quiet_hours_end: z.union([z.string().max(12), z.null(), z.literal('')]).optional(),
     custom_fields: z.record(z.string().max(20), z.string().max(2000)).optional(),
     custom_field_values: z.record(z.string().max(20), z.string().max(2000)).optional(),
     tag_ids: idList.optional(),
@@ -244,6 +246,16 @@ const guardianConsent = z
 const ageSettings = z
   .object({
     min_volunteer_age: z.union([z.number().int().min(1).max(99), z.null(), z.literal('')]).optional(),
+  })
+  .strict();
+const retentionSettings = z
+  .object({
+    // Null or '' turns retention off for this shelter. 1..120 months when on.
+    retention_inactive_months: z.union([
+      z.number().int().min(1).max(120),
+      z.null(),
+      z.literal(''),
+    ]),
   })
   .strict();
 const brandSettings = z
@@ -640,6 +652,10 @@ const unsubscribe = z
   })
   .strict();
 
+const quietTime = z
+  .union([z.string().max(12), z.null(), z.literal('')])
+  .optional();
+
 const pushPrefs = z
   .object({
     prefer_urgent: optFlag,
@@ -650,6 +666,10 @@ const pushPrefs = z
     preferReminders: optFlag,
     preferThreads: optFlag,
     preferFosters: optFlag,
+    quiet_hours_start: quietTime,
+    quiet_hours_end: quietTime,
+    quietHoursStart: quietTime,
+    quietHoursEnd: quietTime,
   })
   .strict();
 
@@ -751,6 +771,7 @@ const bodies = {
   serviceSettings,
   guardianConsent,
   ageSettings,
+  retentionSettings,
   brandSettings,
   privacyContact,
   awardQualification,

@@ -18,6 +18,8 @@ const NOTIFICATION_PREF_FIELDS = new Set([
   'prefer_fosters',
 ]);
 
+const { normaliseQuietTime } = require('../utils/quietHours');
+
 const ALLOWED_PROFILE_FIELDS = new Set([
   'date_of_birth',
   'address',
@@ -38,6 +40,8 @@ const ALLOWED_PROFILE_FIELDS = new Set([
   'prefer_reminders',
   'prefer_threads',
   'prefer_fosters',
+  'quiet_hours_start',
+  'quiet_hours_end',
   'marketing_consent',
 ]);
 
@@ -113,6 +117,15 @@ function sanitizeProfileData(profileData = {}) {
     if (NOTIFICATION_PREF_FIELDS.has(key)) {
       const n = Number(value);
       sanitized[key] = n === 1 ? 1 : 0;
+      return;
+    }
+
+    if (key === 'quiet_hours_start' || key === 'quiet_hours_end') {
+      if (value == null || value === '') {
+        sanitized[key] = null;
+      } else {
+        sanitized[key] = normaliseQuietTime(value);
+      }
       return;
     }
 

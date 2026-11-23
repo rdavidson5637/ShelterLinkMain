@@ -1,21 +1,28 @@
 # Retention and erasure
 
-Nothing in this runbook chooses a retention period. Each period stays empty until Assisi confirms it. An empty period is skipped.
+Inactive-volunteer anonymisation is a per-shelter setting. It is off until an admin sets a number of months under Privacy settings. Other categories below stay empty until Assisi confirms them. An empty period is skipped.
 
-## Periods
+## Inactive volunteers (per shelter)
 
-Set these in the environment when the periods are agreed. Leave them unset until then.
+| Setting | Where | What a set value does |
+|---|---|---|
+| Inactive volunteer accounts | Admin Privacy settings → `retention_inactive_months` on `shelter_settings` (migration `053`) | Anonymise volunteers in that shelter whose `COALESCE(last_login, created_at)` is older than N months. Approved hour rows stay. Null means off. |
+
+Admins must open the preview list before running retention from the Privacy page. The daily `dataRetention` job is claimed through `job_runs` (scheduler `run_key`) and writes `gdpr.retention.job` to `audit_log` for every shelter it visits, including when the period is off (skipped).
+
+## Other periods (environment)
+
+Set these in the environment when the periods are agreed. Leave them unset until then. They are used by the manual sweep only; they do not drive the nightly inactive-volunteer job.
 
 | Category | Variable | What a set value does |
 |---|---|---|
-| Inactive volunteer accounts | `RETENTION_INACTIVE_VOLUNTEER_YEARS` or `DATA_RETENTION_YEARS` | Anonymise the account. Approved hour rows stay. |
 | Applications | `RETENTION_APPLICATION_YEARS` | Reported only. Applications are not deleted, because feedback, swaps and animal activity point at them. |
 | Hours | `RETENTION_HOURS_YEARS` | Reported only. Hour rows are not deleted. |
 | Audit log | `RETENTION_AUDIT_LOG_YEARS` | Delete audit rows older than the period. |
 | Group booking requests | `RETENTION_GROUP_BOOKING_YEARS` | Delete booking rows older than the period. |
 | Password reset tokens | none | Links expire after one hour. The hourly `resetTokenCleanup` job clears them once `reset_token_expires` has passed. `RETENTION_RESET_TOKEN_HOURS` is only an extra wait used by the manual sweep. Leave it unset. |
 
-The nightly job uses the inactive-volunteer period only. While that value is empty, the job scans nothing and anonymises nothing. The reset-token job does not wait for a retention period.
+`RETENTION_INACTIVE_VOLUNTEER_YEARS` / `DATA_RETENTION_YEARS` are legacy env names. Prefer the per-shelter months setting.
 
 ## Dry run
 
@@ -37,4 +44,4 @@ Waiver acceptance rows stay, linked to the anonymised account, so there is still
 
 ## Still to confirm
 
-TODO: the number of years or hours for each row in the table above.
+TODO: the number of months each shelter wants for inactive volunteers, and the years or hours for each env row above.

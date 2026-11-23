@@ -3,6 +3,7 @@
 const pushService = require('../utils/pushService');
 const VolunteerProfile = require('../models/VolunteerProfile');
 const { isStaffOrAdmin } = require('../middleware/auth');
+const { normaliseQuietTime } = require('../utils/quietHours');
 
 function ensureAuth(req, res) {
   if (!req.session || !req.session.userId) {
@@ -77,6 +78,16 @@ async function updateNotificationPrefs(req, res) {
       prefer_threads: coercePref(body.prefer_threads ?? body.preferThreads, 0),
       prefer_fosters: coercePref(body.prefer_fosters ?? body.preferFosters, 0),
     };
+    if (Object.prototype.hasOwnProperty.call(body, 'quiet_hours_start')
+      || Object.prototype.hasOwnProperty.call(body, 'quietHoursStart')) {
+      const raw = body.quiet_hours_start ?? body.quietHoursStart;
+      prefs.quiet_hours_start = raw == null || raw === '' ? null : normaliseQuietTime(raw);
+    }
+    if (Object.prototype.hasOwnProperty.call(body, 'quiet_hours_end')
+      || Object.prototype.hasOwnProperty.call(body, 'quietHoursEnd')) {
+      const raw = body.quiet_hours_end ?? body.quietHoursEnd;
+      prefs.quiet_hours_end = raw == null || raw === '' ? null : normaliseQuietTime(raw);
+    }
 
     const existing = await VolunteerProfile.findByUserId(req.session.userId);
     if (!existing) {
@@ -90,6 +101,12 @@ async function updateNotificationPrefs(req, res) {
       prefer_reminders: Number(profile.prefer_reminders) || 0,
       prefer_threads: Number(profile.prefer_threads) || 0,
       prefer_fosters: Number(profile.prefer_fosters) || 0,
+      quiet_hours_start: profile.quiet_hours_start
+        ? String(profile.quiet_hours_start).slice(0, 5)
+        : null,
+      quiet_hours_end: profile.quiet_hours_end
+        ? String(profile.quiet_hours_end).slice(0, 5)
+        : null,
     });
   } catch (error) {
     console.error('[Push] updateNotificationPrefs error:', error.message);
@@ -132,6 +149,8 @@ async function getNotificationPrefs(req, res) {
         prefer_reminders: 1,
         prefer_threads: 0,
         prefer_fosters: 0,
+        quiet_hours_start: null,
+        quiet_hours_end: null,
         configured: pushService.isConfigured(),
       });
     }
@@ -140,6 +159,12 @@ async function getNotificationPrefs(req, res) {
       prefer_reminders: Number(profile.prefer_reminders ?? 1),
       prefer_threads: Number(profile.prefer_threads ?? 0),
       prefer_fosters: Number(profile.prefer_fosters ?? 0),
+      quiet_hours_start: profile.quiet_hours_start
+        ? String(profile.quiet_hours_start).slice(0, 5)
+        : null,
+      quiet_hours_end: profile.quiet_hours_end
+        ? String(profile.quiet_hours_end).slice(0, 5)
+        : null,
       configured: pushService.isConfigured(),
     });
   } catch (error) {
