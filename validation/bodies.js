@@ -705,6 +705,7 @@ const queries = {
     .strict(),
   applications: z.object({ status: qstr(40), limit: qstr(10) }).strict(),
   animals: z.object({ species: qstr(40), status: qstr(40) }).strict(),
+  careGaps: z.object({ days: z.string().regex(/^\d{1,2}$/).optional() }).strict(),
   incidents: z
     .object({
       animal_id: qstr(20),

@@ -8,6 +8,7 @@ export const ADMIN_PRIMARY = [
   { id: 'day-sheet', label: 'Day sheet', href: '/pages/admin/day-sheet.html' },
   { id: 'week-sheet', label: 'Week sheet', href: '/pages/admin/week-sheet.html' },
   { id: 'animals', label: 'Animals', href: '/pages/admin/animals.html' },
+  { id: 'care-gaps', label: 'Care gaps', href: '/pages/admin/care-gaps.html' },
   { id: 'fosters', label: 'Fosters', href: '/pages/admin/fosters.html' },
   { id: 'transport', label: 'Transport', href: '/pages/admin/transport.html' },
   { id: 'applications', label: 'Applications', href: '/pages/admin/review-applications.html' },
