@@ -79,7 +79,7 @@ test('migration 063 adds contacted and follow-up columns', () => {
   assert.match(MIGRATION, /applications_no_show_contacted_idx/);
   assert.match(SCHEMA, /no_show_contacted_at/);
   assert.match(SCHEMA, /no_show_followup_sent_at/);
-  assert.match(SETUP_DB, /067_noshow_followup\.pg\.sql/);
+  assert.match(SETUP_DB, /069_noshow_followup\.pg\.sql/);
 });
 
 test('routes and nav expose the staff no-show follow-up queue', () => {
