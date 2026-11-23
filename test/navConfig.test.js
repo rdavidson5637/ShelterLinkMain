@@ -46,7 +46,7 @@ test('filterNavForRole hides admin navigation from volunteers', async () => {
     '../frontend/js/components/navConfig.js'
   );
   assert.deepEqual(filterNavForRole(ADMIN_PRIMARY, 'volunteer'), []);
-  assert.equal(VOLUNTEER_NAV.length, 13);
+  assert.equal(VOLUNTEER_NAV.length, 14);
   const applications = VOLUNTEER_NAV.find((item) => item.id === 'applications');
   assert.equal(applications.href, '/pages/volunteer/my-applications.html');
 });
