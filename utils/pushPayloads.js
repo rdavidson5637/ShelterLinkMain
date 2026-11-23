@@ -76,6 +76,21 @@ function buildThreadPayload(source = {}) {
   };
 }
 
+function buildWaitlistOfferPayload(source = {}) {
+  const shiftTitle = truncate(source.opportunity_title || source.title || 'a shift', 80);
+  const hours = Number(source.hours) || 12;
+  const claimUrl = sameOriginPath(
+    source.claimUrl || source.url || '/pages/volunteer/claim-waitlist.html'
+  );
+  return {
+    title: `Place available: ${shiftTitle}`,
+    body: truncate(`You have ${hours} hours to claim this waitlist place.`, 140),
+    url: claimUrl,
+    type: 'waitlist_offer',
+    tag: `waitlist-offer-${source.offer_id || source.id || ''}`,
+  };
+}
+
 function buildFosterPayload(source = {}) {
   const species = truncate(source.species || source.animal_species || 'An animal', 40) || 'An animal';
   const date = formatShelterDate(source.needed_from || source.neededFrom || source.date || '');
@@ -96,4 +111,5 @@ module.exports = {
   buildReminderPayload,
   buildThreadPayload,
   buildFosterPayload,
+  buildWaitlistOfferPayload,
 };

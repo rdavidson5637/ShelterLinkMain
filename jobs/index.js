@@ -5,6 +5,7 @@ const { runShiftReminders } = require('./shiftReminders');
 const { runQualificationExpiry } = require('./qualificationExpiry');
 const { runOpportunityMatchDigest } = require('./opportunityMatchDigest');
 const { runSwapWaitlistExpiry } = require('./swapWaitlistExpiry');
+const { runWaitlistOffers } = require('./waitlistOffers');
 const { runDataRetentionJob } = require('./dataRetention');
 const { runFeedbackRequests } = require('./feedbackRequests');
 const { runDbKeepAlive } = require('./dbKeepAlive');
@@ -37,6 +38,10 @@ function registerAllJobs() {
   );
   // Hourly: publish swap offers after the waitlist exclusive window.
   scheduler.registerJob('swapWaitlistExpiry', '20 * * * *', () => forEachShelter(() => runSwapWaitlistExpiry()));
+  // Every 15 minutes: waitlist seat offers (notify, expire, cascade).
+  scheduler.registerJob('waitlistOffers', '5,20,35,50 * * * *', () =>
+    forEachShelter(() => runWaitlistOffers())
+  );
   // Hourly: unread thread digests (messages older than 15 min; max one email/hour/user).
   scheduler.registerJob('messageDigest', '25 * * * *', () => forEachShelter(() => runMessageDigest()));
   // Daily: email post-shift feedback links for opportunities from yesterday.

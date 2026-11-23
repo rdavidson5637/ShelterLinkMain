@@ -291,6 +291,29 @@ async function sendSwapOpened(volunteerEmail, opportunityTitle) {
   );
 }
 
+/**
+ * Seat freed on a full shift: time-limited claim link for the next waitlisted
+ * volunteer (SL-LATER-23). Distinct from swap waitlist offers.
+ */
+async function sendWaitlistSeatOffer(volunteerEmail, details = {}) {
+  const brand = await brandBits();
+  const title = details.title || 'a shift';
+  const claimLink = details.claimLink || '#';
+  const hours = details.hours || 12;
+  const safeLink = escapeHtml(claimLink).replace(/"/g, '&quot;');
+  return sendEmail(
+    volunteerEmail,
+    'A place opened on the waitlist - ShelterLink',
+    `
+    <p>Hello,</p>
+    <p>A place opened on <strong>${escapeHtml(title)}</strong> and you are next on the waitlist.</p>
+    <p>You have <strong>${Number(hours) || 12} hours</strong> to claim it before it is offered to the next person:</p>
+    <p><a href="${safeLink}">Claim this place</a></p>
+    <p>Thank you,<br/>${brand.signoff}</p>
+    `
+  );
+}
+
 async function sendSwapWaitlistOffer(volunteerEmail, details = {}) {
   const brand = await brandBits();
   const title = details.title || 'a shift';
@@ -639,6 +662,7 @@ module.exports = {
   sendHoursApproval,
   sendVolunteerApprovalNotification,
   sendWaitlistPromotion,
+  sendWaitlistSeatOffer,
   sendBookingConfirmed,
   sendShiftReminder,
   sendOpportunityMatchDigest,

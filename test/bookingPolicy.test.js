@@ -26,6 +26,28 @@ require.cache[emailPath] = {
   },
 };
 
+// SL-LATER-23: seat frees create timed offers. Stub the orchestrator here so
+// booking-policy tests stay focused on apply/trust; claim behaviour is covered
+// in test/waitlistOffers.test.js.
+const offerCalls = [];
+const waitlistOffersPath = require.resolve('../utils/waitlistOffers');
+require.cache[waitlistOffersPath] = {
+  id: waitlistOffersPath,
+  filename: waitlistOffersPath,
+  loaded: true,
+  exports: {
+    offerNextWaitlisted: async (opportunityId) => {
+      offerCalls.push(['offer', opportunityId]);
+      return { id: offerCalls.length, opportunity_id: opportunityId, status: 'offered' };
+    },
+    fillFromWaitlist: async (opportunityId) => {
+      offerCalls.push(['fill', opportunityId]);
+      return [{ id: offerCalls.length, opportunity_id: opportunityId, status: 'offered' }];
+    },
+    claimOfferByToken: async () => ({ error: 'not stubbed', status: 500 }),
+  },
+};
+
 const appCtrl = require('../controllers/applicationController');
 const policyCtrl = require('../controllers/bookingPolicyController');
 const policy = require('../utils/bookingPolicy');
@@ -33,6 +55,11 @@ const { runWithShelter, TENANT_TABLES } = require('../utils/shelterContext');
 const { bodies } = require('../validation/bodies');
 
 const SHELTER = 1;
+
+function resetOffers() {
+  offerCalls.length = 0;
+  emailCalls.length = 0;
+}
 
 function makeRes() {
   const res = { statusCode: 200, body: undefined };
@@ -238,7 +265,8 @@ test('approval mode is the default when the shelter has no policy row', async ()
   assert.equal(db.policyQueries.length, 1);
 });
 
-test('approval mode: freed seat moves the oldest waitlisted volunteer to pending, not confirmed', async () => {
+test('approval mode: freed seat starts a timed waitlist offer (claim later)', async () => {
+  resetOffers();
   const db = world({
     mode: 'approval',
     trusted: [3],
@@ -250,8 +278,9 @@ test('approval mode: freed seat moves the oldest waitlisted volunteer to pending
   });
   const res = await cancelAsAdmin(1);
   assert.equal(res.statusCode, 200);
-  assert.equal(db.apps.find((a) => a.application_id === 2).status, 'pending');
-  assert.equal(emailsOf('promote').length, 1);
+  // Status stays waitlisted until the volunteer claims the offer.
+  assert.equal(db.apps.find((a) => a.application_id === 2).status, 'waitlisted');
+  assert.ok(offerCalls.some((c) => c[0] === 'fill' && c[1] === 1));
   assert.equal(emailsOf('booked').length, 0);
 });
 
@@ -307,7 +336,8 @@ test('instant mode: losing the race for the last seat lands on the waitlist, nev
   assert.equal(emailsOf('booked').length, 0);
 });
 
-test('instant mode: freed seat confirms the oldest waitlisted trusted volunteer', async () => {
+test('instant mode: freed seat offers the waitlist place instead of auto-confirming', async () => {
+  resetOffers();
   const db = world({
     mode: 'instant',
     trusted: [3, 4],
@@ -320,53 +350,15 @@ test('instant mode: freed seat confirms the oldest waitlisted trusted volunteer'
   });
   const res = await cancelAsAdmin(1);
   assert.equal(res.statusCode, 200);
-  assert.equal(db.apps.find((a) => a.application_id === 2).status, 'accepted');
-  // Only one seat was freed, so the next person stays on the waitlist.
+  assert.equal(db.apps.find((a) => a.application_id === 2).status, 'waitlisted');
   assert.equal(db.apps.find((a) => a.application_id === 3).status, 'waitlisted');
-  const booked = emailsOf('booked');
-  assert.equal(booked.length, 1);
-  assert.equal(booked[0][1], 'v3@x.com');
-  assert.deepEqual(booked[0][3], { fromWaitlist: true });
-  assert.equal(emailsOf('promote').length, 0);
-});
-
-test('instant mode: oldest waitlisted volunteer who is not trusted goes to pending for staff', async () => {
-  const db = world({
-    mode: 'instant',
-    trusted: [4],
-    max: 1,
-    apps: [
-      { application_id: 1, user_id: 2, opportunity_id: 1, status: 'accepted' },
-      { application_id: 2, user_id: 3, opportunity_id: 1, status: 'waitlisted', applied_at: '2026-11-02' },
-      { application_id: 3, user_id: 4, opportunity_id: 1, status: 'waitlisted', applied_at: '2026-11-03' },
-    ],
-  });
-  await cancelAsAdmin(1);
-  // Queue order is kept: the older, untrusted volunteer is not skipped.
-  assert.equal(db.apps.find((a) => a.application_id === 2).status, 'pending');
-  assert.equal(db.apps.find((a) => a.application_id === 3).status, 'waitlisted');
-  assert.equal(emailsOf('promote').length, 1);
+  assert.ok(offerCalls.some((c) => c[0] === 'fill' && c[1] === 1));
   assert.equal(emailsOf('booked').length, 0);
 });
 
-test('instant mode: trusted volunteer whose profile is no longer approved goes to pending', async () => {
-  const db = world({
-    mode: 'instant',
-    trusted: [3],
-    max: 1,
-    approvedProfiles: [2],
-    apps: [
-      { application_id: 1, user_id: 2, opportunity_id: 1, status: 'accepted' },
-      { application_id: 2, user_id: 3, opportunity_id: 1, status: 'waitlisted', applied_at: '2026-11-02' },
-    ],
-  });
-  await cancelAsAdmin(1);
-  assert.equal(db.apps.find((a) => a.application_id === 2).status, 'pending');
-  assert.equal(emailsOf('booked').length, 0);
-});
-
-test('instant mode: raising capacity fills every new seat from trusted waitlisted volunteers', async () => {
-  const db = world({
+test('instant mode: raising capacity starts one timed waitlist offer', async () => {
+  resetOffers();
+  world({
     mode: 'instant',
     trusted: [3, 4],
     max: 3,
@@ -376,14 +368,15 @@ test('instant mode: raising capacity fills every new seat from trusted waitliste
       { application_id: 3, user_id: 4, opportunity_id: 1, status: 'waitlisted', applied_at: '2026-11-03' },
     ],
   });
-  const promoted = await runWithShelter(SHELTER, () => appCtrl.fillFromWaitlist(1));
-  assert.equal(promoted.length, 2);
-  assert.ok(promoted.every((p) => p.auto_confirmed));
-  assert.equal(db.apps.filter((a) => a.status === 'accepted').length, 3);
+  const offered = await runWithShelter(SHELTER, () => appCtrl.fillFromWaitlist(1));
+  assert.equal(offered.length, 1);
+  assert.equal(offered[0].status, 'offered');
+  assert.ok(offerCalls.some((c) => c[0] === 'fill'));
 });
 
-test('approval mode: raising capacity still promotes one volunteer to pending at a time', async () => {
-  const db = world({
+test('approval mode: raising capacity starts one timed waitlist offer', async () => {
+  resetOffers();
+  world({
     mode: 'approval',
     trusted: [3, 4],
     max: 3,
@@ -393,10 +386,9 @@ test('approval mode: raising capacity still promotes one volunteer to pending at
       { application_id: 3, user_id: 4, opportunity_id: 1, status: 'waitlisted', applied_at: '2026-11-03' },
     ],
   });
-  const promoted = await runWithShelter(SHELTER, () => appCtrl.fillFromWaitlist(1));
-  assert.equal(promoted.length, 1);
-  assert.equal(db.apps.find((a) => a.application_id === 2).status, 'pending');
-  assert.equal(db.apps.find((a) => a.application_id === 3).status, 'waitlisted');
+  const offered = await runWithShelter(SHELTER, () => appCtrl.fillFromWaitlist(1));
+  assert.equal(offered.length, 1);
+  assert.equal(offered[0].status, 'offered');
 });
 
 test('policy read failure fails safe to staff approval', async () => {

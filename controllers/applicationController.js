@@ -23,6 +23,7 @@ const {
   sendWaitlistPromotion,
   sendBookingConfirmed,
 } = require('../utils/emailService');
+const waitlistOffers = require('../utils/waitlistOffers');
 const { isStaffOrAdmin } = require('../middleware/auth');
 const { isTestOrE2EOpportunity } = require('../utils/testOpportunityGuard');
 
@@ -44,125 +45,58 @@ function isAcceptedStatus(status) {
 }
 
 /**
- * Is this volunteer still fit to be confirmed without staff looking first?
- * Re-checks what applying checked, because a qualification or background
- * check can lapse while someone sits on the waitlist. Any doubt -> false, and
- * the booking goes to staff as pending instead.
- */
-async function stillEligibleForAutoConfirm(userId, opportunity) {
-  try {
-    const profile = await VolunteerProfile.findByUserId(userId);
-    if (!profile || !profile.approved) return false;
-    const opportunityId = opportunity.opportunity_id || opportunity.id;
-    const missingQuals = await Qualification.findMissingForUser(userId, opportunityId);
-    if (missingQuals.length) return false;
-    const missingAnimalQuals = await Animal.findMissingQualificationsForUser(userId, opportunityId);
-    if (missingAnimalQuals.length) return false;
-    const checkAssessment = await Vetting.assessRequiredCheck(userId, opportunity);
-    return Boolean(checkAssessment && checkAssessment.ok);
-  } catch (error) {
-    console.error('[Application] auto-confirm eligibility error:', error.message);
-    return false;
-  }
-}
-
-/**
- * Promote the oldest waitlisted application when a seat frees up.
- * Approval mode (default): moves to pending for staff to review.
- * Instant mode: a trusted, still-eligible volunteer is confirmed (accepted)
- * straight away; anyone else moves to pending as before.
- * Optionally reopen a capacity-closed opportunity when a seat is available.
+ * When a seat frees, offer it to the first eligible waitlisted volunteer with
+ * a time-limited claim link (SL-LATER-23). Booking policy (accepted vs pending)
+ * is applied when they claim, not up front.
  */
 async function promoteOldestWaitlisted(opportunityId) {
-  if (!opportunityId) return null;
-
-  const waitlisted = await Application.findOldestWaitlisted(opportunityId);
-  if (!waitlisted) return null;
-
-  const opportunity = await Opportunity.findById(opportunityId);
-
-  let targetStatus = 'pending';
-  try {
-    const mode = await BookingPolicy.getMode();
-    if (mode === 'instant' && opportunity) {
-      const trusted = await BookingPolicy.isTrusted(waitlisted.user_id);
-      const eligible = trusted
-        ? await stillEligibleForAutoConfirm(waitlisted.user_id, opportunity)
-        : false;
-      targetStatus = bookingPolicy.promotionStatus({ mode, trusted, eligible });
-    }
-  } catch (policyError) {
-    // Fail safe: if the policy cannot be read, staff review the promotion.
-    console.error('[Application] promoteOldestWaitlisted policy error:', policyError.message);
-    targetStatus = 'pending';
-  }
-
-  let promoted = null;
-  let confirmed = false;
-  if (targetStatus === 'accepted') {
-    const claimed = await Application.claimSeat(waitlisted.application_id, opportunityId, 'waitlisted');
-    if (claimed === 'accepted') {
-      confirmed = true;
-      promoted = (await Application.findById(waitlisted.application_id)) || {
-        ...waitlisted,
-        status: 'accepted',
-      };
-    } else {
-      // The seat went to someone else (for example a group booking). Leave
-      // them on the waitlist, still first in line.
-      return null;
-    }
-  } else {
-    promoted = await Application.updateStatus(waitlisted.application_id, 'pending');
-  }
-  if (!promoted) return null;
-
-  try {
-    const email = promoted.email || waitlisted.email;
-    const title = promoted.opportunity_title || waitlisted.opportunity_title || 'Opportunity';
-    if (email) {
-      if (confirmed) {
-        await sendBookingConfirmed(email, title, { fromWaitlist: true });
-      } else {
-        await sendWaitlistPromotion(email, title);
-      }
-    }
-  } catch (emailError) {
-    console.error('[Application] promoteOldestWaitlisted email error:', emailError.message);
-  }
-
-  if (opportunity && opportunity.status === 'closed') {
-    const maxVolunteers = Number(opportunity.max_volunteers);
-    const capacity = await Opportunity.getCurrentCapacity(opportunityId);
-    if (!Number.isFinite(maxVolunteers) || maxVolunteers <= 0 || capacity < maxVolunteers) {
-      await Opportunity.updateStatus(opportunityId, 'open');
-    }
-  }
-
-  return { ...promoted, status: confirmed ? 'accepted' : 'pending', auto_confirmed: confirmed };
+  return waitlistOffers.offerNextWaitlisted(opportunityId);
 }
 
 /**
- * Keep promoting from the waitlist while seats are free and each promotion is
- * confirmed instantly (instant mode, trusted volunteers). Stops at the first
- * promotion that goes to staff as pending, which is the approval-mode
- * behaviour: one promotion per freed seat event.
+ * Start one timed waitlist offer for a free seat. Further seats are offered
+ * after claim or expiry (one active offer per opportunity).
  */
-async function fillFromWaitlist(opportunityId, maxRounds = 50) {
-  const promotedList = [];
-  for (let round = 0; round < maxRounds; round += 1) {
-    const promoted = await promoteOldestWaitlisted(opportunityId);
-    if (!promoted) break;
-    promotedList.push(promoted);
-    if (!promoted.auto_confirmed) break;
+async function fillFromWaitlist(opportunityId, maxRounds = 1) {
+  return waitlistOffers.fillFromWaitlist(opportunityId, maxRounds);
+}
 
-    const opportunity = await Opportunity.findById(opportunityId);
-    const maxVolunteers = Number(opportunity && opportunity.max_volunteers);
-    if (!Number.isFinite(maxVolunteers) || maxVolunteers <= 0) break;
-    const capacity = await Opportunity.getCurrentCapacity(opportunityId);
-    if (capacity >= maxVolunteers) break;
+async function claimWaitlistOffer(req, res) {
+  try {
+    if (!ensureAuthenticated(req, res)) return;
+    const token = String(req.body?.token || '').trim();
+    if (!token) {
+      return res.status(400).json({ error: 'token is required' });
+    }
+    const result = await waitlistOffers.claimOfferByToken(token, req.session.userId);
+    if (result.error) {
+      return res.status(result.status || 400).json({ error: result.error });
+    }
+
+    try {
+      const email = result.application?.email;
+      const title = result.application?.opportunity_title || 'Opportunity';
+      if (email) {
+        if (result.confirmed) {
+          await sendBookingConfirmed(email, title, { fromWaitlist: true });
+        } else {
+          await sendWaitlistPromotion(email, title);
+        }
+      }
+    } catch (emailError) {
+      console.error('[Application] claimWaitlistOffer email error:', emailError.message);
+    }
+
+    return res.status(200).json({
+      message: result.message,
+      status: result.status,
+      application: result.application,
+    });
+  } catch (error) {
+    console.error('[Application] claimWaitlistOffer error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
+    return res.status(500).json({ error: 'Internal server error' });
   }
-  return promotedList;
 }
 
 async function applyForOpportunity(req, res) {
@@ -731,6 +665,7 @@ module.exports = {
   cancelApplication,
   promoteOldestWaitlisted,
   fillFromWaitlist,
+  claimWaitlistOffer,
   markApplicationNoShow,
   checkInApplication,
   checkOutApplication,

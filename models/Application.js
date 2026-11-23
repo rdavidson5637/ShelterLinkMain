@@ -371,7 +371,14 @@ async function cancelApplication(applicationId, userId, { asAdmin = false } = {}
 }
 
 async function findOldestWaitlisted(opportunityId) {
+  const rows = await findWaitlistedOrdered(opportunityId, 1);
+  return rows[0] || null;
+}
+
+/** Waitlisted applications oldest-first (for timed seat offers). */
+async function findWaitlistedOrdered(opportunityId, limit = 50) {
   try {
+    const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 200);
     const sql = `
       SELECT
         a.application_id,
@@ -383,24 +390,26 @@ async function findOldestWaitlisted(opportunityId) {
         u.first_name,
         u.last_name,
         u.name,
-        o.title AS opportunity_title
+        o.title AS opportunity_title,
+        vp.quiet_hours_start,
+        vp.quiet_hours_end
       FROM ${TABLE} a
       LEFT JOIN users u ON u.user_id = a.user_id
       LEFT JOIN opportunities o ON o.opportunity_id = a.opportunity_id
+      LEFT JOIN volunteer_profiles vp ON vp.user_id = a.user_id
       WHERE a.opportunity_id = ?
         AND a.status = 'waitlisted'
       ORDER BY a.applied_at ASC, a.application_id ASC
-      LIMIT 1
+      LIMIT ?
     `;
-    const [rows] = await pool.execute(sql, [opportunityId]);
-    const row = rows[0] || null;
-    if (row) {
+    const [rows] = await pool.execute(sql, [opportunityId, safeLimit]);
+    return rows.map((row) => {
       row.id = row.application_id;
       row.created_at = row.applied_at;
-    }
-    return row;
+      return row;
+    });
   } catch (error) {
-    console.error('[Application] findOldestWaitlisted error:', error.message);
+    console.error('[Application] findWaitlistedOrdered error:', error.message);
     throw error;
   }
 }
@@ -597,6 +606,7 @@ module.exports = {
   countApprovedByUserId,
   cancelApplication,
   findOldestWaitlisted,
+  findWaitlistedOrdered,
   claimSeat,
   findAcceptedNeedingReminder,
   markReminderSent,

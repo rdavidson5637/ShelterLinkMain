@@ -21,7 +21,11 @@
  */
 
 const { isEmailConfigured } = require('../emailConfig');
-const { buildReminderPayload, buildUrgentPayload } = require('../pushPayloads');
+const {
+  buildReminderPayload,
+  buildUrgentPayload,
+  buildWaitlistOfferPayload,
+} = require('../pushPayloads');
 const { getSmsProvider } = require('./smsProvider');
 const { rowInQuietHours } = require('../quietHours');
 
@@ -206,9 +210,71 @@ async function notifyUrgentCover({
   return { email, push, sms, skippedQuiet, skippedPref };
 }
 
+/**
+ * Timed waitlist seat offer (SL-LATER-23). Quiet hours delay the send; the
+ * claim clock starts only when this returns delivered. No preference gate:
+ * the volunteer asked to be on the waitlist.
+ *
+ * @param {object} recipient { user_id, email, quiet_hours_start?, quiet_hours_end? }
+ * @param {object} details { title, claimLink, hours, offer_id? }
+ * @param {object} [options]
+ * @param {Date} [options.now]
+ */
+async function notifyWaitlistSeatOffer(recipient, details = {}, options = {}) {
+  const now = options.now || new Date();
+  if (rowInQuietHours(recipient, now)) {
+    return skipAllChannels('quiet_hours');
+  }
+
+  const emailOn = isEmailConfigured();
+  const result = {
+    email: emptyResult({ configured: emailOn }),
+    push: emptyResult(),
+    sms: emptyResult(),
+    delivered: false,
+  };
+
+  if (emailOn) {
+    if (!recipient.email) {
+      result.email.failed = 1;
+      result.email.reason = 'missing_email';
+    } else {
+      await emailService().sendWaitlistSeatOffer(recipient.email, {
+        title: details.title,
+        claimLink: details.claimLink,
+        hours: details.hours,
+      });
+      result.email.sent = 1;
+    }
+  } else {
+    result.email.skipped = 1;
+  }
+
+  result.push = await sendPush(
+    [recipient.user_id],
+    buildWaitlistOfferPayload({
+      opportunity_title: details.title,
+      hours: details.hours,
+      claimUrl: details.claimPath || details.claimLink,
+      offer_id: details.offer_id,
+    }),
+    'waitlist'
+  );
+  result.sms = await sendSms([recipient.user_id]);
+  result.delivered = result.email.sent > 0 || result.push.sent > 0;
+  // Push-only when email is off still counts as delivered.
+  if (!emailOn && result.push.sent > 0) result.delivered = true;
+  // If email is configured but missing, and push also failed, not delivered.
+  if (emailOn && result.email.reason === 'missing_email' && result.push.sent === 0) {
+    result.delivered = false;
+  }
+  return result;
+}
+
 module.exports = {
   CHANNELS,
   channelStatus,
   notifyShiftReminder,
   notifyUrgentCover,
+  notifyWaitlistSeatOffer,
 };
