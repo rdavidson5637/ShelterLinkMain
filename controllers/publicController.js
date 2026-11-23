@@ -1,6 +1,5 @@
 'use strict';
 
-const crypto = require('crypto');
 const Opportunity = require('../models/Opportunity');
 const Application = require('../models/Application');
 const { pool } = require('../config/database');
@@ -15,6 +14,7 @@ const {
   runWithoutShelter,
 } = require('../utils/shelterContext');
 const { publicShelterId } = require('../middleware/shelter');
+const { createIcalToken, hashIcalToken } = require('../utils/icalToken');
 
 // One entry per resolved shelter id, so slug A and slug B never share a
 // payload. Keys only come from ids that exist, so this is bounded by the
@@ -194,29 +194,57 @@ async function publicOpportunitiesIcs(req, res) {
   }
 }
 
-async function ensureIcalToken(userId) {
+function icalFeedOrigin(req) {
+  return process.env.APP_URL
+    ? String(process.env.APP_URL).replace(/\/$/, '')
+    : `${req.protocol}://${req.get('host')}`;
+}
+
+function icalFeedUrl(req, rawToken) {
+  return `${icalFeedOrigin(req)}/api/my-shifts.ics?token=${rawToken}`;
+}
+
+function sessionRawMatchesHash(sessionRaw, storedHash) {
+  if (!sessionRaw || !storedHash) return false;
+  return hashIcalToken(sessionRaw) === storedHash;
+}
+
+async function issueIcalToken(userId, session) {
+  const { raw, hash } = createIcalToken();
+  await pool.execute(`UPDATE users SET ical_token = ? WHERE user_id = ?`, [hash, userId]);
+  if (session) session.icalTokenRaw = raw;
+  return raw;
+}
+
+async function loadUserIcalHash(userId) {
   const [rows] = await pool.execute(
     `SELECT user_id, ical_token FROM users WHERE user_id = ? LIMIT 1`,
     [userId]
   );
-  const user = rows[0];
-  if (!user) return null;
-  if (user.ical_token) return user.ical_token;
-  const token = crypto.randomBytes(24).toString('hex');
-  await pool.execute(`UPDATE users SET ical_token = ? WHERE user_id = ?`, [token, userId]);
-  return token;
+  return rows[0] || null;
 }
 
 async function getMyIcalToken(req, res) {
   try {
     if (!req.session?.userId) return res.status(401).json({ error: 'Unauthorized' });
-    const token = await ensureIcalToken(req.session.userId);
-    if (!token) return res.status(404).json({ error: 'User not found' });
-    const origin = process.env.APP_URL
-      ? String(process.env.APP_URL).replace(/\/$/, '')
-      : `${req.protocol}://${req.get('host')}`;
-    const url = `${origin}/api/my-shifts.ics?token=${token}`;
-    return res.status(200).json({ token, url });
+    const user = await loadUserIcalHash(req.session.userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    let raw = null;
+    if (!user.ical_token) {
+      raw = await issueIcalToken(user.user_id, req.session);
+    } else if (sessionRawMatchesHash(req.session.icalTokenRaw, user.ical_token)) {
+      raw = req.session.icalTokenRaw;
+    }
+
+    if (!raw) {
+      return res.status(200).json({ configured: true, token: null, url: null });
+    }
+    return res.status(200).json({
+      configured: true,
+      token: raw,
+      url: icalFeedUrl(req, raw),
+    });
   } catch (error) {
     console.error('[Public] getMyIcalToken error:', error.message);
     if (error.status === 404) return res.status(404).json({ error: 'Not found' });
@@ -224,25 +252,71 @@ async function getMyIcalToken(req, res) {
   }
 }
 
+async function resetMyIcalToken(req, res) {
+  try {
+    if (!req.session?.userId) return res.status(401).json({ error: 'Unauthorized' });
+    const user = await loadUserIcalHash(req.session.userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const raw = await issueIcalToken(user.user_id, req.session);
+    return res.status(200).json({
+      configured: true,
+      token: raw,
+      url: icalFeedUrl(req, raw),
+      reset: true,
+    });
+  } catch (error) {
+    console.error('[Public] resetMyIcalToken error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+function isBookedShiftStatus(status) {
+  const normalised = String(status || '').toLowerCase();
+  return normalised === 'accepted' || normalised === 'approved';
+}
+
 async function myShiftsIcs(req, res) {
   try {
     const token = String(req.query.token || '').trim();
     if (!token) return res.status(404).json({ error: 'Not found' });
 
-    const [users] = await runWithoutShelter(() => pool.execute(
-      `SELECT user_id, shelter_id FROM users WHERE ical_token = ? LIMIT 1`,
-      [token]
+    const tokenHash = hashIcalToken(token);
+    let owner = null;
+    let matchedLegacyPlaintext = false;
+    const [byHash] = await runWithoutShelter(() => pool.execute(
+      `SELECT user_id, shelter_id, ical_token FROM users WHERE ical_token = ? LIMIT 1`,
+      [tokenHash]
     ));
-    if (!users.length) return res.status(404).json({ error: 'Not found' });
-    const owner = users[0];
+    if (byHash.length) {
+      owner = byHash[0];
+    } else {
+      // Pre-SL-LATER-22 rows stored the raw secret. Accept once, then hash it.
+      const [byPlain] = await runWithoutShelter(() => pool.execute(
+        `SELECT user_id, shelter_id, ical_token FROM users WHERE ical_token = ? LIMIT 1`,
+        [token]
+      ));
+      if (byPlain.length) {
+        owner = byPlain[0];
+        matchedLegacyPlaintext = true;
+      }
+    }
+    if (!owner) return res.status(404).json({ error: 'Not found' });
+    if (matchedLegacyPlaintext) {
+      await runWithoutShelter(() => pool.execute(
+        `UPDATE users SET ical_token = ? WHERE user_id = ? AND ical_token = ?`,
+        [tokenHash, owner.user_id, token]
+      ));
+    }
     if (currentShelterId() && Number(owner.shelter_id) !== Number(currentShelterId())) {
       return res.status(404).json({ error: 'Not found' });
     }
 
     const apps = await runWithShelter(owner.shelter_id, () => Application.findByUserId(owner.user_id));
     const upcoming = apps.filter((app) => {
-      const status = (app.status || '').toLowerCase();
-      if (status !== 'accepted' && status !== 'approved') return false;
+      // Cancelled, rejected, pending, and waitlisted bookings stay out of the feed.
+      if (!isBookedShiftStatus(app.status)) return false;
       const start = new Date(app.opportunity_start_date);
       return !Number.isNaN(start.getTime()) && start.getTime() >= Date.now() - 12 * 60 * 60 * 1000;
     });
@@ -301,6 +375,7 @@ module.exports = {
   publicOpportunitiesIcs,
   myShiftsIcs,
   getMyIcalToken,
+  resetMyIcalToken,
   applicationIcs,
   escapeIcalText,
   buildVCalendar,

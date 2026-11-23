@@ -222,16 +222,23 @@ test('production public list hides smoke-test shifts', async () => {
 test('ical feed URL uses APP_URL when set', async () => {
   const prev = process.env.APP_URL;
   process.env.APP_URL = 'https://shelterlink.online';
+  const crypto = require('crypto');
+  const raw = 'a'.repeat(64);
+  const hash = crypto.createHash('sha256').update(raw, 'utf8').digest('hex');
   mock.setHandler(async (sql) => {
     if (/ical_token/i.test(sql) && /SELECT/i.test(sql)) {
-      return [[{ user_id: 3, ical_token: 'tok123' }]];
+      return [[{ user_id: 3, ical_token: hash }]];
     }
     return [{ affectedRows: 1 }];
   });
   const res = makeRes();
-  await publicCtrl.getMyIcalToken({ session: { userId: 3 }, protocol: 'http', get: () => 'localhost:3000' }, res);
+  await publicCtrl.getMyIcalToken({
+    session: { userId: 3, icalTokenRaw: raw },
+    protocol: 'http',
+    get: () => 'localhost:3000',
+  }, res);
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.url, 'https://shelterlink.online/api/my-shifts.ics?token=tok123');
+  assert.equal(res.body.url, `https://shelterlink.online/api/my-shifts.ics?token=${raw}`);
   if (prev === undefined) delete process.env.APP_URL;
   else process.env.APP_URL = prev;
 });

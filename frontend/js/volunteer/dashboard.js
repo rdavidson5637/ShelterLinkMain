@@ -38,6 +38,7 @@ const documentLabelInput = document.getElementById('documentLabel');
 const documentUploadMessage = document.getElementById('documentUploadMessage');
 const icalFeedDetailsEl = document.getElementById('icalFeedDetails');
 const copyIcalButton = document.getElementById('copyIcalButton');
+const resetIcalButton = document.getElementById('resetIcalButton');
 const appleCalLink = document.getElementById('appleCalLink');
 const googleCalLink = document.getElementById('googleCalLink');
 const logoutButton = document.getElementById('logoutButton');
@@ -485,17 +486,13 @@ async function handleDocumentUpload(event) {
     setDocUploadMessage('Network error while uploading', 'error');
   }
 }
-async function fetchAndDisplayIcalFeed() {
+function renderIcalFeed(data) {
   if (!icalFeedDetailsEl) return;
-  try {
-    const res = await apiRequest('/me/ical-feed', { method: 'GET' });
-    if (!res.ok) { icalFeedDetailsEl.textContent = 'Unable to load calendar feed.'; return; }
-    const data = await res.json();
-    icalUrl = data.url || '';
-    icalFeedDetailsEl.replaceChildren();
-    if (!icalUrl) { icalFeedDetailsEl.textContent = 'Feed unavailable.'; return; }
+  icalUrl = data?.url || '';
+  icalFeedDetailsEl.replaceChildren();
+  if (icalUrl) {
     const intro = document.createElement('p');
-    intro.textContent = 'Subscribe in your calendar app using the buttons below.';
+    intro.textContent = 'Subscribe in your calendar app using the buttons below. Reset the link if it was shared by mistake.';
     const input = document.createElement('input');
     input.type = 'text';
     input.readOnly = true;
@@ -506,10 +503,49 @@ async function fetchAndDisplayIcalFeed() {
     const links = buildCalendarSubscribeUrls(icalUrl);
     if (appleCalLink) { appleCalLink.href = links.apple; appleCalLink.hidden = false; }
     if (googleCalLink) { googleCalLink.href = links.google; googleCalLink.hidden = false; }
+    if (copyIcalButton) copyIcalButton.hidden = false;
+    return;
+  }
+  if (appleCalLink) appleCalLink.hidden = true;
+  if (googleCalLink) googleCalLink.hidden = true;
+  if (copyIcalButton) copyIcalButton.hidden = true;
+  if (data?.configured) {
+    icalFeedDetailsEl.textContent = 'Your private calendar feed is active. Reset the link to copy a new subscribe URL (the old one stops working).';
+    return;
+  }
+  icalFeedDetailsEl.textContent = 'Feed unavailable.';
+}
+
+async function fetchAndDisplayIcalFeed() {
+  if (!icalFeedDetailsEl) return;
+  try {
+    const res = await apiRequest('/me/ical-feed', { method: 'GET' });
+    if (!res.ok) { icalFeedDetailsEl.textContent = 'Unable to load calendar feed.'; return; }
+    renderIcalFeed(await res.json());
   } catch (error) {
     console.error('[Dashboard] ical feed error:', error);
     icalFeedDetailsEl.textContent = 'Unable to load calendar feed.';
   }
+}
+
+function resetIcalFeed() {
+  if (!icalFeedDetailsEl) return;
+  showConfirm({
+    heading: 'Reset calendar link?',
+    body: 'The current subscribe URL will stop working. Calendar apps will need the new link.',
+    confirmText: 'Reset link',
+    cancelText: 'Keep link',
+    onConfirm: async () => {
+      try {
+        const res = await apiRequest('/me/ical-feed/reset', { method: 'POST' });
+        if (!res.ok) { icalFeedDetailsEl.textContent = 'Unable to reset calendar feed.'; return; }
+        renderIcalFeed(await res.json());
+      } catch (error) {
+        console.error('[Dashboard] ical feed reset error:', error);
+        icalFeedDetailsEl.textContent = 'Unable to reset calendar feed.';
+      }
+    },
+  });
 }
 function setExportButtonLoading(loading) {
   if (!exportHoursCsvButton) return;
@@ -600,6 +636,12 @@ async function init() {
         const input = icalFeedDetailsEl.querySelector('input');
         if (input) input.select();
       }
+    });
+  }
+  if (resetIcalButton) {
+    resetIcalButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      resetIcalFeed();
     });
   }
 }
