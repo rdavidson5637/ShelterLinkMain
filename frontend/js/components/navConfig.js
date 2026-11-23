@@ -26,6 +26,7 @@ export const ADMIN_MANAGE = [
   { id: 'resources', label: 'Resources', href: '/pages/admin/resources.html' },
   { id: 'announcements', label: 'Announcements', href: '/pages/admin/announcements.html' },
   { id: 'wishlist', label: 'Supplies wishlist', href: '/pages/admin/wishlist.html' },
+  { id: 'events', label: 'Shelter events', href: '/pages/admin/events.html' },
   { id: 'qualifications', label: 'Skills', href: '/pages/admin/qualifications.html' },
   { id: 'training', label: 'Training modules', href: '/pages/admin/training.html', adminOnly: true },
   { id: 'custom-fields', label: 'Custom fields', href: '/pages/admin/custom-fields.html', adminOnly: true },
@@ -60,6 +61,7 @@ export const VOLUNTEER_PRIMARY = [
 /** Lower-frequency destinations — grouped under More so the bar stays one row. */
 export const VOLUNTEER_MORE = [
   { id: 'applications', label: 'Applications', href: '/pages/volunteer/my-applications.html' },
+  { id: 'events', label: 'Events', href: '/pages/volunteer/events.html' },
   { id: 'hours', label: 'Hours', href: '/pages/volunteer/my-hours.html' },
   { id: 'impact', label: 'My impact', href: '/pages/volunteer/my-impact.html' },
   { id: 'mileage', label: 'Mileage', href: '/pages/volunteer/mileage.html' },

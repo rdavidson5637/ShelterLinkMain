@@ -3629,6 +3629,138 @@ body.staff-app .dashboard-main > section {
   color: var(--text-secondary);
 }
 
+/* SL-DAY-20: one-off shelter events — ruled lists, not card grids */
+.event-compose {
+  margin: 0 0 var(--section-gap);
+  max-width: 40rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.event-compose h2,
+.event-list-header h2,
+.event-attendee-section h2 {
+  margin: 0 0 0.65rem;
+  font-size: var(--text-lg);
+  line-height: 1.15;
+}
+
+.event-field-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+}
+
+.event-field-row label {
+  flex: 1 1 10rem;
+}
+
+.event-list-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.event-archived-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.event-ruled-list,
+.event-attendee-ruled {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.event-ruled-list > li,
+.event-attendee-ruled > li {
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.event-ruled-list > li:last-child,
+.event-attendee-ruled > li:last-child {
+  border-bottom: 0;
+}
+
+.event-ruled-list > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem 1.25rem;
+}
+
+.event-ruled-main {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.event-ruled-main strong,
+.event-attendee-ruled strong {
+  display: block;
+  margin: 0 0 0.25rem;
+  font-size: var(--text-md);
+  line-height: 1.2;
+  color: var(--text);
+}
+
+.event-ruled-main p {
+  margin: 0 0 0.35rem;
+  max-width: var(--measure);
+  line-height: 1.55;
+}
+
+.event-meta {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.event-ruled-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.event-ruled-actions button {
+  margin: 0;
+}
+
+.event-attendee-section {
+  margin-top: var(--section-gap);
+  padding-top: var(--section-gap);
+  border-top: 1px solid var(--border);
+  max-width: var(--measure);
+}
+
+.event-attendee-ruled > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+}
+
+.event-volunteer-list,
+.event-staff-list {
+  max-width: 48rem;
+}
+
+.event-empty {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
 /* Volunteer my-impact (SL-DAY-21): editorial ruled figures, not a card grid */
 .my-impact-figures {
   margin: 0 0 var(--section-gap);

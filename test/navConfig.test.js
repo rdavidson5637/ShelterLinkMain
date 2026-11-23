@@ -25,6 +25,7 @@ test('filterNavForRole hides admin-only destinations from staff', async () => {
     'resources',
     'announcements',
     'wishlist',
+    'events',
     'qualifications',
     'closures',
     'groups',
@@ -45,7 +46,7 @@ test('filterNavForRole hides admin navigation from volunteers', async () => {
     '../frontend/js/components/navConfig.js'
   );
   assert.deepEqual(filterNavForRole(ADMIN_PRIMARY, 'volunteer'), []);
-  assert.equal(VOLUNTEER_NAV.length, 13);
+  assert.equal(VOLUNTEER_NAV.length, 14);
   const applications = VOLUNTEER_NAV.find((item) => item.id === 'applications');
   assert.equal(applications.href, '/pages/volunteer/my-applications.html');
 });
@@ -62,6 +63,7 @@ test('volunteer nav keeps daily items primary and tucks the rest under More', as
     VOLUNTEER_MORE.map((item) => item.label),
     [
       'Applications',
+      'Events',
       'Hours',
       'My impact',
       'Mileage',
@@ -80,6 +82,7 @@ test('volunteer nav keeps daily items primary and tucks the rest under More', as
       'calendar',
       'messages',
       'applications',
+      'events',
       'hours',
       'impact',
       'mileage',

@@ -104,6 +104,14 @@ function inferFromRequest(req) {
     else if (method === 'POST') action = 'wishlist.create';
     else if (method === 'PUT' || method === 'PATCH') action = 'wishlist.update';
   }
+  else if (resource === 'events') {
+    if (segments.includes('email') && method === 'POST') action = 'event.email';
+    else if (segments.includes('archive') && method === 'POST') action = 'event.archive';
+    else if (segments.includes('signup') && method === 'POST') action = 'event.signup';
+    else if (segments.includes('cancel') && method === 'POST') action = 'event.cancel';
+    else if (method === 'POST') action = 'event.create';
+    else if (method === 'PUT' || method === 'PATCH') action = 'event.update';
+  }
   else if (resource === 'animals') {
     if (segments.includes('photo') && method === 'POST') action = 'animal.photo';
     else if (segments.includes('activity') && method === 'POST') action = 'animal.activity';

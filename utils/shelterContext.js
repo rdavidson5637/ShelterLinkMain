@@ -40,6 +40,8 @@ const TENANT_TABLES = [
   'shelter_announcements',
   'shelter_booking_policy',
   'shelter_closures',
+  'shelter_event_signups',
+  'shelter_events',
   'shelter_settings',
   'shelter_wishlist_items',
   'shelters',

@@ -27,6 +27,7 @@ const {
   buildNoShowFollowUp,
   buildUsualAvailabilityAsk,
   buildShelterAnnouncement,
+  buildShelterEventAttendees,
   buildVolunteerShiftNoteAlert,
 } = require('../utils/emailService');
 const { catalogIds, renderEmailPreviews, sampleData } = require('../utils/emailPreview');
@@ -108,6 +109,11 @@ const BUILDERS = [
   {
     id: 'shelter_announcement',
     build: (brand, samples) => buildShelterAnnouncement(samples.shelterAnnouncement, brand),
+  },
+  {
+    id: 'shelter_event_attendees',
+    build: (brand, samples) =>
+      buildShelterEventAttendees(samples.shelterEventAttendees, brand),
   },
   {
     id: 'volunteer_shift_note',

@@ -909,6 +909,12 @@ const queries = {
       archived: qstr(10),
     })
     .strict(),
+  shelterEvents: z
+    .object({
+      all: qstr(10),
+      archived: qstr(10),
+    })
+    .strict(),
 };
 
 const weekCopy = z
@@ -1122,6 +1128,51 @@ const bodies = {
         .optional(),
       priority: z.enum(['high', 'medium', 'low']).optional(),
       note: optStr(500),
+    })
+    .strict(),
+  // SL-DAY-20: one-off shelter events (date, place, capacity, description).
+  shelterEventCreate: z
+    .object({
+      title: optStr(160),
+      description: optStr(4000),
+      body: optStr(4000),
+      event_date: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional(),
+      eventDate: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional(),
+      location: optStr(200),
+      place: optStr(200),
+      capacity: z.union([
+        z.number().int().min(1).max(9999),
+        z.string().regex(/^[1-9]\d{0,3}$/),
+      ]),
+    })
+    .strict(),
+  shelterEventUpdate: z
+    .object({
+      title: optStr(160),
+      description: optStr(4000),
+      body: optStr(4000),
+      event_date: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional(),
+      eventDate: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional(),
+      location: optStr(200),
+      place: optStr(200),
+      capacity: z
+        .union([
+          z.number().int().min(1).max(9999),
+          z.string().regex(/^[1-9]\d{0,3}$/),
+        ])
+        .optional(),
     })
     .strict(),
   reorderFields,

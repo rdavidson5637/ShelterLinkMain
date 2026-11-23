@@ -22,6 +22,7 @@ const {
   buildNoShowFollowUp,
   buildUsualAvailabilityAsk,
   buildShelterAnnouncement,
+  buildShelterEventAttendees,
   buildVolunteerShiftNoteAlert,
 } = require('./emailService');
 
@@ -113,6 +114,13 @@ function sampleData(shelterNamePlain) {
       body: 'We are resurfacing the walk yard. Please use the indoor enrichment room for Saturday morning shifts.',
       postedOn: '2026-11-23',
       expiresOn: '2026-11-30',
+    },
+    shelterEventAttendees: {
+      firstName: 'Alex',
+      title: 'Spring open day',
+      description: 'Help welcome visitors and show them around the kennels.',
+      eventDate: '2026-12-06',
+      location: 'Main yard gate',
     },
   };
 }
@@ -228,6 +236,14 @@ const CATALOG = [
     description: 'Optional staff email of a dated shelter notice to active volunteers only.',
     build(brand, samples) {
       return buildShelterAnnouncement(samples.shelterAnnouncement, brand);
+    },
+  },
+  {
+    id: 'shelter_event_attendees',
+    label: 'Shelter event attendees',
+    description: 'Optional staff email to people signed up for a one-off shelter event.',
+    build(brand, samples) {
+      return buildShelterEventAttendees(samples.shelterEventAttendees, brand);
     },
   },
 ];
