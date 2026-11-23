@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>My impact - ShelterLink</title>
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Volunteer navigation">
+        <a class="site-brand" href="/pages/volunteer/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">Menu</button>
+        <ul class="nav-menu" id="navMenu" data-volunteer-nav></ul>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main id="main" class="container">
+      <section class="page-lede">
+        <h1>My impact</h1>
+        <p>
+          Your approved hours, shifts, shelters, and passed training modules.
+          Figures come from your records only.
+        </p>
+      </section>
+
+      <div id="message" role="status" aria-live="polite"></div>
+
+      <section aria-labelledby="impact-figures-heading">
+        <h2 id="impact-figures-heading" class="visually-hidden">Totals</h2>
+        <dl id="impactFigures" class="my-impact-figures">
+          <div>
+            <dt>Hours this year</dt>
+            <dd id="hoursThisYear">—</dd>
+          </div>
+          <div>
+            <dt>Hours all time</dt>
+            <dd id="totalHours">—</dd>
+          </div>
+          <div>
+            <dt>Shifts done</dt>
+            <dd id="shiftsCompleted">—</dd>
+          </div>
+          <div>
+            <dt>Shelters helped</dt>
+            <dd id="sheltersHelped">—</dd>
+          </div>
+          <div>
+            <dt>Training completed</dt>
+            <dd id="trainingCompleted">—</dd>
+          </div>
+        </dl>
+        <p id="impactYearNote" class="my-impact-note"></p>
+      </section>
+
+      <section class="my-impact-links" aria-label="Related pages">
+        <ul class="action-list">
+          <li>
+            <a href="/pages/volunteer/my-hours.html">
+              <span>
+                <strong>My hours</strong>
+                View and export your hours history.
+              </span>
+              <span class="choice-arrow" aria-hidden="true">→</span>
+            </a>
+          </li>
+          <li>
+            <a href="/pages/volunteer/certificate.html">
+              <span>
+                <strong>Hours statement</strong>
+                Print approved hours for school or DofE.
+              </span>
+              <span class="choice-arrow" aria-hidden="true">→</span>
+            </a>
+          </li>
+          <li>
+            <a href="/pages/volunteer/training.html">
+              <span>
+                <strong>Training</strong>
+                Open modules and take a quiz.
+              </span>
+              <span class="choice-arrow" aria-hidden="true">→</span>
+            </a>
+          </li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <small>&copy; <span data-footer-year>2026</span> ShelterLink</small>
+      </div>
+    </footer>
+
+    <script type="module" src="/js/components/volunteerNav.js"></script>
+    <script type="module" src="/js/volunteer/my-impact.js"></script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+  </body>
+</html>

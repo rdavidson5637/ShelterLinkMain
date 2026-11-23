@@ -60,6 +60,7 @@ export const VOLUNTEER_PRIMARY = [
 export const VOLUNTEER_MORE = [
   { id: 'applications', label: 'Applications', href: '/pages/volunteer/my-applications.html' },
   { id: 'hours', label: 'Hours', href: '/pages/volunteer/my-hours.html' },
+  { id: 'impact', label: 'My impact', href: '/pages/volunteer/my-impact.html' },
   { id: 'mileage', label: 'Mileage', href: '/pages/volunteer/mileage.html' },
   { id: 'training', label: 'Training', href: '/pages/volunteer/training.html' },
   { id: 'resources', label: 'Resources', href: '/pages/volunteer/resources.html' },
