@@ -37,7 +37,7 @@ const { inferFromRequest } = require('../middleware/auditLog');
 
 const ROOT = path.join(__dirname, '..');
 const MIGRATION = fs.readFileSync(
-  path.join(ROOT, 'database/063_noshow_followup.pg.sql'),
+  path.join(ROOT, 'database/064_noshow_followup.pg.sql'),
   'utf8'
 );
 const SCHEMA = fs.readFileSync(path.join(ROOT, 'database/schema.pg.sql'), 'utf8');
