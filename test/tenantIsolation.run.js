@@ -439,6 +439,7 @@ function cases(feedbackToken) {
     own('GET', '/api/admin/day-sheet?date=2099-06-01'),
     own('GET', '/api/admin/week-sheet'),
     own('GET', '/api/admin/week-sheet.ics'),
+    own('GET', '/api/admin/this-week'),
     own('GET', '/api/admin/stats'),
     own('GET', '/api/admin/stats/leaderboard'),
     own('GET', '/api/admin/volunteers'),

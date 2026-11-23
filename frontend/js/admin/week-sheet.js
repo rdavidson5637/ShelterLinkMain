@@ -167,8 +167,14 @@ async function init() {
     return;
   }
   applyRoleVisibility(user);
-  if (weekStartInput) weekStartInput.value = todayMonday();
-  updateIcsLink(weekStartInput?.value || todayMonday());
+  const params = new URLSearchParams(window.location.search);
+  const fromQuery = params.get('week_start');
+  const initialWeek =
+    fromQuery && /^\d{4}-\d{2}-\d{2}$/.test(fromQuery)
+      ? mondayOf(fromQuery)
+      : todayMonday();
+  if (weekStartInput) weekStartInput.value = initialWeek;
+  updateIcsLink(weekStartInput?.value || initialWeek);
   loadButton?.addEventListener('click', () => loadSheet().catch(() => {}));
   printButton?.addEventListener('click', () => window.print());
   weekStartInput?.addEventListener('change', () => {

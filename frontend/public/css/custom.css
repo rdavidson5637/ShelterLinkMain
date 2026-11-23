@@ -2262,6 +2262,72 @@ article.shift-row {
   color: inherit;
 }
 
+.this-week {
+  margin: 0 0 var(--section-gap);
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.this-week-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  max-width: var(--measure);
+}
+
+.this-week-header h2 {
+  margin: 0 0 0.25rem;
+}
+
+.this-week-header p {
+  margin: 0;
+  color: var(--text-secondary);
+  max-width: var(--measure);
+}
+
+.this-week-body {
+  display: grid;
+  gap: 1.5rem;
+  max-width: var(--measure);
+}
+
+.this-week-group {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.this-week-group h3 {
+  margin: 0 0 0.35rem;
+  font-size: var(--text-lg);
+  line-height: 1.15;
+}
+
+.this-week-group > p {
+  margin: 0 0 0.5rem;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.this-week-empty {
+  margin: 0;
+  padding: 0.9rem 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+.this-week .action-list .this-week-detail {
+  display: block;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
 .setup-checklist {
   margin: 0 0 var(--section-gap);
   padding: 0;
