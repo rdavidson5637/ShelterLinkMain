@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Shelter events - ShelterLink</title>
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Account">
+        <a class="site-brand" href="/pages/admin/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" aria-label="Toggle navigation">Menu</button>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main id="main" class="container dashboard-layout">
+      <aside id="admin-nav" class="sidebar-nav"></aside>
+      <div class="dashboard-main">
+        <section>
+          <h1>Shelter events</h1>
+          <p>
+            One-off open days, fundraisers, and clean-up days at this shelter.
+            These are separate from regular shifts. Volunteers sign up themselves;
+            email goes only to people on the list when you click send.
+          </p>
+          <div id="message" role="status" aria-live="polite"></div>
+        </section>
+
+        <section class="event-compose">
+          <h2>Create an event</h2>
+          <form id="eventForm" class="event-form">
+            <label for="event_title">
+              Title
+              <input
+                type="text"
+                id="event_title"
+                name="title"
+                required
+                maxlength="160"
+                placeholder="Spring open day"
+              />
+            </label>
+            <label for="event_description">
+              Description
+              <textarea
+                id="event_description"
+                name="description"
+                required
+                maxlength="4000"
+                rows="4"
+                placeholder="What volunteers will do and what to bring"
+              ></textarea>
+            </label>
+            <div class="event-field-row">
+              <label for="event_date">
+                Date
+                <input type="date" id="event_date" name="event_date" required />
+              </label>
+              <label for="event_location">
+                Place
+                <input
+                  type="text"
+                  id="event_location"
+                  name="location"
+                  required
+                  maxlength="200"
+                  placeholder="Main yard gate"
+                />
+              </label>
+              <label for="event_capacity">
+                Capacity
+                <input
+                  type="number"
+                  id="event_capacity"
+                  name="capacity"
+                  required
+                  min="1"
+                  max="9999"
+                  step="1"
+                  value="20"
+                />
+              </label>
+            </div>
+            <button type="submit">Create event</button>
+          </form>
+        </section>
+
+        <section>
+          <div class="event-list-header">
+            <h2>Events</h2>
+            <label class="event-archived-toggle" for="showAll">
+              <input type="checkbox" id="showAll" name="show_all" />
+              Show past and archived
+            </label>
+          </div>
+          <div id="eventList" class="event-staff-list">
+            <p>Loading...</p>
+          </div>
+        </section>
+
+        <section id="attendeeSection" class="event-attendee-section" hidden>
+          <h2 id="attendeeHeading">Attendees</h2>
+          <div id="attendeeList" class="event-attendee-list">
+            <p class="event-empty">Select an event to see who has signed up.</p>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2026 ShelterLink</small>
+    </footer>
+
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/admin/events.js"></script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+    <script type="module" src="/js/components/adminNav.js"></script>
+  </body>
+</html>

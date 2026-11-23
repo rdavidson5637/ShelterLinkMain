@@ -938,6 +938,39 @@ async function sendShelterAnnouncement(volunteerEmail, details = {}) {
   return sendEmail(volunteerEmail, parts.subject, parts.html, parts.text);
 }
 
+/**
+ * Staff-triggered email to people signed up for a one-off shelter event (SL-DAY-20).
+ * Sent only on an explicit click to current attendees. Email only; no SMS.
+ */
+function buildShelterEventAttendees(details = {}, brand) {
+  const name = escapeHtml(details.firstName || 'there');
+  const title = escapeHtml(details.title || 'Shelter event');
+  const description = escapeHtml(String(details.description || '')).replace(/\n/g, '<br/>');
+  const eventDate = details.eventDate
+    ? escapeHtml(String(details.eventDate).slice(0, 10))
+    : '';
+  const location = details.location ? escapeHtml(String(details.location)) : '';
+  return withText(
+    `${details.title || 'Shelter event'} - ShelterLink`,
+    `
+    <p>Hi ${name},</p>
+    <p>A note about an event you signed up for at ${brand.name || 'your shelter'}:</p>
+    <p><strong>${title}</strong></p>
+    <p>${description}</p>
+    ${eventDate ? `<p>Date: ${eventDate}</p>` : ''}
+    ${location ? `<p>Place: ${location}</p>` : ''}
+    <p>You can review or cancel your sign-up on the Events page in ShelterLink.</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
+    `
+  );
+}
+
+async function sendShelterEventAttendees(volunteerEmail, details = {}) {
+  const brand = await brandBits();
+  const parts = buildShelterEventAttendees(details, brand);
+  return sendEmail(volunteerEmail, parts.subject, parts.html, parts.text);
+}
+
 function formatShiftDateForEmail(value) {
   if (!value) return 'the scheduled date';
   const d = value instanceof Date ? value : new Date(value);
@@ -1062,6 +1095,8 @@ module.exports = {
   sendUsualAvailabilityAsk,
   buildShelterAnnouncement,
   sendShelterAnnouncement,
+  buildShelterEventAttendees,
+  sendShelterEventAttendees,
   buildNoShowFollowUp,
   sendNoShowFollowUp,
   buildVolunteerShiftNoteAlert,
