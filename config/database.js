@@ -245,11 +245,45 @@ function assertTenantContext(sql) {
   throw err;
 }
 
-async function applyTenant(client) {
+function isSessionOnlySql(sql) {
+  const text = String(sql || '');
+  return /\bsession\b/i.test(text) && !mentionsTenantTable(text);
+}
+
+function isGlobalOpsSql(sql) {
+  const text = String(sql || '');
+  if (mentionsTenantTable(text)) return false;
+  return /\bjob_runs\b/i.test(text) || /\brate_limit_hits\b/i.test(text);
+}
+
+/**
+ * Which NOBYPASSRLS role a query should run as. The login role (postgres)
+ * is never used for app queries after BEGIN.
+ */
+function roleForQuery(sql, ctx) {
+  if (sql && (isSessionOnlySql(sql) || isGlobalOpsSql(sql))) return 'shelterlink_app';
+  if (ctx?.shelterId && !ctx.bypass) return 'shelterlink_tenant';
+  if (ctx?.bypass) return 'shelterlink_platform';
+  return 'shelterlink_app';
+}
+
+const APP_ROLES = new Set(['shelterlink_app', 'shelterlink_platform', 'shelterlink_tenant']);
+
+async function applyRole(client, sql) {
   const ctx = shelterStore.getStore();
-  if (!ctx?.shelterId || ctx.bypass) return;
-  await client.query(`SELECT set_config('app.shelter_id', $1, true)`, [String(ctx.shelterId)]);
-  await client.query('SET LOCAL ROLE shelterlink_tenant');
+  const role = roleForQuery(sql, ctx);
+  if (!APP_ROLES.has(role)) {
+    throw new Error('Refusing to set an unknown database role');
+  }
+  if (role === 'shelterlink_tenant') {
+    await client.query(`SELECT set_config('app.shelter_id', $1, true)`, [String(ctx.shelterId)]);
+  }
+  await client.query(`SET LOCAL ROLE ${role}`);
+}
+
+// Backward-compatible name used by older tests and comments.
+async function applyTenant(client, sql) {
+  return applyRole(client, sql);
 }
 
 async function runOn(querier, sql, params) {
@@ -266,12 +300,11 @@ async function runOn(querier, sql, params) {
 
 async function runScoped(client, sql, params, alreadyInTx) {
   if (alreadyInTx) {
-    await applyTenant(client);
     return runOn(client, sql, params);
   }
   await client.query('BEGIN');
   try {
-    await applyTenant(client);
+    await applyRole(client, sql);
     const result = await runOn(client, sql, params);
     await client.query('COMMIT');
     return result;
@@ -287,7 +320,7 @@ function wrapClient(client) {
     async beginTransaction() {
       await client.query('BEGIN');
       inTx = true;
-      await applyTenant(client);
+      await applyRole(client);
     },
     async commit() {
       await client.query('COMMIT');
@@ -353,13 +386,39 @@ async function closePool() {
   await pgPool.end();
 }
 
+/**
+ * connect-pg-simple pool: every session query runs as shelterlink_app
+ * inside a transaction, never as the bypass login role.
+ */
+const sessionPool = {
+  async query(text, params) {
+    const client = await pgPool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('SET LOCAL ROLE shelterlink_app');
+      const result = await client.query(text, params);
+      await client.query('COMMIT');
+      return result;
+    } catch (error) {
+      try { await client.query('ROLLBACK'); } catch { /* already aborted */ }
+      throw error;
+    } finally {
+      client.release();
+    }
+  },
+};
+
 module.exports = {
   pool,
   pgPool,
+  sessionPool,
   testConnection,
   closePool,
   translatePlaceholders,
   mapInsertId,
   ensureReturning,
   shapeExecuteResult,
+  roleForQuery,
+  isSessionOnlySql,
+  isGlobalOpsSql,
 };
