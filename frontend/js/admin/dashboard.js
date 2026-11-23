@@ -299,6 +299,69 @@ async function loadThisWeek() {
   }
 }
 
+function renderMilestones(summary) {
+  const body = document.getElementById('milestonesBody');
+  const lede = document.getElementById('milestonesSummary');
+  if (!body) return;
+
+  if (!summary) {
+    body.replaceChildren();
+    const message = document.createElement('p');
+    message.textContent = 'Could not load volunteer milestones.';
+    body.appendChild(message);
+    if (lede) lede.textContent = 'Could not load milestones.';
+    return;
+  }
+
+  const pending = Array.isArray(summary.pending) ? summary.pending : [];
+  if (lede) {
+    lede.textContent =
+      pending.length === 0
+        ? 'No one-year or 50-shift thank-yous waiting to send.'
+        : `${pending.length} volunteer${pending.length === 1 ? '' : 's'} reached a milestone you can thank by email.`;
+  }
+
+  body.replaceChildren();
+  if (!pending.length) {
+    const empty = document.createElement('p');
+    empty.className = 'this-week-empty';
+    empty.textContent = 'Nothing to send right now.';
+    body.appendChild(empty);
+    return;
+  }
+
+  const list = document.createElement('ul');
+  list.className = 'action-list';
+  pending.forEach((item) => {
+    appendThisWeekItem(list, {
+      title: item.name || 'Volunteer',
+      detail: item.detail || item.label || '',
+      href: item.href || '/pages/admin/volunteers.html',
+    });
+  });
+  body.appendChild(list);
+}
+
+async function loadMilestones() {
+  const body = document.getElementById('milestonesBody');
+  try {
+    const res = await apiRequest('/admin/milestones', { method: 'GET' });
+    if (!res.ok) {
+      renderMilestones(null);
+      return;
+    }
+    renderMilestones(await res.json());
+  } catch (error) {
+    console.error('[Dashboard] loadMilestones error:', error);
+    if (body) {
+      body.replaceChildren();
+      const message = document.createElement('p');
+      message.textContent = 'Could not load volunteer milestones.';
+      body.appendChild(message);
+    }
+  }
+}
+
 async function loadExpiringChecks() {
   const host = document.getElementById('expiringChecks');
   if (!host) return;
@@ -494,6 +557,7 @@ async function init() {
   // Load all data initially
   const loads = [
     loadThisWeek(),
+    loadMilestones(),
     loadStats(),
     loadRecentApplications(),
     loadRecentHours(),
