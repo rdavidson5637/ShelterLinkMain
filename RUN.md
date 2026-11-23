@@ -30,13 +30,20 @@ On a development server the login page shows a Demo accounts card. That card is 
 
 ## Smoke test
 
-With the server running:
+Post-deploy read-only check (defaults to production):
 
 ```bash
 npm run smoke
 ```
 
-Clean smoke rows without wiping the demo: `npm run db:clean-demo`.
+Local lifecycle smoke (writes demo rows; needs `SMOKE_ADMIN_PASSWORD`):
+
+```bash
+npm run smoke:e2e
+```
+
+Clean lifecycle smoke rows without wiping the demo: `npm run db:clean-demo`.
+See `docs/runbooks/post-deploy-smoke.md`.
 
 ## Unit tests (no DB needed)
 
