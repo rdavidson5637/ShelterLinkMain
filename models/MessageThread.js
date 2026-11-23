@@ -564,38 +564,75 @@ async function unreadCountForUser(userId, { isStaff = false } = {}) {
 }
 
 /**
- * Users with unread messages older than 15 minutes, not muted, not own messages,
- * who have not received a digest this clock-hour.
+ * Users with unread messages older than 15 minutes who have not received a
+ * digest this clock-hour.
+ *
+ * Volunteers: participant threads only, muted skipped (same as before).
+ * Staff/admin: every thread, matching unreadCountForUser — so digest mail
+ * stays in sync with the staff unread badge even when they are not yet a
+ * participant row on an older thread.
  */
 async function findDigestCandidates(now = new Date()) {
+  const at = now.toISOString();
   const [rows] = await pool.execute(
     `
-      SELECT
-        u.user_id,
-        u.email,
-        u.first_name,
-        COUNT(m.id)::int AS unread_count,
-        MAX(m.created_at) AS latest_unread_at
-      FROM messages m
-      INNER JOIN thread_participants tp ON tp.thread_id = m.thread_id
-      INNER JOIN users u ON u.user_id = tp.user_id
-      LEFT JOIN volunteer_profiles vp ON vp.user_id = u.user_id
-      LEFT JOIN message_digest_log d
-        ON d.user_id = u.user_id
-        AND d.digest_hour = date_trunc('hour', CAST(? AS TIMESTAMP))
-      WHERE m.deleted_at IS NULL
-        AND m.user_id <> tp.user_id
-        AND COALESCE(tp.muted, 0) = 0
-        AND (tp.last_read_at IS NULL OR m.created_at > tp.last_read_at)
-        AND m.created_at <= (CAST(? AS TIMESTAMP) - INTERVAL '15 minutes')
-        AND u.email IS NOT NULL
-        AND u.email <> ''
-        AND d.user_id IS NULL
-        AND (vp.away_until IS NULL OR vp.away_until < CURRENT_DATE)
-      GROUP BY u.user_id, u.email, u.first_name
-      ORDER BY u.user_id ASC
+      SELECT * FROM (
+        SELECT
+          u.user_id,
+          u.email,
+          u.first_name,
+          u.role,
+          COUNT(m.id)::int AS unread_count,
+          MAX(m.created_at) AS latest_unread_at
+        FROM messages m
+        INNER JOIN thread_participants tp ON tp.thread_id = m.thread_id
+        INNER JOIN users u ON u.user_id = tp.user_id AND u.role = 'volunteer'
+        LEFT JOIN volunteer_profiles vp ON vp.user_id = u.user_id
+        LEFT JOIN message_digest_log d
+          ON d.user_id = u.user_id
+          AND d.digest_hour = date_trunc('hour', CAST(? AS TIMESTAMP))
+        WHERE m.deleted_at IS NULL
+          AND m.user_id <> tp.user_id
+          AND COALESCE(tp.muted, 0) = 0
+          AND (tp.last_read_at IS NULL OR m.created_at > tp.last_read_at)
+          AND m.created_at <= (CAST(? AS TIMESTAMP) - INTERVAL '15 minutes')
+          AND u.email IS NOT NULL
+          AND u.email <> ''
+          AND d.user_id IS NULL
+          AND (vp.away_until IS NULL OR vp.away_until < CURRENT_DATE)
+        GROUP BY u.user_id, u.email, u.first_name, u.role
+
+        UNION ALL
+
+        SELECT
+          u.user_id,
+          u.email,
+          u.first_name,
+          u.role,
+          COUNT(m.id)::int AS unread_count,
+          MAX(m.created_at) AS latest_unread_at
+        FROM messages m
+        INNER JOIN message_threads t ON t.id = m.thread_id
+        INNER JOIN users u ON u.role IN ('staff', 'admin')
+        LEFT JOIN thread_participants tp
+          ON tp.thread_id = m.thread_id AND tp.user_id = u.user_id
+        LEFT JOIN volunteer_profiles vp ON vp.user_id = u.user_id
+        LEFT JOIN message_digest_log d
+          ON d.user_id = u.user_id
+          AND d.digest_hour = date_trunc('hour', CAST(? AS TIMESTAMP))
+        WHERE m.deleted_at IS NULL
+          AND m.user_id <> u.user_id
+          AND (tp.last_read_at IS NULL OR m.created_at > tp.last_read_at)
+          AND m.created_at <= (CAST(? AS TIMESTAMP) - INTERVAL '15 minutes')
+          AND u.email IS NOT NULL
+          AND u.email <> ''
+          AND d.user_id IS NULL
+          AND (vp.away_until IS NULL OR vp.away_until < CURRENT_DATE)
+        GROUP BY u.user_id, u.email, u.first_name, u.role
+      ) AS digest_candidates
+      ORDER BY user_id ASC
     `,
-    [now.toISOString(), now.toISOString()]
+    [at, at, at, at]
   );
   return rows;
 }
