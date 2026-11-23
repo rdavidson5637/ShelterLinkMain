@@ -220,6 +220,9 @@ const profile = z
     date_of_birth: optStr(40),
     address: optStr(500),
     emergency_contact: optStr(300),
+    emergency_contact_name: optStr(120),
+    emergency_contact_relationship: optStr(80),
+    emergency_contact_phone: optStr(40),
     skills: optStr(2000),
     availability: optStr(40),
     home_type: optStr(20),
@@ -243,6 +246,14 @@ const profile = z
     tag_ids: idList.optional(),
     tagIds: idList.optional(),
     tags: idList.optional(),
+  })
+  .strict();
+
+const emergencyContact = z
+  .object({
+    emergency_contact_name: optStr(120),
+    emergency_contact_relationship: optStr(80),
+    emergency_contact_phone: optStr(40),
   })
   .strict();
 
@@ -811,6 +822,7 @@ const bodies = {
   claimToken,
   hours,
   profile,
+  emergencyContact,
   approval,
   fosterApproval,
   serviceSettings,

@@ -45,11 +45,28 @@
               </label>
             </div>
 
-            <div class="form-section">
-              <label for="emergency_contact">
-                Emergency Contact
-                <input type="text" id="emergency_contact" name="emergency_contact" required placeholder="Name and phone number" />
-              </label>
+            <div class="form-section form-full-width" id="emergencyContactSection">
+              <fieldset>
+                <legend>Emergency contact</legend>
+                <p><small>Who should staff call if something happens during a shift.</small></p>
+                <div class="form-grid">
+                  <label for="emergency_contact_name">
+                    Name
+                    <input type="text" id="emergency_contact_name" name="emergency_contact_name" required maxlength="120" autocomplete="name" />
+                  </label>
+                  <label for="emergency_contact_relationship">
+                    Relationship
+                    <input type="text" id="emergency_contact_relationship" name="emergency_contact_relationship" required maxlength="80" placeholder="e.g. parent, partner, friend" />
+                  </label>
+                  <label for="emergency_contact_phone">
+                    Phone
+                    <input type="tel" id="emergency_contact_phone" name="emergency_contact_phone" required maxlength="40" autocomplete="tel" />
+                  </label>
+                </div>
+                <p style="margin-top:0.5rem;">
+                  <button type="button" id="saveEmergencyContactButton" class="secondary" hidden>Save emergency contact</button>
+                </p>
+              </fieldset>
             </div>
 
             <div class="form-section form-full-width">

@@ -73,7 +73,16 @@ test('stripContactFields removes known PII keys', () => {
     id: 1,
     email: 'a@b.com',
     emergency_contact: 'Mum',
+    emergency_contact_name: 'Mum',
+    emergency_contact_relationship: 'parent',
+    emergency_contact_phone: '07700',
     title: 'Walk',
   });
   assert.deepStrictEqual(out, { id: 1, title: 'Walk' });
+});
+
+test('hasContactLeak detects structured emergency contact fields', () => {
+  assert.strictEqual(hasContactLeak({ emergency_contact_name: 'Pat' }), true);
+  assert.strictEqual(hasContactLeak({ emergency_contact_phone: '07700' }), true);
+  assert.strictEqual(hasContactLeak({ emergency_contact_relationship: 'friend' }), true);
 });

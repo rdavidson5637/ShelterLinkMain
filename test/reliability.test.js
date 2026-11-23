@@ -248,7 +248,8 @@ test('volunteers table has a sortable 12-month column group', () => {
   for (const key of ['attended_12m', 'no_shows_12m', 'late_cancellations_12m', 'hours_12m']) {
     assert.match(html, new RegExp(`data-sort-key="${key}" aria-sort="none"`));
   }
-  assert.match(html, /colspan="9"/);
+  assert.match(html, /colspan="10"/);
+  assert.match(html, /Emergency contact/);
 });
 
 test('sortVolunteers orders by count either way and breaks ties by name', async () => {
