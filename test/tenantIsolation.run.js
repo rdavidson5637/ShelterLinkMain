@@ -508,6 +508,16 @@ function cases(feedbackToken) {
     deny('GET', '/api/admin/volunteers/2/documents'),
     deny('GET', '/api/admin/gdpr/volunteers/2/export'),
     deny('POST', '/api/admin/gdpr/volunteers/2/erase', { confirmation: 'DELETE' }),
+    // Retention settings/preview/run are scoped to the caller's shelter (own),
+    // not foreign ids. Cross-shelter checks run after the deny loop.
+    { method: 'GET', urlPath: '/api/admin/settings/retention', expect: 'own' },
+    {
+      method: 'PUT',
+      urlPath: '/api/admin/settings/retention',
+      json: { retention_inactive_months: 12 },
+      expect: 'own',
+    },
+    { method: 'GET', urlPath: '/api/admin/gdpr/retention/preview', expect: 'own' },
     deny('PUT', '/api/admin/users/2/role', { role: 'staff' }),
     deny('GET', '/api/qualifications/1'),
     deny('PUT', '/api/qualifications/1', { name: 'Changed' }),
@@ -726,6 +736,61 @@ async function main() {
     }
     if (brandPublic.status !== 200 || !brandPublic.text.includes('Assisi Animal Sanctuary') || leaks(brandPublic.text)) {
       failures.push(`public brand -> ${brandPublic.status} ${brandPublic.text.slice(0, 180)}`);
+    }
+
+    // SL-LATER-19: retention preview/run stay on shelter B; shelter A volunteer
+    // must not appear or be anonymised.
+    await admin.query(`
+      UPDATE users
+         SET last_login = '2010-01-01 00:00:00', created_at = '2010-01-01 00:00:00'
+       WHERE user_id = 2
+    `);
+    const retentionPut = await request(port, 'PUT', '/api/admin/settings/retention', {
+      json: { retention_inactive_months: 1, shelter_id: 1 },
+      cookie,
+    });
+    if (retentionPut.status !== 400) {
+      failures.push(`retention put with shelter_id -> ${retentionPut.status} ${retentionPut.text.slice(0, 180)}`);
+    }
+    const retentionSave = await request(port, 'PUT', '/api/admin/settings/retention', {
+      json: { retention_inactive_months: 1 },
+      cookie,
+    });
+    if (retentionSave.status !== 200 || !retentionSave.text.includes('"retention_inactive_months":1')) {
+      failures.push(`retention save -> ${retentionSave.status} ${retentionSave.text.slice(0, 180)}`);
+    }
+    const retentionPreview = await request(port, 'GET', '/api/admin/gdpr/retention/preview', { cookie });
+    if (retentionPreview.status !== 200 || leaks(retentionPreview.text)) {
+      failures.push(`retention preview -> ${retentionPreview.status} ${retentionPreview.text.slice(0, 180)}`);
+    } else {
+      const previewBody = JSON.parse(retentionPreview.text);
+      if (previewBody.shelter_id !== 2) {
+        failures.push(`retention preview shelter_id ${previewBody.shelter_id}`);
+      }
+      if ((previewBody.candidates || []).some((c) => Number(c.user_id) === 2)) {
+        failures.push('retention preview listed shelter A volunteer');
+      }
+    }
+    const retentionRun = await request(port, 'POST', '/api/admin/gdpr/retention/run', {
+      json: {},
+      cookie,
+    });
+    if (retentionRun.status !== 200 || leaks(retentionRun.text)) {
+      failures.push(`retention run -> ${retentionRun.status} ${retentionRun.text.slice(0, 180)}`);
+    } else {
+      const runBody = JSON.parse(retentionRun.text);
+      if (runBody.shelter_id !== 2) {
+        failures.push(`retention run shelter_id ${runBody.shelter_id}`);
+      }
+      if ((runBody.results || []).some((r) => Number(r.user_id) === 2)) {
+        failures.push('retention run touched shelter A volunteer');
+      }
+    }
+    const aVolunteer = await admin.query(
+      `SELECT anonymised_at FROM users WHERE user_id = 2`
+    );
+    if (aVolunteer.rows[0]?.anonymised_at) {
+      failures.push('shelter A volunteer was anonymised by shelter B retention');
     }
 
     const { createShelterWithAdmin } = require('../services/shelterProvision');

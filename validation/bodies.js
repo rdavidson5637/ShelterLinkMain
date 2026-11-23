@@ -248,6 +248,16 @@ const ageSettings = z
     min_volunteer_age: z.union([z.number().int().min(1).max(99), z.null(), z.literal('')]).optional(),
   })
   .strict();
+const retentionSettings = z
+  .object({
+    // Null or '' turns retention off for this shelter. 1..120 months when on.
+    retention_inactive_months: z.union([
+      z.number().int().min(1).max(120),
+      z.null(),
+      z.literal(''),
+    ]),
+  })
+  .strict();
 const brandSettings = z
   .object({
     // Hex accent mapped onto --green tokens, or null/'' to clear (default palette).
@@ -755,6 +765,7 @@ const bodies = {
   serviceSettings,
   guardianConsent,
   ageSettings,
+  retentionSettings,
   brandSettings,
   awardQualification,
   bulkMessage,

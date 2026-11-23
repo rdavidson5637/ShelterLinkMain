@@ -1235,11 +1235,16 @@ CREATE INDEX platform_audit_created_at_idx ON platform_audit (created_at);
 -- grants.
 -- ----------------------------------------------------------------------------
 CREATE TABLE shelter_settings (
-  shelter_id         INTEGER PRIMARY KEY DEFAULT (NULLIF(current_setting('app.shelter_id', true), '')::integer),
-  min_volunteer_age  SMALLINT,
-  updated_by         INTEGER,
-  updated_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  shelter_id                  INTEGER PRIMARY KEY DEFAULT (NULLIF(current_setting('app.shelter_id', true), '')::integer),
+  min_volunteer_age           SMALLINT,
+  retention_inactive_months   SMALLINT DEFAULT NULL,
+  updated_by                  INTEGER,
+  updated_at                  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT shelter_settings_min_age_chk CHECK (min_volunteer_age IS NULL OR (min_volunteer_age >= 1 AND min_volunteer_age <= 99)),
+  CONSTRAINT shelter_settings_retention_months_chk CHECK (
+    retention_inactive_months IS NULL
+    OR (retention_inactive_months >= 1 AND retention_inactive_months <= 120)
+  ),
   CONSTRAINT shelter_settings_shelter_id_fkey
     FOREIGN KEY (shelter_id) REFERENCES shelters (id) ON DELETE RESTRICT,
   CONSTRAINT shelter_settings_updated_by_fkey

@@ -29,6 +29,9 @@ const {
   listAuditLog,
   exportVolunteerGdpr,
   eraseVolunteer,
+  getRetentionSettings,
+  updateRetentionSettings,
+  previewRetention,
   runRetention,
   updateUserRole,
 } = require('../controllers/gdprController');
@@ -111,6 +114,15 @@ router.post('/messages', isAuthenticated, adminOnly, messageLimiter, validateBod
 router.get('/audit-log', isAuthenticated, adminOnly, validateQuery(queries.audit), listAuditLog);
 router.get('/gdpr/volunteers/:userId/export', isAuthenticated, adminOnly, exportVolunteerGdpr);
 router.post('/gdpr/volunteers/:userId/erase', isAuthenticated, adminOnly, validateBody(bodies.erase), eraseVolunteer);
+router.get('/settings/retention', isAuthenticated, adminOnly, getRetentionSettings);
+router.put(
+  '/settings/retention',
+  isAuthenticated,
+  adminOnly,
+  validateBody(bodies.retentionSettings),
+  updateRetentionSettings
+);
+router.get('/gdpr/retention/preview', isAuthenticated, adminOnly, previewRetention);
 router.post('/gdpr/retention/run', isAuthenticated, adminOnly, validateBody(bodies.empty), runRetention);
 router.put('/users/:userId/role', isAuthenticated, adminOnly, validateBody(bodies.role), updateUserRole);
 

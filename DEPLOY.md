@@ -74,7 +74,7 @@ SMTP or the token is rolled back. Expired reset tokens are cleared by an hourly 
 | `TZ` | Set the same zone on the host. The scheduler no longer depends on it, but other logs do |
 | `WEB_PUSH_VAPID_PUBLIC_KEY` `WEB_PUSH_VAPID_PRIVATE_KEY` `WEB_PUSH_VAPID_SUBJECT` | Generate once with `npx web-push generate-vapid-keys`. Do not rotate after launch |
 | `EMAIL_HOST` `EMAIL_PORT` `EMAIL_USER` `EMAIL_PASS` `EMAIL_FROM` | Brevo SMTP (or equivalent) |
-| `DATA_RETENTION_YEARS` | Leave blank until Assisi sets a period. A number anonymises inactive volunteer accounts. There is no default |
+| `DATA_RETENTION_YEARS` | Legacy. Inactive-volunteer anonymisation is a per-shelter Privacy setting (`retention_inactive_months`, off by default). Leave this env blank |
 | `CCEW_API_KEY` | Optional. Charity Commission for England and Wales Register API key. Without it, E&W lookups report `not_configured` and the platform owner checks the register by hand. `npm run check-prod` reports whether it is set |
 | `OSCR_API_KEY` | Reserved. Scottish lookups are not live yet |
 | `DB_CONNECTION_LIMIT` | `10` (Supabase free-tier budget) |
@@ -117,7 +117,7 @@ CONFIRM_LIVE_SHELTER=yes ADMIN_INITIAL_PASSWORD='a-long-password' npm run create
 - [ ] Fresh `SESSION_SECRET`, `ADMIN_REGISTRATION_KEY`, `FEEDBACK_TOKEN_SECRET`
 - [ ] HTTPS provided by the host
 - [ ] `EMAIL_*` filled with Brevo (or other) SMTP
-- [ ] `DATA_RETENTION_YEARS` left blank until Assisi sets the period
+- [ ] Per-shelter retention left off until each charity sets months under Privacy settings
 - [ ] Schema applied with `--no-seed` (no `admin@shelterlink.org` demo user)
 - [ ] First real admin created via `npm run create-admin`
 - [ ] `/healthz` monitored

@@ -3,11 +3,85 @@
 const { hashPassword } = require('../utils/password');
 const { pool } = require('../config/database');
 const { destroyUserSessions } = require('../utils/sessionCookie');
-const { periods } = require('../config/retention');
+const { cutoffFrom } = require('../config/retention');
+const { currentShelterId } = require('../utils/shelterContext');
 const UserDocument = require('./UserDocument');
 
-function retentionYears() {
-  return periods().inactiveVolunteerYears;
+const RETENTION_MONTHS_MIN = 1;
+const RETENTION_MONTHS_MAX = 120;
+
+function normaliseRetentionMonths(value) {
+  if (value == null || value === '') return null;
+  const n = Number(value);
+  if (!Number.isFinite(n) || !Number.isInteger(n)) return null;
+  if (n < RETENTION_MONTHS_MIN || n > RETENTION_MONTHS_MAX) return null;
+  return n;
+}
+
+/**
+ * Per-shelter inactive-volunteer period (months). Null means off.
+ */
+async function getRetentionMonths() {
+  const shelterId = currentShelterId();
+  if (!shelterId) return null;
+  const [rows] = await pool.execute(
+    `SELECT retention_inactive_months
+       FROM shelter_settings
+      WHERE shelter_id = ?
+      LIMIT 1`,
+    [shelterId]
+  );
+  return normaliseRetentionMonths(rows[0]?.retention_inactive_months);
+}
+
+async function getRetentionSettings() {
+  const shelterId = currentShelterId();
+  if (!shelterId) {
+    return { retention_inactive_months: null, updated_at: null, shelter_id: null };
+  }
+  const [rows] = await pool.execute(
+    `SELECT retention_inactive_months, updated_at
+       FROM shelter_settings
+      WHERE shelter_id = ?
+      LIMIT 1`,
+    [shelterId]
+  );
+  const row = rows[0] || null;
+  return {
+    shelter_id: shelterId,
+    retention_inactive_months: normaliseRetentionMonths(row?.retention_inactive_months),
+    updated_at: row ? row.updated_at : null,
+  };
+}
+
+async function setRetentionMonths(months, updatedBy) {
+  const shelterId = currentShelterId();
+  if (!shelterId) {
+    const err = new Error('Shelter context is missing');
+    err.status = 403;
+    throw err;
+  }
+  let value = null;
+  if (months != null && months !== '') {
+    value = normaliseRetentionMonths(months);
+    if (value == null) {
+      const err = new Error(
+        `retention_inactive_months must be null (off) or an integer from ${RETENTION_MONTHS_MIN} to ${RETENTION_MONTHS_MAX}`
+      );
+      err.statusCode = 400;
+      throw err;
+    }
+  }
+  await pool.execute(
+    `INSERT INTO shelter_settings (shelter_id, retention_inactive_months, updated_by, updated_at)
+     VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+     ON CONFLICT (shelter_id) DO UPDATE
+       SET retention_inactive_months = EXCLUDED.retention_inactive_months,
+           updated_by = EXCLUDED.updated_by,
+           updated_at = CURRENT_TIMESTAMP`,
+    [shelterId, value, updatedBy || null]
+  );
+  return getRetentionSettings();
 }
 
 /**
@@ -309,36 +383,74 @@ async function anonymiseUser(userId, { reason = 'gdpr_erasure' } = {}) {
 }
 
 /**
- * Find volunteers inactive for retentionYears() and anonymise them.
+ * Volunteers inactive longer than this shelter's retention_inactive_months.
  * Inactivity = COALESCE(last_login, created_at) older than the threshold.
+ * Null months means the feature is off for this shelter.
+ */
+async function listRetentionCandidates(now = new Date()) {
+  const shelterId = currentShelterId();
+  const months = await getRetentionMonths();
+  if (months == null || !shelterId) {
+    return {
+      shelter_id: shelterId || null,
+      retention_inactive_months: null,
+      skipped: true,
+      cutoff: null,
+      scanned: 0,
+      candidates: [],
+    };
+  }
+  const cutoff = cutoffFrom(now, months, 'months');
+  const [rows] = await pool.execute(
+    `SELECT user_id, first_name, last_name, name, email, last_login, created_at
+       FROM users
+      WHERE role = 'volunteer'
+        AND shelter_id = ?
+        AND anonymised_at IS NULL
+        AND COALESCE(last_login, created_at) < ?
+      ORDER BY user_id ASC`,
+    [shelterId, cutoff]
+  );
+  return {
+    shelter_id: shelterId,
+    retention_inactive_months: months,
+    skipped: false,
+    cutoff: cutoff.toISOString(),
+    scanned: rows.length,
+    candidates: rows.map((row) => ({
+      user_id: row.user_id,
+      first_name: row.first_name,
+      last_name: row.last_name,
+      name: row.name,
+      email: row.email,
+      last_login: row.last_login,
+      created_at: row.created_at,
+      inactive_since: row.last_login || row.created_at,
+    })),
+  };
+}
+
+/**
+ * Anonymise volunteers from listRetentionCandidates via anonymiseUser.
+ * Keeps approved hour rows (same GDPR erasure path).
  */
 async function runDataRetention(now = new Date()) {
-  const years = retentionYears();
-  if (years == null) {
+  const preview = await listRetentionCandidates(now);
+  if (preview.skipped) {
     return {
-      retention_years: null,
+      shelter_id: preview.shelter_id,
+      retention_inactive_months: null,
       skipped: true,
       cutoff: null,
       scanned: 0,
       anonymised: 0,
       results: [],
+      candidates: [],
     };
   }
-  const cutoff = new Date(now);
-  cutoff.setFullYear(cutoff.getFullYear() - years);
-
-  const [candidates] = await pool.execute(
-    `SELECT user_id
-     FROM users
-     WHERE role = 'volunteer'
-       AND anonymised_at IS NULL
-       AND COALESCE(last_login, created_at) < ?
-     ORDER BY user_id ASC`,
-    [cutoff]
-  );
 
   const results = [];
-  for (const row of candidates) {
+  for (const row of preview.candidates) {
     try {
       const outcome = await anonymiseUser(row.user_id, { reason: 'data_retention' });
       results.push({ user_id: row.user_id, ok: true, outcome });
@@ -348,16 +460,25 @@ async function runDataRetention(now = new Date()) {
   }
 
   return {
-    retention_years: years,
-    cutoff: cutoff.toISOString(),
-    scanned: candidates.length,
+    shelter_id: preview.shelter_id,
+    retention_inactive_months: preview.retention_inactive_months,
+    skipped: false,
+    cutoff: preview.cutoff,
+    scanned: preview.scanned,
     anonymised: results.filter((r) => r.ok && r.outcome && !r.outcome.already_anonymised).length,
     results,
+    candidates: preview.candidates,
   };
 }
 
 module.exports = {
-  retentionYears,
+  RETENTION_MONTHS_MIN,
+  RETENTION_MONTHS_MAX,
+  normaliseRetentionMonths,
+  getRetentionMonths,
+  getRetentionSettings,
+  setRetentionMonths,
+  listRetentionCandidates,
   buildVolunteerExport,
   anonymiseUser,
   runDataRetention,
