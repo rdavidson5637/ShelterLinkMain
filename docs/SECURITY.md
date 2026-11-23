@@ -121,4 +121,23 @@ traversal surface. See `docs/OBJECT-STORAGE.md`.
   dump. Set `BACKUP_ENCRYPTION_KEY`. Restore steps and the outstanding drill
   are in `docs/BACKUP-RESTORE.md`.
 
+## 12) Dependency audit gate (CI)
+
+- CI runs `npm run audit:deps` (`scripts/npm-audit-gate.js`) after `npm ci`.
+- The gate calls `npm audit --omit=dev` and fails on **high** or **critical**
+  advisories in production dependencies. Moderate and low findings do not fail
+  the build. There is no paid scanning service.
+- Exceptions live in `npm-audit-allowlist.json` at the repo root. Each row needs:
+  - `id` — GHSA id (preferred) or npm advisory source number
+  - `reason` — why the exception is accepted
+  - `reviewBy` — ISO date (`YYYY-MM-DD`); **expired rows fail the gate** even
+    if the advisory is gone, so stale exceptions get re-reviewed or removed
+- Prefer a patch or minor upgrade over an allowlist entry. Do not jump major
+  versions solely to clear an advisory without a planned migration.
+- Current exception: `GHSA-mrhx-c7xc-m3w5` (zod < 4.6.6). The fix is only on
+  zod 4.x; ShelterLink stays on zod 3.x for now, with body schemas already
+  capping string length and array size. Review by the date in the allowlist.
+- Local check: `npm run audit:deps`. Tests: `test/npmAuditGate.test.js`
+  (included in `npm run test:security`).
+
 

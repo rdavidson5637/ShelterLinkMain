@@ -1,0 +1,7 @@
+[
+  {
+    "id": "GHSA-mrhx-c7xc-m3w5",
+    "reason": "zod fix is only in 4.6.6+ (major). Stay on zod 3.x until a planned migration; request bodies already cap string length and array size so the DoS path is constrained.",
+    "reviewBy": "2027-02-23"
+  }
+]

@@ -32,6 +32,9 @@ jobs:
           cache: npm
       - run: node --version
       - run: npm ci
+      # Fail on high/critical production advisories unless covered by a
+      # non-expired row in npm-audit-allowlist.json (SL-LATER-37).
+      - run: npm run audit:deps
       # Vendor Pico/FullCalendar (postinstall) and render A2 icons so tests
       # that stat files under frontend/public pass without committed blobs.
       - run: npm run icons
