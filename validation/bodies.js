@@ -795,6 +795,13 @@ const queries = {
     })
     .strict(),
   applications: z.object({ status: qstr(40), limit: qstr(10) }).strict(),
+  noShows: z
+    .object({
+      contacted: z.enum(['open', 'contacted', 'all']).optional(),
+      days: qstr(10),
+      limit: qstr(10),
+    })
+    .strict(),
   animals: z.object({ species: qstr(40), status: qstr(40) }).strict(),
   careGaps: z.object({ days: z.string().regex(/^\d{1,2}$/).optional() }).strict(),
   expiryDashboard: z
@@ -874,10 +881,20 @@ const weekCopy = z
   })
   .strict();
 
+const noShowContacted = z
+  .object({
+    send_email: z
+      .union([z.boolean(), z.number().int().min(0).max(1), z.string().regex(/^(true|false|0|1)$/i)])
+      .optional(),
+    message: optStr(2000),
+  })
+  .strict();
+
 const bodies = {
   empty,
   changePassword,
   weekCopy,
+  noShowContacted,
   register,
   privacyNotice,
   registerAdmin,

@@ -12,6 +12,7 @@ export const ADMIN_PRIMARY = [
   { id: 'fosters', label: 'Fosters', href: '/pages/admin/fosters.html' },
   { id: 'transport', label: 'Transport', href: '/pages/admin/transport.html' },
   { id: 'applications', label: 'Applications', href: '/pages/admin/review-applications.html' },
+  { id: 'no-shows', label: 'No-show follow-up', href: '/pages/admin/no-shows.html' },
   { id: 'hours', label: 'Hours', href: '/pages/admin/approve-hours.html' },
   { id: 'mileage', label: 'Mileage', href: '/pages/admin/approve-mileage.html' },
   { id: 'volunteers', label: 'Volunteers', href: '/pages/admin/volunteers.html' },

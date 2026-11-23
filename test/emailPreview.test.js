@@ -24,6 +24,7 @@ const {
   buildMilestoneThankYou,
   buildBuddyAssigned,
   buildExpiryReminder,
+  buildNoShowFollowUp,
 } = require('../utils/emailService');
 const { catalogIds, renderEmailPreviews, sampleData } = require('../utils/emailPreview');
 const { listEmailPreviews } = require('../controllers/emailPreviewController');
@@ -92,6 +93,10 @@ const BUILDERS = [
   {
     id: 'expiry_reminder',
     build: (brand, samples) => buildExpiryReminder(samples.expiryReminder, brand),
+  },
+  {
+    id: 'noshow_followup',
+    build: (brand, samples) => buildNoShowFollowUp(samples.noShow, brand),
   },
 ];
 
