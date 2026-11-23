@@ -166,6 +166,139 @@ function checkTypeLabel(value) {
   return labels[value] || 'Background check';
 }
 
+const THIS_WEEK_GROUPS = [
+  {
+    key: 'unfilled',
+    title: 'Unfilled shifts',
+    empty: 'Every shift this week has at least one place filled.',
+  },
+  {
+    key: 'short_staffed',
+    title: 'Short-staffed shifts',
+    empty: 'No partly filled shifts need more volunteers this week.',
+  },
+  {
+    key: 'pending_bookings',
+    title: 'Pending bookings',
+    empty: 'No bookings for this week are waiting on approval.',
+  },
+  {
+    key: 'training_expiring',
+    title: 'Training expiring soon',
+    empty: 'No volunteer training expires in the next 30 days.',
+  },
+  {
+    key: 'waitlist_offers',
+    title: 'Waitlist offers outstanding',
+    empty: 'No timed waitlist offers are open for this week.',
+  },
+];
+
+function appendThisWeekItem(list, item) {
+  const li = document.createElement('li');
+  const link = document.createElement('a');
+  link.href = item.href || '/pages/admin/week-sheet.html';
+
+  const copy = document.createElement('span');
+  const title = document.createElement('strong');
+  title.textContent = item.title || 'Action';
+  const detail = document.createElement('span');
+  detail.className = 'this-week-detail';
+  detail.textContent = item.detail || '';
+  copy.appendChild(title);
+  copy.appendChild(detail);
+
+  const arrow = document.createElement('span');
+  arrow.className = 'choice-arrow';
+  arrow.setAttribute('aria-hidden', 'true');
+  arrow.textContent = '→';
+
+  link.appendChild(copy);
+  link.appendChild(arrow);
+  li.appendChild(link);
+  list.appendChild(li);
+}
+
+function renderThisWeek(summary) {
+  const body = document.getElementById('thisWeekBody');
+  const lede = document.getElementById('thisWeekSummary');
+  if (!body) return;
+
+  if (!summary) {
+    body.replaceChildren();
+    const message = document.createElement('p');
+    message.textContent = 'Could not load this week\'s actions.';
+    body.appendChild(message);
+    if (lede) lede.textContent = 'Could not load this week.';
+    return;
+  }
+
+  const counts = summary.counts || {};
+  const total =
+    (counts.unfilled || 0) +
+    (counts.short_staffed || 0) +
+    (counts.pending_bookings || 0) +
+    (counts.training_expiring || 0) +
+    (counts.waitlist_offers || 0);
+
+  if (lede) {
+    const range =
+      summary.week_start && summary.week_end
+        ? `${formatDateOnly(summary.week_start)} to ${formatDateOnly(summary.week_end)}`
+        : 'This week';
+    lede.textContent =
+      total === 0
+        ? `${range}. Nothing needs action right now.`
+        : `${range}. ${total} item${total === 1 ? '' : 's'} need attention.`;
+  }
+
+  body.replaceChildren();
+  THIS_WEEK_GROUPS.forEach((group) => {
+    const items = Array.isArray(summary[group.key]) ? summary[group.key] : [];
+    const section = document.createElement('section');
+    section.className = 'this-week-group';
+    section.setAttribute('aria-labelledby', `thisWeek-${group.key}`);
+
+    const heading = document.createElement('h3');
+    heading.id = `thisWeek-${group.key}`;
+    heading.textContent = group.title;
+    section.appendChild(heading);
+
+    if (!items.length) {
+      const empty = document.createElement('p');
+      empty.className = 'this-week-empty';
+      empty.textContent = group.empty;
+      section.appendChild(empty);
+    } else {
+      const list = document.createElement('ul');
+      list.className = 'action-list';
+      items.forEach((item) => appendThisWeekItem(list, item));
+      section.appendChild(list);
+    }
+    body.appendChild(section);
+  });
+}
+
+async function loadThisWeek() {
+  const body = document.getElementById('thisWeekBody');
+  try {
+    const res = await apiRequest('/admin/this-week', { method: 'GET' });
+    if (!res.ok) {
+      renderThisWeek(null);
+      return;
+    }
+    renderThisWeek(await res.json());
+  } catch (error) {
+    console.error('[Dashboard] loadThisWeek error:', error);
+    if (body) {
+      body.replaceChildren();
+      const message = document.createElement('p');
+      message.textContent = 'Could not load this week\'s actions.';
+      body.appendChild(message);
+    }
+  }
+}
+
 async function loadExpiringChecks() {
   const host = document.getElementById('expiringChecks');
   if (!host) return;
@@ -360,6 +493,7 @@ async function init() {
 
   // Load all data initially
   const loads = [
+    loadThisWeek(),
     loadStats(),
     loadRecentApplications(),
     loadRecentHours(),
