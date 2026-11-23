@@ -22,8 +22,14 @@ async function main() {
   const config = periods();
   const plan = [];
 
+  // Inactive volunteers: prefer per-shelter Privacy settings. Env years are
+  // legacy; the nightly job and admin preview use shelter_settings only.
   if (config.inactiveVolunteerYears == null) {
-    plan.push(['inactive volunteer accounts', 'skip', 'period is not set']);
+    plan.push([
+      'inactive volunteer accounts',
+      'skip',
+      'use per-shelter retention_inactive_months (Privacy settings); env years not set',
+    ]);
   } else {
     const cutoff = cutoffFrom(now, config.inactiveVolunteerYears, 'years');
     const n = await count(
@@ -33,9 +39,9 @@ async function main() {
       [cutoff]
     );
     plan.push([
-      'inactive volunteer accounts',
+      'inactive volunteer accounts (legacy env)',
       apply ? 'anonymise' : 'would anonymise',
-      `${n} accounts older than ${cutoff.toISOString()}. Hour rows are kept.`,
+      `${n} accounts older than ${cutoff.toISOString()}. Prefer the per-shelter months setting. Hour rows are kept.`,
     ]);
     if (apply && n) await Gdpr.runDataRetention(now);
   }

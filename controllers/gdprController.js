@@ -121,6 +121,54 @@ async function eraseVolunteer(req, res) {
   }
 }
 
+async function getRetentionSettings(req, res) {
+  try {
+    if (!ensureAdmin(req, res)) return;
+    const settings = await Gdpr.getRetentionSettings();
+    return res.status(200).json(settings);
+  } catch (error) {
+    console.error('[Admin] getRetentionSettings error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+async function updateRetentionSettings(req, res) {
+  try {
+    if (!ensureAdmin(req, res)) return;
+    const raw = req.body?.retention_inactive_months;
+    const months = raw === '' || raw === undefined ? null : raw;
+    const settings = await Gdpr.setRetentionMonths(months, req.session.userId);
+    await recordAudit(req, {
+      action: 'shelter.settings.retention',
+      entityType: 'shelter_settings',
+      entityId: settings.shelter_id,
+      detail: { retention_inactive_months: settings.retention_inactive_months },
+    });
+    return res.status(200).json(settings);
+  } catch (error) {
+    console.error('[Admin] updateRetentionSettings error:', error.message);
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
+    if (error.status === 403) return res.status(403).json({ error: error.message });
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+async function previewRetention(req, res) {
+  try {
+    if (!ensureAdmin(req, res)) return;
+    const preview = await Gdpr.listRetentionCandidates();
+    return res.status(200).json(preview);
+  } catch (error) {
+    console.error('[Admin] previewRetention error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
 async function runRetention(req, res) {
   try {
     if (!ensureAdmin(req, res)) return;
@@ -128,11 +176,14 @@ async function runRetention(req, res) {
     await recordAudit(req, {
       action: 'gdpr.retention',
       entityType: 'system',
-      entityId: null,
+      entityId: summary.shelter_id,
       detail: {
-        retention_years: summary.retention_years,
+        shelter_id: summary.shelter_id,
+        retention_inactive_months: summary.retention_inactive_months,
         scanned: summary.scanned,
         anonymised: summary.anonymised,
+        skipped: Boolean(summary.skipped),
+        cutoff: summary.cutoff,
       },
     });
     return res.status(200).json(summary);
@@ -193,6 +244,9 @@ module.exports = {
   listAuditLog,
   exportVolunteerGdpr,
   eraseVolunteer,
+  getRetentionSettings,
+  updateRetentionSettings,
+  previewRetention,
   runRetention,
   updateUserRole,
 };
