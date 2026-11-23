@@ -559,12 +559,16 @@ CREATE TABLE user_documents (
   expires_at     DATE          DEFAULT NULL,
   label          VARCHAR(255)  DEFAULT NULL,
   content        BYTEA         DEFAULT NULL,
+  storage_key    TEXT          DEFAULT NULL,
   CONSTRAINT fk_ud_user
     FOREIGN KEY (user_id) REFERENCES users (user_id)
     ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE INDEX fk_ud_user ON user_documents (user_id);
+CREATE UNIQUE INDEX uq_user_documents_storage_key
+  ON user_documents (storage_key)
+  WHERE storage_key IS NOT NULL;
 
 -- ----------------------------------------------------------------------------
 -- admin_messages
@@ -703,15 +707,21 @@ CREATE INDEX idx_aa_user ON animal_activity (user_id);
 CREATE INDEX fk_aa_application ON animal_activity (application_id);
 
 -- Animal photo bytes, kept out of `animals` so list/detail SELECTs stay lean.
+-- content is used when object storage is off; storage_key when it is on.
 CREATE TABLE animal_photos (
   animal_id   INTEGER       NOT NULL PRIMARY KEY,
-  content     BYTEA         NOT NULL,
+  content     BYTEA         DEFAULT NULL,
   mime_type   VARCHAR(100)  NOT NULL DEFAULT 'image/jpeg',
   updated_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  storage_key TEXT          DEFAULT NULL,
   CONSTRAINT fk_animal_photos_animal
     FOREIGN KEY (animal_id) REFERENCES animals (id)
     ON DELETE CASCADE ON UPDATE CASCADE
 );
+
+CREATE UNIQUE INDEX uq_animal_photos_storage_key
+  ON animal_photos (storage_key)
+  WHERE storage_key IS NOT NULL;
 
 -- ----------------------------------------------------------------------------
 -- Foster requests, offers, and placements

@@ -75,9 +75,11 @@ messaging participants, foster offer lists, and swap flows.
 ## 8) Uploads
 
 Volunteer documents and animal photos are held in memory by `multer`
-(`memoryStorage`), size-capped at 5MB, then written to Postgres as `bytea`
-(`user_documents.content`, `animal_photos.content`). Nothing is written to the
-filesystem, so there is no path traversal surface and files survive redeploys.
+(`memoryStorage`), size-capped at 5MB, then stored either as Postgres `bytea`
+(`user_documents.content`, `animal_photos.content`) or in an S3-compatible
+bucket when `OBJECT_STORAGE_*` is fully configured (`storage_key` on the row,
+`content` null). Nothing is written to the app filesystem, so there is no path
+traversal surface. See `docs/OBJECT-STORAGE.md`.
 
 - Documents accept PDF/JPG/PNG; animal photos accept JPG/PNG only.
 - The stored type comes from the file signature (PDF, JPEG, or PNG bytes), and
@@ -87,9 +89,10 @@ filesystem, so there is no path traversal surface and files survive redeploys.
   number instead. Staff see status and dates only. See `docs/VETTING-DATA.md`.
 - Every read goes through an authenticated route. Another person's documents
   can be listed or downloaded by an admin only. The owner can still download
-  their own file. Document and photo bytes are never selected by list or
-  detail queries, only by the dedicated download and photo endpoints.
-- Deleting a row deletes the bytes (same row / `ON DELETE CASCADE`).
+  their own file. Document and photo bytes and storage keys are never selected
+  by list or detail queries, only by the dedicated download and photo endpoints.
+- Deleting a row deletes the bytes (same row / object delete / `ON DELETE CASCADE`).
+  GDPR erase removes object-storage blobs before deleting document rows.
 
 ## 9) Login across shelters
 
