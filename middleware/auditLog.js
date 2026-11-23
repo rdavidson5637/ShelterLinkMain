@@ -104,6 +104,12 @@ function inferFromRequest(req) {
     else if (method === 'POST') action = 'wishlist.create';
     else if (method === 'PUT' || method === 'PATCH') action = 'wishlist.update';
   }
+  else if (resource === 'animals') {
+    if (segments.includes('photo') && method === 'POST') action = 'animal.photo';
+    else if (segments.includes('activity') && method === 'POST') action = 'animal.activity';
+    else if (method === 'POST') action = 'animal.create';
+    else if (method === 'PUT' || method === 'PATCH') action = 'animal.update';
+  }
 
   const entityType =
     resource === 'admin' && segments[1] === 'volunteers'
