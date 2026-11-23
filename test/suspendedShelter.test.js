@@ -54,7 +54,7 @@ function useDb(extra = () => undefined) {
     if (/FROM shelters WHERE slug = 'assisi'/.test(sql)) return [[{ id: 1 }]];
     if (/FROM shelters WHERE slug = \?/.test(sql)) {
       const row = bySlug(params[0]);
-      return [row ? [{ id: row.id, status: row.status }] : []];
+      return [row ? [{ id: row.id, status: row.status, name: row.name }] : []];
     }
     if (/SELECT status FROM shelters WHERE id = \?/.test(sql)) {
       const row = shelters[Number(params[0])];
@@ -101,7 +101,12 @@ function sqlCalls() {
 
 test('a suspended shelter\'s slug has no id, but its row and status are still visible', async () => {
   assert.equal(await shelterIdFromSlug('paws'), null);
-  assert.deepEqual(await shelterFromSlug('paws'), { id: 2, status: 'suspended' });
+  assert.deepEqual(await shelterFromSlug('paws'), {
+    id: 2,
+    status: 'suspended',
+    name: 'Paws Rescue',
+    slug: 'paws',
+  });
   assert.equal(await shelterIdFromSlug('hope'), 3);
   assert.equal(await shelterIdFromSlug('nowhere'), null);
 });

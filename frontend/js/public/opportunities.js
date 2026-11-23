@@ -1,5 +1,5 @@
 import { formatShiftWhen } from '../utils/dateFormat.js';
-import { loadBrand } from '../brand.js';
+import { applyShelterBrand, loadBrand } from '../brand.js';
 import { currentShelterSlug, shelterLinkFor, withShelterQuery } from '../shelterSlug.js';
 import { renderEmptyState, renderErrorState } from '../utils/listState.js';
 import {
@@ -53,6 +53,7 @@ async function load() {
       fetch(withShelterQuery('/api/public/opportunities'), { credentials: 'omit' }),
       loadBrand(),
     ]);
+    if (brand) applyShelterBrand(brand);
     if (!res.ok) {
       showError('The shift list could not be loaded. Try again in a moment.');
       return;
