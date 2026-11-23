@@ -61,6 +61,10 @@ function inferFromRequest(req) {
   else if (segments.includes('milestones') && resource === 'admin' && method === 'POST') {
     action = 'volunteer.milestone.email';
   }
+  else if (resource === 'admin' && segments[1] === 'volunteers' && segments.includes('buddy')) {
+    if (method === 'PUT') action = 'volunteer.buddy.assign';
+    else if (method === 'DELETE') action = 'volunteer.buddy.clear';
+  }
 
   const entityType =
     resource === 'admin' && segments[1] === 'volunteers'

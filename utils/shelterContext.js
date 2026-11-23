@@ -55,6 +55,7 @@ const TENANT_TABLES = [
   'trusted_volunteers',
   'user_documents',
   'users',
+  'volunteer_buddies',
   'volunteer_hours',
   'volunteer_milestone_emails',
   'volunteer_profiles',

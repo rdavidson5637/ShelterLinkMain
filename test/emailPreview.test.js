@@ -22,6 +22,7 @@ const {
   buildWeeklyDigest,
   buildPasswordReset,
   buildMilestoneThankYou,
+  buildBuddyAssigned,
 } = require('../utils/emailService');
 const { catalogIds, renderEmailPreviews, sampleData } = require('../utils/emailPreview');
 const { listEmailPreviews } = require('../controllers/emailPreviewController');
@@ -82,6 +83,10 @@ const BUILDERS = [
   {
     id: 'milestone',
     build: (brand, samples) => buildMilestoneThankYou(samples.milestone, brand),
+  },
+  {
+    id: 'buddy',
+    build: (brand, samples) => buildBuddyAssigned(samples.buddy, brand),
   },
 ];
 

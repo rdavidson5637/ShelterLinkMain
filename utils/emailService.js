@@ -804,6 +804,31 @@ async function sendMilestoneThankYou(volunteerEmail, details = {}) {
   return sendEmail(volunteerEmail, parts.subject, parts.html, parts.text);
 }
 
+/**
+ * Staff-triggered notice to a buddy when they are paired with a new volunteer
+ * (SL-DAY-08). Email only; never automatic without an explicit staff click.
+ */
+function buildBuddyAssigned(details = {}, brand) {
+  const buddyName = escapeHtml(details.buddyFirstName || 'there');
+  const volunteerName = escapeHtml(details.volunteerName || 'a new volunteer');
+  const shelter = brand.name ? ` at ${brand.name}` : '';
+  return withText(
+    `You have been asked to buddy a new volunteer - ShelterLink`,
+    `
+    <p>Hi ${buddyName},</p>
+    <p>Staff have asked you to be a buddy for <strong>${volunteerName}</strong>${shelter}.</p>
+    <p>Say hello when you next see them, and help with questions about shifts and settling in. You can see this pairing on your volunteer home page.</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
+    `
+  );
+}
+
+async function sendBuddyAssigned(buddyEmail, details = {}) {
+  const brand = await brandBits();
+  const parts = buildBuddyAssigned(details, brand);
+  return sendEmail(buddyEmail, parts.subject, parts.html, parts.text);
+}
+
 module.exports = {
   currentShelterName,
   brandBits,
@@ -852,4 +877,6 @@ module.exports = {
   sendPasswordReset,
   buildMilestoneThankYou,
   sendMilestoneThankYou,
+  buildBuddyAssigned,
+  sendBuddyAssigned,
 };

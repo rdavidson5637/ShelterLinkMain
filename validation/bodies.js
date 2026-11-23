@@ -653,6 +653,17 @@ const inductionProgress = z
   })
   .strict();
 
+const volunteerBuddy = z
+  .object({
+    buddy_user_id: idValue.optional(),
+    buddyUserId: idValue.optional(),
+    notify: optFlag,
+  })
+  .strict()
+  .refine((body) => body.buddy_user_id != null || body.buddyUserId != null, {
+    message: 'Choose a buddy from the volunteer list.',
+  });
+
 const shelterResourceLink = z
   .object({
     title: optStr(200),
@@ -930,6 +941,7 @@ const bodies = {
   customField,
   inductionItem,
   inductionProgress,
+  volunteerBuddy,
   shelterResourceLink,
   shelterResourceFileMeta,
   shelterResourceUpdate,

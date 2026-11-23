@@ -575,10 +575,56 @@ async function handleSubmit(event) {
   }
 }
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+async function loadBuddy() {
+  const card = document.getElementById('buddyProfileCard');
+  const el = document.getElementById('buddyProfileDetails');
+  if (!card || !el) return;
+  try {
+    const res = await apiRequest('/buddy/me', { method: 'GET' });
+    if (!res.ok) {
+      card.hidden = true;
+      return;
+    }
+    const data = await res.json();
+    const lines = [];
+    if (data.as_volunteer?.buddy?.name) {
+      lines.push(
+        `<p>Your buddy is <strong>${escapeHtml(data.as_volunteer.buddy.name)}</strong>.</p>`
+      );
+    }
+    const mentees = Array.isArray(data.as_buddy) ? data.as_buddy : [];
+    if (mentees.length) {
+      const names = mentees
+        .map((row) => escapeHtml(row.volunteer?.name || 'a volunteer'))
+        .join(', ');
+      lines.push(`<p>You are a buddy for <strong>${names}</strong>.</p>`);
+    }
+    if (!lines.length) {
+      card.hidden = true;
+      return;
+    }
+    card.hidden = false;
+    el.innerHTML = lines.join('');
+  } catch (error) {
+    console.error('[Profile] buddy error:', error);
+    card.hidden = true;
+  }
+}
+
 async function init() {
   await requireAuth();
   setDateBounds();
   const existingProfile = await checkExistingProfile();
+  await loadBuddy();
 
   if (!existingProfile) {
     await loadCustomFields();
