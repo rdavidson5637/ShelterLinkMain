@@ -7,6 +7,7 @@ const { isAdminUser } = require('../middleware/auth');
 const platformOwner = require('../middleware/platformOwner');
 const shelterContext = require('../utils/shelterContext');
 const { convertToCSV } = require('../utils/csvExport');
+const { zipSingleFile } = require('../utils/simpleZip');
 
 function ensureAdmin(req, res) {
   if (!req.session || !req.session.userId) {
@@ -151,6 +152,59 @@ async function exportVolunteerGdpr(req, res) {
     return res.status(200).send(JSON.stringify(payload, null, 2));
   } catch (error) {
     console.error('[Admin] exportVolunteerGdpr error:', error.message);
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+/**
+ * SL-DAY-09: signed-in volunteer downloads their own GDPR export.
+ * Always uses session.userId — query/body userId is ignored (tenancy).
+ * Reuses Gdpr.buildVolunteerExport (same payload as admin GDPR export).
+ */
+async function exportMyData(req, res) {
+  try {
+    if (!req.session || !req.session.userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const userId = Number(req.session.userId);
+    if (!Number.isFinite(userId)) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const payload = await Gdpr.buildVolunteerExport(userId);
+    if (!payload) {
+      return res.status(404).json({ error: 'Volunteer not found' });
+    }
+
+    await recordAudit(req, {
+      action: 'gdpr.export.self',
+      entityType: 'volunteer',
+      entityId: userId,
+      detail: { format: String(req.query?.format || 'json').toLowerCase() === 'zip' ? 'zip' : 'json' },
+    });
+
+    const jsonBody = JSON.stringify(payload, null, 2);
+    const wantZip = String(req.query?.format || 'json').toLowerCase() === 'zip';
+    const stamp = new Date().toISOString().slice(0, 10);
+    const baseName = `my-shelterlink-data-${stamp}`;
+
+    if (wantZip) {
+      const zipBuf = zipSingleFile(`${baseName}.json`, jsonBody);
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', `attachment; filename="${baseName}.zip"`);
+      return res.status(200).send(zipBuf);
+    }
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="${baseName}.json"`);
+    return res.status(200).send(jsonBody);
+  } catch (error) {
+    console.error('[Volunteer] exportMyData error:', error.message);
     if (error.statusCode) {
       return res.status(error.statusCode).json({ error: error.message });
     }
@@ -329,6 +383,7 @@ module.exports = {
   listAuditLog,
   exportAuditLogCsv,
   exportVolunteerGdpr,
+  exportMyData,
   eraseVolunteer,
   getRetentionSettings,
   updateRetentionSettings,

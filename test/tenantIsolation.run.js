@@ -610,6 +610,8 @@ function cases(feedbackToken) {
     deny('GET', '/api/admin/volunteers/2/documents'),
     deny('GET', '/api/admin/gdpr/volunteers/2/export'),
     deny('POST', '/api/admin/gdpr/volunteers/2/erase', { confirmation: 'DELETE' }),
+    // SL-DAY-09: staff cannot pull another shelter's volunteer via admin GDPR export
+    // (covered above). Self-export is exercised after volunteer login below.
     // SL-DAY-03: merge must not touch another shelter's volunteers.
     deny('POST', '/api/admin/volunteers/merge/preview', {
       keep_user_id: 2,
@@ -791,6 +793,49 @@ async function main() {
     const cookie = sessionCookie(login.setCookie);
     if (!cookie) throw new Error('Login did not set a session cookie');
     if (leaks(login.text)) throw new Error(`Login response leaked ${leaks(login.text)}`);
+
+    // SL-DAY-09: shelter B volunteer self-export is 200 and never includes shelter A markers.
+    const volLogin = await request(port, 'POST', '/api/auth/login', {
+      json: { email: 'b.volunteer@example.test', password: 'Password1' },
+    });
+    if (volLogin.status !== 200) {
+      throw new Error(`Shelter B volunteer login failed ${volLogin.status}: ${volLogin.text}`);
+    }
+    const volCookie = sessionCookie(volLogin.setCookie);
+    if (!volCookie) throw new Error('Volunteer login did not set a session cookie');
+    for (const exportPath of ['/api/volunteer/data-export', '/api/volunteer/data-export?format=zip']) {
+      const selfExport = await request(port, 'GET', exportPath, { cookie: volCookie });
+      if (selfExport.status !== 200 || leaks(selfExport.text)) {
+        throw new Error(
+          `self-export ${exportPath} -> ${selfExport.status} ${
+            leaks(selfExport.text) ? `leaked ${leaks(selfExport.text)}` : selfExport.text.slice(0, 180)
+          }`
+        );
+      }
+      if (exportPath.includes('format=zip')) {
+        // request() decodes as utf8; store-method ZIP still starts with ASCII "PK".
+        const asBuf = Buffer.from(selfExport.text, 'latin1');
+        if (asBuf.length < 4 || asBuf.readUInt32LE(0) !== 0x04034b50) {
+          throw new Error(`self-export ZIP missing local header for ${exportPath}`);
+        }
+        if (asBuf.includes(Buffer.from('MarkerA')) || asBuf.includes(Buffer.from('a.volunteer@example.test'))) {
+          throw new Error('self-export ZIP leaked shelter A data');
+        }
+      } else {
+        const payload = JSON.parse(selfExport.text);
+        if (Number(payload.user?.user_id) !== 4) {
+          throw new Error(`self-export returned wrong user ${selfExport.text.slice(0, 180)}`);
+        }
+        if (JSON.stringify(payload).includes('MarkerA') || JSON.stringify(payload).includes('a.volunteer@example.test')) {
+          throw new Error('self-export leaked shelter A data');
+        }
+      }
+    }
+    // Cross-tenant: shelter B admin still cannot export shelter A volunteer (also in cases()).
+    const crossGdpr = await request(port, 'GET', '/api/admin/gdpr/volunteers/2/export', { cookie });
+    if (![403, 404].includes(crossGdpr.status) || leaks(crossGdpr.text)) {
+      throw new Error(`cross-tenant GDPR export -> ${crossGdpr.status} ${crossGdpr.text.slice(0, 180)}`);
+    }
 
     const beforeCounts = await countsForShelter(admin);
     const beforeRow = await snapshot(admin);

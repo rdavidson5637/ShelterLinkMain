@@ -217,6 +217,16 @@
           <button type="submit" id="submitButton">Complete Profile</button>
         </form>
 
+        <section id="my-data" class="devices-section" aria-labelledby="myDataTitle">
+          <h2 id="myDataTitle">Your data</h2>
+          <p>Download a copy of your ShelterLink profile, bookings, hours and messages. Staff at other shelters cannot download this.</p>
+          <p>
+            <button type="button" id="exportMyDataJsonButton" class="secondary">Download JSON</button>
+            <button type="button" id="exportMyDataZipButton" class="secondary">Download ZIP</button>
+          </p>
+          <p id="exportMyDataMessage" role="status" aria-live="polite"></p>
+        </section>
+
         <section id="signedInDevices" class="devices-section"></section>
         <section id="changePassword" class="devices-section"></section>
 

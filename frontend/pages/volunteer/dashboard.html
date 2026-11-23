@@ -105,6 +105,15 @@
                 <span class="choice-arrow" aria-hidden="true">→</span>
               </button>
             </li>
+            <li>
+              <button type="button" class="action-list-item" id="exportMyDataButton">
+                <span>
+                  <strong>Download my data</strong>
+                  Profile, bookings, hours and messages as JSON.
+                </span>
+                <span class="choice-arrow" aria-hidden="true">→</span>
+              </button>
+            </li>
           </ul>
         </section>
 
@@ -178,6 +187,16 @@
               <a id="appleCalLink" hidden rel="noopener" target="_blank">Add to Apple Calendar</a>
               <a id="googleCalLink" hidden rel="noopener" target="_blank">Add to Google Calendar</a>
             </p>
+          </article>
+
+          <article class="stat-card" id="myDataPrivacyCard">
+            <strong>Your data</strong>
+            <p>Download a copy of your profile, bookings, hours and messages. JSON by default, or a ZIP of the same file.</p>
+            <p style="margin-top:0.75rem;">
+              <button type="button" id="exportMyDataJsonButton" class="secondary button-small">Download JSON</button>
+              <button type="button" id="exportMyDataZipButton" class="secondary button-small">Download ZIP</button>
+            </p>
+            <p><a class="text-link" href="/pages/volunteer/complete-profile.html#my-data">Privacy settings on your profile</a></p>
           </article>
         </section>
       </div>

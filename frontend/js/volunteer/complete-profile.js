@@ -1,4 +1,4 @@
-import { apiRequest } from '../config.js';
+import { API_URL, apiRequest } from '../config.js';
 import { requireAuth, logoutEverywhere } from '../auth.js';
 import { renderTagChips, getSelectedTagIds } from '../components/tagChips.js';
 import { showFormErrors, clearFormErrors } from '../utils/formErrors.js';
@@ -681,6 +681,66 @@ async function init() {
   if (existingProfile) {
     fillNotificationPrefs(existingProfile);
   }
+
+  bindMyDataExport();
+}
+
+function getFilenameFromDisposition(contentDisposition) {
+  const match = /filename="?([^"]+)"?/i.exec(contentDisposition || '');
+  return match?.[1] || null;
+}
+
+async function downloadMyData(format) {
+  const jsonBtn = document.getElementById('exportMyDataJsonButton');
+  const zipBtn = document.getElementById('exportMyDataZipButton');
+  const msg = document.getElementById('exportMyDataMessage');
+  const buttons = [jsonBtn, zipBtn].filter(Boolean);
+  buttons.forEach((btn) => {
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+  });
+  if (msg) msg.textContent = 'Preparing download…';
+  try {
+    const qs = format === 'zip' ? '?format=zip' : '';
+    const response = await fetch(`${API_URL}/volunteer/data-export${qs}`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error(`Export failed (${response.status})`);
+    const blob = await response.blob();
+    const fallback = format === 'zip'
+      ? `my-shelterlink-data-${new Date().toISOString().slice(0, 10)}.zip`
+      : `my-shelterlink-data-${new Date().toISOString().slice(0, 10)}.json`;
+    const filename = getFilenameFromDisposition(response.headers.get('Content-Disposition')) || fallback;
+    const downloadUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(downloadUrl);
+    if (msg) msg.textContent = 'Download started.';
+  } catch (error) {
+    console.error('[Profile] downloadMyData error:', error);
+    if (msg) msg.textContent = 'Unable to download your data right now. Please try again.';
+  } finally {
+    buttons.forEach((btn) => {
+      btn.disabled = false;
+      btn.setAttribute('aria-busy', 'false');
+    });
+  }
+}
+
+function bindMyDataExport() {
+  document.getElementById('exportMyDataJsonButton')?.addEventListener('click', (event) => {
+    event.preventDefault();
+    downloadMyData('json');
+  });
+  document.getElementById('exportMyDataZipButton')?.addEventListener('click', (event) => {
+    event.preventDefault();
+    downloadMyData('zip');
+  });
 }
 
 document.addEventListener('DOMContentLoaded', init);
