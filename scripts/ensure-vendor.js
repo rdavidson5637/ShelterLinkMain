@@ -1,25 +1,25 @@
 'use strict';
 
 /**
- * Fetches vendored Pico and FullCalendar if they are missing on disk.
- * Runtime still serves them from /public so CSP stays script-src 'self'.
- * Used when a git remote cannot carry the large vendor blobs.
+ * Fetches vendored Pico and FullCalendar if they are missing or fail the
+ * pinned SRI checksum. Runtime still serves them from /public so CSP stays
+ * script-src 'self'. Used when a git remote cannot carry the large vendor blobs.
  */
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
+const { ROOT, VENDOR_FILES } = require('./vendor-manifest');
 
-const ROOT = path.join(__dirname, '..');
-const FILES = [
-  {
-    dest: path.join(ROOT, 'frontend/public/css/vendor/pico-2.1.1.min.css'),
-    url: 'https://cdn.jsdelivr.net/npm/@picocss/pico@2.1.1/css/pico.min.css',
-  },
-  {
-    dest: path.join(ROOT, 'frontend/public/js/vendor/fullcalendar-6.1.19.min.js'),
-    url: 'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js',
-  },
-];
+function sriSha384(buffer) {
+  return `sha384-${crypto.createHash('sha384').update(buffer).digest('base64')}`;
+}
+
+function fileMatchesIntegrity(dest, integrity) {
+  if (!fs.existsSync(dest)) return false;
+  const actual = sriSha384(fs.readFileSync(dest));
+  return actual === integrity;
+}
 
 function download(url, dest) {
   return new Promise((resolve, reject) => {
@@ -30,12 +30,20 @@ function download(url, dest) {
       .get(url, (res) => {
         if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
           res.resume();
-          download(res.headers.location, dest).then(resolve, reject);
+          out.close(() => {
+            fs.unlink(tmp, () => {
+              download(res.headers.location, dest).then(resolve, reject);
+            });
+          });
           return;
         }
         if (res.statusCode !== 200) {
           res.resume();
-          reject(new Error(`${url} -> ${res.statusCode}`));
+          out.close(() => {
+            fs.unlink(tmp, () => {
+              reject(new Error(`${url} -> ${res.statusCode}`));
+            });
+          });
           return;
         }
         res.pipe(out);
@@ -46,22 +54,52 @@ function download(url, dest) {
           });
         });
       })
-      .on('error', reject);
+      .on('error', (err) => {
+        out.close(() => {
+          fs.unlink(tmp, () => reject(err));
+        });
+      });
   });
 }
 
-async function main() {
-  for (const file of FILES) {
-    if (fs.existsSync(file.dest) && fs.statSync(file.dest).size > 1000) {
-      console.log('vendor ok', path.relative(ROOT, file.dest));
-      continue;
+async function ensureFile(file) {
+  const rel = path.relative(ROOT, file.dest);
+  if (fileMatchesIntegrity(file.dest, file.integrity)) {
+    console.log('vendor ok', rel);
+    return;
+  }
+  if (fs.existsSync(file.dest)) {
+    console.log('vendor checksum mismatch, refetch', rel);
+    fs.unlinkSync(file.dest);
+  } else {
+    console.log('vendor fetch', rel);
+  }
+  await download(file.url, file.dest);
+  if (!fileMatchesIntegrity(file.dest, file.integrity)) {
+    const actual = sriSha384(fs.readFileSync(file.dest));
+    try {
+      fs.unlinkSync(file.dest);
+    } catch {
+      /* ignore */
     }
-    console.log('vendor fetch', path.relative(ROOT, file.dest));
-    await download(file.url, file.dest);
+    throw new Error(
+      `integrity mismatch for ${rel}: expected ${file.integrity}, got ${actual}`
+    );
+  }
+  console.log('vendor verified', rel);
+}
+
+async function main() {
+  for (const file of VENDOR_FILES) {
+    await ensureFile(file);
   }
 }
 
-main().catch((error) => {
-  console.error('[ensure-vendor]', error.message);
-  process.exit(1);
-});
+module.exports = { sriSha384, fileMatchesIntegrity, ensureFile, VENDOR_FILES };
+
+if (require.main === module) {
+  main().catch((error) => {
+    console.error('[ensure-vendor]', error.message);
+    process.exit(1);
+  });
+}
