@@ -122,7 +122,7 @@ function makeReq(overrides = {}) {
   };
 }
 
-test('migration 066 creates volunteer_shift_notes with tenant isolation', () => {
+test('migration 067 creates volunteer_shift_notes with tenant isolation', () => {
   assert.match(MIGRATION, /CREATE TABLE IF NOT EXISTS volunteer_shift_notes/);
   assert.match(MIGRATION, /ENABLE ROW LEVEL SECURITY/);
   assert.match(MIGRATION, /tenant_isolation/);
@@ -131,7 +131,7 @@ test('migration 066 creates volunteer_shift_notes with tenant isolation', () => 
   assert.match(MIGRATION, /char_length\(body\) <= 500/);
   assert.match(SCHEMA, /CREATE TABLE volunteer_shift_notes/);
   assert.match(SCHEMA, /DROP TABLE IF EXISTS[\s\S]*volunteer_shift_notes/);
-  assert.match(SETUP_DB, /066_volunteer_shift_notes\.pg\.sql/);
+  assert.match(SETUP_DB, /067_volunteer_shift_notes\.pg\.sql/);
   assert.ok(TENANT_TABLES.includes('volunteer_shift_notes'));
 });
 
