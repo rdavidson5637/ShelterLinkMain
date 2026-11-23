@@ -45,6 +45,17 @@
       .clear-filters-wrap {
         margin-top: 0.75rem;
       }
+      .browse-eligibility-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+        font-size: var(--text-sm);
+      }
+      .browse-eligibility-toggle input {
+        width: auto;
+        margin: 0;
+      }
 
       .opportunities-grid {
         display: grid;
@@ -170,6 +181,10 @@
             </select>
           </label>
         </div>
+        <label for="filter_show_ineligible" class="browse-eligibility-toggle">
+          <input type="checkbox" id="filter_show_ineligible" name="show_ineligible" />
+          Show shifts I am not eligible for
+        </label>
         <div class="clear-filters-wrap" id="clearFiltersWrap" style="display: none;">
           <button type="button" id="clearFiltersButton" class="secondary button-secondary">Clear All Filters</button>
         </div>

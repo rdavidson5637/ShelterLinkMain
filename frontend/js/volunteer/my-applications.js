@@ -63,15 +63,17 @@ async function loadAnimalsForApplication(app, container) {
 
   animals.forEach((animal) => {
     const block = document.createElement('div');
+    block.className = 'shift-animal-row';
     block.style.cssText =
-      'margin:0.5rem 0;padding:0.65rem 0.85rem;border:1px solid var(--border-color,#ddd);border-radius:6px;';
+      'margin:0.5rem 0;padding:0.65rem 0;border-bottom:1px solid var(--border-color,#ddd);';
     const title = document.createElement('strong');
     title.textContent = animal.name;
     block.appendChild(title);
     if (animal.handling_notes) {
       const notes = document.createElement('p');
+      notes.className = 'shift-animal-handling';
       notes.style.cssText = 'margin:0.35rem 0;font-size:var(--text-sm);';
-      notes.textContent = `Handling: ${animal.handling_notes}`;
+      notes.textContent = `Handling notes: ${animal.handling_notes}`;
       block.appendChild(notes);
     }
     const actions = document.createElement('div');

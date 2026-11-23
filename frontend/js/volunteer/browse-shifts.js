@@ -4,6 +4,11 @@ import { showOpportunityModal, hideOpportunityModal } from '../components/opport
 import { formatShiftWhen, upcomingFirst } from '../utils/dateFormat.js';
 import { groupShiftsByPeriod } from '../utils/groupShifts.js';
 import { renderClosedDaysList } from '../utils/closures.js';
+import {
+  getMissingSkills,
+  skillIneligibilityReason,
+  partitionBySkillEligibility,
+} from '../utils/shiftSkills.js';
 
 const shiftsContainer = document.getElementById('shifts-container');
 const coverShiftsSection = document.getElementById('coverShiftsSection');
@@ -16,6 +21,7 @@ const fromInput = document.getElementById('filter_from');
 const toInput = document.getElementById('filter_to');
 const hoursSelect = document.getElementById('filter_hours');
 const tagSelect = document.getElementById('filter_tag');
+const showIneligibleInput = document.getElementById('filter_show_ineligible');
 const clearFiltersWrap = document.getElementById('clearFiltersWrap');
 const clearFiltersButton = document.getElementById('clearFiltersButton');
 const logoutButton = document.getElementById('logoutButton');
@@ -36,28 +42,8 @@ function asOpportunityList(data) {
   return [];
 }
 
-function toDateOnly(value) {
-  if (!value) return null;
-  return String(value).slice(0, 10);
-}
-
-function isQualificationValid(award, asOf = new Date()) {
-  if (!award) return false;
-  const expires = toDateOnly(award.expires_at);
-  if (!expires) return true;
-  return expires >= toDateOnly(asOf);
-}
-
 function getMissingQualifications(opportunity) {
-  const required = opportunity.required_qualifications || [];
-  if (!required.length) return [];
-  const heldById = new Map(
-    myQualifications.map((q) => [Number(q.qualification_id), q])
-  );
-  return required.filter((req) => {
-    const held = heldById.get(Number(req.id));
-    return !isQualificationValid(held);
-  });
+  return getMissingSkills(opportunity.required_qualifications || [], myQualifications);
 }
 
 function isOpportunityFull(opportunity) {
@@ -69,7 +55,14 @@ function isOpportunityFull(opportunity) {
 }
 
 
-const URL_KEYS = { q: 'q', from: 'from', to: 'to', hours: 'hours', tag: 'tag' };
+const URL_KEYS = {
+  q: 'q',
+  from: 'from',
+  to: 'to',
+  hours: 'hours',
+  tag: 'tag',
+  showIneligible: 'show_ineligible',
+};
 
 function getFiltersFromUrl() {
   const params = new URLSearchParams(window.location.search);
@@ -79,6 +72,7 @@ function getFiltersFromUrl() {
     to: params.get(URL_KEYS.to) || '',
     hours: params.get(URL_KEYS.hours) || '',
     tag: params.get(URL_KEYS.tag) || '',
+    showIneligible: params.get(URL_KEYS.showIneligible) === '1',
   };
 }
 
@@ -89,6 +83,7 @@ function applyFiltersToUrl(filters) {
   if (filters.to) params.set(URL_KEYS.to, filters.to);
   if (filters.hours) params.set(URL_KEYS.hours, filters.hours);
   if (filters.tag) params.set(URL_KEYS.tag, filters.tag);
+  if (filters.showIneligible) params.set(URL_KEYS.showIneligible, '1');
   const query = params.toString();
   const newUrl = query ? `${window.location.pathname}?${query}` : window.location.pathname;
   window.history.replaceState({ filters }, '', newUrl);
@@ -101,6 +96,7 @@ function getFiltersFromForm() {
     to: toInput?.value || '',
     hours: hoursSelect?.value || '',
     tag: tagSelect?.value || '',
+    showIneligible: Boolean(showIneligibleInput?.checked),
   };
 }
 
@@ -110,10 +106,18 @@ function setFormFromFilters(filters) {
   if (toInput) toInput.value = filters.to || '';
   if (hoursSelect) hoursSelect.value = filters.hours || '';
   if (tagSelect) tagSelect.value = filters.tag || '';
+  if (showIneligibleInput) showIneligibleInput.checked = Boolean(filters.showIneligible);
 }
 
 function hasActiveFilters(filters) {
-  return !!(filters.q || filters.from || filters.to || filters.hours || filters.tag);
+  return !!(
+    filters.q ||
+    filters.from ||
+    filters.to ||
+    filters.hours ||
+    filters.tag ||
+    filters.showIneligible
+  );
 }
 
 function getHoursValue(opportunity) {
@@ -319,16 +323,13 @@ function renderOpportunityCard(opportunity) {
     meta.appendChild(tagsMeta);
   }
 
+  article.appendChild(title);
+  article.appendChild(meta);
   if (missingQuals.length) {
     const reason = document.createElement('p');
     reason.className = 'unqualified-reason';
-    reason.textContent = `You need: ${missingQuals.map((q) => q.name).join(', ')}`;
-    article.appendChild(title);
-    article.appendChild(meta);
+    reason.textContent = skillIneligibilityReason(missingQuals);
     article.appendChild(reason);
-  } else {
-    article.appendChild(title);
-    article.appendChild(meta);
   }
 
   if (opportunity.closed_reason) {
@@ -362,11 +363,23 @@ function applyFiltersAndRender() {
   applyFiltersToUrl(filters);
 
   const filtered = filterOpportunities(allOpportunities, filters);
+  const { eligible, ineligible } = partitionBySkillEligibility(
+    filtered,
+    getMissingQualifications
+  );
+  const visible = filters.showIneligible
+    ? [...eligible, ...ineligible.map((row) => row.opportunity)]
+    : eligible;
   const total = allOpportunities.length;
-  const showing = filtered.length;
+  const showing = visible.length;
+  const hiddenCount = filters.showIneligible ? 0 : ineligible.length;
 
   if (shiftsStatus) {
-    shiftsStatus.textContent = `Showing ${showing} of ${total} available shifts`;
+    let status = `Showing ${showing} of ${total} available shifts`;
+    if (hiddenCount > 0) {
+      status += ` (${hiddenCount} hidden because you are missing a required skill)`;
+    }
+    shiftsStatus.textContent = status;
   }
 
   if (clearFiltersWrap) {
@@ -375,10 +388,10 @@ function applyFiltersAndRender() {
 
   if (shiftsContainer) {
     shiftsContainer.innerHTML = '';
-    if (filtered.length > 0) {
+    if (visible.length > 0) {
       shiftsContainer.style.display = '';
       if (emptyState) emptyState.style.display = 'none';
-      groupShiftsByPeriod(filtered).forEach((group) => {
+      groupShiftsByPeriod(visible).forEach((group) => {
         const section = document.createElement('section');
         section.className = 'shift-group';
         const heading = document.createElement('h2');
@@ -401,7 +414,9 @@ function applyFiltersAndRender() {
         if (emptyCopy) {
           emptyCopy.textContent =
             total > 0
-              ? 'No shifts match your search. Try clearing the filters.'
+              ? hiddenCount > 0 && !filters.showIneligible
+                ? 'No shifts you are eligible for match your search. Tick "Show shifts I am not eligible for" to see why.'
+                : 'No shifts match your search. Try clearing the filters.'
               : 'No shifts available right now. Check back soon!';
         }
       }
@@ -410,7 +425,14 @@ function applyFiltersAndRender() {
 }
 
 function clearAllFilters() {
-  setFormFromFilters({ q: '', from: '', to: '', hours: '', tag: '' });
+  setFormFromFilters({
+    q: '',
+    from: '',
+    to: '',
+    hours: '',
+    tag: '',
+    showIneligible: false,
+  });
   applyFiltersToUrl({});
   applyFiltersAndRender();
 }
@@ -433,7 +455,7 @@ function setupDebouncedSearch() {
 }
 
 function attachEventListeners() {
-  [fromInput, toInput, hoursSelect, tagSelect].forEach((el) => {
+  [fromInput, toInput, hoursSelect, tagSelect, showIneligibleInput].forEach((el) => {
     el?.addEventListener('change', applyFiltersAndRender);
   });
 
@@ -553,7 +575,7 @@ function renderCoverSwapCard(swap) {
   if (Array.isArray(swap.missing_qualifications) && swap.missing_qualifications.length) {
     const reason = document.createElement('p');
     reason.className = 'unqualified-reason';
-    reason.textContent = `You need: ${swap.missing_qualifications.map((q) => q.name).join(', ')}`;
+    reason.textContent = skillIneligibilityReason(swap.missing_qualifications);
     article.appendChild(title);
     article.appendChild(meta);
     article.appendChild(reason);

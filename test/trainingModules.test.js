@@ -418,6 +418,6 @@ test('apply still rejects without the qualification awarded by training', async 
     res
   );
   assert.strictEqual(res.statusCode, 403);
-  assert.match(res.body.error, /missing required qualifications/i);
+  assert.match(res.body.error, /missing required skills/i);
   assert.match(res.body.error, /Dog walking level 1/);
 });

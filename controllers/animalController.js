@@ -1,13 +1,35 @@
 'use strict';
 
+/**
+ * Animal records and volunteer-safe handling notes (SL-DAY-19).
+ *
+ * handling_notes — volunteer-safe care/handling (e.g. walk with two people,
+ *   no other dogs). Shown to volunteers with an accepted shift or active
+ *   foster for that animal, and on open-shift browse (safety before booking).
+ * notes — staff-only (medication and other internal). Never returned to
+ *   volunteers. Create/update of either field is audit-logged without storing
+ *   the note text in the audit detail.
+ */
+
 const crypto = require('crypto');
 const multer = require('multer');
 const Animal = require('../models/Animal');
 const UserDocument = require('../models/UserDocument');
 const { isStaffOrAdmin } = require('../middleware/auth');
+const { recordAudit } = require('../middleware/auditLog');
 const { canonicalMime, sniffImage } = require('../utils/fileSignature');
 
 const IMAGE_MIME = new Set(['image/jpeg', 'image/png']);
+
+function noteText(value) {
+  if (value == null) return null;
+  const s = String(value).trim();
+  return s || null;
+}
+
+function notesChanged(before, after) {
+  return noteText(before) !== noteText(after);
+}
 
 function ensureStaff(req, res) {
   if (!req.session?.userId) {
@@ -58,6 +80,10 @@ function handleMulterError(err, res) {
   return true;
 }
 
+/**
+ * Volunteer-safe animal payload. Never includes staff-only `notes`
+ * (medication / internal). Handling notes only when the caller has access.
+ */
 function toPublicAnimal(animal, { includeHandling = false } = {}) {
   if (!animal) return null;
   const out = {
@@ -73,9 +99,39 @@ function toPublicAnimal(animal, { includeHandling = false } = {}) {
     requires_qualification_name: animal.requires_qualification_name,
   };
   if (includeHandling) {
-    out.handling_notes = animal.handling_notes;
+    out.handling_notes = animal.handling_notes || null;
   }
   return out;
+}
+
+async function auditAnimalMutation(req, res, {
+  action,
+  animal,
+  previous = null,
+}) {
+  if (!animal) return;
+  const detail = {
+    handling_notes_present: Boolean(noteText(animal.handling_notes)),
+    staff_notes_present: Boolean(noteText(animal.notes)),
+  };
+  if (previous) {
+    detail.handling_notes_changed = notesChanged(
+      previous.handling_notes,
+      animal.handling_notes
+    );
+    detail.staff_notes_changed = notesChanged(previous.notes, animal.notes);
+  }
+  try {
+    await recordAudit(req, {
+      action,
+      entityType: 'animal',
+      entityId: String(animal.id),
+      detail,
+    });
+    if (res.locals) res.locals.auditWritten = true;
+  } catch (err) {
+    console.error('[Animal] audit error:', err.message);
+  }
 }
 
 async function listAnimals(req, res) {
@@ -133,6 +189,10 @@ async function createAnimal(req, res) {
   try {
     if (!ensureStaff(req, res)) return;
     const animal = await Animal.create(req.body || {});
+    await auditAnimalMutation(req, res, {
+      action: 'animal.create',
+      animal,
+    });
     return res.status(201).json(animal);
   } catch (error) {
     if (error.status === 400) return res.status(400).json({ error: error.message });
@@ -145,8 +205,15 @@ async function createAnimal(req, res) {
 async function updateAnimal(req, res) {
   try {
     if (!ensureStaff(req, res)) return;
+    const previous = await Animal.findById(req.params.id);
+    if (!previous) return res.status(404).json({ error: 'Animal not found' });
     const animal = await Animal.update(req.params.id, req.body || {});
     if (!animal) return res.status(404).json({ error: 'Animal not found' });
+    await auditAnimalMutation(req, res, {
+      action: 'animal.update',
+      animal,
+      previous,
+    });
     return res.status(200).json(animal);
   } catch (error) {
     if (error.status === 400) return res.status(400).json({ error: error.message });
@@ -279,4 +346,7 @@ module.exports = {
   myHelpedAnimals,
   careGaps,
   toPublicAnimal,
+  auditAnimalMutation,
+  noteText,
+  notesChanged,
 };

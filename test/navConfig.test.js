@@ -26,12 +26,13 @@ test('filterNavForRole hides admin-only destinations from staff', async () => {
     'announcements',
     'wishlist',
     'events',
+    'qualifications',
     'closures',
     'groups',
     'messages',
   ]);
   assert.deepEqual(insight, ['impact-report', 'feedback', 'staff-help', 'staff-guide', 'security']);
-  assert.ok(!manage.includes('qualifications'));
+  assert.ok(manage.includes('qualifications'));
   assert.ok(!manage.includes('training'));
   assert.ok(!manage.includes('custom-fields'));
   assert.ok(!manage.includes('waivers'));

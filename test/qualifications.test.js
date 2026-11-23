@@ -113,7 +113,7 @@ test('apply rejects when required qualification is missing', async () => {
   const res = makeRes();
   await appCtrl.applyForOpportunity(makeReq(), res);
   assert.strictEqual(res.statusCode, 403);
-  assert.match(res.body.error, /missing required qualifications/i);
+  assert.match(res.body.error, /missing required skills/i);
   assert.match(res.body.error, /Dog Handling/);
   assert.strictEqual(emailCalls.length, 0);
 });

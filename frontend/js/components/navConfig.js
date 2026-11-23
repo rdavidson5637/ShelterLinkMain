@@ -26,7 +26,7 @@ export const ADMIN_MANAGE = [
   { id: 'announcements', label: 'Announcements', href: '/pages/admin/announcements.html' },
   { id: 'wishlist', label: 'Supplies wishlist', href: '/pages/admin/wishlist.html' },
   { id: 'events', label: 'Shelter events', href: '/pages/admin/events.html' },
-  { id: 'qualifications', label: 'Qualifications', href: '/pages/admin/qualifications.html', adminOnly: true },
+  { id: 'qualifications', label: 'Skills', href: '/pages/admin/qualifications.html' },
   { id: 'training', label: 'Training modules', href: '/pages/admin/training.html', adminOnly: true },
   { id: 'custom-fields', label: 'Custom fields', href: '/pages/admin/custom-fields.html', adminOnly: true },
   { id: 'waivers', label: 'Waivers', href: '/pages/admin/waivers.html', adminOnly: true },

@@ -198,12 +198,12 @@ async function loadQualifications() {
   try {
     const res = await apiRequest('/qualifications', { method: 'GET' });
     if (!res.ok) {
-      qualificationSelect.innerHTML = '<option disabled>Unable to load qualifications</option>';
+      qualificationSelect.innerHTML = '<option disabled>Unable to load skills</option>';
       return;
     }
     allQualifications = await res.json();
     if (!allQualifications.length) {
-      qualificationSelect.innerHTML = '<option disabled value="">No qualifications defined</option>';
+      qualificationSelect.innerHTML = '<option disabled value="">No skills defined yet</option>';
       return;
     }
     qualificationSelect.innerHTML = '';
@@ -217,7 +217,7 @@ async function loadQualifications() {
     });
   } catch (error) {
     console.error('[Admin] loadQualifications error:', error);
-    qualificationSelect.innerHTML = '<option disabled>Unable to load qualifications</option>';
+    qualificationSelect.innerHTML = '<option disabled>Unable to load skills</option>';
   }
 }
 

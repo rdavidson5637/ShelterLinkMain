@@ -251,8 +251,9 @@ function stripAdminFields(opportunity, isAdminUser) {
   const copy = { ...opportunity };
   delete copy.check_in_code;
   delete copy.activity_notes;
-  // Volunteers browsing open shifts see animals without internal notes;
-  // handling_notes stay visible — they are safety-critical for the shift.
+  // Volunteer-safe animal fields only (SL-DAY-19). Staff-only `notes`
+  // (medication / internal) are never included. handling_notes stay visible
+  // so volunteers know safety instructions before and on a shift.
   if (Array.isArray(copy.animals)) {
     copy.animals = copy.animals.map((a) => ({
       id: a.id,
@@ -261,7 +262,7 @@ function stripAdminFields(opportunity, isAdminUser) {
       breed: a.breed,
       status: a.status,
       photo_filename: a.photo_filename,
-      handling_notes: a.handling_notes,
+      handling_notes: a.handling_notes || null,
       requires_qualification_id: a.requires_qualification_id,
       requires_qualification_name: a.requires_qualification_name,
     }));
