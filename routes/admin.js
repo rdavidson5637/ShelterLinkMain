@@ -97,6 +97,10 @@ const {
   assignVolunteerBuddy,
   clearVolunteerBuddy,
 } = require('../controllers/buddyController');
+const {
+  listExpiringItems,
+  sendExpiryReminder,
+} = require('../controllers/expiryDashboardController');
 
 const { validateBody, validateQuery, positiveParam } = require('../middleware/validate');
 const { listStaffInvites, createStaffInvite, revokeStaffInvite } = require('../controllers/staffInviteController');
@@ -124,6 +128,21 @@ router.get('/week-sheet/copy-preview', isAuthenticated, staffOrAdmin, validateQu
 router.post('/week-sheet/copy', isAuthenticated, staffOrAdmin, validateBody(bodies.weekCopy), postCopyWeek);
 router.get('/this-week', isAuthenticated, staffOrAdmin, getThisWeek);
 router.get('/milestones', isAuthenticated, staffOrAdmin, listPendingMilestones);
+router.get(
+  '/expiry-dashboard',
+  isAuthenticated,
+  staffOrAdmin,
+  validateQuery(queries.expiryDashboard),
+  listExpiringItems
+);
+router.post(
+  '/expiry-dashboard/remind',
+  isAuthenticated,
+  staffOrAdmin,
+  messageLimiter,
+  validateBody(bodies.expiryReminder),
+  sendExpiryReminder
+);
 router.get('/stats', isAuthenticated, staffOrAdmin, validateQuery(queries.year), getAdminStats);
 router.get('/reports/impact', isAuthenticated, staffOrAdmin, validateQuery(queries.impactReport), getImpactReport);
 router.get('/reports/impact.csv', isAuthenticated, staffOrAdmin, validateQuery(queries.impactReport), getImpactReportCsv);

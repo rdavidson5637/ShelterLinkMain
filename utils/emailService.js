@@ -829,6 +829,41 @@ async function sendBuddyAssigned(buddyEmail, details = {}) {
   return sendEmail(buddyEmail, parts.subject, parts.html, parts.text);
 }
 
+/**
+ * Staff-triggered reminder that a check, document, or qualification is due
+ * to expire (SL-DAY-12). Email only; never automatic without a staff click.
+ */
+function buildExpiryReminder(details = {}, brand) {
+  const name = escapeHtml(details.firstName || 'there');
+  const item = escapeHtml(details.itemLabel || 'an item on your record');
+  const expiresOn = escapeHtml(details.expiresOn || 'soon');
+  const kind = String(details.kind || '');
+  let kindPhrase = 'record';
+  if (kind === 'background_check') kindPhrase = 'background check';
+  else if (kind === 'document') kindPhrase = 'document';
+  else if (kind === 'qualification') kindPhrase = 'qualification or training';
+  const extra = details.message ? String(details.message).trim() : '';
+  const extraHtml = extra
+    ? `<p>${escapeHtml(extra).replace(/\n/g, '<br/>')}</p>`
+    : '';
+  return withText(
+    `Reminder: ${details.itemLabel || 'item'} expires soon - ShelterLink`,
+    `
+    <p>Hi ${name},</p>
+    <p>This is a reminder that your ${escapeHtml(kindPhrase)} <strong>${item}</strong> expires on <strong>${expiresOn}</strong>.</p>
+    <p>Please renew it before then, or speak to shelter staff if you need help.</p>
+    ${extraHtml}
+    <p>Thank you,<br/>${brand.signoff}</p>
+    `
+  );
+}
+
+async function sendExpiryReminder(volunteerEmail, details = {}) {
+  const brand = await brandBits();
+  const parts = buildExpiryReminder(details, brand);
+  return sendEmail(volunteerEmail, parts.subject, parts.html, parts.text);
+}
+
 module.exports = {
   currentShelterName,
   brandBits,
@@ -879,4 +914,6 @@ module.exports = {
   sendMilestoneThankYou,
   buildBuddyAssigned,
   sendBuddyAssigned,
+  buildExpiryReminder,
+  sendExpiryReminder,
 };

@@ -797,6 +797,11 @@ const queries = {
   applications: z.object({ status: qstr(40), limit: qstr(10) }).strict(),
   animals: z.object({ species: qstr(40), status: qstr(40) }).strict(),
   careGaps: z.object({ days: z.string().regex(/^\d{1,2}$/).optional() }).strict(),
+  expiryDashboard: z
+    .object({
+      days: z.string().regex(/^\d{1,2}$/).optional(),
+    })
+    .strict(),
   incidents: z
     .object({
       animal_id: qstr(20),
@@ -942,6 +947,14 @@ const bodies = {
   inductionItem,
   inductionProgress,
   volunteerBuddy,
+  expiryReminder: z
+    .object({
+      kind: z.enum(['background_check', 'document', 'qualification']),
+      id: idValue,
+      message: optStr(2000),
+      send_email: optFlag,
+    })
+    .strict(),
   shelterResourceLink,
   shelterResourceFileMeta,
   shelterResourceUpdate,

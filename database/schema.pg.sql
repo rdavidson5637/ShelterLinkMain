@@ -417,6 +417,7 @@ CREATE TABLE volunteer_qualifications (
   expires_at               DATE          DEFAULT NULL,
   awarded_by               INTEGER       DEFAULT NULL,
   last_expiry_notified_at  DATE          DEFAULT NULL,
+  last_staff_reminder_sent_at TIMESTAMP  DEFAULT NULL,
   created_at               TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT uq_volunteer_qualification UNIQUE (user_id, qualification_id),
   CONSTRAINT fk_vq_user
@@ -608,6 +609,7 @@ CREATE TABLE user_documents (
   uploaded_at    TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   expires_at     DATE          DEFAULT NULL,
   label          VARCHAR(255)  DEFAULT NULL,
+  last_staff_reminder_sent_at TIMESTAMP DEFAULT NULL,
   content        BYTEA         DEFAULT NULL,
   storage_key    TEXT          DEFAULT NULL,
   CONSTRAINT fk_ud_user
@@ -1101,6 +1103,7 @@ CREATE TABLE background_checks (
   notes             TEXT          DEFAULT NULL,
   updated_by        INTEGER       DEFAULT NULL,
   updated_at        TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  last_staff_reminder_sent_at TIMESTAMP DEFAULT NULL,
   CONSTRAINT fk_background_checks_user
     FOREIGN KEY (user_id) REFERENCES users (user_id)
     ON DELETE CASCADE ON UPDATE CASCADE,
