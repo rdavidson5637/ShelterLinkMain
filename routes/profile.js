@@ -7,6 +7,10 @@ const {
   getBadges,
 } = require('../controllers/profileController');
 const {
+  getMyUsualAvailability,
+  putMyUsualAvailability,
+} = require('../controllers/usualAvailabilityController');
+const {
   getMyCertificate,
   issueMyCertificate,
 } = require('../controllers/certificateController');
@@ -28,6 +32,12 @@ router.use(isAuthenticated);
 router.post('/profile', validateBody(bodies.profile), createProfile);
 router.get('/profile', getProfile);
 router.put('/profile', validateBody(bodies.profile), updateProfile);
+router.get('/usual-availability', getMyUsualAvailability);
+router.put(
+  '/usual-availability',
+  validateBody(bodies.usualAvailability),
+  putMyUsualAvailability
+);
 router.get('/profile/age', getMyAgeStatus);
 router.post('/profile/guardian-consent', validateBody(bodies.guardianConsent), giveMyGuardianConsent);
 router.get('/badges', getBadges);

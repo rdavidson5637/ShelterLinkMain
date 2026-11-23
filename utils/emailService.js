@@ -877,6 +877,67 @@ async function sendExpiryReminder(volunteerEmail, details = {}) {
   return sendEmail(volunteerEmail, parts.subject, parts.html, parts.text);
 }
 
+/**
+ * Staff-triggered ask when a short-staffed shift matches a volunteer's usual
+ * days (SL-DAY-14). Email only; never automatic without an explicit click.
+ */
+function buildUsualAvailabilityAsk(details = {}, brand) {
+  const name = escapeHtml(details.firstName || 'there');
+  const title = escapeHtml(details.opportunityTitle || 'a volunteer shift');
+  const when = details.whenLabel ? escapeHtml(details.whenLabel) : '';
+  const location = details.location ? escapeHtml(details.location) : '';
+  const match = details.matchLabel ? escapeHtml(details.matchLabel) : '';
+  return withText(
+    `Can you help with ${details.opportunityTitle || 'a short-staffed shift'}? - ShelterLink`,
+    `
+    <p>Hi ${name},</p>
+    <p>We are short-staffed for <strong>${title}</strong>${when ? ` on <strong>${when}</strong>` : ''}.</p>
+    ${match ? `<p>Your usual availability includes <strong>${match}</strong>, so we thought of you.</p>` : ''}
+    ${location ? `<p>Location: ${location}</p>` : ''}
+    <p>If you can help, please log in to ShelterLink and apply for the shift.</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
+    `
+  );
+}
+
+async function sendUsualAvailabilityAsk(volunteerEmail, details = {}) {
+  const brand = await brandBits();
+  const parts = buildUsualAvailabilityAsk(details, brand);
+  return sendEmail(volunteerEmail, parts.subject, parts.html, parts.text);
+}
+
+/**
+ * Staff-triggered shelter announcement email (SL-DAY-17).
+ * Sent only on an explicit click to active volunteers. Email only; no SMS.
+ */
+function buildShelterAnnouncement(details = {}, brand) {
+  const name = escapeHtml(details.firstName || 'there');
+  const title = escapeHtml(details.title || 'Shelter notice');
+  const body = escapeHtml(String(details.body || ''))
+    .replace(/\n/g, '<br/>');
+  const posted = details.postedOn ? escapeHtml(String(details.postedOn).slice(0, 10)) : '';
+  const expires = details.expiresOn ? escapeHtml(String(details.expiresOn).slice(0, 10)) : '';
+  return withText(
+    `${details.title || 'Shelter notice'} - ShelterLink`,
+    `
+    <p>Hi ${name},</p>
+    <p>A notice from ${brand.name || 'your shelter'}:</p>
+    <p><strong>${title}</strong></p>
+    <p>${body}</p>
+    ${posted ? `<p>Posted: ${posted}</p>` : ''}
+    ${expires ? `<p>Expires: ${expires}</p>` : ''}
+    <p>You can also read current notices on your ShelterLink home page.</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
+    `
+  );
+}
+
+async function sendShelterAnnouncement(volunteerEmail, details = {}) {
+  const brand = await brandBits();
+  const parts = buildShelterAnnouncement(details, brand);
+  return sendEmail(volunteerEmail, parts.subject, parts.html, parts.text);
+}
+
 module.exports = {
   currentShelterName,
   brandBits,
@@ -929,4 +990,8 @@ module.exports = {
   sendBuddyAssigned,
   buildExpiryReminder,
   sendExpiryReminder,
+  buildUsualAvailabilityAsk,
+  sendUsualAvailabilityAsk,
+  buildShelterAnnouncement,
+  sendShelterAnnouncement,
 };
