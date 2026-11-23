@@ -24,6 +24,7 @@ const {
   buildMilestoneThankYou,
   buildBuddyAssigned,
   buildExpiryReminder,
+  buildNoShowFollowUp,
   buildUsualAvailabilityAsk,
   buildShelterAnnouncement,
 } = require('../utils/emailService');
@@ -94,6 +95,10 @@ const BUILDERS = [
   {
     id: 'expiry_reminder',
     build: (brand, samples) => buildExpiryReminder(samples.expiryReminder, brand),
+  },
+  {
+    id: 'noshow_followup',
+    build: (brand, samples) => buildNoShowFollowUp(samples.noShow, brand),
   },
   {
     id: 'usual_availability_ask',

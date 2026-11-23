@@ -278,6 +278,9 @@ CREATE TABLE applications (
   notes            TEXT          DEFAULT NULL,
   reminder_sent_at TIMESTAMP     DEFAULT NULL,
   no_show          SMALLINT      NOT NULL DEFAULT 0,
+  no_show_contacted_at TIMESTAMP DEFAULT NULL,
+  no_show_contacted_by INTEGER   DEFAULT NULL,
+  no_show_followup_sent_at TIMESTAMP DEFAULT NULL,
   checked_in_at    TIMESTAMP     DEFAULT NULL,
   checked_out_at   TIMESTAMP     DEFAULT NULL,
   feedback_requested_at TIMESTAMP DEFAULT NULL,
@@ -287,12 +290,18 @@ CREATE TABLE applications (
     ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT fk_applications_opportunity
     FOREIGN KEY (opportunity_id) REFERENCES opportunities (opportunity_id)
-    ON DELETE CASCADE ON UPDATE CASCADE
+    ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT fk_applications_no_show_contacted_by
+    FOREIGN KEY (no_show_contacted_by) REFERENCES users (user_id)
+    ON DELETE SET NULL ON UPDATE CASCADE
 );
 
 CREATE INDEX idx_applications_status ON applications (status);
 CREATE INDEX idx_applications_opportunity_status ON applications (opportunity_id, status);
 CREATE INDEX idx_applications_status_reminder ON applications (status, reminder_sent_at);
+CREATE INDEX applications_no_show_contacted_idx
+  ON applications (no_show, no_show_contacted_at)
+  WHERE no_show = 1;
 
 -- ----------------------------------------------------------------------------
 -- shift_feedback

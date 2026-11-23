@@ -28,6 +28,9 @@ function inferFromRequest(req) {
   let action = `${resource}.${methodVerb}`;
   if (segments.includes('approval')) action = 'volunteer.approval';
   else if (segments.includes('approve')) action = 'hours.approve';
+  else if (segments.includes('no-show') && segments.includes('contacted')) {
+    action = 'application.no_show_contacted';
+  }
   else if (segments.includes('no-show')) action = 'application.no_show';
   else if (segments.includes('export') || resource === 'export') action = `export.${segments[1] || 'data'}`;
   else if (segments.includes('erase')) action = 'gdpr.erase';

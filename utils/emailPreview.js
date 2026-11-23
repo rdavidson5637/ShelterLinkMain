@@ -19,6 +19,7 @@ const {
   buildMilestoneThankYou,
   buildBuddyAssigned,
   buildExpiryReminder,
+  buildNoShowFollowUp,
   buildUsualAvailabilityAsk,
   buildShelterAnnouncement,
 } = require('./emailService');
@@ -85,6 +86,12 @@ function sampleData(shelterNamePlain) {
       kind: 'background_check',
       expiresOn: '2026-12-15',
       message: '',
+    },
+    noShow: {
+      volunteerName: 'Alex',
+      opportunityTitle: 'Morning kennel walk',
+      shiftDate: '2026-11-15T09:00:00.000Z',
+      message: 'Hope you are well. Let us know if you would like another shift.',
     },
     usualAvailability: {
       firstName: 'Alex',
@@ -182,6 +189,14 @@ const CATALOG = [
     description: 'Optional staff-sent reminder when a check, document, or qualification expires soon.',
     build(brand, samples) {
       return buildExpiryReminder(samples.expiryReminder, brand);
+    },
+  },
+  {
+    id: 'noshow_followup',
+    label: 'No-show follow-up',
+    description: 'Staff-triggered email after a missed shift. Never auto-sent.',
+    build(brand, samples) {
+      return buildNoShowFollowUp(samples.noShow, brand);
     },
   },
   {

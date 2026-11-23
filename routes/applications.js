@@ -9,6 +9,8 @@ const {
   cancelApplication,
   claimWaitlistOffer,
   markApplicationNoShow,
+  listNoShows,
+  markNoShowContacted,
   checkInApplication,
   checkOutApplication,
 } = require('../controllers/applicationController');
@@ -33,9 +35,18 @@ router.post('/swaps/:id/claim', isAuthenticated, validateBody(bodies.empty), cla
 router.post('/waitlist/claim-by-token', isAuthenticated, validateBody(bodies.claimToken), claimWaitlistOffer);
 router.delete('/swaps/:id', isAuthenticated, cancelSwap);
 router.post('/:id/swap', isAuthenticated, validateBody(bodies.empty), requestSwap);
+router.get('/no-shows', isAuthenticated, requireStaff, validateQuery(queries.noShows), listNoShows);
 router.get('/', isAuthenticated, requireStaff, validateQuery(queries.applications), getAllApplications);
 router.put('/:id', isAuthenticated, requireStaff, auditMutations, validateBody(bodies.applicationStatus), updateApplicationStatus);
 router.patch('/:id/no-show', isAuthenticated, requireStaff, auditMutations, validateBody(bodies.empty), markApplicationNoShow);
+router.patch(
+  '/:id/no-show/contacted',
+  isAuthenticated,
+  requireStaff,
+  auditMutations,
+  validateBody(bodies.noShowContacted),
+  markNoShowContacted
+);
 router.post('/:id/check-in', isAuthenticated, validateBody(bodies.checkCode), checkInApplication);
 router.post('/:id/check-out', isAuthenticated, validateBody(bodies.checkCode), checkOutApplication);
 router.delete('/:id', isAuthenticated, cancelApplication);
