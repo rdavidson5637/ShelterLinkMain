@@ -688,6 +688,7 @@ const kioskUnlock = z
 const queries = {
   day: z.object({ date: qdate }).strict(),
   week: z.object({ week_start: qdate }).strict(),
+  weekCopy: z.object({ source_week: qdate, target_week: qdate }).strict(),
   opportunities: z
     .object({
       status: qstr(20),
@@ -752,8 +753,16 @@ const queries = {
   customFields: z.object({ active: qstr(10) }).strict(),
 };
 
+const weekCopy = z
+  .object({
+    source_week: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    target_week: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  })
+  .strict();
+
 const bodies = {
   empty,
+  weekCopy,
   register,
   privacyNotice,
   registerAdmin,
