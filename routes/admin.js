@@ -97,6 +97,10 @@ const {
   assignVolunteerBuddy,
   clearVolunteerBuddy,
 } = require('../controllers/buddyController');
+const {
+  listForOpportunity: listVolunteerShiftNotesForOpportunity,
+  listForVolunteer: listVolunteerShiftNotesForVolunteer,
+} = require('../controllers/volunteerShiftNoteController');
 
 const { validateBody, validateQuery, positiveParam } = require('../middleware/validate');
 const { listStaffInvites, createStaffInvite, revokeStaffInvite } = require('../controllers/staffInviteController');
@@ -226,6 +230,18 @@ router.put(
   assignVolunteerBuddy
 );
 router.delete('/volunteers/:userId/buddy', isAuthenticated, staffOrAdmin, clearVolunteerBuddy);
+router.get(
+  '/volunteers/:userId/shift-notes',
+  isAuthenticated,
+  staffOrAdmin,
+  listVolunteerShiftNotesForVolunteer
+);
+router.get(
+  '/opportunities/:id/volunteer-notes',
+  isAuthenticated,
+  staffOrAdmin,
+  listVolunteerShiftNotesForOpportunity
+);
 router.get('/volunteers/:userId/guardian-consent', isAuthenticated, staffOrAdmin, getVolunteerGuardianConsent);
 router.post('/volunteers/:userId/guardian-consent', isAuthenticated, staffOrAdmin, validateBody(bodies.guardianConsent), recordVolunteerGuardianConsent);
 router.delete('/volunteers/:userId/guardian-consent', isAuthenticated, staffOrAdmin, withdrawVolunteerGuardianConsent);

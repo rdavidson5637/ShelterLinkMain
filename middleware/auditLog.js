@@ -65,6 +65,9 @@ function inferFromRequest(req) {
     if (method === 'PUT') action = 'volunteer.buddy.assign';
     else if (method === 'DELETE') action = 'volunteer.buddy.clear';
   }
+  else if (resource === 'volunteer-shift-notes' && method === 'POST') {
+    action = 'volunteer.shift_note.save';
+  }
 
   const entityType =
     resource === 'admin' && segments[1] === 'volunteers'

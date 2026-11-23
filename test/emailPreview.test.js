@@ -23,6 +23,7 @@ const {
   buildPasswordReset,
   buildMilestoneThankYou,
   buildBuddyAssigned,
+  buildVolunteerShiftNoteAlert,
 } = require('../utils/emailService');
 const { catalogIds, renderEmailPreviews, sampleData } = require('../utils/emailPreview');
 const { listEmailPreviews } = require('../controllers/emailPreviewController');
@@ -87,6 +88,11 @@ const BUILDERS = [
   {
     id: 'buddy',
     build: (brand, samples) => buildBuddyAssigned(samples.buddy, brand),
+  },
+  {
+    id: 'volunteer_shift_note',
+    build: (brand, samples) =>
+      buildVolunteerShiftNoteAlert(samples.volunteerShiftNote, brand),
   },
 ];
 

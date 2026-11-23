@@ -33,6 +33,8 @@ const shiftNotesList = document.getElementById('shiftNotesList');
 const shiftNoteBody = document.getElementById('shiftNoteBody');
 const shiftNoteNotify = document.getElementById('shiftNoteNotify');
 const addShiftNoteButton = document.getElementById('addShiftNoteButton');
+const volunteerShiftNotesSection = document.getElementById('volunteerShiftNotesSection');
+const volunteerShiftNotesList = document.getElementById('volunteerShiftNotesList');
 
 let opportunities = [];
 let selectedOpportunityId = null;
@@ -70,6 +72,8 @@ function clearEditForm() {
   if (shiftNotesList) shiftNotesList.innerHTML = '';
   if (shiftNoteBody) shiftNoteBody.value = '';
   if (shiftNoteNotify) shiftNoteNotify.checked = false;
+  if (volunteerShiftNotesSection) volunteerShiftNotesSection.hidden = true;
+  if (volunteerShiftNotesList) volunteerShiftNotesList.innerHTML = '';
 }
 
 function setDateConstraint() {
@@ -145,6 +149,7 @@ function populateEditForm(opportunity) {
   if (saveButton) saveButton.disabled = false;
   editForm?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   loadShiftNotes(opportunity.id, opportunity.shift_notes);
+  loadVolunteerShiftNotes(opportunity.id);
 }
 
 function formatNoteWhen(value) {
@@ -208,6 +213,41 @@ async function loadShiftNotes(opportunityId, preloaded = null) {
   } catch (error) {
     console.error('[Admin] loadShiftNotes error:', error);
     renderShiftNotes([]);
+  }
+}
+
+function renderVolunteerShiftNotes(notes = []) {
+  if (!volunteerShiftNotesList) return;
+  if (!notes.length) {
+    volunteerShiftNotesList.innerHTML = '<p><small>No volunteer notes yet.</small></p>';
+    return;
+  }
+  volunteerShiftNotesList.innerHTML = notes
+    .map((n) => {
+      const when = formatNoteWhen(n.created_at);
+      return `<article class="strip">
+        <p style="margin:0;"><strong>${escapeHtml(n.volunteer_name || 'Volunteer')}</strong>${
+          when ? ` · ${escapeHtml(when)}` : ''
+        }</p>
+        <p style="margin:0.25rem 0;">${escapeHtml(n.body || '')}</p>
+      </article>`;
+    })
+    .join('');
+}
+
+async function loadVolunteerShiftNotes(opportunityId) {
+  if (!volunteerShiftNotesSection || !opportunityId) return;
+  volunteerShiftNotesSection.hidden = false;
+  try {
+    const res = await apiRequest(`/admin/opportunities/${opportunityId}/volunteer-notes`);
+    if (!res.ok) {
+      renderVolunteerShiftNotes([]);
+      return;
+    }
+    renderVolunteerShiftNotes(await res.json());
+  } catch (error) {
+    console.error('[Admin] loadVolunteerShiftNotes error:', error);
+    renderVolunteerShiftNotes([]);
   }
 }
 
