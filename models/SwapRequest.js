@@ -199,9 +199,17 @@ async function publishExpiredWaitlistOffers(now = new Date()) {
 
 /**
  * Atomically transfer an accepted slot from the original volunteer to the claimer.
- * Returns { swap, original, claimerApplication } or throws with .code for controller mapping.
+ * claimerStatus follows the shelter booking policy: 'accepted' for instant trusted
+ * bookings, otherwise 'pending' for staff approval (SL-DAY-13 / SL-NOW-03).
+ * Returns { swap, original, claimerApplication, claimerStatus, confirmed } or throws
+ * with .code for controller mapping.
  */
-async function claimAtomically(swapId, claimerUserId, { viaToken = null, now = new Date() } = {}) {
+async function claimAtomically(
+  swapId,
+  claimerUserId,
+  { viaToken = null, now = new Date(), claimerStatus = 'pending' } = {}
+) {
+  const targetStatus = claimerStatus === 'accepted' ? 'accepted' : 'pending';
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
@@ -308,19 +316,19 @@ async function claimAtomically(swapId, claimerUserId, { viaToken = null, now = n
       await connection.execute(
         `
           UPDATE applications
-          SET status = 'accepted', rejection_reason = NULL
+          SET status = ?, rejection_reason = NULL
           WHERE application_id = ?
         `,
-        [existing.application_id]
+        [targetStatus, existing.application_id]
       );
       claimerApplicationId = existing.application_id;
     } else {
       const [insertResult] = await connection.execute(
         `
           INSERT INTO applications (user_id, opportunity_id, status)
-          VALUES (?, ?, 'accepted')
+          VALUES (?, ?, ?)
         `,
-        [claimerUserId, swap.opportunity_id]
+        [claimerUserId, swap.opportunity_id, targetStatus]
       );
       claimerApplicationId = insertResult.insertId;
     }
@@ -379,6 +387,8 @@ async function claimAtomically(swapId, claimerUserId, { viaToken = null, now = n
       claimerApplication,
       opportunityId: swap.opportunity_id,
       opportunityTitle: swap.opportunity_title,
+      claimerStatus: targetStatus,
+      confirmed: targetStatus === 'accepted',
     };
   } catch (error) {
     try {

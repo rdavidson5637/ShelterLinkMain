@@ -519,7 +519,9 @@ function renderCoverSwapCard(swap) {
   claimBtn.disabled = swap.can_claim === false;
   claimBtn.addEventListener('click', async () => {
     if (swap.can_claim === false) return;
-    const confirmed = window.confirm('Claim this shift? You will take the accepted place.');
+    const confirmed = window.confirm(
+      'Offer to cover this shift? Trusted volunteers may be confirmed straight away; otherwise staff will review it.'
+    );
     if (!confirmed) return;
     try {
       const res = await apiRequest(`/applications/swaps/${swap.id}/claim`, { method: 'POST' });
