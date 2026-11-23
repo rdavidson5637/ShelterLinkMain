@@ -133,6 +133,9 @@ test('buildObjectKey never embeds the original file name', () => {
 
   const logo = buildObjectKey('shelter-logos', 3, '.jpg');
   assert.match(logo, /^shelter-logos\/3\/[a-f0-9]{32}\.jpg$/);
+
+  const resource = buildObjectKey('shelter-resources', 1, '.pdf');
+  assert.match(resource, /^shelter-resources\/1\/[a-f0-9]{32}\.pdf$/);
 });
 
 test('SigV4 authorize produces a stable credential scope and signature shape', () => {
