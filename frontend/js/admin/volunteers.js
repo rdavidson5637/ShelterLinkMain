@@ -572,6 +572,34 @@ async function viewProfile(userId) {
       waiversHtml = '<p>Unable to load waiver status.</p>';
     }
 
+    let inductionHtml = '<p>No induction checklist set for this shelter. <a href="/pages/admin/induction.html">Set one up</a>.</p>';
+    try {
+      const inductionRes = await apiRequest(`/admin/volunteers/${userId}/induction`, { method: 'GET' });
+      if (inductionRes.ok) {
+        const induction = await inductionRes.json();
+        const list = Array.isArray(induction.items) ? induction.items : [];
+        if (list.length) {
+          inductionHtml = `<p>${escapeHtml(String(induction.doneCount || 0))} of ${escapeHtml(String(induction.total || 0))} complete</p>
+            <ul class="induction-progress-list">${list
+              .map((item) => {
+                const checked = item.done ? 'checked' : '';
+                const when = item.completed_at
+                  ? ` · ${escapeHtml(String(item.completed_at).slice(0, 10))}`
+                  : '';
+                return `<li>
+                  <label>
+                    <input type="checkbox" class="induction-tick" data-item-id="${escapeHtml(item.id)}" ${checked} />
+                    ${escapeHtml(item.title)}${when}
+                  </label>
+                </li>`;
+              })
+              .join('')}</ul>`;
+        }
+      }
+    } catch {
+      inductionHtml = '<p>Unable to load induction progress.</p>';
+    }
+
     // Under-18 rules (SL-NOW-02): only shown when this volunteer is under 18
     // or under the shelter minimum.
     let guardianHtml = '';
@@ -771,6 +799,10 @@ async function viewProfile(userId) {
           <strong>Waivers:</strong>
           ${waiversHtml}
         </div>
+        <div>
+          <strong>Induction checklist:</strong>
+          ${inductionHtml}
+        </div>
         ${
           guardianHtml
             ? `<div>
@@ -836,6 +868,32 @@ async function viewProfile(userId) {
     `;
     
     profileContent.innerHTML = profileHtml;
+
+    profileContent.querySelectorAll('.induction-tick').forEach((box) => {
+      box.addEventListener('change', async () => {
+        const itemId = box.getAttribute('data-item-id');
+        box.disabled = true;
+        try {
+          const tickRes = await apiRequest(`/admin/volunteers/${userId}/induction/${itemId}`, {
+            method: 'PUT',
+            body: { done: box.checked },
+          });
+          if (!tickRes.ok) {
+            const body = await tickRes.json().catch(() => ({}));
+            box.checked = !box.checked;
+            setMessage(body.error || 'Could not update induction item.', 'error');
+          } else {
+            setMessage('Induction progress updated.', 'success');
+            await viewProfile(userId);
+            return;
+          }
+        } catch {
+          box.checked = !box.checked;
+          setMessage('Network error updating induction item.', 'error');
+        }
+        box.disabled = false;
+      });
+    });
 
     await loadVettingSection(userId);
 

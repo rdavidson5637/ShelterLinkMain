@@ -330,6 +330,7 @@ async function anonymiseUser(userId, { reason = 'gdpr_erasure' } = {}) {
     await conn.execute('DELETE FROM guardian_consents WHERE user_id = ?', [id]);
     await conn.execute('DELETE FROM training_attempts WHERE user_id = ?', [id]);
     await conn.execute('DELETE FROM mileage_claims WHERE user_id = ?', [id]);
+    await conn.execute('DELETE FROM induction_checklist_progress WHERE user_id = ?', [id]);
     await conn.execute(
       `UPDATE messages SET body = '[removed]' WHERE user_id = ?`,
       [id]

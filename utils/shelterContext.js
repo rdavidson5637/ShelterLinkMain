@@ -22,6 +22,8 @@ const TENANT_TABLES = [
   'group_bookings',
   'guardian_consents',
   'incidents',
+  'induction_checklist_items',
+  'induction_checklist_progress',
   'message_digest_log',
   'message_threads',
   'messages',

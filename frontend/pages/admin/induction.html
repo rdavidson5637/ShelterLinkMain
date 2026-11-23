@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Induction checklist - ShelterLink</title>
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Account">
+        <a class="site-brand" href="/pages/admin/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" aria-label="Toggle navigation">Menu</button>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main id="main" class="container dashboard-layout">
+      <aside id="admin-nav" class="sidebar-nav"></aside>
+      <div class="dashboard-main">
+        <section>
+          <h1>Induction checklist</h1>
+          <p>
+            Set the short checklist every new volunteer should complete at this shelter.
+            Tick items on each volunteer&rsquo;s profile as they finish them.
+          </p>
+          <div id="message" role="status" aria-live="polite"></div>
+        </section>
+
+        <section>
+          <article style="max-width: 720px;">
+            <h2 id="formTitle">Add checklist item</h2>
+            <form id="inductionForm">
+              <input type="hidden" id="item_id" />
+              <label for="title">
+                Title
+                <input type="text" id="title" name="title" required maxlength="200" placeholder="Site tour" />
+              </label>
+              <label for="sort_order">
+                Order
+                <input type="number" id="sort_order" name="sort_order" step="1" placeholder="Leave blank to append" />
+              </label>
+              <div class="opportunity-actions">
+                <button type="submit" id="saveButton">Save</button>
+                <button type="button" id="cancelEditButton" class="secondary" hidden>Cancel edit</button>
+              </div>
+            </form>
+          </article>
+        </section>
+
+        <section>
+          <h2>Shelter checklist</h2>
+          <p id="starterHint">No items yet. Add your own, or start with the common four.</p>
+          <p>
+            <button type="button" id="starterButton" class="secondary">Add starter checklist</button>
+          </p>
+          <div class="table-wrapper">
+            <table>
+              <caption>Induction checklist items</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Order</th>
+                  <th scope="col">Title</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="inductionTableBody">
+                <tr><td colspan="4">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2026 ShelterLink</small>
+    </footer>
+
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/admin/induction.js"></script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+    <script type="module" src="/js/components/adminNav.js"></script>
+  </body>
+</html>

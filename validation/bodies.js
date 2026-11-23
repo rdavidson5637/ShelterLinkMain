@@ -625,6 +625,20 @@ const customField = z
   })
   .strict();
 
+const inductionItem = z
+  .object({
+    title: optStr(200),
+    sort_order: z.union([z.number().int(), z.string().max(10)]).optional().nullable(),
+    active: optFlag,
+  })
+  .strict();
+
+const inductionProgress = z
+  .object({
+    done: flag,
+  })
+  .strict();
+
 const reorderFields = z
   .object({
     ordered_ids: idList.optional(),
@@ -785,6 +799,12 @@ const queries = {
     })
     .strict(),
   customFields: z.object({ active: qstr(10) }).strict(),
+  inductionItems: z
+    .object({
+      active: qstr(10),
+      activeOnly: qstr(10),
+    })
+    .strict(),
 };
 
 const weekCopy = z
@@ -863,6 +883,8 @@ const bodies = {
   trainingModule,
   trainingAttempt,
   customField,
+  inductionItem,
+  inductionProgress,
   reorderFields,
   template,
   templateFromForm,

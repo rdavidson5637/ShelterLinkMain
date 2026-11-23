@@ -82,6 +82,10 @@ const {
   deleteClosure,
 } = require('../controllers/closureController');
 const { getVolunteerHoursStatement } = require('../controllers/hoursStatementController');
+const {
+  getVolunteerInduction,
+  setVolunteerInductionItem,
+} = require('../controllers/inductionChecklistController');
 
 const { validateBody, validateQuery, positiveParam } = require('../middleware/validate');
 const { listStaffInvites, createStaffInvite, revokeStaffInvite } = require('../controllers/staffInviteController');
@@ -94,6 +98,7 @@ const router = express.Router();
 router.param('userId', positiveParam('userId'));
 router.param('inviteId', positiveParam('inviteId'));
 router.param('closureId', positiveParam('closureId'));
+router.param('itemId', positiveParam('itemId'));
 
 router.use(auditMutations);
 
@@ -161,6 +166,14 @@ router.delete(
 );
 router.get('/volunteers/:userId/custom-fields', isAuthenticated, staffOrAdmin, getVolunteerCustomValues);
 router.get('/volunteers/:userId/waivers', isAuthenticated, staffOrAdmin, getVolunteerWaiverStatus);
+router.get('/volunteers/:userId/induction', isAuthenticated, staffOrAdmin, getVolunteerInduction);
+router.put(
+  '/volunteers/:userId/induction/:itemId',
+  isAuthenticated,
+  staffOrAdmin,
+  validateBody(bodies.inductionProgress),
+  setVolunteerInductionItem
+);
 router.get('/volunteers/:userId/guardian-consent', isAuthenticated, staffOrAdmin, getVolunteerGuardianConsent);
 router.post('/volunteers/:userId/guardian-consent', isAuthenticated, staffOrAdmin, validateBody(bodies.guardianConsent), recordVolunteerGuardianConsent);
 router.delete('/volunteers/:userId/guardian-consent', isAuthenticated, staffOrAdmin, withdrawVolunteerGuardianConsent);

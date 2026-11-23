@@ -19,6 +19,7 @@ export const ADMIN_PRIMARY = [
 
 export const ADMIN_MANAGE = [
   { id: 'onboarding', label: 'Onboarding', href: '/pages/admin/onboarding.html' },
+  { id: 'induction', label: 'Induction checklist', href: '/pages/admin/induction.html' },
   { id: 'qualifications', label: 'Qualifications', href: '/pages/admin/qualifications.html', adminOnly: true },
   { id: 'training', label: 'Training modules', href: '/pages/admin/training.html', adminOnly: true },
   { id: 'custom-fields', label: 'Custom fields', href: '/pages/admin/custom-fields.html', adminOnly: true },

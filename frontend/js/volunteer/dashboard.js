@@ -94,6 +94,36 @@ async function loadOnboardingChecklist() {
   }
 }
 
+async function loadInductionChecklist() {
+  const card = document.getElementById('inductionChecklistCard');
+  const el = document.getElementById('inductionChecklist');
+  const summaryEl = document.getElementById('inductionChecklistSummary');
+  if (!card || !el) return;
+  try {
+    const res = await apiRequest('/induction-checklist/me', { method: 'GET' });
+    if (!res.ok) {
+      card.hidden = true;
+      return;
+    }
+    const data = await res.json();
+    const items = Array.isArray(data.items) ? data.items : [];
+    if (!items.length) {
+      card.hidden = true;
+      return;
+    }
+    card.hidden = false;
+    if (summaryEl) {
+      summaryEl.textContent = `${data.doneCount || 0} of ${data.total || 0} complete`;
+    }
+    el.innerHTML = `<ul>${items
+      .map((item) => `<li>${item.done ? '\u2713' : '\u25cb'} ${escapeHtml(item.title)}</li>`)
+      .join('')}</ul>`;
+  } catch (error) {
+    console.error('[Dashboard] induction checklist error:', error);
+    card.hidden = true;
+  }
+}
+
 function renderBadges(badges = {}) {
   if (badgesListEl) {
     const earned = badges.earned || [];
@@ -589,6 +619,7 @@ async function init() {
     userNameEl.textContent = displayName;
   }
   await loadOnboardingChecklist();
+  await loadInductionChecklist();
   const profile = await fetchProfile();
   if (profile === null) {
     renderProfileIncomplete();
