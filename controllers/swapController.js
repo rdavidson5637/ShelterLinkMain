@@ -219,7 +219,7 @@ async function assertClaimerEligible(userId, opportunityId) {
   if (missingQuals.length) {
     const names = missingQuals.map((q) => q.name).join(', ');
     return {
-      error: `You are missing required qualifications (or they have expired): ${names}`,
+      error: `You are missing required skills (or they have expired): ${names}`,
       status: 403,
       missing_qualifications: missingQuals,
     };

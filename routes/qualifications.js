@@ -1,7 +1,7 @@
 'use strict';
 
 const express = require('express');
-const { isAuthenticated, requireRole } = require('../middleware/auth');
+const { isAuthenticated, requireStaff } = require('../middleware/auth');
 const { auditMutations } = require('../middleware/auditLog');
 const {
   listQualifications,
@@ -19,8 +19,9 @@ router.param('id', positiveParam('id'));
 
 router.get('/', isAuthenticated, listQualifications);
 router.get('/mine', isAuthenticated, getMyQualifications);
-router.post('/', isAuthenticated, requireRole('admin'), auditMutations, validateBody(bodies.qualification), createQualification);
-router.put('/:id', isAuthenticated, requireRole('admin'), auditMutations, validateBody(bodies.qualification), updateQualification);
-router.delete('/:id', isAuthenticated, requireRole('admin'), auditMutations, deleteQualification);
+// Staff manage this shelter's skill list (dog walking, cattery, reception, …).
+router.post('/', isAuthenticated, requireStaff, auditMutations, validateBody(bodies.qualification), createQualification);
+router.put('/:id', isAuthenticated, requireStaff, auditMutations, validateBody(bodies.qualification), updateQualification);
+router.delete('/:id', isAuthenticated, requireStaff, auditMutations, deleteQualification);
 
 module.exports = router;

@@ -199,9 +199,8 @@ export function showOpportunityModal(opportunity, options = {}) {
     const names = requiredQuals.map((q) => escapeHtml(q.name)).join(', ');
     let html = `<p>requires: ${names}</p>`;
     if (missingQualifications.length) {
-      html += `<p class="opportunity-modal-unqualified">You are missing: ${missingQualifications
-        .map((q) => escapeHtml(q.name))
-        .join(', ')}</p>`;
+      const names = missingQualifications.map((q) => escapeHtml(q.name)).join(', ');
+      html += `<p class="opportunity-modal-unqualified">Not eligible for this shift. You need: ${names}</p>`;
     }
     qualsBody.innerHTML = html;
     qualsSection.hidden = false;

@@ -505,7 +505,7 @@ test('unqualified claimer is rejected', async () => {
       res
     );
     assert.strictEqual(res.statusCode, 403);
-    assert.match(res.body.error, /missing required qualifications/i);
+    assert.match(res.body.error, /missing required skills/i);
     assert.ok(Array.isArray(res.body.missing_qualifications));
   } finally {
     Qualification.findMissingForUser = originalMissing;

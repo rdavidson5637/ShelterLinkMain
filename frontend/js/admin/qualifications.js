@@ -1,5 +1,5 @@
 import { apiRequest } from '../config.js';
-import { requireAuth, checkAuth, logout, isAdminRole} from '../auth.js';
+import { requireAuth, checkAuth, logout, isStaffOrAdminRole } from '../auth.js';
 
 const form = document.getElementById('qualificationForm');
 const formTitle = document.getElementById('formTitle');
@@ -33,7 +33,7 @@ function resetForm() {
   editingId = null;
   if (idInput) idInput.value = '';
   form?.reset();
-  if (formTitle) formTitle.textContent = 'Add qualification';
+  if (formTitle) formTitle.textContent = 'Add skill';
   if (cancelEditButton) cancelEditButton.hidden = true;
   if (saveButton) saveButton.textContent = 'Save';
 }
@@ -47,7 +47,7 @@ function startEdit(q) {
     validityInput.value =
       q.validity_months == null || q.validity_months === '' ? '' : String(q.validity_months);
   }
-  if (formTitle) formTitle.textContent = 'Edit qualification';
+  if (formTitle) formTitle.textContent = 'Edit skill';
   if (cancelEditButton) cancelEditButton.hidden = false;
   if (saveButton) saveButton.textContent = 'Update';
   form?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -56,7 +56,7 @@ function startEdit(q) {
 function renderTable() {
   if (!tableBody) return;
   if (!qualifications.length) {
-    tableBody.innerHTML = '<tr><td colspan="4">No qualifications yet.</td></tr>';
+    tableBody.innerHTML = '<tr><td colspan="4">No skills yet for this shelter.</td></tr>';
     return;
   }
 
@@ -109,7 +109,7 @@ async function loadQualifications() {
   try {
     const res = await apiRequest('/qualifications', { method: 'GET' });
     if (!res.ok) {
-      setMessage('Failed to load qualifications', 'error');
+      setMessage('Failed to load skills', 'error');
       qualifications = [];
       renderTable();
       return;
@@ -118,7 +118,7 @@ async function loadQualifications() {
     renderTable();
   } catch (error) {
     console.error('[Admin] loadQualifications error:', error);
-    setMessage('Network error while loading qualifications', 'error');
+    setMessage('Network error while loading skills', 'error');
   }
 }
 
@@ -145,10 +145,10 @@ async function handleSubmit(event) {
     const res = await apiRequest(endpoint, { method, body: payload });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      setMessage(body?.error || 'Failed to save qualification', 'error');
+      setMessage(body?.error || 'Failed to save skill', 'error');
       return;
     }
-    setMessage(editingId ? 'Qualification updated' : 'Qualification created', 'success');
+    setMessage(editingId ? 'Skill updated' : 'Skill created', 'success');
     resetForm();
     await loadQualifications();
   } catch (error) {
@@ -171,7 +171,7 @@ async function deleteQualification(q) {
       return;
     }
     if (editingId === q.id) resetForm();
-    setMessage('Qualification deleted', 'success');
+    setMessage('Skill deleted', 'success');
     await loadQualifications();
   } catch (error) {
     console.error('[Admin] delete qualification error:', error);
@@ -179,9 +179,9 @@ async function deleteQualification(q) {
   }
 }
 
-async function enforceAdmin() {
+async function enforceStaff() {
   const user = await checkAuth();
-  if (!isAdminRole(user)) {
+  if (!isStaffOrAdminRole(user)) {
     window.location.href = '/login.html';
     return null;
   }
@@ -190,7 +190,7 @@ async function enforceAdmin() {
 
 async function init() {
   await requireAuth();
-  await enforceAdmin();
+  await enforceStaff();
 
   form?.addEventListener('submit', handleSubmit);
   cancelEditButton?.addEventListener('click', () => {

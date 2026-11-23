@@ -22,7 +22,7 @@ export const ADMIN_MANAGE = [
   { id: 'induction', label: 'Induction checklist', href: '/pages/admin/induction.html' },
   { id: 'expiry', label: 'Expiring soon', href: '/pages/admin/expiry-dashboard.html' },
   { id: 'resources', label: 'Resources', href: '/pages/admin/resources.html' },
-  { id: 'qualifications', label: 'Qualifications', href: '/pages/admin/qualifications.html', adminOnly: true },
+  { id: 'qualifications', label: 'Skills', href: '/pages/admin/qualifications.html' },
   { id: 'training', label: 'Training modules', href: '/pages/admin/training.html', adminOnly: true },
   { id: 'custom-fields', label: 'Custom fields', href: '/pages/admin/custom-fields.html', adminOnly: true },
   { id: 'waivers', label: 'Waivers', href: '/pages/admin/waivers.html', adminOnly: true },

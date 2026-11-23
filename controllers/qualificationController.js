@@ -2,19 +2,7 @@
 
 const Qualification = require('../models/Qualification');
 const User = require('../models/User');
-const { isAdminUser, isStaffOrAdmin } = require('../middleware/auth');
-
-function ensureAdmin(req, res) {
-  if (!req.session || !req.session.userId) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return false;
-  }
-  if (!isAdminUser(req)) {
-    res.status(403).json({ error: 'Forbidden' });
-    return false;
-  }
-  return true;
-}
+const { isStaffOrAdmin } = require('../middleware/auth');
 
 function ensureStaff(req, res) {
   if (!req.session || !req.session.userId) {
@@ -50,7 +38,7 @@ async function listQualifications(req, res) {
 
 async function createQualification(req, res) {
   try {
-    if (!ensureAdmin(req, res)) return;
+    if (!ensureStaff(req, res)) return;
 
     const name = String(req.body?.name || '').trim();
     if (!name) {
@@ -82,7 +70,7 @@ async function createQualification(req, res) {
 
 async function updateQualification(req, res) {
   try {
-    if (!ensureAdmin(req, res)) return;
+    if (!ensureStaff(req, res)) return;
 
     const { id } = req.params;
     const data = {};
@@ -127,7 +115,7 @@ async function updateQualification(req, res) {
 
 async function deleteQualification(req, res) {
   try {
-    if (!ensureAdmin(req, res)) return;
+    if (!ensureStaff(req, res)) return;
     const deleted = await Qualification.remove(req.params.id);
     if (!deleted) {
       return res.status(404).json({ error: 'Qualification not found' });
