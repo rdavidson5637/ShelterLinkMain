@@ -62,7 +62,7 @@ form.addEventListener('submit', async (e) => {
     const data = await res.json().catch(() => ({}));
 
     if (res.ok) {
-      showMessage('Password updated successfully! Redirecting to sign in…', 'success');
+      showMessage('Password updated. Redirecting to sign in…', 'success');
       form.style.display = 'none';
       loginLink.style.display = 'block';
       setTimeout(() => {
@@ -71,11 +71,11 @@ form.addEventListener('submit', async (e) => {
     } else {
       showFormErrors(form, [{ field: 'password', message: data.error || 'Something went wrong. Please try again.' }]);
       submitButton.disabled = false;
-      submitButton.textContent = 'Set New Password';
+      submitButton.textContent = 'Set new password';
     }
   } catch (err) {
     showFormErrors(form, [{ message: 'Network error. Please check your connection and try again.' }]);
     submitButton.disabled = false;
-    submitButton.textContent = 'Set New Password';
+    submitButton.textContent = 'Set new password';
   }
 });
