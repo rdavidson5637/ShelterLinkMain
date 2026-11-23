@@ -168,6 +168,8 @@ async function buildVolunteerExport(userId) {
        FROM volunteer_shift_notes WHERE user_id = ? ORDER BY id`,
     [id]
   );
+  // SL-DAY-15: volunteer_staff_notes are staff-only and must never appear in
+  // this export (admin GDPR or volunteer self-export). Do not SELECT them.
   const [fosterOffers] = await pool.execute(
     `SELECT id, request_id, note, status, created_at FROM foster_offers WHERE user_id = ? ORDER BY id`,
     [id]
@@ -351,6 +353,11 @@ async function anonymiseUser(userId, { reason = 'gdpr_erasure' } = {}) {
       [id, id]
     );
     await conn.execute('DELETE FROM volunteer_usual_availability WHERE user_id = ?', [id]);
+    // Staff-only notes about this volunteer (never in export; remove on erase).
+    await conn.execute(
+      `DELETE FROM volunteer_staff_notes WHERE volunteer_user_id = ?`,
+      [id]
+    );
     await conn.execute(
       `UPDATE messages SET body = '[removed]' WHERE user_id = ?`,
       [id]

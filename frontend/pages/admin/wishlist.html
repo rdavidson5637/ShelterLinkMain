@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Supplies wishlist - ShelterLink</title>
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Account">
+        <a class="site-brand" href="/pages/admin/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" aria-label="Toggle navigation">Menu</button>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main id="main" class="container dashboard-layout">
+      <aside id="admin-nav" class="sidebar-nav"></aside>
+      <div class="dashboard-main">
+        <section>
+          <h1>Supplies wishlist</h1>
+          <p>
+            List items this shelter needs. The public shelter page shows the active list
+            and the date it was last updated. There is no payment or donation checkout here.
+          </p>
+          <div id="message" role="status" aria-live="polite"></div>
+        </section>
+
+        <section class="wishlist-compose">
+          <h2>Add an item</h2>
+          <form id="wishlistForm" class="wishlist-form">
+            <label for="wishlist_name">
+              Item name
+              <input
+                type="text"
+                id="wishlist_name"
+                name="name"
+                required
+                maxlength="160"
+                placeholder="Dog towels"
+                autocomplete="off"
+              />
+            </label>
+            <div class="wishlist-field-row">
+              <label for="wishlist_quantity">
+                Quantity
+                <input
+                  type="number"
+                  id="wishlist_quantity"
+                  name="quantity"
+                  required
+                  min="1"
+                  max="9999"
+                  step="1"
+                  value="1"
+                />
+              </label>
+              <label for="wishlist_priority">
+                Priority
+                <select id="wishlist_priority" name="priority" required>
+                  <option value="high">High</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="low">Low</option>
+                </select>
+              </label>
+            </div>
+            <label for="wishlist_note">
+              Note (optional)
+              <textarea
+                id="wishlist_note"
+                name="note"
+                maxlength="500"
+                rows="3"
+                placeholder="Size, brand, or where to leave them"
+              ></textarea>
+            </label>
+            <button type="submit">Add to wishlist</button>
+          </form>
+        </section>
+
+        <section>
+          <div class="wishlist-list-header">
+            <h2>Current list</h2>
+            <p id="wishlistUpdatedOn" class="wishlist-updated" hidden></p>
+            <label class="wishlist-archived-toggle" for="showArchived">
+              <input type="checkbox" id="showArchived" name="show_archived" />
+              Show archived
+            </label>
+          </div>
+          <div id="wishlistList" class="wishlist-staff-list">
+            <p>Loading...</p>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2026 ShelterLink</small>
+    </footer>
+
+    <script type="module" src="/js/components/adminNav.js"></script>
+    <script type="module" src="/js/admin/wishlist.js"></script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+  </body>
+</html>

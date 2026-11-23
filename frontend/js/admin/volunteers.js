@@ -712,6 +712,65 @@ async function viewProfile(userId) {
       afterShiftNotesHtml = '<p>Unable to load after-shift notes.</p>';
     }
 
+    // SL-DAY-15: private staff notes — staff only; never shown to the volunteer.
+    let staffNotesHtml = '<p>Unable to load staff notes.</p>';
+    try {
+      const notesRes = await apiRequest(`/admin/volunteers/${userId}/staff-notes`, { method: 'GET' });
+      if (notesRes.ok) {
+        const notesData = await notesRes.json();
+        const notes = Array.isArray(notesData.notes) ? notesData.notes : [];
+        const listHtml = notes.length
+          ? `<ul class="staff-notes-list" style="list-style:none; padding:0; margin:0.75rem 0 0; display:grid; gap:0.75rem;">
+              ${notes
+                .map((note) => {
+                  const when = String(note.created_at || '').replace('T', ' ').slice(0, 16);
+                  const edited =
+                    note.edited && note.updated_at
+                      ? ` · edited ${escapeHtml(String(note.updated_at).replace('T', ' ').slice(0, 16))}${
+                          note.updated_by?.name
+                            ? ` by ${escapeHtml(note.updated_by.name)}`
+                            : ''
+                        }`
+                      : '';
+                  return `<li style="border-top:1px solid var(--border, #ddd); padding-top:0.75rem;" data-note-id="${escapeHtml(note.id)}">
+                    <p style="margin:0 0 0.35rem;"><small>${escapeHtml(note.author?.name || 'Staff')} · ${escapeHtml(when)}${edited}</small></p>
+                    <p class="staff-note-body" style="margin:0 0 0.5rem; white-space:pre-wrap;">${escapeHtml(note.body || '')}</p>
+                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                      <button type="button" class="secondary button-small staff-note-edit-btn" data-note-id="${escapeHtml(note.id)}">Edit</button>
+                      <button type="button" class="secondary button-small staff-note-delete-btn" data-note-id="${escapeHtml(note.id)}">Delete</button>
+                    </div>
+                    <form class="staff-note-edit-form" data-note-id="${escapeHtml(note.id)}" hidden style="display:grid; gap:0.5rem; margin-top:0.5rem;">
+                      <label>
+                        Edit note
+                        <textarea name="body" rows="3" maxlength="4000" required>${escapeHtml(note.body || '')}</textarea>
+                      </label>
+                      <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                        <button type="submit" class="button-small">Save changes</button>
+                        <button type="button" class="secondary button-small staff-note-edit-cancel">Cancel</button>
+                      </div>
+                    </form>
+                  </li>`;
+                })
+                .join('')}
+            </ul>`
+          : '<p>No staff notes yet.</p>';
+        staffNotesHtml = `
+          <p><small>Visible to staff only. Not shown to the volunteer and not included in their data export.</small></p>
+          <form id="staffNoteCreateForm" style="display:grid; gap:0.5rem; margin-top:0.5rem;">
+            <label>
+              Add a note
+              <textarea id="staffNoteBody" name="body" rows="3" maxlength="4000" required placeholder="Internal note for staff"></textarea>
+            </label>
+            <button type="submit" class="button-small">Save note</button>
+            <p id="staffNoteStatus" class="form-status" hidden></p>
+          </form>
+          ${listHtml}
+        `;
+      }
+    } catch {
+      staffNotesHtml = '<p>Unable to load staff notes.</p>';
+    }
+
     // Under-18 rules (SL-NOW-02): only shown when this volunteer is under 18
     // or under the shelter minimum.
     let guardianHtml = '';
@@ -926,10 +985,14 @@ async function viewProfile(userId) {
           <p><small>Pair a new volunteer with an experienced buddy. Both see it on their home page.</small></p>
           ${buddyHtml}
         </div>
-        <div class="detail-block">
+                <div class="detail-block">
           <strong>After-shift notes</strong>
           <p><small>Short notes the volunteer left after check-in or after a shift ended. Not ratings.</small></p>
           ${afterShiftNotesHtml}
+        </div>
+<div style="border-top: 1px solid #ddd; padding-top: 0.75rem;">
+          <strong>Staff notes</strong>
+          ${staffNotesHtml}
         </div>
         ${
           guardianHtml
@@ -1092,6 +1155,118 @@ async function viewProfile(userId) {
         }
       });
     }
+
+    const staffNoteCreateForm = document.getElementById('staffNoteCreateForm');
+    if (staffNoteCreateForm) {
+      staffNoteCreateForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const textarea = document.getElementById('staffNoteBody');
+        const statusEl = document.getElementById('staffNoteStatus');
+        const text = String(textarea?.value || '').trim();
+        if (!text) {
+          setMessage('Write a note before saving.', 'error');
+          return;
+        }
+        const submitBtn = staffNoteCreateForm.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
+        if (statusEl) {
+          statusEl.hidden = false;
+          statusEl.textContent = 'Saving note…';
+        }
+        try {
+          const saveRes = await apiRequest(`/admin/volunteers/${userId}/staff-notes`, {
+            method: 'POST',
+            body: { body: text },
+          });
+          const body = await saveRes.json().catch(() => ({}));
+          if (!saveRes.ok) {
+            const err = body.error || 'Could not save note.';
+            if (statusEl) statusEl.textContent = err;
+            setMessage(err, 'error');
+            if (submitBtn) submitBtn.disabled = false;
+            return;
+          }
+          setMessage('Staff note saved.', 'success');
+          await viewProfile(userId);
+        } catch {
+          if (statusEl) statusEl.textContent = 'Network error saving note.';
+          setMessage('Network error saving note.', 'error');
+          if (submitBtn) submitBtn.disabled = false;
+        }
+      });
+    }
+
+    profileContent.querySelectorAll('.staff-note-edit-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const noteId = btn.getAttribute('data-note-id');
+        const form = profileContent.querySelector(`.staff-note-edit-form[data-note-id="${noteId}"]`);
+        if (form) form.hidden = false;
+      });
+    });
+
+    profileContent.querySelectorAll('.staff-note-edit-cancel').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const form = btn.closest('.staff-note-edit-form');
+        if (form) form.hidden = true;
+      });
+    });
+
+    profileContent.querySelectorAll('.staff-note-edit-form').forEach((form) => {
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const noteId = form.getAttribute('data-note-id');
+        const textarea = form.querySelector('textarea[name="body"]');
+        const text = String(textarea?.value || '').trim();
+        if (!text) {
+          setMessage('Write a note before saving.', 'error');
+          return;
+        }
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
+        try {
+          const saveRes = await apiRequest(`/admin/volunteers/${userId}/staff-notes/${noteId}`, {
+            method: 'PUT',
+            body: { body: text },
+          });
+          const body = await saveRes.json().catch(() => ({}));
+          if (!saveRes.ok) {
+            setMessage(body.error || 'Could not update note.', 'error');
+            if (submitBtn) submitBtn.disabled = false;
+            return;
+          }
+          setMessage('Staff note updated.', 'success');
+          await viewProfile(userId);
+        } catch {
+          setMessage('Network error updating note.', 'error');
+          if (submitBtn) submitBtn.disabled = false;
+        }
+      });
+    });
+
+    profileContent.querySelectorAll('.staff-note-delete-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const noteId = btn.getAttribute('data-note-id');
+        if (!noteId) return;
+        if (!window.confirm('Delete this staff note?')) return;
+        btn.disabled = true;
+        try {
+          const delRes = await apiRequest(`/admin/volunteers/${userId}/staff-notes/${noteId}`, {
+            method: 'DELETE',
+          });
+          const body = await delRes.json().catch(() => ({}));
+          if (!delRes.ok) {
+            setMessage(body.error || 'Could not delete note.', 'error');
+            btn.disabled = false;
+            return;
+          }
+          setMessage('Staff note deleted.', 'success');
+          await viewProfile(userId);
+        } catch {
+          setMessage('Network error deleting note.', 'error');
+          btn.disabled = false;
+        }
+      });
+    });
 
     profileContent.querySelectorAll('.milestone-send-btn').forEach((btn) => {
       btn.addEventListener('click', async () => {

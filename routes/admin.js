@@ -98,13 +98,20 @@ const {
   clearVolunteerBuddy,
 } = require('../controllers/buddyController');
 const {
-  listExpiringItems,
-  sendExpiryReminder,
-} = require('../controllers/expiryDashboardController');
+  listVolunteerStaffNotes,
+  createVolunteerStaffNote,
+  updateVolunteerStaffNote,
+  deleteVolunteerStaffNote,
+} = require('../controllers/staffNoteController');
+
 const {
   listForOpportunity: listVolunteerShiftNotesForOpportunity,
   listForVolunteer: listVolunteerShiftNotesForVolunteer,
 } = require('../controllers/volunteerShiftNoteController');
+const {
+  listExpiringItems,
+  sendExpiryReminder,
+} = require('../controllers/expiryDashboardController');
 
 const { validateBody, validateQuery, positiveParam } = require('../middleware/validate');
 const { listStaffInvites, createStaffInvite, revokeStaffInvite } = require('../controllers/staffInviteController');
@@ -119,6 +126,7 @@ router.param('userId', positiveParam('userId'));
 router.param('inviteId', positiveParam('inviteId'));
 router.param('closureId', positiveParam('closureId'));
 router.param('itemId', positiveParam('itemId'));
+router.param('noteId', positiveParam('noteId'));
 
 router.use(auditMutations);
 
@@ -249,6 +257,28 @@ router.put(
   assignVolunteerBuddy
 );
 router.delete('/volunteers/:userId/buddy', isAuthenticated, staffOrAdmin, clearVolunteerBuddy);
+router.get('/volunteers/:userId/staff-notes', isAuthenticated, staffOrAdmin, listVolunteerStaffNotes);
+router.post(
+  '/volunteers/:userId/staff-notes',
+  isAuthenticated,
+  staffOrAdmin,
+  validateBody(bodies.volunteerStaffNote),
+  createVolunteerStaffNote
+);
+router.put(
+  '/volunteers/:userId/staff-notes/:noteId',
+  isAuthenticated,
+  staffOrAdmin,
+  validateBody(bodies.volunteerStaffNote),
+  updateVolunteerStaffNote
+);
+router.delete(
+  '/volunteers/:userId/staff-notes/:noteId',
+  isAuthenticated,
+  staffOrAdmin,
+  deleteVolunteerStaffNote
+);
+
 router.get(
   '/volunteers/:userId/shift-notes',
   isAuthenticated,

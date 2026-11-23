@@ -19,6 +19,7 @@ const {
   buildMilestoneThankYou,
   buildBuddyAssigned,
   buildExpiryReminder,
+  buildNoShowFollowUp,
   buildUsualAvailabilityAsk,
   buildShelterAnnouncement,
   buildVolunteerShiftNoteAlert,
@@ -86,6 +87,12 @@ function sampleData(shelterNamePlain) {
       kind: 'background_check',
       expiresOn: '2026-12-15',
       message: '',
+    },
+    noShow: {
+      volunteerName: 'Alex',
+      opportunityTitle: 'Morning kennel walk',
+      shiftDate: '2026-11-15T09:00:00.000Z',
+      message: 'Hope you are well. Let us know if you would like another shift.',
     },
     volunteerShiftNote: {
       volunteerName: 'Alex',
@@ -192,6 +199,22 @@ const CATALOG = [
     },
   },
   {
+    id: 'volunteer_shift_note',
+    label: 'After-shift note',
+    description: 'Optional alert when a volunteer leaves a short after-shift note and asks to notify staff.',
+    build(brand, samples) {
+      return buildVolunteerShiftNoteAlert(samples.volunteerShiftNote, brand);
+    },
+  },
+  {
+    id: 'noshow_followup',
+    label: 'No-show follow-up',
+    description: 'Staff-triggered email after a missed shift. Never auto-sent.',
+    build(brand, samples) {
+      return buildNoShowFollowUp(samples.noShow, brand);
+    },
+  },
+  {
     id: 'usual_availability_ask',
     label: 'Usual availability ask',
     description: 'Optional staff email when a short-staffed shift matches a volunteer usual days.',
@@ -205,14 +228,6 @@ const CATALOG = [
     description: 'Optional staff email of a dated shelter notice to active volunteers only.',
     build(brand, samples) {
       return buildShelterAnnouncement(samples.shelterAnnouncement, brand);
-    },
-  },
-  {
-    id: 'volunteer_shift_note',
-    label: 'After-shift note',
-    description: 'Optional alert when a volunteer leaves a short after-shift note and asks to notify staff.',
-    build(brand, samples) {
-      return buildVolunteerShiftNoteAlert(samples.volunteerShiftNote, brand);
     },
   },
 ];
