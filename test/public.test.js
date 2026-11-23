@@ -106,12 +106,22 @@ test('public endpoint hides cancelled, closed, and test-titled shifts even if li
       max_volunteers: 4,
       spots_filled: 0,
     },
+    {
+      opportunity_id: 6,
+      id: 6,
+      title: 'Latest kennel clean',
+      start_date: '2099-01-06 10:00:00',
+      end_date: '2099-01-06 12:00:00',
+      status: 'open',
+      max_volunteers: 4,
+      spots_filled: 0,
+    },
   ]]);
 
   const res = makeRes();
   await publicCtrl.listPublicOpportunities({}, res);
   assert.strictEqual(res.statusCode, 200);
-  assert.deepStrictEqual(res.body.map((row) => row.title), ['Open kennel']);
+  assert.deepStrictEqual(res.body.map((row) => row.title), ['Open kennel', 'Latest kennel clean']);
 });
 
 test('public list marks full shifts as not accepting applications', async () => {

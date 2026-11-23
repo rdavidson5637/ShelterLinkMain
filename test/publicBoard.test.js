@@ -18,6 +18,15 @@ test('public board hides cancelled, closed, completed, and test-titled shifts', 
   assert.equal(isHiddenFromPublicBoard({ title: 'E2E test cover', status: 'open' }), true);
 });
 
+test('public board title filter uses word boundaries (Latest / Contest stay visible)', () => {
+  assert.equal(isHiddenFromPublicBoard({ title: 'Latest kennel clean', status: 'open' }), false);
+  assert.equal(isHiddenFromPublicBoard({ title: 'Contest fundraising walk', status: 'open' }), false);
+  assert.equal(isHiddenFromPublicBoard({ title: 'Protest cover needed', status: 'open' }), false);
+  assert.equal(isHiddenFromPublicBoard({ title: 'Testament shift', status: 'open' }), false);
+  assert.equal(isHiddenFromPublicBoard({ title: 'Morning test walk', status: 'open' }), true);
+  assert.equal(isHiddenFromPublicBoard({ title: 'Smoke cover', status: 'open' }), true);
+});
+
 test('filterPublicBoardOpportunities is defence-in-depth even if DB returns mixed rows', () => {
   const filtered = filterPublicBoardOpportunities([
     { title: 'Cattery Care', status: 'open' },
@@ -61,11 +70,22 @@ test('frontend public board filter matches the API helper', async () => {
   const board = await import('../frontend/js/public/publicBoard.js');
   assert.equal(board.isHiddenFromPublicBoard({ title: 'Smoke Test Shift', status: 'open' }), true);
   assert.equal(board.isHiddenFromPublicBoard({ title: 'Walk', status: 'completed' }), true);
+  assert.equal(board.isHiddenFromPublicBoard({ title: 'Latest kennel clean', status: 'open' }), false);
   assert.equal(board.isAcceptingSignups({ title: 'Walk', spots_remaining: 0 }), false);
   assert.equal(board.isAcceptingSignups({ title: 'Walk', spots_remaining: 2 }), true);
   assert.equal(board.closedShiftLabel({ status: 'closed' }), 'This shift is closed');
   assert.equal(board.closedShiftLabel({ status: 'cancelled' }), 'This shift was cancelled');
   assert.equal(board.closedShiftLabel({ spots_remaining: 0 }), 'Shift full');
+});
+
+test('public opportunities empty state names the shelter', async () => {
+  const { publicOpportunitiesEmptyCopy } = await import('../frontend/js/public/opportunitiesEmpty.js');
+  const named = publicOpportunitiesEmptyCopy('Assisi Animal Sanctuary');
+  assert.match(named.title, /Assisi Animal Sanctuary/);
+  assert.match(named.body, /Assisi Animal Sanctuary has nothing listed/);
+  const fallback = publicOpportunitiesEmptyCopy('');
+  assert.equal(fallback.title, 'No open shifts at this shelter');
+  assert.match(fallback.body, /this shelter has nothing listed/i);
 });
 
 test('forgot-password copy never surfaces Invalid credentials', async () => {
