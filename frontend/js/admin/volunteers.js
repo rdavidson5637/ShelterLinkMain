@@ -29,6 +29,61 @@ let allVolunteers = [];
 let filteredVolunteers = [];
 let allQualifications = [];
 let currentUser = null;
+// Imported volunteers ticked for a set-password invite (SL-LATER-32).
+const selectedForInvite = new Set();
+const inviteBar = document.getElementById('inviteBar');
+const inviteSelectionCount = document.getElementById('inviteSelectionCount');
+const sendInvitesButton = document.getElementById('sendInvitesButton');
+
+const INVITE_LABELS = {
+  not_invited: 'Not yet invited',
+  invited: 'Invite sent, password not set',
+  invite_expired: 'Invite expired',
+};
+
+function canInvite(volunteer) {
+  return Boolean(INVITE_LABELS[volunteer.invite_status]);
+}
+
+function updateInviteBar() {
+  if (!inviteBar) return;
+  const any = allVolunteers.some(canInvite);
+  inviteBar.hidden = !any;
+  const n = selectedForInvite.size;
+  sendInvitesButton.disabled = n === 0;
+  sendInvitesButton.textContent = n
+    ? `Send set-password invite${n === 1 ? '' : 's'} (${n})`
+    : 'Send set-password invites';
+  inviteSelectionCount.textContent = n
+    ? `${n} selected. Each gets a link to set a password, valid for 7 days.`
+    : 'Tick imported volunteers to send them a link to set their password.';
+}
+
+async function sendInvites(ids) {
+  if (!ids.length) return;
+  sendInvitesButton.disabled = true;
+  try {
+    const res = await apiRequest('/admin/volunteers/invites', {
+      method: 'POST',
+      body: { user_ids: ids },
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setMessage(body.error || 'Invites were not sent.', 'error');
+      updateInviteBar();
+      return;
+    }
+    const parts = [`Sent ${body.sent} invite${body.sent === 1 ? '' : 's'}`];
+    if (body.failed) parts.push(`${body.failed} could not be emailed`);
+    if (body.skipped) parts.push(`${body.skipped} skipped because they already have a password`);
+    setMessage(`${parts.join(', ')}.`, body.failed ? 'error' : 'success');
+    selectedForInvite.clear();
+    await loadVolunteers({ keepMessage: true });
+  } catch {
+    setMessage('Network error sending invites', 'error');
+    updateInviteBar();
+  }
+}
 
 function setMessage(text, tone = 'neutral') {
   if (!messageEl) return;
@@ -61,6 +116,8 @@ function filterVolunteers() {
       matchesStatus = volunteer.approved === true || volunteer.approved === 1;
     } else if (statusValue === 'pending') {
       matchesStatus = !volunteer.approved || volunteer.approved === false || volunteer.approved === 0;
+    } else if (statusValue === 'not_invited') {
+      matchesStatus = volunteer.invite_status === 'not_invited';
     }
 
     return matchesSearch && matchesStatus;
@@ -115,6 +172,12 @@ function volunteerActions(volunteer, isApproved) {
   const menuItems = [
     { label: 'Award qualification', onSelect: () => openAwardModal(volunteer) },
   ];
+  if (canInvite(volunteer)) {
+    menuItems.unshift({
+      label: volunteer.invite_status === 'not_invited' ? 'Send set-password invite' : 'Resend set-password invite',
+      onSelect: () => sendInvites([volunteer.id]),
+    });
+  }
   const isFosterApproved =
     volunteer.foster_approved === true || volunteer.foster_approved === 1;
   menuItems.push({
@@ -143,7 +206,7 @@ function renderTable() {
   const cardList = volunteersCardList;
 
   if (!filteredVolunteers.length) {
-    volunteersTableBody.innerHTML = '<tr><td colspan="6">No volunteers found</td></tr>';
+    volunteersTableBody.innerHTML = '<tr><td colspan="7">No volunteers found</td></tr>';
     if (cardList) cardList.innerHTML = '<p>No volunteers found</p>';
     return;
   }
@@ -158,6 +221,20 @@ function renderTable() {
     const noShows = String(volunteer.no_show_count || 0);
 
     const tr = document.createElement('tr');
+    const selectTd = document.createElement('td');
+    if (canInvite(volunteer)) {
+      const box = document.createElement('input');
+      box.type = 'checkbox';
+      box.checked = selectedForInvite.has(volunteer.id);
+      box.setAttribute('aria-label', `Select ${fullName} for a set-password invite`);
+      box.addEventListener('change', () => {
+        if (box.checked) selectedForInvite.add(volunteer.id);
+        else selectedForInvite.delete(volunteer.id);
+        updateInviteBar();
+      });
+      selectTd.appendChild(box);
+    }
+    tr.appendChild(selectTd);
     tr.appendChild(createIdentityCell(fullName, volunteer.email || ''));
 
     const phoneTd = document.createElement('td');
@@ -165,6 +242,12 @@ function renderTable() {
 
     const statusTd = document.createElement('td');
     statusTd.appendChild(createStatusBadge(isApproved ? 'approved' : 'pending'));
+    if (canInvite(volunteer)) {
+      const invite = document.createElement('div');
+      invite.className = 'invite-status';
+      invite.textContent = INVITE_LABELS[volunteer.invite_status];
+      statusTd.appendChild(invite);
+    }
     if (volunteer.away_until) {
       const away = document.createElement('div');
       away.style.cssText = 'font-size:var(--text-xs);margin-top:0.25rem;color:var(--pico-muted-color,#55605a);';
@@ -195,7 +278,7 @@ function renderTable() {
       email.textContent = volunteer.email || '';
       const meta = document.createElement('p');
       meta.className = 'person-card-meta';
-      meta.textContent = `${hours} hours · ${noShows} no-shows`;
+      meta.textContent = `${hours} hours · ${noShows} no-shows${canInvite(volunteer) ? ` · ${INVITE_LABELS[volunteer.invite_status]}` : ''}`;
       const status = createStatusBadge(isApproved ? 'approved' : 'pending');
       card.append(name, email, status, meta, volunteerActions(volunteer, isApproved));
       cardList.appendChild(card);
@@ -946,25 +1029,29 @@ async function loadQualificationsCatalog() {
   }
 }
 
-async function loadVolunteers() {
+async function loadVolunteers({ keepMessage = false } = {}) {
   if (!volunteersTableBody) return;
 
-  setMessage('Loading volunteers...');
+  if (!keepMessage) setMessage('Loading volunteers...');
   
   try {
     const res = await apiRequest('/admin/volunteers', { method: 'GET' });
     if (!res.ok) {
-      volunteersTableBody.innerHTML = '<tr><td colspan="6">Failed to load volunteers</td></tr>';
+      volunteersTableBody.innerHTML = '<tr><td colspan="7">Failed to load volunteers</td></tr>';
       setMessage('Failed to load volunteers', 'error');
       return;
     }
 
     allVolunteers = await res.json();
+    for (const id of [...selectedForInvite]) {
+      if (!allVolunteers.some((v) => v.id === id && canInvite(v))) selectedForInvite.delete(id);
+    }
     filterVolunteers();
-    setMessage('');
+    updateInviteBar();
+    if (!keepMessage) setMessage('');
   } catch (error) {
     console.error('[Volunteers] loadVolunteers error:', error);
-    volunteersTableBody.innerHTML = '<tr><td colspan="6">Error loading volunteers</td></tr>';
+    volunteersTableBody.innerHTML = '<tr><td colspan="7">Error loading volunteers</td></tr>';
     setMessage('Error loading volunteers', 'error');
   }
 }
@@ -977,6 +1064,8 @@ function attachEventListeners() {
   if (statusFilter) {
     statusFilter.addEventListener('change', filterVolunteers);
   }
+
+  sendInvitesButton?.addEventListener('click', () => sendInvites([...selectedForInvite]));
 
   const exportNewsletterAudienceButton = document.getElementById('exportNewsletterAudienceButton');
   if (exportNewsletterAudienceButton) {

@@ -46,6 +46,15 @@
             <button id="exportNewsletterAudienceButton" type="button">Export newsletter audience CSV</button>
           </div>
         </li>
+        <li data-admin-only hidden>
+          <div>
+            <h2>Import from a spreadsheet</h2>
+            <p>Add volunteers from a CSV, checked row by row before saving. Nobody is emailed until you send invites below.</p>
+          </div>
+          <div class="export-actions">
+            <a role="button" href="/pages/admin/volunteer-import.html">Import volunteers CSV</a>
+          </div>
+        </li>
       </ul>
 
       <section class="filter-bar" aria-label="Filters">
@@ -59,17 +68,23 @@
             <option value="all">All</option>
             <option value="approved">Approved</option>
             <option value="pending">Pending</option>
+            <option value="not_invited">Not yet invited</option>
           </select>
         </label>
       </section>
 
       <section>
         <div id="message" role="status" aria-live="polite"></div>
+        <div class="invite-bar" id="inviteBar" hidden>
+          <p id="inviteSelectionCount">Tick imported volunteers to send them a link to set their password.</p>
+          <button type="button" id="sendInvitesButton" disabled>Send set-password invites</button>
+        </div>
         <div class="table-wrapper staff-dense directory-table">
           <table>
             <caption>Registered volunteers</caption>
             <thead>
               <tr>
+                <th scope="col"><span class="visually-hidden">Select for invite</span></th>
                 <th scope="col">Volunteer</th>
                 <th scope="col">Phone</th>
                 <th scope="col">Status</th>
@@ -79,7 +94,7 @@
               </tr>
             </thead>
             <tbody id="volunteersTableBody">
-              <tr><td colspan="6">Loading volunteers...</td></tr>
+              <tr><td colspan="7">Loading volunteers...</td></tr>
             </tbody>
           </table>
         </div>
