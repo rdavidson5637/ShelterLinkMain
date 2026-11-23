@@ -664,6 +664,18 @@ const volunteerBuddy = z
     message: 'Choose a buddy from the volunteer list.',
   });
 
+const volunteerShiftNote = z
+  .object({
+    application_id: optId,
+    applicationId: optId,
+    body: z.string().trim().min(1).max(500),
+    notify: optFlag,
+  })
+  .strict()
+  .refine((body) => body.application_id != null || body.applicationId != null, {
+    message: 'application_id is required',
+  });
+
 const volunteerStaffNote = z
   .object({
     body: str(4000).optional(),
@@ -989,6 +1001,7 @@ const bodies = {
   inductionItem,
   inductionProgress,
   volunteerBuddy,
+  volunteerShiftNote,
   volunteerStaffNote,
   expiryReminder: z
     .object({

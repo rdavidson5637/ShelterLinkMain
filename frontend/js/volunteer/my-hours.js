@@ -2,6 +2,7 @@ import { API_URL, apiRequest } from '../config.js';
 import { requireAuth, logout } from '../auth.js';
 import { formatDateOnly } from '../utils/dateFormat.js';
 import { createStatusBadge } from '../components/statusBadge.js';
+import { escapeHtml } from '../utils/escapeHtml.js';
 
 const totalApprovedHoursEl = document.getElementById('totalApprovedHours');
 const totalPendingHoursEl = document.getElementById('totalPendingHours');
@@ -14,6 +15,7 @@ const filterStatus = document.getElementById('filterStatus');
 const clearFiltersButton = document.getElementById('clearFiltersButton');
 const hoursTableBody = document.getElementById('hoursTableBody');
 const feedbackShiftsBody = document.getElementById('feedbackShiftsBody');
+const afterShiftNotesEl = document.getElementById('afterShiftNotes');
 const logoutButton = document.getElementById('logoutButton');
 
 let allHours = [];
@@ -217,6 +219,102 @@ async function loadHours() {
   }
 }
 
+async function loadAfterShiftNotes() {
+  if (!afterShiftNotesEl) return;
+  try {
+    const res = await apiRequest('/volunteer-shift-notes/mine', { method: 'GET' });
+    if (!res.ok) {
+      afterShiftNotesEl.innerHTML = '<p>Unable to load after-shift notes.</p>';
+      return;
+    }
+    const rows = await res.json();
+    if (!Array.isArray(rows) || !rows.length) {
+      afterShiftNotesEl.innerHTML =
+        '<p><small>No recent shifts ready for a note yet. You can leave one after check-in or after the shift ends.</small></p>';
+      return;
+    }
+
+    afterShiftNotesEl.innerHTML = rows
+      .map((row) => {
+        const appId = Number(row.application_id);
+        const existing = row.note?.body || '';
+        const title = escapeHtml(row.opportunity_title || 'Shift');
+        const when = escapeHtml(formatDate(row.opportunity_start_date));
+        return `<article class="strip" data-application-id="${appId}">
+          <p style="margin:0;"><strong>${title}</strong> · ${when}</p>
+          <label for="afterShiftBody-${appId}">
+            Short note for staff
+            <textarea id="afterShiftBody-${appId}" rows="2" maxlength="500" placeholder="Optional. For example: the yard gate latch sticks.">${escapeHtml(existing)}</textarea>
+          </label>
+          <label>
+            <input type="checkbox" id="afterShiftNotify-${appId}" ${
+              Number(row.note?.notify) === 1 ? 'checked' : ''
+            } />
+            Email staff about this note
+          </label>
+          <button type="button" class="secondary button-small" data-save-note="${appId}">
+            ${row.has_note ? 'Update note' : 'Save note'}
+          </button>
+          <p class="form-status" id="afterShiftStatus-${appId}" hidden></p>
+        </article>`;
+      })
+      .join('');
+
+    afterShiftNotesEl.querySelectorAll('[data-save-note]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const appId = Number(btn.getAttribute('data-save-note'));
+        saveAfterShiftNote(appId);
+      });
+    });
+  } catch (error) {
+    console.error('[MyHours] loadAfterShiftNotes error:', error);
+    afterShiftNotesEl.innerHTML = '<p>Error loading after-shift notes.</p>';
+  }
+}
+
+async function saveAfterShiftNote(applicationId) {
+  const bodyEl = document.getElementById(`afterShiftBody-${applicationId}`);
+  const notifyEl = document.getElementById(`afterShiftNotify-${applicationId}`);
+  const statusEl = document.getElementById(`afterShiftStatus-${applicationId}`);
+  const body = (bodyEl?.value || '').trim();
+  if (!body) {
+    if (statusEl) {
+      statusEl.hidden = false;
+      statusEl.textContent = 'Enter a short note before saving.';
+    }
+    return;
+  }
+  try {
+    const res = await apiRequest('/volunteer-shift-notes', {
+      method: 'POST',
+      body: {
+        application_id: applicationId,
+        body,
+        notify: Boolean(notifyEl?.checked),
+      },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      if (statusEl) {
+        statusEl.hidden = false;
+        statusEl.textContent = err.error || 'Could not save note.';
+      }
+      return;
+    }
+    if (statusEl) {
+      statusEl.hidden = false;
+      statusEl.textContent = 'Note saved.';
+    }
+    await loadAfterShiftNotes();
+  } catch (error) {
+    console.error('[MyHours] saveAfterShiftNote error:', error);
+    if (statusEl) {
+      statusEl.hidden = false;
+      statusEl.textContent = 'Could not save note.';
+    }
+  }
+}
+
 async function loadFeedbackShifts() {
   if (!feedbackShiftsBody) return;
 
@@ -297,7 +395,7 @@ function attachEventListeners() {
 async function init() {
   await requireAuth();
   attachEventListeners();
-  await Promise.all([loadHours(), loadFeedbackShifts()]);
+  await Promise.all([loadHours(), loadFeedbackShifts(), loadAfterShiftNotes()]);
 }
 
 document.addEventListener('DOMContentLoaded', init);

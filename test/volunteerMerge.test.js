@@ -149,6 +149,13 @@ function installDb(state) {
       return [{ affectedRows: n }];
     }
 
+    if (/DELETE FROM volunteer_shift_notes d/.test(sql)) {
+      return [{ affectedRows: 0 }];
+    }
+    if (/UPDATE volunteer_shift_notes SET user_id = \? WHERE user_id = \?/.test(sql)) {
+      return [{ affectedRows: 0 }];
+    }
+
     if (/FROM volunteer_qualifications WHERE user_id = \?/.test(sql) && /COUNT/.test(sql)) {
       const id = Number(params[0]);
       return [[{ n: state.quals.filter((q) => q.user_id === id).length }]];

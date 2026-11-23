@@ -103,6 +103,11 @@ const {
   updateVolunteerStaffNote,
   deleteVolunteerStaffNote,
 } = require('../controllers/staffNoteController');
+
+const {
+  listForOpportunity: listVolunteerShiftNotesForOpportunity,
+  listForVolunteer: listVolunteerShiftNotesForVolunteer,
+} = require('../controllers/volunteerShiftNoteController');
 const {
   listExpiringItems,
   sendExpiryReminder,
@@ -272,6 +277,19 @@ router.delete(
   isAuthenticated,
   staffOrAdmin,
   deleteVolunteerStaffNote
+);
+
+router.get(
+  '/volunteers/:userId/shift-notes',
+  isAuthenticated,
+  staffOrAdmin,
+  listVolunteerShiftNotesForVolunteer
+);
+router.get(
+  '/opportunities/:id/volunteer-notes',
+  isAuthenticated,
+  staffOrAdmin,
+  listVolunteerShiftNotesForOpportunity
 );
 router.get('/volunteers/:userId/guardian-consent', isAuthenticated, staffOrAdmin, getVolunteerGuardianConsent);
 router.post('/volunteers/:userId/guardian-consent', isAuthenticated, staffOrAdmin, validateBody(bodies.guardianConsent), recordVolunteerGuardianConsent);
