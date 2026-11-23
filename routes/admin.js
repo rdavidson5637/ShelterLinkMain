@@ -75,6 +75,7 @@ const { listStaffInvites, createStaffInvite, revokeStaffInvite } = require('../c
 const { bodies, queries } = require('../validation/bodies');
 const { previewImport, runImport, sendInvites } = require('../controllers/volunteerImportController');
 const { MAX_BYTES: IMPORT_MAX_BYTES } = require('../utils/volunteerCsv');
+const { listEmailPreviews } = require('../controllers/emailPreviewController');
 
 const router = express.Router();
 router.param('userId', positiveParam('userId'));
@@ -178,6 +179,9 @@ router.put('/volunteers/:userId/trusted', isAuthenticated, adminOnly, validateBo
 // SL-LATER-10: per-shelter accent colour and logo.
 router.get('/settings/brand', isAuthenticated, staffOrAdmin, getBrandSettings);
 router.put('/settings/brand', isAuthenticated, adminOnly, validateBody(bodies.brandSettings), updateBrandSettings);
+
+// SL-LATER-38: read-only email previews (sample data, never sends).
+router.get('/email-previews', isAuthenticated, adminOnly, listEmailPreviews);
 router.post(
   '/settings/brand/logo',
   isAuthenticated,

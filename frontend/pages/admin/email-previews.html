@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Email previews - ShelterLink</title>
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body class="staff-app">
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Account">
+        <a class="site-brand" href="/pages/admin/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" aria-label="Toggle navigation">Menu</button>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main id="main" class="container dashboard-layout">
+      <aside id="admin-nav" class="sidebar-nav"></aside>
+      <div class="dashboard-main">
+        <section class="page-lede">
+          <h1>Email previews</h1>
+          <p>
+            Sample copies of the emails ShelterLink sends for
+            <span id="shelterNameLabel">your shelter</span>.
+            This page only shows previews. It never sends mail.
+          </p>
+        </section>
+
+        <p id="message" role="status" aria-live="polite"></p>
+
+        <div class="email-preview-layout">
+          <section aria-labelledby="email-types-title">
+            <h2 id="email-types-title" class="visually-hidden">Email types</h2>
+            <ul id="emailTypeList" class="action-list"></ul>
+          </section>
+
+          <section id="emailDetail" class="email-preview-detail" hidden aria-live="polite">
+            <header class="email-preview-detail-header">
+              <h2 id="detailLabel"></h2>
+              <p id="detailDescription" class="email-preview-desc"></p>
+            </header>
+            <table class="email-preview-meta">
+              <tbody>
+                <tr>
+                  <th scope="row">Subject</th>
+                  <td id="detailSubject"></td>
+                </tr>
+              </tbody>
+            </table>
+            <h3>HTML</h3>
+            <iframe
+              id="detailHtml"
+              class="email-preview-frame"
+              title="HTML email preview"
+              sandbox=""
+            ></iframe>
+            <h3>Plain text</h3>
+            <pre id="detailText" class="email-preview-plain"></pre>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <footer class="container" data-site-footer></footer>
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/admin/email-previews.js"></script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+    <script type="module" src="/js/components/adminNav.js"></script>
+  </body>
+</html>

@@ -15,6 +15,7 @@ require.cache[emailPath] = {
   loaded: true,
   exports: {
     sendEmail: async () => {},
+    sendPasswordReset: async () => {},
   },
 };
 

@@ -2860,3 +2860,88 @@ body.staff-app .dashboard-main > section {
   margin-top: 0.25rem;
   color: var(--text-secondary, #55605a);
 }
+
+/* Email previews (SL-LATER-38): ruled list + detail table, no card grid. */
+.email-preview-layout {
+  display: grid;
+  gap: var(--section-gap, 2rem);
+  max-width: 48rem;
+}
+
+.email-preview-layout .action-list {
+  max-width: none;
+}
+
+.email-preview-layout .action-list button.action-list-item[aria-current='true'] {
+  color: var(--green);
+}
+
+.email-preview-detail {
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+
+.email-preview-detail-header h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  margin: 0 0 0.35rem;
+  color: var(--text);
+  line-height: var(--leading-heading);
+}
+
+.email-preview-desc {
+  margin: 0 0 1rem;
+  color: var(--text-secondary);
+}
+
+.email-preview-meta {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1.25rem;
+}
+
+.email-preview-meta th,
+.email-preview-meta td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--text-sm);
+}
+
+.email-preview-meta th {
+  width: 6.5rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.email-preview-detail h3 {
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 600;
+  margin: 1.25rem 0 0.5rem;
+  color: var(--text);
+}
+
+.email-preview-frame {
+  display: block;
+  width: 100%;
+  min-height: 14rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.email-preview-plain {
+  margin: 0;
+  padding: 0.85rem 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  line-height: var(--leading-body, 1.6);
+  color: var(--text);
+  background: transparent;
+}

@@ -2,20 +2,17 @@ const nodemailer = require('nodemailer');
 const { currentShelterName } = require('./shelterBrand');
 const { isEmailConfigured } = require('./emailConfig');
 const { threadUrl } = require('./pushPayloads');
-
-function escapeHtml(value) {
-  return String(value || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
+const { escapeHtml, htmlToPlainText, composeMailParts } = require('./emailParts');
 
 async function brandBits() {
   const name = await currentShelterName();
-  const safe = name ? escapeHtml(name) : '';
+  const plain = name ? String(name) : '';
+  const safe = plain ? escapeHtml(plain) : '';
   return {
     name: safe,
+    namePlain: plain,
     signoff: safe ? `ShelterLink, ${safe}` : 'ShelterLink',
+    signoffPlain: plain ? `ShelterLink, ${plain}` : 'ShelterLink',
   };
 }
 
@@ -38,14 +35,13 @@ function headerValue(value) {
   return String(value || '').replace(/[\r\n]/g, ' ').trim();
 }
 
-async function sendEmail(to, subject, htmlContent) {
+async function sendEmail(to, subject, htmlContent, textContent) {
   const safeTo = headerValue(to);
-  const safeSubject = headerValue(subject);
   if (!safeTo || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(safeTo)) {
     throw new Error('Recipient email is invalid');
   }
-  if (!safeSubject) throw new Error('Email subject is required');
-  if (!htmlContent) throw new Error('Email content is required');
+
+  const parts = composeMailParts(headerValue(subject), htmlContent, textContent);
 
   const fromAddress = headerValue(EMAIL_FROM || EMAIL_USER);
   if (!fromAddress || !isEmailConfigured()) {
@@ -55,9 +51,14 @@ async function sendEmail(to, subject, htmlContent) {
   return transporter.sendMail({
     from: fromAddress,
     to: safeTo,
-    subject: safeSubject,
-    html: htmlContent,
+    subject: parts.subject,
+    html: parts.html,
+    text: parts.text,
   });
+}
+
+function withText(subject, html) {
+  return composeMailParts(subject, html);
 }
 
 async function sendApplicationConfirmation(volunteerEmail, opportunityTitle) {
@@ -75,11 +76,9 @@ async function sendApplicationConfirmation(volunteerEmail, opportunityTitle) {
   );
 }
 
-async function sendApplicationApproval(volunteerEmail, opportunityTitle) {
-  const brand = await brandBits();
-  const safeTitle = opportunityTitle || 'the selected opportunity';
-  return sendEmail(
-    volunteerEmail,
+function buildApplicationApproval(opportunityTitle, brand) {
+  const safeTitle = escapeHtml(opportunityTitle || 'the selected opportunity');
+  return withText(
     'Application Approved - ShelterLink',
     `
     <p>Hello,</p>
@@ -88,6 +87,12 @@ async function sendApplicationApproval(volunteerEmail, opportunityTitle) {
     <p>Best regards,<br/>${brand.signoff}</p>
     `
   );
+}
+
+async function sendApplicationApproval(volunteerEmail, opportunityTitle) {
+  const brand = await brandBits();
+  const parts = buildApplicationApproval(opportunityTitle, brand);
+  return sendEmail(volunteerEmail, parts.subject, parts.html, parts.text);
 }
 
 async function sendApplicationRejection(volunteerEmail, opportunityTitle, reason = null) {
@@ -175,14 +180,12 @@ async function sendWaitlistPromotion(volunteerEmail, opportunityTitle) {
 /**
  * Instant booking or waitlist auto-fill confirmed a trusted volunteer (SL-NOW-03).
  */
-async function sendBookingConfirmed(volunteerEmail, opportunityTitle, { fromWaitlist = false } = {}) {
-  const brand = await brandBits();
-  const safeTitle = opportunityTitle || 'the selected opportunity';
+function buildBookingConfirmed(opportunityTitle, brand, { fromWaitlist = false } = {}) {
+  const safeTitle = escapeHtml(opportunityTitle || 'the selected opportunity');
   const lead = fromWaitlist
     ? `A place opened up on <strong>${safeTitle}</strong> and you were next on the waitlist.`
     : `You are booked on <strong>${safeTitle}</strong>.`;
-  return sendEmail(
-    volunteerEmail,
+  return withText(
     fromWaitlist ? 'You are booked from the waitlist - ShelterLink' : 'You are booked - ShelterLink',
     `
     <p>Hello,</p>
@@ -193,14 +196,18 @@ async function sendBookingConfirmed(volunteerEmail, opportunityTitle, { fromWait
   );
 }
 
-async function sendShiftReminder(volunteerEmail, details = {}) {
+async function sendBookingConfirmed(volunteerEmail, opportunityTitle, { fromWaitlist = false } = {}) {
   const brand = await brandBits();
-  const title = details.title || 'your upcoming shift';
-  const date = details.date || 'TBA';
-  const time = details.time || '';
-  const location = details.location || 'TBA';
-  return sendEmail(
-    volunteerEmail,
+  const parts = buildBookingConfirmed(opportunityTitle, brand, { fromWaitlist });
+  return sendEmail(volunteerEmail, parts.subject, parts.html, parts.text);
+}
+
+function buildShiftReminder(details = {}, brand) {
+  const title = escapeHtml(details.title || 'your upcoming shift');
+  const date = escapeHtml(details.date || 'TBA');
+  const time = details.time ? escapeHtml(details.time) : '';
+  const location = escapeHtml(details.location || 'TBA');
+  return withText(
     'Shift Reminder - ShelterLink',
     `
     <p>Hello,</p>
@@ -214,6 +221,12 @@ async function sendShiftReminder(volunteerEmail, details = {}) {
     <p>Thank you,<br/>${brand.signoff}</p>
     `
   );
+}
+
+async function sendShiftReminder(volunteerEmail, details = {}) {
+  const brand = await brandBits();
+  const parts = buildShiftReminder(details, brand);
+  return sendEmail(volunteerEmail, parts.subject, parts.html, parts.text);
 }
 
 async function sendOpportunityMatchDigest(volunteerEmail, details = {}) {
@@ -314,14 +327,12 @@ async function sendSwapOpened(volunteerEmail, opportunityTitle) {
  * Seat freed on a full shift: time-limited claim link for the next waitlisted
  * volunteer (SL-LATER-23). Distinct from swap waitlist offers.
  */
-async function sendWaitlistSeatOffer(volunteerEmail, details = {}) {
-  const brand = await brandBits();
+function buildWaitlistSeatOffer(details = {}, brand) {
   const title = details.title || 'a shift';
   const claimLink = details.claimLink || '#';
   const hours = details.hours || 12;
   const safeLink = escapeHtml(claimLink).replace(/"/g, '&quot;');
-  return sendEmail(
-    volunteerEmail,
+  return withText(
     'A place opened on the waitlist - ShelterLink',
     `
     <p>Hello,</p>
@@ -331,6 +342,12 @@ async function sendWaitlistSeatOffer(volunteerEmail, details = {}) {
     <p>Thank you,<br/>${brand.signoff}</p>
     `
   );
+}
+
+async function sendWaitlistSeatOffer(volunteerEmail, details = {}) {
+  const brand = await brandBits();
+  const parts = buildWaitlistSeatOffer(details, brand);
+  return sendEmail(volunteerEmail, parts.subject, parts.html, parts.text);
 }
 
 async function sendSwapWaitlistOffer(volunteerEmail, details = {}) {
@@ -526,9 +543,8 @@ async function sendFosterPlacementConfirmation(volunteerEmail, details = {}) {
   );
 }
 
-async function sendWeeklyDigest(volunteerEmail, details = {}) {
-  const brand = await brandBits();
-  const name = details.name || 'there';
+function buildWeeklyDigest(details = {}, brand) {
+  const name = escapeHtml(details.name || 'there');
   const myShifts = Array.isArray(details.myShifts) ? details.myShifts : [];
   const openShifts = Array.isArray(details.openShifts) ? details.openShifts : [];
   const fosterMatches = Array.isArray(details.fosterMatches) ? details.fosterMatches : [];
@@ -538,8 +554,8 @@ async function sendWeeklyDigest(volunteerEmail, details = {}) {
     ? `<ul>${myShifts
         .map(
           (s) =>
-            `<li><strong>${s.title || 'Shift'}</strong><br/>${s.when || 'TBA'} · ${
-              s.location || 'TBA'
+            `<li><strong>${escapeHtml(s.title || 'Shift')}</strong><br/>${escapeHtml(s.when || 'TBA')} · ${
+              escapeHtml(s.location || 'TBA')
             }</li>`
         )
         .join('')}</ul>`
@@ -549,8 +565,8 @@ async function sendWeeklyDigest(volunteerEmail, details = {}) {
     ? `<ul>${openShifts
         .map(
           (s) =>
-            `<li><strong>${s.title || 'Opportunity'}</strong><br/>${s.when || 'TBA'} · ${
-              s.location || 'TBA'
+            `<li><strong>${escapeHtml(s.title || 'Opportunity')}</strong><br/>${escapeHtml(s.when || 'TBA')} · ${
+              escapeHtml(s.location || 'TBA')
             }</li>`
         )
         .join('')}</ul>`
@@ -560,8 +576,8 @@ async function sendWeeklyDigest(volunteerEmail, details = {}) {
     ? `<ul>${fosterMatches
         .map(
           (f) =>
-            `<li><strong>${f.animalName || 'Foster'}</strong> (${f.urgency || 'planned'}) — needed from ${
-              f.neededFrom || 'TBA'
+            `<li><strong>${escapeHtml(f.animalName || 'Foster')}</strong> (${escapeHtml(f.urgency || 'planned')}) - needed from ${
+              escapeHtml(f.neededFrom || 'TBA')
             }</li>`
         )
         .join('')}</ul>`
@@ -572,12 +588,11 @@ async function sendWeeklyDigest(volunteerEmail, details = {}) {
       ? `<p>You have <strong>${unreadCount}</strong> unread message${unreadCount === 1 ? '' : 's'}.</p>`
       : '';
 
-  return sendEmail(
-    volunteerEmail,
+  return withText(
     'Your weekly ShelterLink digest',
     `
     <p>Hi ${name},</p>
-    <p>Here is your week ahead${brand.name ? ` at ${brand.name}` : ""}.</p>
+    <p>Here is your week ahead${brand.name ? ` at ${brand.name}` : ''}.</p>
     <h3>Your shifts this week</h3>
     ${myHtml}
     <h3>Open shifts you could help with</h3>
@@ -588,6 +603,12 @@ async function sendWeeklyDigest(volunteerEmail, details = {}) {
     <p>Thank you,<br/>${brand.signoff}</p>
     `
   );
+}
+
+async function sendWeeklyDigest(volunteerEmail, details = {}) {
+  const brand = await brandBits();
+  const parts = buildWeeklyDigest(details, brand);
+  return sendEmail(volunteerEmail, parts.subject, parts.html, parts.text);
 }
 
 async function sendThreadDigest(toEmail, details = {}) {
@@ -674,14 +695,16 @@ async function sendShelterInvite(to, { shelterName, link, role = 'admin', expire
  * (SL-LATER-32). Sent only when staff choose to, never by the import. The
  * link is the normal reset-password page with a longer-lived token.
  */
-async function sendVolunteerSetPasswordInvite(to, { firstName, link, expiresInDays = 7 } = {}) {
+function buildVolunteerSetPasswordInvite(
+  { firstName, link, expiresInDays = 7, shelterNamePlain } = {},
+  brand
+) {
   if (!link) throw new Error('Invite link is required');
-  const brand = await brandBits();
   const safeLink = escapeHtml(link).replace(/"/g, '&quot;');
   const where = brand.name ? ` at <strong>${brand.name}</strong>` : '';
-  return sendEmail(
-    to,
-    brand.name ? `Set your ShelterLink password for ${headerValue(await currentShelterName())}` : 'Set your ShelterLink password',
+  const subjectName = headerValue(shelterNamePlain || brand.namePlain || '');
+  return withText(
+    subjectName ? `Set your ShelterLink password for ${subjectName}` : 'Set your ShelterLink password',
     `
     <p>Hi ${escapeHtml(firstName) || 'there'},</p>
     <p>You are on the volunteer list${where}, which now uses ShelterLink for shifts and hours. Choose a password to sign in.</p>
@@ -697,20 +720,81 @@ async function sendVolunteerSetPasswordInvite(to, { firstName, link, expiresInDa
   );
 }
 
+async function sendVolunteerSetPasswordInvite(to, { firstName, link, expiresInDays = 7 } = {}) {
+  const brand = await brandBits();
+  const parts = buildVolunteerSetPasswordInvite(
+    { firstName, link, expiresInDays, shelterNamePlain: brand.namePlain },
+    brand
+  );
+  return sendEmail(to, parts.subject, parts.html, parts.text);
+}
+
+/**
+ * Password reset (forgot-password). Shelter name is passed in because the
+ * request may run outside the volunteer's shelter ALS context.
+ */
+function buildPasswordReset({ firstName, link, shelterName } = {}, brand) {
+  if (!link) throw new Error('Reset link is required');
+  const safeLink = escapeHtml(link).replace(/"/g, '&quot;');
+  const plainShelter = shelterName || brand.namePlain || '';
+  const safeShelter = plainShelter ? escapeHtml(plainShelter) : '';
+  const signoff = brand && brand.signoff
+    ? brand.signoff
+    : safeShelter
+      ? `ShelterLink, ${safeShelter}`
+      : 'The ShelterLink Team';
+  return withText(
+    'Reset Your ShelterLink Password',
+    `
+    <p>Hi ${escapeHtml(firstName || 'there')},</p>
+    <p>We received a request to reset your ShelterLink password${safeShelter ? ` for ${safeShelter}` : ''}.</p>
+    <p>
+      <a href="${safeLink}" style="display:inline-block;padding:0.6rem 1.4rem;background:#0f766e;color:#ffffff;border-radius:6px;text-decoration:none;font-weight:600;">
+        Reset My Password
+      </a>
+    </p>
+    <p>Or copy this link into your browser:<br/><small>${safeLink}</small></p>
+    <p>This link expires in <strong>1 hour</strong>. If you didn't request a reset, you can safely ignore this email.</p>
+    <p>Thanks,<br/>${signoff}</p>
+    `
+  );
+}
+
+async function sendPasswordReset(to, details = {}) {
+  const brand = details.shelterName
+    ? {
+        name: escapeHtml(details.shelterName),
+        namePlain: String(details.shelterName),
+        signoff: `ShelterLink, ${escapeHtml(details.shelterName)}`,
+        signoffPlain: `ShelterLink, ${details.shelterName}`,
+      }
+    : await brandBits();
+  const parts = buildPasswordReset(details, brand);
+  return sendEmail(to, parts.subject, parts.html, parts.text);
+}
+
 module.exports = {
   currentShelterName,
   brandBits,
   isEmailConfigured,
+  escapeHtml,
+  htmlToPlainText,
+  composeMailParts,
+  withText,
   sendEmail,
   sendApplicationConfirmation,
+  buildApplicationApproval,
   sendApplicationApproval,
   sendApplicationRejection,
   sendApplicationCancellation,
   sendHoursApproval,
   sendVolunteerApprovalNotification,
   sendWaitlistPromotion,
+  buildWaitlistSeatOffer,
   sendWaitlistSeatOffer,
+  buildBookingConfirmed,
   sendBookingConfirmed,
+  buildShiftReminder,
   sendShiftReminder,
   sendOpportunityMatchDigest,
   sendQualificationExpiryNotice,
@@ -726,9 +810,13 @@ module.exports = {
   sendGroupBookingDeclined,
   sendUrgentCover,
   sendFosterPlacementConfirmation,
+  buildWeeklyDigest,
   sendWeeklyDigest,
   sendThreadDigest,
   sendShiftNoteUpdate,
   sendShelterInvite,
+  buildVolunteerSetPasswordInvite,
   sendVolunteerSetPasswordInvite,
+  buildPasswordReset,
+  sendPasswordReset,
 };
