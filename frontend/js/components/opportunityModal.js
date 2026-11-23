@@ -217,7 +217,7 @@ export function showOpportunityModal(opportunity, options = {}) {
     animalsBody.innerHTML = animals
       .map((a) => {
         const photo = a.photo_filename
-          ? `<img class="opportunity-modal-animal-thumb" src="/api/animals/${Number(a.id)}/photo" alt="" width="56" height="56" />`
+          ? `<img class="opportunity-modal-animal-thumb" src="/api/animals/${Number(a.id)}/photo" alt="" aria-hidden="true" width="56" height="56" />`
           : '';
         const handling = a.handling_notes
           ? `<p class="opportunity-modal-handling"><strong>Handling:</strong> ${escapeHtml(a.handling_notes)}</p>`

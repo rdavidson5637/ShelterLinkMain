@@ -41,13 +41,13 @@
         <p id="bookingModeSummary"></p>
         <fieldset>
           <legend>Booking mode for this shelter</legend>
-          <label>
-            <input type="radio" name="booking_mode" value="approval" />
+          <label for="bookingModeApproval">
+            <input type="radio" id="bookingModeApproval" name="booking_mode" value="approval" />
             Staff approve every booking
           </label>
           <small>Applications and waitlist moves all wait on this page for a decision.</small>
-          <label>
-            <input type="radio" name="booking_mode" value="instant" />
+          <label for="bookingModeInstant">
+            <input type="radio" id="bookingModeInstant" name="booking_mode" value="instant" />
             Trusted volunteers book instantly
           </label>
           <small>Volunteers an admin marks as trusted are confirmed when there is a place, and confirmed from the waitlist when one opens. Everyone else still waits here.</small>
