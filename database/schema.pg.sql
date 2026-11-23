@@ -1701,7 +1701,7 @@ CREATE INDEX volunteer_buddies_shelter_volunteer_idx
 -- ----------------------------------------------------------------------------
 -- volunteer_shift_notes
 -- Optional after-shift notes from volunteers (short text, no rating).
--- (SL-DAY-11; database/067_volunteer_shift_notes.pg.sql). 067 still runs after
+-- (SL-DAY-11; database/068_volunteer_shift_notes.pg.sql). 067 still runs after
 -- 033 on a fresh setup to add row level security, triggers, and grants.
 -- ----------------------------------------------------------------------------
 CREATE TABLE volunteer_shift_notes (
