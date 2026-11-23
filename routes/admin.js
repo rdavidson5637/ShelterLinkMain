@@ -17,6 +17,13 @@ const {
 } = require('../controllers/qualificationController');
 const { getVolunteerCustomValues } = require('../controllers/customFieldController');
 const { getVolunteerWaiverStatus } = require('../controllers/waiverController');
+const {
+  getVolunteerGuardianConsent,
+  recordVolunteerGuardianConsent,
+  withdrawVolunteerGuardianConsent,
+  getAgeSettings,
+  updateAgeSettings,
+} = require('../controllers/guardianConsentController');
 const { listVolunteerDocuments } = require('../controllers/documentController');
 const {
   listAuditLog,
@@ -60,6 +67,11 @@ router.delete(
 );
 router.get('/volunteers/:userId/custom-fields', isAuthenticated, staffOrAdmin, getVolunteerCustomValues);
 router.get('/volunteers/:userId/waivers', isAuthenticated, staffOrAdmin, getVolunteerWaiverStatus);
+router.get('/volunteers/:userId/guardian-consent', isAuthenticated, staffOrAdmin, getVolunteerGuardianConsent);
+router.post('/volunteers/:userId/guardian-consent', isAuthenticated, staffOrAdmin, validateBody(bodies.guardianConsent), recordVolunteerGuardianConsent);
+router.delete('/volunteers/:userId/guardian-consent', isAuthenticated, staffOrAdmin, withdrawVolunteerGuardianConsent);
+router.get('/settings/age', isAuthenticated, staffOrAdmin, getAgeSettings);
+router.put('/settings/age', isAuthenticated, adminOnly, validateBody(bodies.ageSettings), updateAgeSettings);
 router.get('/volunteers/:userId/documents', isAuthenticated, adminOnly, listVolunteerDocuments);
 
 router.get('/messages/recipients', isAuthenticated, adminOnly, validateQuery(queries.recipients), previewRecipients);

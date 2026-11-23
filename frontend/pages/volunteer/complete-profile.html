@@ -168,6 +168,40 @@
 
           <button type="submit" id="submitButton">Complete Profile</button>
         </form>
+
+        <section id="guardianConsentSection" class="guardian-consent" aria-labelledby="guardianConsentTitle" hidden>
+          <h2 id="guardianConsentTitle">Parent or guardian consent</h2>
+          <p id="guardianConsentIntro">
+            You are under 18. Before you can book a shift here, a parent or guardian
+            needs to read this and fill it in themselves.
+          </p>
+          <div id="guardianConsentStatus" role="status" aria-live="polite"></div>
+          <form id="guardianConsentForm" novalidate>
+            <label for="guardian_name">
+              Parent or guardian’s full name
+              <input type="text" id="guardian_name" name="guardian_name" maxlength="200" autocomplete="off" required />
+            </label>
+            <label for="guardian_relationship">
+              Relationship to the volunteer
+              <input type="text" id="guardian_relationship" name="guardian_relationship" maxlength="100" placeholder="For example mother, father, legal guardian" required />
+            </label>
+            <label for="guardian_phone">
+              Their phone number
+              <input type="tel" id="guardian_phone" name="guardian_phone" maxlength="40" autocomplete="off" />
+            </label>
+            <label for="guardian_email">
+              Their email address
+              <input type="email" id="guardian_email" name="guardian_email" maxlength="254" autocomplete="off" />
+            </label>
+            <small>Give at least one way for the shelter to reach them.</small>
+            <label for="guardian_confirm">
+              <input type="checkbox" id="guardian_confirm" name="confirm" value="true" />
+              I am this volunteer’s parent or legal guardian, and I consent to them volunteering
+              with this shelter.
+            </label>
+            <button type="submit" id="guardianConsentSubmit">Record consent</button>
+          </form>
+        </section>
       </article>
     </main>
 
@@ -178,6 +212,7 @@
     <script type="module" src="/js/utils/errorHandler.js"></script>
     <script type="module" src="/js/utils/sessionManager.js"></script>
     <script type="module" src="/js/volunteer/complete-profile.js"></script>
+    <script type="module" src="/js/volunteer/guardian-consent.js"></script>
     <script type="module" src="/js/bindLogout.js"></script>
       <script type="module" src="/js/utils/footerYear.js"></script>
       <script type="module" src="/js/components/volunteerNav.js"></script>

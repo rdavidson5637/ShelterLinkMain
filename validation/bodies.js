@@ -178,6 +178,21 @@ const profile = z
   .strict();
 
 const approval = z.object({ approved: optFlag }).strict();
+const guardianConsent = z
+  .object({
+    guardian_name: optStr(200),
+    guardian_relationship: optStr(100),
+    guardian_phone: optStr(40),
+    guardian_email: optStr(254),
+    // The parent or guardian ticks this themselves.
+    confirm: z.union([z.literal(true), z.literal('on'), z.literal('true')]).optional(),
+  })
+  .strict();
+const ageSettings = z
+  .object({
+    min_volunteer_age: z.union([z.number().int().min(1).max(99), z.null(), z.literal('')]).optional(),
+  })
+  .strict();
 const fosterApproval = z.object({ foster_approved: optFlag }).strict();
 const serviceSettings = z
   .object({
@@ -595,6 +610,8 @@ const bodies = {
   approval,
   fosterApproval,
   serviceSettings,
+  guardianConsent,
+  ageSettings,
   awardQualification,
   bulkMessage,
   erase,
