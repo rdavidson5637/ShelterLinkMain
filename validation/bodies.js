@@ -75,6 +75,13 @@ const login = z
   })
   .strict();
 
+const changePassword = z
+  .object({
+    currentPassword: str(200),
+    newPassword: str(200),
+  })
+  .strict();
+
 const forgot = z.object({ email: optStr(254) }).strict();
 
 const reset = z
@@ -768,6 +775,7 @@ const weekCopy = z
 
 const bodies = {
   empty,
+  changePassword,
   weekCopy,
   register,
   privacyNotice,

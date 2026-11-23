@@ -2806,6 +2806,82 @@ body.staff-app .dashboard-main > section {
   align-items: center;
 }
 
+/* --------------------------------------------------------------------------
+   Signed-in devices and change password (SL-LATER-33)
+   Ruled rows on the flat page, one table, no cards.
+   -------------------------------------------------------------------------- */
+.devices-section {
+  margin-top: var(--section-gap, 2rem);
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.devices-section h2 {
+  margin-bottom: 0.5rem;
+}
+
+.devices-intro {
+  color: var(--text-secondary);
+  max-width: 65ch;
+}
+
+.devices-table td,
+.devices-table th {
+  vertical-align: middle;
+}
+
+.devices-table tbody tr + tr td {
+  border-top: 1px solid var(--border);
+}
+
+.devices-table tr[aria-current='true'] td {
+  background: var(--green-tint);
+}
+
+.devices-current {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.devices-table .devices-signout {
+  margin: 0;
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+.change-password {
+  max-width: 28rem;
+}
+
+.change-password small {
+  display: block;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 600px) {
+  .devices-table thead {
+    display: none;
+  }
+
+  .devices-table tr,
+  .devices-table td {
+    display: block;
+  }
+
+  .devices-table td[data-label]::before {
+    content: attr(data-label) ': ';
+    color: var(--text-secondary);
+  }
+
+  .devices-table tbody tr + tr {
+    border-top: 1px solid var(--border);
+  }
+
+  .devices-table tbody tr + tr td {
+    border-top: 0;
+  }
+}
+
 /* Volunteer CSV import and set-password invites (SL-LATER-32).
    Ruled rows on the page background, same as the directory table. */
 .import-upload {
