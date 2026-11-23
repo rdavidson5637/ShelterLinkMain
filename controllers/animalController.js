@@ -93,6 +93,17 @@ async function listAnimals(req, res) {
   }
 }
 
+async function careGaps(req, res) {
+  try {
+    if (!ensureStaff(req, res)) return;
+    const result = await Animal.findCareGaps({ flagDays: req.query.days });
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[Animal] care gaps error:', error.message);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
 async function getAnimal(req, res) {
   try {
     if (!ensureAuth(req, res)) return;
@@ -266,5 +277,6 @@ module.exports = {
   getPhoto,
   logActivity,
   myHelpedAnimals,
+  careGaps,
   toPublicAnimal,
 };

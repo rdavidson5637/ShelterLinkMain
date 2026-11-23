@@ -14,6 +14,7 @@ const {
   getPhoto,
   logActivity,
   myHelpedAnimals,
+  careGaps,
 } = require('../controllers/animalController');
 
 const { validateBody, validateQuery, positiveParam } = require('../middleware/validate');
@@ -24,6 +25,7 @@ router.param('id', positiveParam('id'));
 
 router.get('/me/helped', isAuthenticated, myHelpedAnimals);
 router.get('/', isAuthenticated, requireStaff, validateQuery(queries.animals), listAnimals);
+router.get('/care-gaps', isAuthenticated, requireStaff, validateQuery(queries.careGaps), careGaps);
 router.post('/', isAuthenticated, requireStaff, auditMutations, validateBody(bodies.animal), createAnimal);
 router.get('/:id', isAuthenticated, getAnimal);
 router.put('/:id', isAuthenticated, requireStaff, auditMutations, validateBody(bodies.animal), updateAnimal);

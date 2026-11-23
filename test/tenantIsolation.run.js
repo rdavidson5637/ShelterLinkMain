@@ -466,6 +466,8 @@ function cases(feedbackToken) {
     own('GET', '/api/group-bookings'),
     own('GET', '/api/animals'),
     own('GET', '/api/animals/me/helped'),
+    own('GET', '/api/animals/care-gaps'),
+    own('GET', '/api/animals/care-gaps?days=1'),
     own('GET', '/api/fosters/requests'),
     own('GET', '/api/fosters/placements'),
     own('GET', '/api/fosters/my-placements'),
@@ -615,6 +617,7 @@ function cases(feedbackToken) {
     deny('GET', '/api/opportunity-templates/1'),
     deny('DELETE', '/api/opportunity-templates/1'),
     { method: 'GET', urlPath: '/api/animals?shelter_id=1', expect: 'rejected' },
+    { method: 'GET', urlPath: '/api/animals/care-gaps?shelter_id=1', expect: 'rejected' },
     { method: 'POST', urlPath: '/api/animals', json: { name: 'Dog', shelter_id: 1 }, expect: 'rejected' },
     { method: 'POST', urlPath: '/api/auth/forgot-password', json: { email: 'a.volunteer@example.test' }, expect: 'forgot' },
     {
