@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Accessibility statement - ShelterLink</title>
+    <meta
+      name="description"
+      content="How accessible ShelterLink is, known limits, and how to ask for help."
+    />
+    <link rel="canonical" href="https://shelterlink.online/pages/accessibility.html" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ShelterLink" />
+    <meta property="og:title" content="Accessibility statement - ShelterLink" />
+    <meta
+      property="og:description"
+      content="How accessible ShelterLink is, known limits, and how to ask for help."
+    />
+    <meta property="og:url" content="https://shelterlink.online/pages/accessibility.html" />
+    <meta property="og:image" content="https://shelterlink.online/public/icons/apple-touch-icon.png" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Accessibility statement - ShelterLink" />
+    <meta
+      name="twitter:description"
+      content="How accessible ShelterLink is, known limits, and how to ask for help."
+    />
+    <link
+      rel="stylesheet"
+      href="/public/css/vendor/pico-2.1.1.min.css"
+      integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU"
+    />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Main navigation">
+        <a class="site-brand" href="/index.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button
+          class="nav-toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="navMenu"
+          aria-label="Toggle navigation"
+        >
+          ☰
+        </button>
+        <ul class="nav-menu" id="navMenu">
+          <li><a class="nav-link" href="/pages/opportunities.html">Open shifts</a></li>
+          <li><a class="nav-link" href="/register.html">Register</a></li>
+          <li><a class="nav-link" href="/login.html">Sign in</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main id="main" class="container" style="max-width: 42rem;" tabindex="-1">
+      <article>
+        <h1>Accessibility statement</h1>
+        <p>Last updated 23 November 2026.</p>
+        <p>
+          This statement applies to ShelterLink at
+          <a href="https://shelterlink.online">shelterlink.online</a>, the volunteer rota used by
+          Assisi Animal Sanctuary.
+        </p>
+
+        <h2>How accessible this site is</h2>
+        <p>
+          We aim to meet
+          <a href="https://www.w3.org/TR/WCAG21/">WCAG 2.1 level AA</a>
+          on volunteer-facing flows first, then staff screens. The site is
+          <strong>partially compliant</strong> with that standard. Some parts do not yet meet every
+          success criterion. Automated markup and contrast checks cover the redesigned public,
+          volunteer, and staff surfaces; a full browser-based audit is not yet part of every
+          release.
+        </p>
+
+        <h2>What we have in place</h2>
+        <ul>
+          <li>A skip link to the main content on each page, with a focusable main landmark.</li>
+          <li>One clear page title heading (<code>h1</code>) on public, volunteer, and staff pages.</li>
+          <li>Visible keyboard focus and respect for reduced motion preferences.</li>
+          <li>Form labels, error summaries, and named dialogs on the redesigned screens.</li>
+          <li>Status that is not colour alone (text labels with tinted badges).</li>
+        </ul>
+
+        <h2>Known limits</h2>
+        <ul>
+          <li>Some browser-native date pickers still use default form chrome.</li>
+          <li>
+            A few admin filter and bulk-action forms still announce server errors in a live region
+            rather than a focusable error summary.
+          </li>
+          <li>Charts on the admin dashboard are not in scope for this pass.</li>
+          <li>
+            Full axe or Lighthouse CI in a real browser is not wired into the test suite yet.
+          </li>
+        </ul>
+
+        <h2>Reporting a problem</h2>
+        <p>
+          If you find a barrier, tell a member of staff at the sanctuary, or use the contact
+          details on the Assisi website.
+          <!-- TODO: accessibility contact email once Assisi confirms one. -->
+        </p>
+        <p>
+          Say which page you were on, what you were trying to do, and which assistive technology
+          you use if you know it. We will work with the sanctuary to improve the page where we can.
+        </p>
+
+        <h2>Enforcement</h2>
+        <p>
+          If you are not happy with how a report is handled, you can contact the Equality
+          Commission for Northern Ireland or the Equality Advisory and Support Service. Details are
+          on
+          <a href="https://www.equalityni.org/">equalityni.org</a>
+          and
+          <a href="https://www.equalityadvisoryservice.com/">equalityadvisoryservice.com</a>.
+        </p>
+
+        <h2>Preparation of this statement</h2>
+        <p>
+          This statement was prepared on 23 November 2026 from the in-repo accessibility notes and
+          automated checks in the ShelterLink test suite. It is not a claim of full WCAG
+          certification.
+        </p>
+        <p>
+          Related:
+          <a href="/pages/privacy.html">Privacy notice</a>.
+        </p>
+      </article>
+    </main>
+
+    <footer class="container">
+      <small></small>
+    </footer>
+
+    <script type="module" src="/js/components/publicNav.js"></script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+  </body>
+</html>

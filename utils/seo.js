@@ -213,6 +213,7 @@ function sitemapUrlsForShelters(shelters, origin = publicOrigin()) {
     '/pages/opportunities.html',
     '/pages/group-booking.html',
     '/pages/privacy.html',
+    '/pages/accessibility.html',
     '/apply',
   ].map((p) => absoluteUrl(p, origin));
 
@@ -234,6 +235,7 @@ function buildRobotsTxt(origin = publicOrigin()) {
     'Allow: /pages/opportunities.html',
     'Allow: /pages/group-booking.html',
     'Allow: /pages/privacy.html',
+    'Allow: /pages/accessibility.html',
     'Disallow: /api/',
     'Disallow: /pages/admin/',
     'Disallow: /pages/volunteer/',

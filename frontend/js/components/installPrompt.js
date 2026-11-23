@@ -69,7 +69,9 @@ function card(children) {
 }
 
 function heading() {
-  const h = document.createElement('h2');
+  // Not a heading — the install card sits above the page h1 in the DOM.
+  const h = document.createElement('p');
+  h.className = 'install-card-title';
   h.textContent = 'Put ShelterLink on your home screen';
   return h;
 }

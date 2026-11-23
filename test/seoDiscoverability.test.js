@@ -114,6 +114,7 @@ test('sitemap omits suspended shelters and includes active shelter pages', () =>
   );
   assert.ok(urls.includes('https://shelterlink.online/'));
   assert.ok(urls.includes('https://shelterlink.online/pages/opportunities.html'));
+  assert.ok(urls.includes('https://shelterlink.online/pages/accessibility.html'));
   assert.ok(urls.includes('https://shelterlink.online/s/assisi'));
   assert.ok(urls.includes('https://shelterlink.online/s/assisi/opportunities'));
   assert.ok(urls.includes('https://shelterlink.online/s/second/opportunities'));
@@ -126,6 +127,7 @@ test('sitemap omits suspended shelters and includes active shelter pages', () =>
 test('robots.txt allows public pages, blocks the API, and points at the sitemap', () => {
   const text = buildRobotsTxt('https://shelterlink.online');
   assert.match(text, /Allow: \/pages\/opportunities\.html/);
+  assert.match(text, /Allow: \/pages\/accessibility\.html/);
   assert.match(text, /Disallow: \/api\//);
   assert.match(text, /Disallow: \/pages\/admin\//);
   assert.match(text, /Sitemap: https:\/\/shelterlink\.online\/sitemap\.xml/);
@@ -135,6 +137,7 @@ test('robots.txt allows public pages, blocks the API, and points at the sitemap'
 test('static robots.txt fallback still blocks private surfaces', () => {
   const text = fs.readFileSync(path.join(__dirname, '../frontend/robots.txt'), 'utf8');
   assert.match(text, /Allow: \/pages\/opportunities\.html/);
+  assert.match(text, /Allow: \/pages\/accessibility\.html/);
   assert.match(text, /Disallow: \/api\//);
   assert.match(text, /Sitemap: https:\/\/shelterlink\.online\/sitemap\.xml/);
 });

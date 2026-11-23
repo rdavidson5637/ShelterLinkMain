@@ -3,6 +3,7 @@ Allow: /
 Allow: /pages/opportunities.html
 Allow: /pages/group-booking.html
 Allow: /pages/privacy.html
+Allow: /pages/accessibility.html
 Disallow: /api/
 Disallow: /pages/admin/
 Disallow: /pages/volunteer/

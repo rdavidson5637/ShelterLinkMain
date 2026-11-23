@@ -43,8 +43,17 @@ export function applySiteFooter(root = document) {
     privacy.href = '/pages/privacy.html';
     privacy.textContent = 'Privacy';
     small.append(privacy);
-    // Drop hand-authored duplicate privacy links inside the footer mount.
-    mount.querySelectorAll(':scope > a[href="/pages/privacy.html"]').forEach((el) => el.remove());
+    small.append(footer.ownerDocument.createTextNode(' · '));
+    const a11y = footer.ownerDocument.createElement('a');
+    a11y.href = '/pages/accessibility.html';
+    a11y.textContent = 'Accessibility';
+    small.append(a11y);
+    // Drop hand-authored duplicate legal links inside the footer mount.
+    mount
+      .querySelectorAll(
+        ':scope > a[href="/pages/privacy.html"], :scope > a[href="/pages/accessibility.html"]'
+      )
+      .forEach((el) => el.remove());
   });
 }
 

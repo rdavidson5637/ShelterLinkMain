@@ -22,6 +22,7 @@ const REDESIGNED_PAGES = [
   'frontend/pages/opportunities.html',
   'frontend/pages/group-booking.html',
   'frontend/pages/privacy.html',
+  'frontend/pages/accessibility.html',
   'frontend/pages/public/reference.html',
   'frontend/pages/volunteer/dashboard.html',
   'frontend/pages/volunteer/checkin.html',
@@ -179,6 +180,23 @@ test('redesigned pages keep one h1 and no skipped heading levels', () => {
       }
       prev = level;
     }
+  }
+});
+
+test('every staff and volunteer page has one h1 and a #main skip target', () => {
+  const roots = [
+    path.join(ROOT, 'frontend/pages/admin'),
+    path.join(ROOT, 'frontend/pages/volunteer'),
+  ];
+  const files = roots.flatMap((dir) => walkHtml(dir));
+  for (const file of files) {
+    const html = fs.readFileSync(file, 'utf8');
+    const rel = relative(file);
+    assert.match(html, /class=["']skip-link["'][^>]*href=["']#main["']/i, rel);
+    assert.match(html, /<main[^>]*\bid=["']main["']/i, rel);
+    const levels = headingLevels(html);
+    assert.equal(levels.filter((l) => l === 1).length, 1, `${rel} exactly one h1`);
+    assert.equal(levels[0], 1, `${rel} starts with h1`);
   }
 });
 
