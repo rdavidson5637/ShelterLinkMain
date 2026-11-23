@@ -43,6 +43,9 @@ const appleCalLink = document.getElementById('appleCalLink');
 const googleCalLink = document.getElementById('googleCalLink');
 const logoutButton = document.getElementById('logoutButton');
 const exportHoursCsvButton = document.getElementById('exportHoursCsvButton');
+const exportMyDataButton = document.getElementById('exportMyDataButton');
+const exportMyDataJsonButton = document.getElementById('exportMyDataJsonButton');
+const exportMyDataZipButton = document.getElementById('exportMyDataZipButton');
 let icalUrl = '';
 let impactSnapshot = null;
 let displayName = 'Volunteer';
@@ -647,6 +650,43 @@ async function exportMyHoursCSV() {
     setExportButtonLoading(false);
   }
 }
+
+async function exportMyData(format = 'json') {
+  const buttons = [exportMyDataButton, exportMyDataJsonButton, exportMyDataZipButton].filter(Boolean);
+  buttons.forEach((btn) => {
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+  });
+  try {
+    const qs = format === 'zip' ? '?format=zip' : '';
+    const response = await fetch(`${API_URL}/volunteer/data-export${qs}`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error(`Export failed (${response.status})`);
+    const blob = await response.blob();
+    const fallback = format === 'zip'
+      ? `my-shelterlink-data-${new Date().toISOString().slice(0, 10)}.zip`
+      : `my-shelterlink-data-${new Date().toISOString().slice(0, 10)}.json`;
+    const filename = getFilenameFromDisposition(response.headers.get('Content-Disposition')) || fallback;
+    const downloadUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(downloadUrl);
+  } catch (error) {
+    console.error('[Dashboard] exportMyData error:', error);
+    alert('Unable to download your data right now. Please try again.');
+  } finally {
+    buttons.forEach((btn) => {
+      btn.disabled = false;
+      btn.setAttribute('aria-busy', 'false');
+    });
+  }
+}
 async function init() {
   mountInstallPrompt(document.getElementById('installPrompt'));
   mountPushToggle(document.getElementById('pushToggle'));
@@ -685,6 +725,24 @@ async function init() {
   documentUploadForm?.addEventListener('submit', handleDocumentUpload);
   if (logoutButton) logoutButton.addEventListener('click', (event) => { event.preventDefault(); logout(); });
   if (exportHoursCsvButton) exportHoursCsvButton.addEventListener('click', (event) => { event.preventDefault(); exportMyHoursCSV(); });
+  if (exportMyDataButton) {
+    exportMyDataButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      exportMyData('json');
+    });
+  }
+  if (exportMyDataJsonButton) {
+    exportMyDataJsonButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      exportMyData('json');
+    });
+  }
+  if (exportMyDataZipButton) {
+    exportMyDataZipButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      exportMyData('zip');
+    });
+  }
   if (downloadImpactButton) {
     downloadImpactButton.addEventListener('click', () => {
       if (!impactCanvas) return;

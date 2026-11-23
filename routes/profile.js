@@ -11,6 +11,7 @@ const {
   issueMyCertificate,
 } = require('../controllers/certificateController');
 const { getMyHoursStatement } = require('../controllers/hoursStatementController');
+const { exportMyData } = require('../controllers/gdprController');
 
 const {
   getMyAgeStatus,
@@ -37,6 +38,8 @@ router.get(
   validateQuery(queries.hoursStatement),
   getMyHoursStatement
 );
+// SL-DAY-09: volunteer self-serve GDPR export (reuses Gdpr.buildVolunteerExport).
+router.get('/data-export', exportMyData);
 
 module.exports = router;
 
