@@ -9,6 +9,7 @@ const descriptionInput = document.getElementById('description');
 const contentInput = document.getElementById('content');
 const passMarkInput = document.getElementById('pass_mark_percent');
 const awardsSelect = document.getElementById('awards_qualification_id');
+const validityInput = document.getElementById('validity_months');
 const activeInput = document.getElementById('active');
 const questionsList = document.getElementById('questionsList');
 const addQuestionButton = document.getElementById('addQuestionButton');
@@ -143,6 +144,12 @@ async function loadModuleForEdit(id) {
       ? String(data.awards_qualification_id)
       : '';
   }
+  if (validityInput) {
+    validityInput.value =
+      data.validity_months == null || data.validity_months === ''
+        ? ''
+        : String(data.validity_months);
+  }
   if (activeInput) activeInput.checked = Boolean(data.active);
   if (questionsList) questionsList.innerHTML = '';
   const qs = Array.isArray(data.questions) ? data.questions : [];
@@ -157,7 +164,7 @@ async function loadModuleForEdit(id) {
 function renderTable() {
   if (!tableBody) return;
   if (!modules.length) {
-    tableBody.innerHTML = '<tr><td colspan="6">No training modules yet.</td></tr>';
+    tableBody.innerHTML = '<tr><td colspan="7">No training modules yet.</td></tr>';
     return;
   }
   tableBody.innerHTML = '';
@@ -167,6 +174,7 @@ function renderTable() {
       m.name || '',
       `${m.pass_mark_percent}%`,
       m.awards_qualification_name || '—',
+      m.validity_months == null ? 'Never' : `${m.validity_months} mo`,
       String(m.question_count ?? 0),
       m.active ? 'Yes' : 'No',
     ];
@@ -256,6 +264,7 @@ form?.addEventListener('submit', async (event) => {
     content: contentInput?.value || '',
     pass_mark_percent: Number(passMarkInput?.value),
     awards_qualification_id: awardsSelect?.value ? Number(awardsSelect.value) : null,
+    validity_months: validityInput?.value ? Number(validityInput.value) : null,
     active: Boolean(activeInput?.checked),
     questions,
   };

@@ -25,6 +25,7 @@ const {
   buildReminderPayload,
   buildUrgentPayload,
   buildWaitlistOfferPayload,
+  buildTrainingRefresherPayload,
 } = require('../pushPayloads');
 const { getSmsProvider } = require('./smsProvider');
 const { rowInQuietHours } = require('../quietHours');
@@ -271,10 +272,73 @@ async function notifyWaitlistSeatOffer(recipient, details = {}, options = {}) {
   return result;
 }
 
+/**
+ * Training refresher: email + push 14 days before a training-awarded
+ * qualification expires. Quiet hours and prefer_reminders gate both channels.
+ *
+ * @param {object} row from Qualification.findNeedingTrainingRefresher
+ * @param {object} details { qualificationName, expiresAt, warnDays }
+ * @param {object} [options]
+ * @param {Date} [options.now]
+ */
+async function notifyTrainingRefresher(row, details = {}, options = {}) {
+  const now = options.now || new Date();
+  if (!prefOn(row, 'prefer_reminders', true)) {
+    return skipAllChannels('prefer_reminders_off');
+  }
+  if (rowInQuietHours(row, now)) {
+    return skipAllChannels('quiet_hours');
+  }
+
+  const emailOn = isEmailConfigured();
+  const result = {
+    email: emptyResult({ configured: emailOn }),
+    push: emptyResult(),
+    sms: emptyResult(),
+    delivered: false,
+  };
+
+  if (emailOn) {
+    if (!row.email) {
+      result.email.failed = 1;
+      result.email.reason = 'missing_email';
+    } else {
+      await emailService().sendTrainingRefresherNotice(row.email, {
+        name: row.first_name || 'Volunteer',
+        qualificationName: details.qualificationName || row.qualification_name,
+        expiresAt: details.expiresAt,
+        warnDays: details.warnDays || 14,
+      });
+      result.email.sent = 1;
+    }
+  } else {
+    result.email.skipped = 1;
+  }
+
+  result.push = await sendPush(
+    [row.user_id],
+    buildTrainingRefresherPayload({
+      ...row,
+      qualificationName: details.qualificationName || row.qualification_name,
+      expiresAt: details.expiresAt,
+      warnDays: details.warnDays || 14,
+    }),
+    'reminders'
+  );
+  result.sms = await sendSms([row.user_id]);
+  result.delivered = result.email.sent > 0 || result.push.sent > 0;
+  if (!emailOn && result.push.sent > 0) result.delivered = true;
+  if (emailOn && result.email.reason === 'missing_email' && result.push.sent === 0) {
+    result.delivered = false;
+  }
+  return result;
+}
+
 module.exports = {
   CHANNELS,
   channelStatus,
   notifyShiftReminder,
   notifyUrgentCover,
   notifyWaitlistSeatOffer,
+  notifyTrainingRefresher,
 };

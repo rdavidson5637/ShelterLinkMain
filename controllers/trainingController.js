@@ -39,6 +39,14 @@ function parseActive(value, fallback = true) {
   return Boolean(value);
 }
 
+function parseValidityMonths(value) {
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 1 || n > 240) return null;
+  return Math.floor(n);
+}
+
 async function listModules(req, res) {
   try {
     if (!ensureAuthenticated(req, res)) return;
@@ -67,8 +75,13 @@ async function getModule(req, res) {
     });
 
     let my_attempts = [];
+    let has_passed = false;
     if (!isAdmin || req.query.include_attempts === '1') {
       my_attempts = await TrainingModule.findAttemptsForUser(
+        req.session.userId,
+        module.id
+      );
+      has_passed = await TrainingModule.hasValidPass(
         req.session.userId,
         module.id
       );
@@ -78,7 +91,7 @@ async function getModule(req, res) {
       ...module,
       questions,
       my_attempts,
-      has_passed: my_attempts.some((a) => a.passed),
+      has_passed,
     });
   } catch (error) {
     console.error('[Training] getModule error:', error.message);
@@ -115,6 +128,20 @@ async function createModule(req, res) {
       }
     }
 
+    let validity_months = null;
+    if (typeof req.body?.validity_months !== 'undefined') {
+      if (req.body.validity_months === '' || req.body.validity_months === null) {
+        validity_months = null;
+      } else {
+        validity_months = parseValidityMonths(req.body.validity_months);
+        if (validity_months == null) {
+          return res
+            .status(400)
+            .json({ error: 'validity_months must be between 1 and 240, or blank' });
+        }
+      }
+    }
+
     const created = await TrainingModule.create({
       name,
       description:
@@ -122,6 +149,7 @@ async function createModule(req, res) {
       content: req.body?.content == null ? '' : String(req.body.content),
       pass_mark_percent,
       awards_qualification_id,
+      validity_months,
       active: parseActive(req.body?.active, true),
     });
 
@@ -195,6 +223,19 @@ async function updateModule(req, res) {
     }
     if (typeof req.body?.active !== 'undefined') {
       data.active = parseActive(req.body.active);
+    }
+    if (typeof req.body?.validity_months !== 'undefined') {
+      if (req.body.validity_months === '' || req.body.validity_months === null) {
+        data.validity_months = null;
+      } else {
+        const months = parseValidityMonths(req.body.validity_months);
+        if (months == null) {
+          return res
+            .status(400)
+            .json({ error: 'validity_months must be between 1 and 240, or blank' });
+        }
+        data.validity_months = months;
+      }
     }
 
     if (!Object.keys(data).length && !Array.isArray(req.body?.questions)) {

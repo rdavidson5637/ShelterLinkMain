@@ -3,6 +3,7 @@
 const scheduler = require('../utils/scheduler');
 const { runShiftReminders } = require('./shiftReminders');
 const { runQualificationExpiry } = require('./qualificationExpiry');
+const { runTrainingRefreshers } = require('./trainingRefreshers');
 const { runOpportunityMatchDigest } = require('./opportunityMatchDigest');
 const { runSwapWaitlistExpiry } = require('./swapWaitlistExpiry');
 const { runWaitlistOffers } = require('./waitlistOffers');
@@ -32,6 +33,10 @@ function registerAllJobs() {
   scheduler.registerJob('shiftReminders', '0 * * * *', () => forEachShelter(() => runShiftReminders()));
   // Daily: qualification expiry warnings (30 days) and day-of notices.
   scheduler.registerJob('qualificationExpiry', '0 8 * * *', () => forEachShelter(() => runQualificationExpiry()));
+  // Daily: training refresher (14 days before training-awarded quals expire).
+  scheduler.registerJob('trainingRefreshers', '15 8 * * *', () =>
+    forEachShelter(() => runTrainingRefreshers())
+  );
   // Hourly: send queued new-opportunity match digests (max one per volunteer/day).
   scheduler.registerJob('opportunityMatchDigest', '15 * * * *', () =>
     forEachShelter(() => runOpportunityMatchDigest())

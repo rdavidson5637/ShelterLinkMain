@@ -53,6 +53,13 @@ function parseChoices(raw) {
   return [];
 }
 
+function normalizeValidityMonths(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const months = Number(value);
+  if (!Number.isFinite(months) || months <= 0) return null;
+  return Math.floor(months);
+}
+
 function mapModule(row) {
   if (!row) return null;
   return {
@@ -64,6 +71,7 @@ function mapModule(row) {
     awards_qualification_id:
       row.awards_qualification_id == null ? null : Number(row.awards_qualification_id),
     awards_qualification_name: row.awards_qualification_name || null,
+    validity_months: normalizeValidityMonths(row.validity_months),
     active: Number(row.active) === 1,
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -93,12 +101,13 @@ async function create({
   content = '',
   pass_mark_percent = 80,
   awards_qualification_id = null,
+  validity_months = null,
   active = true,
 }) {
   const sql = `
     INSERT INTO training_modules
-      (name, description, content, pass_mark_percent, awards_qualification_id, active)
-    VALUES (?, ?, ?, ?, ?, ?)
+      (name, description, content, pass_mark_percent, awards_qualification_id, validity_months, active)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   `;
   const [result] = await pool.execute(sql, [
     name,
@@ -108,6 +117,7 @@ async function create({
     awards_qualification_id == null || awards_qualification_id === ''
       ? null
       : Number(awards_qualification_id),
+    normalizeValidityMonths(validity_months),
     active ? 1 : 0,
   ]);
   return findById(result.insertId, { includeInactive: true });
@@ -117,7 +127,7 @@ async function findById(id, { includeInactive = false } = {}) {
   const sql = `
     SELECT
       m.id, m.name, m.description, m.content, m.pass_mark_percent,
-      m.awards_qualification_id, m.active, m.created_at, m.updated_at,
+      m.awards_qualification_id, m.validity_months, m.active, m.created_at, m.updated_at,
       q.name AS awards_qualification_name,
       (SELECT COUNT(*)::int FROM training_questions tq WHERE tq.module_id = m.id) AS question_count
     FROM training_modules m
@@ -134,7 +144,7 @@ async function findAll({ activeOnly = false } = {}) {
   const sql = `
     SELECT
       m.id, m.name, m.description, m.content, m.pass_mark_percent,
-      m.awards_qualification_id, m.active, m.created_at, m.updated_at,
+      m.awards_qualification_id, m.validity_months, m.active, m.created_at, m.updated_at,
       q.name AS awards_qualification_name,
       (SELECT COUNT(*)::int FROM training_questions tq WHERE tq.module_id = m.id) AS question_count
     FROM training_modules m
@@ -173,6 +183,10 @@ async function update(id, data = {}) {
         ? null
         : Number(data.awards_qualification_id)
     );
+  }
+  if (typeof data.validity_months !== 'undefined') {
+    fields.push('validity_months = ?');
+    params.push(normalizeValidityMonths(data.validity_months));
   }
   if (typeof data.active !== 'undefined') {
     fields.push('active = ?');
@@ -330,6 +344,8 @@ async function recordAttempt({
       awardedAt: asOf,
       awardedBy: null,
       asOf,
+      // Module validity wins when set; otherwise the qualification's own months apply.
+      validityMonths: module.validity_months,
     });
   }
 
@@ -369,8 +385,33 @@ async function recordAttempt({
   };
 }
 
+/**
+ * True when the volunteer has a non-expired pass for this module.
+ * If the module awards a qualification, the award must still be valid asOf.
+ */
+async function hasValidPass(userId, moduleId, asOf = new Date()) {
+  const module = await findById(moduleId, { includeInactive: true });
+  if (!module) return false;
+
+  const attempts = await findAttemptsForUser(userId, moduleId);
+  if (!attempts.some((a) => a.passed)) return false;
+
+  if (!module.awards_qualification_id) return true;
+
+  const held = await Qualification.findByUserId(userId);
+  const award = held.find(
+    (row) => Number(row.qualification_id) === Number(module.awards_qualification_id)
+  );
+  if (!award) return false;
+  const expires = Qualification.toDateOnly(award.expires_at);
+  const asOfDay = Qualification.toDateOnly(asOf);
+  if (expires && asOfDay && expires < asOfDay) return false;
+  return true;
+}
+
 module.exports = {
   scoreAttempt,
+  normalizeValidityMonths,
   create,
   findById,
   findAll,
@@ -380,4 +421,5 @@ module.exports = {
   replaceQuestions,
   findAttemptsForUser,
   recordAttempt,
+  hasValidPass,
 };

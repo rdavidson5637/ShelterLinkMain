@@ -255,6 +255,7 @@ async function awardToUser({
   awardedAt,
   awardedBy = null,
   asOf = new Date(),
+  validityMonths,
 }) {
   const qualification = await findById(qualificationId);
   if (!qualification) {
@@ -264,7 +265,12 @@ async function awardToUser({
   }
 
   const awarded = toDateOnly(awardedAt) || toDateOnly(asOf);
-  const expiresAt = computeExpiresAt(awarded, qualification.validity_months);
+  // Callers (training modules) may override validity; null/undefined means use the qualification default.
+  const months =
+    validityMonths === null || validityMonths === undefined || validityMonths === ''
+      ? qualification.validity_months
+      : validityMonths;
+  const expiresAt = computeExpiresAt(awarded, months);
 
   const sql = `
     INSERT INTO volunteer_qualifications
@@ -309,6 +315,7 @@ async function findMissingForUser(userId, opportunityId, asOf = new Date()) {
 
 /**
  * Rows needing a 30-day-before expiry email (idempotent via last_expiry_notified_at).
+ * Training-module awards use the 14-day trainingRefreshers job instead.
  */
 async function findNeedingExpiryWarning(now = new Date()) {
   const today = toDateOnly(now);
@@ -332,6 +339,53 @@ async function findNeedingExpiryWarning(now = new Date()) {
         vq.last_expiry_notified_at IS NULL
         OR vq.last_expiry_notified_at < (vq.expires_at - interval '30 days')
       )
+      AND NOT EXISTS (
+        SELECT 1
+        FROM training_modules m
+        WHERE m.awards_qualification_id = vq.qualification_id
+      )
+  `;
+  const [rows] = await pool.execute(sql, [today]);
+  return rows;
+}
+
+/**
+ * Training refresher candidates: awards linked to a training module, due in
+ * 14 days. Quiet-hours columns come along so the job can delay the send.
+ */
+async function findNeedingTrainingRefresher(now = new Date()) {
+  const today = toDateOnly(now);
+  const sql = `
+    SELECT
+      vq.id AS volunteer_qualification_id,
+      vq.user_id,
+      vq.qualification_id,
+      vq.awarded_at,
+      vq.expires_at,
+      vq.last_expiry_notified_at,
+      q.name AS qualification_name,
+      u.email,
+      u.first_name,
+      u.last_name,
+      COALESCE(vp.prefer_reminders, 1) AS prefer_reminders,
+      vp.quiet_hours_start,
+      vp.quiet_hours_end
+    FROM volunteer_qualifications vq
+    INNER JOIN qualifications q ON q.id = vq.qualification_id
+    INNER JOIN users u ON u.user_id = vq.user_id
+    LEFT JOIN volunteer_profiles vp ON vp.user_id = vq.user_id
+    WHERE vq.expires_at = (?::date + interval '14 days')
+      AND (
+        vq.last_expiry_notified_at IS NULL
+        OR vq.last_expiry_notified_at < (vq.expires_at - interval '14 days')
+      )
+      AND EXISTS (
+        SELECT 1
+        FROM training_modules m
+        WHERE m.awards_qualification_id = vq.qualification_id
+      )
+      AND COALESCE(vp.prefer_reminders, 1) = 1
+    ORDER BY vq.expires_at ASC, vq.id ASC
   `;
   const [rows] = await pool.execute(sql, [today]);
   return rows;
@@ -396,5 +450,6 @@ module.exports = {
   findMissingForUser,
   findNeedingExpiryWarning,
   findNeedingExpiryNotice,
+  findNeedingTrainingRefresher,
   markExpiryNotified,
 };

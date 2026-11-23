@@ -35,7 +35,8 @@
           <h1>Training modules</h1>
           <p>
             Write short modules with a pass mark. Passing can award a qualification that already
-            gates shifts (for example Dog walking level 1).
+            gates shifts (for example Dog walking level 1). Optional validity months set when
+            that award expires so volunteers can refresh.
           </p>
           <p class="page-lede-meta">
             <a href="/pages/admin/help/training-modules.html">How to set up training modules</a>
@@ -70,6 +71,21 @@
                   <option value="">None</option>
                 </select>
               </label>
+              <label for="validity_months">
+                Validity (months, optional)
+                <input
+                  type="number"
+                  id="validity_months"
+                  name="validity_months"
+                  min="1"
+                  max="240"
+                  placeholder="Never expires"
+                />
+              </label>
+              <p class="muted">
+                When set, a pass expires after this many months. Volunteers get a reminder
+                14 days before, and expired training blocks shifts that need the award.
+              </p>
               <label>
                 <input type="checkbox" id="active" name="active" checked />
                 Active for volunteers
@@ -100,13 +116,14 @@
                   <th scope="col">Name</th>
                   <th scope="col">Pass mark</th>
                   <th scope="col">Awards</th>
+                  <th scope="col">Validity</th>
                   <th scope="col">Questions</th>
                   <th scope="col">Active</th>
                   <th scope="col">Actions</th>
                 </tr>
               </thead>
               <tbody id="modulesTableBody">
-                <tr><td colspan="6">Loading...</td></tr>
+                <tr><td colspan="7">Loading...</td></tr>
               </tbody>
             </table>
           </div>
