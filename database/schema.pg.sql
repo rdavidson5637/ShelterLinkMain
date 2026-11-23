@@ -54,6 +54,7 @@ DROP TABLE IF EXISTS
   opportunity_qualifications,
   volunteer_qualifications,
   qualifications,
+  rate_limit_hits,
   job_runs,
   volunteer_hours,
   swap_requests,
@@ -339,10 +340,25 @@ CREATE TABLE job_runs (
   job_name  VARCHAR(100)  NOT NULL,
   ran_at    TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   status    TEXT          NOT NULL CHECK (status IN ('ok','error')),
-  detail    TEXT          DEFAULT NULL
+  detail    TEXT          DEFAULT NULL,
+  run_key   VARCHAR(64)   DEFAULT NULL
 );
 
 CREATE INDEX idx_job_runs_name_ran ON job_runs (job_name, ran_at);
+CREATE UNIQUE INDEX uq_job_runs_name_run_key
+  ON job_runs (job_name, run_key)
+  WHERE run_key IS NOT NULL;
+
+-- ----------------------------------------------------------------------------
+-- rate_limit_hits (shared express-rate-limit counters across replicas)
+-- ----------------------------------------------------------------------------
+CREATE TABLE rate_limit_hits (
+  key       TEXT          PRIMARY KEY,
+  hits      INTEGER       NOT NULL DEFAULT 0 CHECK (hits >= 0),
+  reset_at  TIMESTAMPTZ   NOT NULL
+);
+
+CREATE INDEX idx_rate_limit_hits_reset ON rate_limit_hits (reset_at);
 
 -- ----------------------------------------------------------------------------
 -- qualifications

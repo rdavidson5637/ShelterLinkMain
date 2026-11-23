@@ -37,7 +37,13 @@ This document summarizes the core backend security controls implemented in Shelt
   - `loginLimiter`: 15 failed login attempts per 15 minutes per IP on the same routes.
   - `forgotAccountLimiter`: 5 password-reset requests per 15 minutes for one email, then the existing per-IP forgot-password limit.
   - `apiLimiter`: 300 requests per 15 minutes per IP across `/api` routes.
+- In production, counters live in Postgres (`rate_limit_hits`) so multiple app replicas share one budget. Set `RATE_LIMIT_STORE=postgres` to enable that on a non-production host, or `RATE_LIMIT_STORE=memory` as an emergency override. Store errors fail open so a database blip does not block the site.
 - The account limit is what stops guessing one password from many addresses. The IP limits are the ones the running app enforces.
+
+## 4b) Scheduled job dedupe
+
+- The in-process scheduler still skips a second tick in the same minute on one host.
+- Before running, it claims `job_runs (job_name, run_key)` so a second replica loses the unique insert and skips that minute. Requires migration `046_rate_limit_job_dedupe.pg.sql`.
 
 ## 5) Input Sanitization
 
