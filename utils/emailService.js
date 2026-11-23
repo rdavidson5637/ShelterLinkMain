@@ -171,6 +171,27 @@ async function sendWaitlistPromotion(volunteerEmail, opportunityTitle) {
   );
 }
 
+/**
+ * Instant booking or waitlist auto-fill confirmed a trusted volunteer (SL-NOW-03).
+ */
+async function sendBookingConfirmed(volunteerEmail, opportunityTitle, { fromWaitlist = false } = {}) {
+  const brand = await brandBits();
+  const safeTitle = opportunityTitle || 'the selected opportunity';
+  const lead = fromWaitlist
+    ? `A place opened up on <strong>${safeTitle}</strong> and you were next on the waitlist.`
+    : `You are booked on <strong>${safeTitle}</strong>.`;
+  return sendEmail(
+    volunteerEmail,
+    fromWaitlist ? 'You are booked from the waitlist - ShelterLink' : 'You are booked - ShelterLink',
+    `
+    <p>Hello,</p>
+    <p>${lead}</p>
+    <p>Your place is confirmed. If you can no longer make it, cancel from My Applications so the next person can have it.</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
+    `
+  );
+}
+
 async function sendShiftReminder(volunteerEmail, details = {}) {
   const brand = await brandBits();
   const title = details.title || 'your upcoming shift';
@@ -583,6 +604,7 @@ module.exports = {
   sendHoursApproval,
   sendVolunteerApprovalNotification,
   sendWaitlistPromotion,
+  sendBookingConfirmed,
   sendShiftReminder,
   sendOpportunityMatchDigest,
   sendQualificationExpiryNotice,
