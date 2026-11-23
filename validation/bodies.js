@@ -561,6 +561,7 @@ const queries = {
   year: z.object({ year: qstr(4) }).strict(),
   exportRange: z.object({ startDate: qdate, endDate: qdate, userId: qstr(20) }).strict(),
   exportOwn: z.object({ startDate: qdate, endDate: qdate }).strict(),
+  impactReport: z.object({ startDate: qdate, endDate: qdate }).strict(),
   transportMileage: z.object({ run_id: qstr(20) }).strict(),
   active: z.object({ active: qstr(10) }).strict(),
   tags: z.object({ limit: qstr(10) }).strict(),

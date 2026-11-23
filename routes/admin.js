@@ -26,6 +26,11 @@ const {
   updateUserRole,
 } = require('../controllers/gdprController');
 const { getDaySheet } = require('../controllers/daySheetController');
+const {
+  getImpactReport,
+  getImpactReportCsv,
+  getImpactReportPdf,
+} = require('../controllers/impactReportController');
 const { getWeekSheet, getWeekSheetIcs } = require('../controllers/weekSheetController');
 
 const { validateBody, validateQuery, positiveParam } = require('../middleware/validate');
@@ -43,6 +48,9 @@ router.get('/day-sheet', isAuthenticated, staffOrAdmin, validateQuery(queries.da
 router.get('/week-sheet', isAuthenticated, staffOrAdmin, validateQuery(queries.week), getWeekSheet);
 router.get('/week-sheet.ics', isAuthenticated, staffOrAdmin, validateQuery(queries.week), getWeekSheetIcs);
 router.get('/stats', isAuthenticated, staffOrAdmin, validateQuery(queries.year), getAdminStats);
+router.get('/reports/impact', isAuthenticated, staffOrAdmin, validateQuery(queries.impactReport), getImpactReport);
+router.get('/reports/impact.csv', isAuthenticated, staffOrAdmin, validateQuery(queries.impactReport), getImpactReportCsv);
+router.get('/reports/impact.pdf', isAuthenticated, staffOrAdmin, validateQuery(queries.impactReport), getImpactReportPdf);
 router.get('/stats/leaderboard', isAuthenticated, staffOrAdmin, validateQuery(queries.year), getLeaderboard);
 router.get('/stats/monthly-hours', isAuthenticated, staffOrAdmin, validateQuery(queries.year), getMonthlyHoursChart);
 router.get('/volunteers', isAuthenticated, staffOrAdmin, getAllVolunteers);

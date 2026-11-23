@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Impact report - ShelterLink</title>
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+    <style>
+      .impact-range {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: end;
+      }
+      .impact-range label {
+        margin-bottom: 0;
+      }
+      .impact-figures {
+        margin: 1.5rem 0;
+        border-top: 2px solid currentColor;
+      }
+      .impact-figures div {
+        display: grid;
+        grid-template-columns: minmax(6rem, 9rem) 1fr;
+        gap: 1rem;
+        align-items: baseline;
+        padding: 0.6rem 0;
+        border-bottom: 1px solid #d0d5d4;
+      }
+      .impact-figures dt {
+        order: 2;
+        font-weight: 400;
+      }
+      .impact-figures dd {
+        order: 1;
+        margin: 0;
+        font-size: 1.75rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.1;
+      }
+      .impact-downloads {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+      .impact-table td:last-child,
+      .impact-table th:last-child,
+      .impact-table td.num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .impact-notes {
+        font-size: 0.9rem;
+        color: #444;
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Account">
+        <a class="site-brand" href="/pages/admin/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" aria-label="Toggle navigation">Menu</button>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main id="main" class="container dashboard-layout">
+      <aside id="admin-nav" class="sidebar-nav"></aside>
+      <div class="dashboard-main">
+        <section>
+          <h1>Impact report</h1>
+          <p>
+            Volunteer hours and animal care for a period you choose, ready for a grant bid or a
+            trustee paper. The report holds totals only, no names or contact details.
+          </p>
+
+          <form id="impactRangeForm" class="impact-range" novalidate>
+            <label for="impactStartDate">
+              From
+              <input type="date" id="impactStartDate" name="startDate" required />
+            </label>
+            <label for="impactEndDate">
+              To
+              <input type="date" id="impactEndDate" name="endDate" required />
+            </label>
+            <button type="submit">Show figures</button>
+          </form>
+          <div id="impactMessage" aria-live="polite"></div>
+        </section>
+
+        <section id="impactResults" hidden>
+          <h2 id="impactPeriod"></h2>
+          <dl class="impact-figures" id="impactFigures"></dl>
+
+          <div class="impact-downloads">
+            <a id="impactPdfLink" role="button" href="#">Download PDF</a>
+            <a id="impactCsvLink" role="button" class="secondary" href="#">Download CSV</a>
+          </div>
+
+          <h3>Animal care logged by volunteers</h3>
+          <table class="impact-table">
+            <thead>
+              <tr><th scope="col">Activity</th><th scope="col">Entries</th><th scope="col">Animals</th></tr>
+            </thead>
+            <tbody id="impactActivity"></tbody>
+          </table>
+
+          <h3>Approved hours by month</h3>
+          <table class="impact-table">
+            <thead>
+              <tr><th scope="col">Month</th><th scope="col">Volunteers</th><th scope="col">Hours</th></tr>
+            </thead>
+            <tbody id="impactMonths"></tbody>
+          </table>
+
+          <div class="impact-notes">
+            <h3>How these figures are counted</h3>
+            <p>
+              Hours are volunteer hour records that staff have approved, dated within the period.
+              Walks and animals helped come from the activity volunteers log against each animal.
+              An animal counts once however many times it was helped. Anything not recorded in
+              ShelterLink is not included.
+            </p>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2026 ShelterLink</small>
+    </footer>
+
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/admin/impact-report.js"></script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+    <script type="module" src="/js/components/adminNav.js"></script>
+  </body>
+</html>
