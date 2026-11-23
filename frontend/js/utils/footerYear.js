@@ -21,13 +21,17 @@ export function footerText(now = new Date(), shelterName = '') {
 
 export function applySiteFooter(root = document) {
   if (!root || typeof root.querySelectorAll !== 'function') return;
-  const targets = root.querySelectorAll('[data-site-footer], footer.container');
+  const targets = root.querySelectorAll('[data-site-footer], footer.container, footer.site-footer');
   targets.forEach((footer) => {
     if (footer.closest('dialog, [role="dialog"]')) return;
-    let small = footer.querySelector(':scope > small');
+    const mount =
+      footer.matches('footer.site-footer') && footer.querySelector(':scope > .container')
+        ? footer.querySelector(':scope > .container')
+        : footer;
+    let small = mount.querySelector(':scope > small');
     if (!small) {
       small = footer.ownerDocument.createElement('small');
-      footer.appendChild(small);
+      mount.prepend(small);
     }
     small.replaceChildren();
     small.append(footer.ownerDocument.createTextNode(`© ${currentFooterYear()} ShelterLink`));
@@ -39,6 +43,8 @@ export function applySiteFooter(root = document) {
     privacy.href = '/pages/privacy.html';
     privacy.textContent = 'Privacy';
     small.append(privacy);
+    // Drop hand-authored duplicate privacy links inside the footer mount.
+    mount.querySelectorAll(':scope > a[href="/pages/privacy.html"]').forEach((el) => el.remove());
   });
 }
 

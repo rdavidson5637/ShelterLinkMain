@@ -259,6 +259,11 @@ const bulkMessage = z
 
 const erase = z.object({ confirmation: optStr(20) }).strict();
 const role = z.object({ role: optStr(20) }).strict();
+// SL-NOW-03: per-shelter booking approval policy.
+const bookingSettings = z
+  .object({ booking_mode: z.enum(['approval', 'instant']) })
+  .strict();
+const trustedVolunteer = z.object({ trusted: z.boolean() }).strict();
 
 const documentMeta = z
   .object({
@@ -693,6 +698,8 @@ const bodies = {
   bulkMessage,
   erase,
   role,
+  bookingSettings,
+  trustedVolunteer,
   documentMeta,
   animal,
   animalActivity,

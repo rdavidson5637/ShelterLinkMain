@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Check in - ShelterLink</title>
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+        <header class="site-header">
+    <style>
+      .checkin-shift { margin-bottom: 1.5rem; }
+      .checkin-shift h2 { margin-bottom: 0.25rem; }
+      .checkin-meta { color: var(--text-secondary); margin: 0; }
+      .checkin-state { font-weight: 600; margin: 1rem 0; }
+      .checkin-action button { width: 100%; }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Volunteer navigation">
+        <a class="site-brand" href="/pages/volunteer/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">Menu</button>
+        <ul class="nav-menu" id="navMenu" data-volunteer-nav></ul>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main id="main" class="container">
+      <h1>Shift check-in</h1>
+
+      <div id="message" role="status" aria-live="polite"></div>
+
+      <section id="checkinShift" class="checkin-shift" hidden>
+        <h2 id="shiftTitle"></h2>
+        <p class="checkin-meta" id="shiftWhen"></p>
+        <p class="checkin-meta" id="shiftWhere"></p>
+        <p class="checkin-state" id="shiftState"></p>
+      </section>
+
+      <form id="checkinForm" class="checkin-action" hidden>
+        <label for="checkinCode" id="checkinCodeLabel">
+          Check-in code
+          <input
+            type="text"
+            id="checkinCode"
+            name="code"
+            autocomplete="off"
+            autocapitalize="characters"
+            spellcheck="false"
+            maxlength="20"
+            aria-describedby="checkinCodeHint"
+            required
+          />
+          <small id="checkinCodeHint">The code is printed under the QR code on the poster.</small>
+        </label>
+        <button type="submit" id="checkinButton">Check in</button>
+      </form>
+
+      <p><a href="/pages/volunteer/my-applications.html">My applications</a></p>
+    </main>
+
+    <footer class="container">
+      <small>&copy; <span data-footer-year></span> ShelterLink</small>
+    </footer>
+
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/volunteer/checkin.js"></script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+    <script type="module" src="/js/components/volunteerNav.js"></script>
+  </body>
+</html>

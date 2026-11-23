@@ -417,6 +417,13 @@ function renderOpportunitiesTable() {
         w.document.close();
       });
       actionsWrap.appendChild(printButton);
+
+      const posterLink = document.createElement('a');
+      posterLink.className = 'secondary button-secondary button-small';
+      posterLink.setAttribute('role', 'button');
+      posterLink.href = `/pages/admin/check-in-poster.html?id=${encodeURIComponent(opportunity.opportunity_id ?? opportunity.id)}`;
+      posterLink.textContent = 'QR poster';
+      actionsWrap.appendChild(posterLink);
     }
 
     actionsTd.appendChild(actionsWrap);

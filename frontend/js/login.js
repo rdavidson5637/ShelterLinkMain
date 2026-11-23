@@ -2,6 +2,7 @@ import { apiRequest } from './config.js';
 import { redirectIfAuthenticated, hasPendingWaivers } from './auth.js';
 import { showFormErrors, clearFormErrors } from './utils/formErrors.js';
 import { clearUserCache, getRegistration } from './pwa.js';
+import { pendingCheckinPath } from './utils/pendingCheckin.js';
 
 const form = document.getElementById('loginForm');
 const messageEl = document.getElementById('message');
@@ -22,7 +23,8 @@ async function redirectToDashboard(role) {
     window.location.href = '/pages/volunteer/accept-waiver.html';
     return;
   }
-  window.location.href = '/pages/volunteer/dashboard.html';
+  // Signed in after scanning a shift poster: go back to that check-in.
+  window.location.href = pendingCheckinPath() || '/pages/volunteer/dashboard.html';
 }
 
 async function handleLogin(event) {

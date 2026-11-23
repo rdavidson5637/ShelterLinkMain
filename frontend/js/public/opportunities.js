@@ -57,29 +57,42 @@ async function load() {
       return;
     }
     listEl.replaceChildren();
+    listEl.classList.add('shift-list');
     rows.forEach((opp) => {
       const article = document.createElement('article');
+      article.className = 'shift-row';
       const spots =
         opp.spots_remaining == null
-          ? 'Unlimited spots'
-          : `${opp.spots_remaining} spot${opp.spots_remaining === 1 ? '' : 's'} remaining`;
+          ? 'Open spaces'
+          : `${opp.spots_remaining} spot${opp.spots_remaining === 1 ? '' : 's'} left`;
 
       const h2 = document.createElement('h2');
       h2.textContent = opp.title || 'Volunteer shift';
       if (opp.is_urgent) {
         const badge = document.createElement('span');
         badge.className = 'badge-urgent';
-        badge.textContent = ' Urgent cover needed';
+        badge.textContent = 'Urgent cover needed';
+        h2.appendChild(document.createTextNode(' '));
         h2.appendChild(badge);
       }
-      const desc = document.createElement('p');
-      desc.textContent = opp.description || '';
       const meta = document.createElement('p');
+      meta.className = 'shift-meta';
       const when = document.createElement('strong');
       when.textContent = formatShiftWhen(opp.date || opp.start_date, opp.end_date);
       meta.append(when, ` · ${opp.location || 'Location TBA'}`);
       const spotsP = document.createElement('p');
+      spotsP.className = 'shift-spots';
       spotsP.textContent = spots;
+      const actions = document.createElement('div');
+      actions.className = 'shift-actions';
+      if (opp.description) {
+        const desc = document.createElement('p');
+        desc.className = 'shift-meta';
+        desc.textContent = opp.description;
+        article.append(h2, meta, desc, spotsP, actions);
+      } else {
+        article.append(h2, meta, spotsP, actions);
+      }
       if (isAcceptingSignups(opp)) {
         const apply = document.createElement('a');
         apply.href = shelterLinkFor('/register.html', currentShelterSlug());
@@ -87,15 +100,15 @@ async function load() {
         apply.textContent = 'Sign up to apply';
         const group = document.createElement('a');
         group.href = `/pages/group-booking.html?opportunity_id=${encodeURIComponent(opp.id)}`;
-        group.className = 'secondary';
+        group.className = 'text-link';
         group.textContent = 'Book as a group';
-        article.append(h2, desc, meta, spotsP, apply, group);
+        actions.append(apply, group);
       } else {
         const closed = document.createElement('button');
         closed.type = 'button';
         closed.disabled = true;
         closed.textContent = closedShiftLabel(opp);
-        article.append(h2, desc, meta, spotsP, closed);
+        actions.append(closed);
       }
       listEl.appendChild(article);
     });
