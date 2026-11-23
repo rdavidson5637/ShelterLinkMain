@@ -201,7 +201,7 @@ function volunteerActions(volunteer, isApproved) {
   wrap.appendChild(viewBtn);
 
   const menuItems = [
-    { label: 'Award qualification', onSelect: () => openAwardModal(volunteer) },
+    { label: 'Record skill', onSelect: () => openAwardModal(volunteer) },
   ];
   if (canInvite(volunteer)) {
     menuItems.unshift({
@@ -557,7 +557,7 @@ async function viewProfile(userId) {
       milestonesHtml = '<p>Unable to load milestones.</p>';
     }
 
-    let qualsHtml = '<p>No qualifications awarded.</p>';
+    let qualsHtml = '<p>No skills recorded yet.</p>';
     try {
       const qualsRes = await apiRequest(`/admin/volunteers/${userId}/qualifications`, { method: 'GET' });
       if (qualsRes.ok) {
@@ -969,7 +969,7 @@ async function viewProfile(userId) {
           ${customHtml}
         </div>
         <div>
-          <strong>Qualifications:</strong>
+          <strong>Skills:</strong>
           ${qualsHtml}
         </div>
         <div>

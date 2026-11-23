@@ -289,7 +289,7 @@ test('expired training award blocks shift apply', async () => {
     res
   );
   assert.strictEqual(res.statusCode, 403);
-  assert.match(res.body.error, /expired|missing required qualifications/i);
+  assert.match(res.body.error, /expired|missing required skills/i);
   assert.match(res.body.error, /Dog walking level 1/);
 });
 

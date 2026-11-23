@@ -159,7 +159,7 @@ async function applyForOpportunity(req, res) {
     if (missingQuals.length) {
       const names = missingQuals.map((q) => q.name).join(', ');
       return res.status(403).json({
-        error: `You are missing required qualifications (or they have expired): ${names}`,
+        error: `You are missing required skills (or they have expired): ${names}`,
         missing_qualifications: missingQuals,
       });
     }

@@ -11,11 +11,11 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <title>Qualifications - ShelterLink</title>
+    <title>Skills - ShelterLink</title>
     <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
     <link rel="stylesheet" href="/public/css/custom.css" />
   </head>
-  <body>
+  <body class="staff-app">
     <a class="skip-link" href="#main">Skip to main content</a>
         <header class="site-header">
       <nav class="site-nav container" aria-label="Account">
@@ -31,42 +31,45 @@
     <main id="main" class="container dashboard-layout">
       <aside id="admin-nav" class="sidebar-nav"></aside>
       <div class="dashboard-main">
-      <section>
-        <h1>Qualifications &amp; training</h1>
-        <p>Define training requirements that can gate volunteer shifts. Leave validity blank for qualifications that never expire.</p>
+      <section class="page-lede">
+        <h1>Skills</h1>
+        <p>
+          Name the skills this shelter uses on shifts (for example dog walking, cattery, reception).
+          Chosen per shelter, not a fixed global list. Tag a shift with the skills it needs, then
+          record them on each volunteer. Leave validity blank when a skill does not expire.
+        </p>
+        <p class="page-lede-meta"><a href="/pages/admin/help/shift-skills.html">How to set shift skills</a></p>
         <div id="message" role="status" aria-live="polite"></div>
       </section>
 
       <section>
-        <article style="max-width: 720px;">
-          <h2 id="formTitle">Add qualification</h2>
-          <form id="qualificationForm">
-            <input type="hidden" id="qualification_id" />
-            <label for="name">
-              Name
-              <input type="text" id="name" name="name" required maxlength="255" />
-            </label>
-            <label for="description">
-              Description
-              <textarea id="description" name="description" rows="3"></textarea>
-            </label>
-            <label for="validity_months">
-              Validity (months)
-              <input type="number" id="validity_months" name="validity_months" min="1" placeholder="Leave blank = never expires" />
-            </label>
-            <div class="opportunity-actions">
-              <button type="submit" id="saveButton">Save</button>
-              <button type="button" id="cancelEditButton" class="secondary" hidden>Cancel edit</button>
-            </div>
-          </form>
-        </article>
+        <h2 id="formTitle">Add skill</h2>
+        <form id="qualificationForm">
+          <input type="hidden" id="qualification_id" />
+          <label for="name">
+            Name
+            <input type="text" id="name" name="name" required maxlength="255" />
+          </label>
+          <label for="description">
+            Description
+            <textarea id="description" name="description" rows="3"></textarea>
+          </label>
+          <label for="validity_months">
+            Validity (months)
+            <input type="number" id="validity_months" name="validity_months" min="1" placeholder="Leave blank = never expires" />
+          </label>
+          <div class="opportunity-actions">
+            <button type="submit" id="saveButton">Save</button>
+            <button type="button" id="cancelEditButton" class="secondary" hidden>Cancel edit</button>
+          </div>
+        </form>
       </section>
 
       <section>
-        <h2>All qualifications</h2>
+        <h2>Skills for this shelter</h2>
         <div class="table-wrapper">
           <table>
-            <caption>Qualifications</caption>
+            <caption>Shelter skills</caption>
             <thead>
               <tr>
                 <th scope="col">Name</th>
