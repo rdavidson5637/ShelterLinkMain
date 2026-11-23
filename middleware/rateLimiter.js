@@ -1,5 +1,6 @@
 const rateLimit = require('express-rate-limit');
 const ipKeyGenerator = rateLimit.ipKeyGenerator;
+const { createPgRateLimitStore } = require('./pgRateLimitStore');
 
 function positiveInt(name, fallback) {
   const raw = process.env[name];
@@ -22,11 +23,26 @@ const LIMITS = {
   invitePage: positiveInt('RATE_LIMIT_INVITE_PAGE', 60),
   inviteCheck: positiveInt('RATE_LIMIT_INVITE_CHECK', 30),
   inviteAccept: positiveInt('RATE_LIMIT_INVITE', 8),
+  shelterApply: positiveInt('RATE_LIMIT_SHELTER_APPLY', 5),
   message: positiveInt('RATE_LIMIT_MESSAGE', 10),
   groupBooking: positiveInt('RATE_LIMIT_GROUP_BOOKING', 8),
   groupBookingEmail: positiveInt('RATE_LIMIT_GROUP_BOOKING_EMAIL', 3),
   pushTest: positiveInt('RATE_LIMIT_PUSH_TEST', 3),
 };
+
+// Shared Postgres counters in production so replicas enforce one budget.
+// RATE_LIMIT_STORE=postgres enables it elsewhere; =memory forces in-process.
+function useSharedStore() {
+  const mode = String(process.env.RATE_LIMIT_STORE || '').trim().toLowerCase();
+  if (mode === 'memory') return false;
+  if (mode === 'postgres' || mode === 'pg') return true;
+  return process.env.NODE_ENV === 'production';
+}
+
+function storeFor(prefix) {
+  if (!useSharedStore()) return undefined;
+  return createPgRateLimitStore(prefix);
+}
 
 const loginLimiter = rateLimit({
   windowMs: WINDOW_MS,
@@ -35,6 +51,7 @@ const loginLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true,
+  store: storeFor('rl:login:'),
 });
 
 // Failed attempts for one email from one IP. Another IP is a separate counter.
@@ -46,6 +63,7 @@ const loginAccountLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true,
+  store: storeFor('rl:login-acct:'),
   keyGenerator(req) {
     const email = String((req.body && req.body.email) || '').trim().toLowerCase();
     const ip = ipKeyGenerator(req.ip);
@@ -61,6 +79,7 @@ const apiLimiter = rateLimit({
   message: 'Too many requests. Please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  store: storeFor('rl:api:'),
 });
 
 const registerLimiter = rateLimit({
@@ -69,6 +88,7 @@ const registerLimiter = rateLimit({
   message: 'Too many registration attempts. Please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  store: storeFor('rl:register:'),
 });
 
 const forgotPasswordLimiter = rateLimit({
@@ -77,6 +97,7 @@ const forgotPasswordLimiter = rateLimit({
   message: 'Too many password reset requests. Please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  store: storeFor('rl:forgot:'),
 });
 
 const forgotAccountLimiter = rateLimit({
@@ -85,6 +106,7 @@ const forgotAccountLimiter = rateLimit({
   message: 'Too many password reset requests. Please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  store: storeFor('rl:forgot-acct:'),
   keyGenerator(req) {
     const email = String((req.body && req.body.email) || '').trim().toLowerCase();
     if (email) return `forgot:${email}`;
@@ -98,6 +120,7 @@ const resetPasswordLimiter = rateLimit({
   message: 'Too many password reset attempts. Please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  store: storeFor('rl:reset:'),
 });
 
 // Invite links. Tokens are 256-bit, so these are about load and noise, not
@@ -110,6 +133,7 @@ const invitePageLimiter = rateLimit({
   message: 'Too many requests. Please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  store: storeFor('rl:invite-page:'),
 });
 
 const inviteCheckLimiter = rateLimit({
@@ -118,12 +142,24 @@ const inviteCheckLimiter = rateLimit({
   message: 'Too many invite checks. Please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  store: storeFor('rl:invite-check:'),
 });
 
 const inviteAcceptLimiter = rateLimit({
   windowMs: WINDOW_MS,
   max: LIMITS.inviteAccept,
   message: 'Too many invite attempts. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: storeFor('rl:invite-accept:'),
+});
+
+// Public shelter applications. Real charities apply once; this keeps the
+// platform owner's queue free of floods.
+const shelterApplyLimiter = rateLimit({
+  windowMs: WINDOW_MS,
+  max: LIMITS.shelterApply,
+  message: 'Too many applications from this connection. Please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -134,6 +170,7 @@ const messageLimiter = rateLimit({
   message: 'Too many message sends. Please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  store: storeFor('rl:message:'),
 });
 
 const groupBookingLimiter = rateLimit({
@@ -142,6 +179,7 @@ const groupBookingLimiter = rateLimit({
   message: 'Too many group booking requests. Please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  store: storeFor('rl:group:'),
 });
 
 const groupBookingEmailLimiter = rateLimit({
@@ -150,6 +188,7 @@ const groupBookingEmailLimiter = rateLimit({
   message: 'Too many group booking requests for this email. Try again tomorrow.',
   standardHeaders: true,
   legacyHeaders: false,
+  store: storeFor('rl:group-email:'),
   keyGenerator(req) {
     const email = String((req.body && req.body.contact_email) || '')
       .trim()
@@ -162,6 +201,7 @@ const groupBookingEmailLimiter = rateLimit({
 const pushTestLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: LIMITS.pushTest,
+  store: storeFor('rl:push-test:'),
   keyGenerator: (req) => {
     if (req.session && req.session.userId) return `user:${req.session.userId}`;
     return ipKeyGenerator(req.ip || 'anon');
@@ -175,6 +215,7 @@ pushTestLimiter.max = LIMITS.pushTest;
 module.exports = {
   LIMITS,
   WINDOW_MS,
+  useSharedStore,
   loginLimiter,
   loginAccountLimiter,
   apiLimiter,
@@ -185,6 +226,7 @@ module.exports = {
   invitePageLimiter,
   inviteCheckLimiter,
   inviteAcceptLimiter,
+  shelterApplyLimiter,
   groupBookingLimiter,
   groupBookingEmailLimiter,
   messageLimiter,

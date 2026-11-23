@@ -9,7 +9,9 @@ const JOB_NAME = 'messageDigest';
 
 /**
  * Email digests for unread messages older than 15 minutes.
- * At most one email per user per clock-hour; respects muted; skips own messages.
+ * At most one email per user per clock-hour; volunteers respect muted;
+ * staff/admin digests match the staff unread badge (all threads).
+ * Skips own messages. Staff links open the admin threads page.
  */
 async function runMessageDigest(options = {}) {
   const now = options.now || new Date();
@@ -41,6 +43,7 @@ async function runMessageDigest(options = {}) {
       await sendThreadDigest(candidate.email, {
         name: candidate.first_name || 'there',
         unreadCount: Number(candidate.unread_count) || 1,
+        role: candidate.role || 'volunteer',
       });
       await MessageThread.markDigestSent(candidate.user_id, now);
       sent += 1;

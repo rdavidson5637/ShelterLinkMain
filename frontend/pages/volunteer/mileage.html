@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Mileage claims - ShelterLink</title>
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Volunteer navigation">
+        <a class="site-brand" href="/pages/volunteer/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">Menu</button>
+        <ul class="nav-menu" id="navMenu" data-volunteer-nav></ul>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main id="main" class="container">
+      <section>
+        <h1>Mileage claims</h1>
+        <p>
+          Record miles for travel to a shift, or claim mileage for a completed transport leg from
+          <a href="/pages/volunteer/transport.html">Transport</a>. Staff review each claim. Amounts
+          stay in miles only.
+        </p>
+      </section>
+
+      <div id="message" role="status" aria-live="polite"></div>
+
+      <section>
+        <h2>Submit a travel claim</h2>
+        <form id="mileageForm">
+          <div class="form-grid">
+            <label for="travel_date">
+              Travel date
+              <input type="date" id="travel_date" name="travel_date" required />
+            </label>
+            <label for="miles">
+              Miles
+              <input type="number" id="miles" name="miles" min="0.1" max="2000" step="0.1" required />
+            </label>
+            <label for="purpose" class="form-full-width">
+              Purpose
+              <input
+                type="text"
+                id="purpose"
+                name="purpose"
+                maxlength="500"
+                required
+                placeholder="For example: travel to Saturday dog walking"
+              />
+            </label>
+          </div>
+          <button type="submit">Submit claim</button>
+        </form>
+      </section>
+
+      <section>
+        <h2>Your claims</h2>
+        <table>
+          <caption>Mileage claims you have submitted</caption>
+          <thead>
+            <tr>
+              <th scope="col">Date</th>
+              <th scope="col">Miles</th>
+              <th scope="col">Purpose</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody id="claimsBody">
+            <tr>
+              <td colspan="4">Loading…</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2026 ShelterLink</small>
+    </footer>
+
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/volunteer/mileage.js"></script>
+  </body>
+</html>

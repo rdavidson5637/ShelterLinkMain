@@ -93,6 +93,32 @@ const acceptInvite = z
   })
   .strict();
 
+// An admin inviting someone to their own shelter. Never a shelter id.
+const staffInvite = z
+  .object({
+    email: optStr(254),
+    role: optStr(20),
+    // Required (true) when role is admin: the page asks before sending.
+    confirm_admin: z.boolean().optional(),
+  })
+  .strict();
+
+// A charity asking to join. Never a shelter id; the row is global.
+const shelterApplication = z
+  .object({
+    shelter_name: optStr(255),
+    desired_slug: optStr(100),
+    regulator: optStr(10),
+    charity_number: optStr(32),
+    contact_name: optStr(200),
+    contact_email: optStr(254),
+    // Honeypot, hidden from people.
+    website: optStr(200),
+    // When the page loaded (ms since epoch), for the minimum fill time.
+    started_at: z.union([z.number(), z.string().regex(/^\d{10,16}$/)]).optional(),
+  })
+  .strict();
+
 const groupBooking = z
   .object({
     opportunity_id: optId,
@@ -358,6 +384,19 @@ const completeLeg = z
   })
   .strict();
 const expense = z.object({ expense_claimed: optFlag }).strict();
+
+const mileageClaim = z
+  .object({
+    travel_date: optStr(40),
+    travelDate: optStr(40),
+    miles: z.union([z.number().finite().positive().max(2000), z.string().max(20)]).optional().nullable(),
+    purpose: optStr(500),
+    transport_leg_id: optId,
+    transportLegId: optId,
+    opportunity_id: optId,
+    opportunityId: optId,
+  })
+  .strict();
 
 const incident = z
   .object({
@@ -668,6 +707,8 @@ const bodies = {
   reset,
   inviteCheck,
   acceptInvite,
+  shelterApplication,
+  staffInvite,
   groupBooking,
   opportunity,
   shiftNote,
@@ -698,6 +739,7 @@ const bodies = {
   transportStatus,
   completeLeg,
   expense,
+  mileageClaim,
   incident,
   thread,
   threadMessage,

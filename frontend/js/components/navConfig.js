@@ -12,6 +12,7 @@ export const ADMIN_PRIMARY = [
   { id: 'transport', label: 'Transport', href: '/pages/admin/transport.html' },
   { id: 'applications', label: 'Applications', href: '/pages/admin/review-applications.html' },
   { id: 'hours', label: 'Hours', href: '/pages/admin/approve-hours.html' },
+  { id: 'mileage', label: 'Mileage', href: '/pages/admin/approve-mileage.html' },
   { id: 'volunteers', label: 'Volunteers', href: '/pages/admin/volunteers.html' },
 ];
 
@@ -30,6 +31,7 @@ export const ADMIN_INSIGHT = [
   { id: 'impact-report', label: 'Impact report', href: '/pages/admin/impact-report.html' },
   { id: 'feedback', label: 'Feedback', href: '/pages/admin/feedback.html' },
   { id: 'staff-guide', label: 'Staff guide', href: '/pages/admin/staff-guide.html' },
+  { id: 'team', label: 'Team invites', href: '/pages/admin/team.html', adminOnly: true },
   { id: 'audit', label: 'Audit log', href: '/pages/admin/audit-log.html', adminOnly: true },
   { id: 'privacy', label: 'Privacy and GDPR', href: '/pages/admin/privacy.html', adminOnly: true },
 ];
@@ -46,6 +48,7 @@ export const VOLUNTEER_PRIMARY = [
 export const VOLUNTEER_MORE = [
   { id: 'applications', label: 'Applications', href: '/pages/volunteer/my-applications.html' },
   { id: 'hours', label: 'Hours', href: '/pages/volunteer/my-hours.html' },
+  { id: 'mileage', label: 'Mileage', href: '/pages/volunteer/mileage.html' },
   { id: 'training', label: 'Training', href: '/pages/volunteer/training.html' },
   { id: 'foster', label: 'Foster', href: '/pages/volunteer/foster.html' },
   { id: 'transport', label: 'Transport', href: '/pages/volunteer/transport.html' },

@@ -33,6 +33,9 @@ function inferFromRequest(req) {
   else if (segments.includes('erase')) action = 'gdpr.erase';
   else if (segments.includes('gdpr') && method === 'GET') action = 'gdpr.export';
   else if (segments.includes('retention')) action = 'gdpr.retention';
+  else if (resource === 'admin' && segments[1] === 'invites') {
+    action = segments.includes('revoke') ? 'invite.revoke' : 'invite.create';
+  }
   else if (segments.includes('trusted') && resource === 'admin') action = 'volunteer.trusted';
   else if (resource === 'admin' && segments[1] === 'settings' && segments[2] === 'booking') {
     action = 'booking_policy.update';
@@ -44,6 +47,8 @@ function inferFromRequest(req) {
   const entityType =
     resource === 'admin' && segments[1] === 'volunteers'
       ? 'volunteer'
+      : resource === 'admin' && segments[1] === 'invites'
+        ? 'invite'
       : resource === 'hours'
         ? 'hours'
         : resource.replace(/s$/, '') || resource;

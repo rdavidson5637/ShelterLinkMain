@@ -10,7 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const { testConnection, pgPool, closePool, pool } = require('./config/database');
 const { sanitizeInput } = require('./middleware/sanitize');
-const { bindShelter, shelterIdFromSlug } = require('./middleware/shelter');
+const { bindShelter, activeShelterPage } = require('./middleware/shelter');
 const { apiLimiter } = require('./middleware/rateLimiter');
 const { errorHandler } = require('./middleware/errorHandler');
 const { validateEnv, logStartupWarnings } = require('./utils/validateEnv');
@@ -179,6 +179,7 @@ const checkinRoutes = require('./routes/checkin');
 const animalRoutes = require('./routes/animals');
 const fosterRoutes = require('./routes/fosters');
 const transportRoutes = require('./routes/transport');
+const mileageRoutes = require('./routes/mileage');
 const incidentRoutes = require('./routes/incidents');
 const threadRoutes = require('./routes/threads');
 const vettingRoutes = require('./routes/vetting');
@@ -214,6 +215,7 @@ app.use('/api/checkin', checkinRoutes);
 app.use('/api/animals', animalRoutes);
 app.use('/api/fosters', fosterRoutes);
 app.use('/api/transport', transportRoutes);
+app.use('/api/mileage', mileageRoutes);
 app.use('/api/incidents', incidentRoutes);
 app.use('/api/threads', threadRoutes);
 app.use('/api/vetting', vettingRoutes);
@@ -260,39 +262,24 @@ app.get('/kiosk', (req, res) => {
 });
 
 // Volunteer sign-up. Plain /register stays on the Assisi default.
-// /join/<slug> only serves the form for a shelter that exists; an unknown
-// slug gets the 404 page rather than a form that would sign up to Assisi.
+// /join/<slug> only serves the form for an active shelter; an unknown or
+// suspended slug gets the 404 page rather than a form that would sign up to
+// Assisi or to a shelter that is not running.
 const REGISTER_PAGE = path.join(__dirname, 'frontend', 'register.html');
 app.get('/register', (req, res) => res.sendFile(REGISTER_PAGE));
-app.get('/join/:slug', apiLimiter, async (req, res, next) => {
-  try {
-    const id = await shelterIdFromSlug(req.params.slug);
-    if (!id) return next();
-    return res.sendFile(REGISTER_PAGE);
-  } catch (error) {
-    return next(error);
-  }
-});
+app.get('/join/:slug', apiLimiter, activeShelterPage(REGISTER_PAGE));
 
 // Public shelter pages. The page reads the slug from its own path and sends
 // it to the API as ?shelter=<slug>; the API resolves it. Same rule as
-// /join: an unknown slug gets the 404 page, never a board or form that
-// would quietly fall back to Assisi.
+// /join: an unknown or suspended slug gets the 404 page, never a board or
+// form that would quietly fall back to Assisi.
 const SHELTER_PAGES = {
   '': path.join(__dirname, 'frontend', 'index.html'),
   '/opportunities': path.join(__dirname, 'frontend', 'pages', 'opportunities.html'),
   '/group-booking': path.join(__dirname, 'frontend', 'pages', 'group-booking.html'),
 };
 for (const [suffix, file] of Object.entries(SHELTER_PAGES)) {
-  app.get(`/s/:slug${suffix}`, apiLimiter, async (req, res, next) => {
-    try {
-      const id = await shelterIdFromSlug(req.params.slug);
-      if (!id) return next();
-      return res.sendFile(file);
-    } catch (error) {
-      return next(error);
-    }
-  });
+  app.get(`/s/:slug${suffix}`, apiLimiter, activeShelterPage(file));
 }
 
 // One-time invite link from an invite email: /invite#<token>. The token is
@@ -309,6 +296,11 @@ app.get('/invite', invitePageLimiter, (req, res) => {
   });
   res.sendFile(INVITE_PAGE);
 });
+
+// Public form for a charity to ask to join. Applications wait for a
+// platform owner at /platform/shelters; nothing goes live from here.
+const APPLY_PAGE = path.join(__dirname, 'frontend', 'apply.html');
+app.get('/apply', (req, res) => res.sendFile(APPLY_PAGE));
 
 app.get('/launch', require('./controllers/launchController').launch);
 
