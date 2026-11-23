@@ -607,6 +607,23 @@ function cases(feedbackToken) {
     deny('GET', '/api/admin/volunteers/2/documents'),
     deny('GET', '/api/admin/gdpr/volunteers/2/export'),
     deny('POST', '/api/admin/gdpr/volunteers/2/erase', { confirmation: 'DELETE' }),
+    // SL-DAY-03: merge must not touch another shelter's volunteers.
+    deny('POST', '/api/admin/volunteers/merge/preview', {
+      keep_user_id: 2,
+      duplicate_user_id: 4,
+    }),
+    deny('POST', '/api/admin/volunteers/merge', {
+      keep_user_id: 2,
+      duplicate_user_id: 4,
+    }),
+    deny('POST', '/api/admin/volunteers/merge/preview', {
+      keep_user_id: 4,
+      duplicate_user_id: 2,
+    }),
+    deny('POST', '/api/admin/volunteers/merge', {
+      keep_user_id: 4,
+      duplicate_user_id: 2,
+    }),
     // Retention settings/preview/run are scoped to the caller's shelter (own),
     // not foreign ids. Cross-shelter checks run after the deny loop.
     { method: 'GET', urlPath: '/api/admin/settings/retention', expect: 'own' },

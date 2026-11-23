@@ -238,6 +238,8 @@ async function getAllVolunteers(req, res) {
       LEFT JOIN volunteer_profiles vp ON vp.user_id = u.user_id
       LEFT JOIN volunteer_hours vh ON vh.user_id = u.user_id
       WHERE u.role = 'volunteer'
+        AND u.archived_at IS NULL
+        AND u.anonymised_at IS NULL
       GROUP BY u.user_id, u.first_name, u.last_name, u.email, u.phone, u.password, u.reset_token_expires, vp.approved, vp.foster_approved, vp.skills, vp.availability, vp.volunteer_type, vp.required_hours, vp.away_until, vp.emergency_contact, vp.emergency_contact_name, vp.emergency_contact_relationship, vp.emergency_contact_phone
       ORDER BY u.first_name, u.last_name
     `;

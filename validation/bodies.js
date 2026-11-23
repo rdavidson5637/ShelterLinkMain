@@ -125,6 +125,20 @@ const volunteerInvites = z
   .object({ user_ids: z.array(idValue).min(1).max(100) })
   .strict();
 
+// Staff merge of two volunteer records in the same shelter (SL-DAY-03).
+const volunteerMerge = z
+  .object({
+    keep_user_id: optId,
+    keepUserId: optId,
+    duplicate_user_id: optId,
+    duplicateUserId: optId,
+  })
+  .strict()
+  .refine(
+    (v) => (v.keep_user_id ?? v.keepUserId) != null && (v.duplicate_user_id ?? v.duplicateUserId) != null,
+    { message: 'keep_user_id and duplicate_user_id are required' }
+  );
+
 // A charity asking to join. Never a shelter id; the row is global.
 const shelterApplication = z
   .object({
@@ -863,6 +877,7 @@ const bodies = {
   shelterApplication,
   staffInvite,
   volunteerInvites,
+  volunteerMerge,
   groupBooking,
   opportunity,
   shiftNote,
