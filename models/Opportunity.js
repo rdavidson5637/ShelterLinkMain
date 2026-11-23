@@ -435,22 +435,31 @@ async function cloneFrom(sourceId, createdBy = null) {
 
 /**
  * Approved, emailable volunteers who are fully qualified for the shift
- * and have not already applied. Used for urgent cover broadcasts.
+ * (required qualifications / animal training quals) and have not already
+ * applied. Used for urgent cover broadcasts. Prefer_urgent and age/consent
+ * are applied after the SQL shortlist (see filterUrgentCoverRecipients).
  */
 async function resolveUrgentCoverRecipients(opportunityId, { limit = 200 } = {}) {
   const safeLimit = Math.min(Math.max(Number(limit) || 200, 1), 200);
+  // Fetch a wider shortlist so age / quiet-hours filters can still fill limit.
+  const fetchLimit = Math.min(safeLimit * 3, 600);
   const sql = `
     SELECT
       u.user_id,
       u.email,
       u.first_name,
-      u.last_name
+      u.last_name,
+      vp.date_of_birth,
+      COALESCE(vp.prefer_urgent, 1) AS prefer_urgent,
+      vp.quiet_hours_start,
+      vp.quiet_hours_end
     FROM users u
     INNER JOIN volunteer_profiles vp ON vp.user_id = u.user_id
     WHERE u.role = 'volunteer'
       AND COALESCE(vp.approved, 0) = 1
       AND u.email IS NOT NULL
       AND u.email <> ''
+      AND COALESCE(vp.prefer_urgent, 1) = 1
       AND (vp.away_until IS NULL OR vp.away_until < CURRENT_DATE)
       AND NOT EXISTS (
         SELECT 1 FROM applications a
@@ -490,9 +499,79 @@ async function resolveUrgentCoverRecipients(opportunityId, { limit = 200 } = {})
     opportunityId,
     opportunityId,
     opportunityId,
-    safeLimit,
+    fetchLimit,
   ]);
-  return rows.map((row) => ({ ...row, id: row.user_id }));
+  const shortlist = rows.map((row) => ({ ...row, id: row.user_id }));
+  return filterUrgentCoverRecipients(shortlist, opportunityId, { limit: safeLimit });
+}
+
+/**
+ * Drop recipients who are under the shelter minimum age, missing guardian
+ * consent when under 18, or currently in quiet hours.
+ */
+async function filterUrgentCoverRecipients(candidates, opportunityId, { limit = 200, now = new Date() } = {}) {
+  const { assessAge } = require('../utils/ageRules');
+  const { calendarDay } = require('../utils/shelterTime');
+  const { rowInQuietHours } = require('../utils/quietHours');
+  const GuardianConsent = require('./GuardianConsent');
+
+  const opportunity = await findById(opportunityId);
+  const onDay = (opportunity && calendarDay(opportunity.start_date)) || calendarDay(now);
+  const settings = await GuardianConsent.getShelterSettings();
+  const minAge = settings.min_volunteer_age;
+
+  const ids = candidates.map((c) => Number(c.user_id)).filter((n) => Number.isFinite(n));
+  const consentIds = new Set();
+  if (ids.length) {
+    const placeholders = ids.map(() => '?').join(', ');
+    const [consentRows] = await pool.execute(
+      `
+        SELECT user_id
+        FROM guardian_consents
+        WHERE withdrawn_at IS NULL
+          AND user_id IN (${placeholders})
+      `,
+      ids
+    );
+    for (const row of consentRows) consentIds.add(Number(row.user_id));
+  }
+
+  const eligible = [];
+  for (const row of candidates) {
+    if (rowInQuietHours(row, now)) continue;
+    const assessment = assessAge({
+      dateOfBirth: row.date_of_birth,
+      minAge,
+      hasConsent: consentIds.has(Number(row.user_id)),
+      onDay,
+    });
+    if (!assessment.ok) continue;
+    eligible.push(row);
+    if (eligible.length >= limit) break;
+  }
+  return eligible;
+}
+
+/**
+ * Atomically claim an urgent flag when the 24h reflag window allows it.
+ * Returns the updated opportunity, or null when another replica already flagged.
+ */
+async function flagUrgentIfAllowed(opportunityId, when = new Date()) {
+  const stamp = when.toISOString().slice(0, 19).replace('T', ' ');
+  const [result] = await pool.execute(
+    `
+      UPDATE ${TABLE}
+      SET is_urgent = 1, urgent_flagged_at = ?
+      WHERE opportunity_id = ?
+        AND (
+          urgent_flagged_at IS NULL
+          OR urgent_flagged_at <= (?::timestamp - interval '24 hours')
+        )
+    `,
+    [stamp, opportunityId, stamp]
+  );
+  if (!result.affectedRows) return null;
+  return findById(opportunityId);
 }
 
 function isUnderstaffed(opportunity) {
@@ -580,10 +659,12 @@ module.exports = {
   deleteSeries,
   cloneFrom,
   resolveUrgentCoverRecipients,
+  filterUrgentCoverRecipients,
   isUnderstaffed,
   isUpcoming,
   canReflagUrgent,
   flagUrgent,
+  flagUrgentIfAllowed,
   buildOccurrenceOffsets,
   generateCheckInCode,
   MAX_OCCURRENCES,

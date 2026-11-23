@@ -47,7 +47,20 @@ test('reminder query skips volunteers currently away', async () => {
 test('urgent cover recipients skip away volunteers', async () => {
   mock.resetCalls();
   mock.setHandler(async (sql) => {
-    assert.match(sql, /away_until/i);
+    if (/FROM users u/i.test(sql)) {
+      assert.match(sql, /away_until/i);
+      return [[]];
+    }
+    if (/WHERE opportunity_id = \?/i.test(sql) && /SELECT/i.test(sql)) {
+      return [[{
+        opportunity_id: 7,
+        id: 7,
+        start_date: '2026-09-01 10:00:00',
+        title: 'Walk',
+      }]];
+    }
+    if (/FROM shelter_settings/i.test(sql)) return [[{ min_volunteer_age: null }]];
+    if (/FROM guardian_consents/i.test(sql)) return [[]];
     return [[]];
   });
   await Opportunity.resolveUrgentCoverRecipients(7);

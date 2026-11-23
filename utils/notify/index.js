@@ -11,6 +11,9 @@
  *   sms:   switched off. See ./smsProvider.js. It is never called with a
  *          phone number, and always reports "skipped".
  *
+ * Preference and quiet-hours gates (SL-LATER-16) run here so email and push
+ * stay in step. Callers should also filter candidates in SQL where possible.
+ *
  * Each send returns a result per channel so callers can log and decide what
  * counts as delivered. A failure on one channel never stops the others.
  *
@@ -20,6 +23,7 @@
 const { isEmailConfigured } = require('../emailConfig');
 const { buildReminderPayload, buildUrgentPayload } = require('../pushPayloads');
 const { getSmsProvider } = require('./smsProvider');
+const { rowInQuietHours } = require('../quietHours');
 
 const CHANNELS = Object.freeze(['email', 'push', 'sms']);
 
@@ -44,6 +48,11 @@ function channelStatus() {
     push: Boolean(pushService().isConfigured()),
     sms: Boolean(sms.isEnabled()),
   };
+}
+
+function prefOn(row, column, defaultOn = true) {
+  if (!row || row[column] == null) return defaultOn;
+  return Number(row[column]) === 1;
 }
 
 async function sendPush(userIds, payload, category) {
@@ -71,14 +80,35 @@ async function sendSms(recipients) {
   return emptyResult({ skipped: count, enabled: Boolean(provider.isEnabled()), provider: provider.name });
 }
 
+function skipAllChannels(reason, recipientCount = 1) {
+  return {
+    email: emptyResult({ skipped: recipientCount, reason }),
+    push: emptyResult({ skipped: recipientCount, reason }),
+    sms: emptyResult({ skipped: recipientCount, reason: 'sms_disabled', provider: getSmsProvider().name }),
+    delivered: false,
+    skipped: true,
+    skipReason: reason,
+  };
+}
+
 /**
  * One shift reminder to one volunteer.
  *
  * @param {object} app row from Application.findAcceptedNeedingReminder
  * @param {object} details { title, date, time, location } for the email
- * @returns {{ email, push, sms, delivered: boolean }}
+ * @param {object} [options]
+ * @param {Date} [options.now]
+ * @returns {{ email, push, sms, delivered: boolean, skipped?: boolean, skipReason?: string }}
  */
-async function notifyShiftReminder(app, details = {}) {
+async function notifyShiftReminder(app, details = {}, options = {}) {
+  const now = options.now || new Date();
+  if (!prefOn(app, 'prefer_reminders', true)) {
+    return skipAllChannels('prefer_reminders_off');
+  }
+  if (rowInQuietHours(app, now)) {
+    return skipAllChannels('quiet_hours');
+  }
+
   const emailOn = isEmailConfigured();
   const result = {
     email: emptyResult({ configured: emailOn }),
@@ -109,17 +139,41 @@ async function notifyShiftReminder(app, details = {}) {
 /**
  * Urgent cover to every resolved recipient.
  *
+ * Recipients should already be preference-, age-, and quiet-hours-filtered.
+ * Quiet hours and prefer_urgent are checked again so a direct caller cannot
+ * bypass them.
+ *
  * @param {object} args
- * @param {Array<{ user_id, email, first_name }>} args.recipients
+ * @param {Array<{ user_id, email, first_name, prefer_urgent?, quiet_hours_start?, quiet_hours_end? }>} args.recipients
  * @param {object} args.opportunity { id, title, location }
  * @param {string} args.subject push title, matches the email subject
  * @param {string} args.whenLabel
- * @returns {{ email, push, sms }}
+ * @param {Date} [args.now]
+ * @returns {{ email, push, sms, skippedQuiet: number, skippedPref: number }}
  */
-async function notifyUrgentCover({ recipients = [], opportunity = {}, subject, whenLabel } = {}) {
+async function notifyUrgentCover({
+  recipients = [],
+  opportunity = {},
+  subject,
+  whenLabel,
+  now = new Date(),
+} = {}) {
   const email = emptyResult();
+  let skippedQuiet = 0;
+  let skippedPref = 0;
   const mailer = emailService();
+  const active = [];
+
   for (const recipient of recipients) {
+    if (!prefOn(recipient, 'prefer_urgent', true)) {
+      skippedPref += 1;
+      continue;
+    }
+    if (rowInQuietHours(recipient, now)) {
+      skippedQuiet += 1;
+      continue;
+    }
+    active.push(recipient);
     try {
       await mailer.sendUrgentCover(recipient.email, {
         firstName: recipient.first_name,
@@ -134,7 +188,7 @@ async function notifyUrgentCover({ recipients = [], opportunity = {}, subject, w
     }
   }
 
-  const userIds = recipients.map((r) => r.user_id);
+  const userIds = active.map((r) => r.user_id);
   let push = { sent: 0, skipped: 0, failed: 0, configured: false };
   if (userIds.length) {
     push = await sendPush(
@@ -148,8 +202,8 @@ async function notifyUrgentCover({ recipients = [], opportunity = {}, subject, w
       'urgent'
     );
   }
-  const sms = await sendSms(recipients);
-  return { email, push, sms };
+  const sms = await sendSms(active);
+  return { email, push, sms, skippedQuiet, skippedPref };
 }
 
 module.exports = {
