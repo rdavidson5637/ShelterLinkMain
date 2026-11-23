@@ -9,7 +9,7 @@ Live prove-out still needs your `DATABASE_URL`.
 
 1. Supabase session pooler **5432** → `DATABASE_URL` in `.env`
 2. Optional: `SHELTER_EMERGENCY_PHONE`, Brevo `EMAIL_*`, VAPID keys
-3. `npm run db:reset` → `npm run dev` → `npm run smoke`
+3. `npm run db:reset` → `npm run dev` → `npm run smoke:e2e`
 4. Walk `ASSISI-DEMO.md` (login shows demo accounts when not production)
 
 ## 2. Shipped for Assisi
