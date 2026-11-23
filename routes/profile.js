@@ -10,14 +10,15 @@ const {
   getMyCertificate,
   issueMyCertificate,
 } = require('../controllers/certificateController');
+const { getMyHoursStatement } = require('../controllers/hoursStatementController');
 
 const {
   getMyAgeStatus,
   giveMyGuardianConsent,
 } = require('../controllers/guardianConsentController');
 
-const { validateBody } = require('../middleware/validate');
-const { bodies } = require('../validation/bodies');
+const { validateBody, validateQuery } = require('../middleware/validate');
+const { bodies, queries } = require('../validation/bodies');
 
 const router = express.Router();
 
@@ -31,6 +32,11 @@ router.post('/profile/guardian-consent', validateBody(bodies.guardianConsent), g
 router.get('/badges', getBadges);
 router.get('/certificate', getMyCertificate);
 router.post('/certificate', validateBody(bodies.empty), issueMyCertificate);
+router.get(
+  '/hours-statement',
+  validateQuery(queries.hoursStatement),
+  getMyHoursStatement
+);
 
 module.exports = router;
 

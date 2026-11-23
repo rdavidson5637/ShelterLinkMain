@@ -11,7 +11,7 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <title>Volunteer certificate - ShelterLink</title>
+    <title>Volunteer hours statement - ShelterLink</title>
     <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
     <link rel="stylesheet" href="/public/css/custom.css" />
     <style>
@@ -19,67 +19,101 @@
         display: flex;
         flex-wrap: wrap;
         gap: 0.75rem;
+        align-items: end;
         margin: 1rem 0 1.5rem;
       }
-      .certificate-sheet {
-        --green: #0f766e;
-        --text: #1f2937;
-        --text-secondary: #5b6670;
-        background: #ffffff;
-        color: var(--text);
-        border: 2px solid var(--green);
-        padding: 2rem 2.5rem;
-        max-width: 297mm;
-        margin: 0 auto;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-      }
-      .certificate-sheet .brand {
-        font-size: var(--text-2xl);
-        color: var(--green);
-        letter-spacing: 0.02em;
+      .cert-actions label {
         margin: 0;
       }
-      .certificate-sheet .subtitle {
-        color: var(--text-secondary);
-        margin: 0.25rem 0 1.5rem;
+      .hours-statement-sheet {
+        background: var(--surface, #fff);
+        color: var(--text, #1f2937);
+        border: 1px solid var(--green-tint-border, #99f6e4);
+        padding: 2rem 2.25rem;
+        max-width: 210mm;
+        margin: 0 auto;
       }
-      .certificate-sheet .certificate-title {
+      .hours-statement-header {
+        display: flex;
+        gap: 1.25rem;
+        align-items: center;
+        margin-bottom: 1.25rem;
+      }
+      .hours-statement-logo {
+        width: 4.5rem;
+        height: 4.5rem;
+        object-fit: contain;
+        flex-shrink: 0;
+      }
+      .shelter-name {
         font-family: var(--font-display);
         font-size: var(--text-xl);
         font-weight: 600;
-        letter-spacing: -0.02em;
+        margin: 0;
         line-height: var(--leading-heading);
-        margin: 0 0 0.5rem;
-        color: var(--text);
       }
-      .certificate-sheet .volunteer-name {
-        font-size: var(--text-2xl);
-        font-weight: 700;
-        margin: 0.75rem 0;
+      .statement-title {
+        margin: 0.15rem 0 0;
+        color: var(--text-secondary, #5b6670);
       }
-      .certificate-sheet .stats {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 2rem;
-        margin: 1.25rem 0;
+      .lede {
+        max-width: 65ch;
+        line-height: 1.6;
+        margin: 0 0 1.25rem;
       }
-      .certificate-sheet .stat strong {
-        display: block;
-        font-size: var(--text-2xl);
-        color: var(--green);
+      .statement-meta {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+        gap: 0.75rem 1.5rem;
+        margin: 0 0 1.5rem;
       }
-      .certificate-sheet .verify {
-        margin-top: 1.5rem;
+      .statement-meta dt {
         font-size: var(--text-sm);
-        color: var(--text-secondary);
+        color: var(--text-secondary, #5b6670);
+        margin: 0;
       }
-      .certificate-sheet .badges {
-        margin-top: 1rem;
+      .statement-meta dd {
+        margin: 0.15rem 0 0;
+        font-weight: 600;
+      }
+      .hours-statement-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0 0 1.5rem;
+      }
+      .hours-statement-table th,
+      .hours-statement-table td {
+        border-bottom: 1px solid var(--green-tint-border, #99f6e4);
+        padding: 0.5rem 0.35rem;
+        text-align: left;
+        vertical-align: top;
+      }
+      .hours-statement-table .num {
+        text-align: right;
+        white-space: nowrap;
+      }
+      .shift-location {
+        font-size: var(--text-sm);
+        color: var(--text-secondary, #5b6670);
+      }
+      .statement-signoff {
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--green-tint-border, #99f6e4);
+      }
+      .statement-signoff .muted {
+        color: var(--text-secondary, #5b6670);
+        font-size: var(--text-sm);
+      }
+      .verify-block {
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--green-tint-border, #99f6e4);
       }
       @media print {
         @page {
-          size: A4 landscape;
-          margin: 12mm;
+          size: A4 portrait;
+          margin: 14mm;
         }
         body {
           background: #fff !important;
@@ -87,7 +121,8 @@
         .site-header,
         .cert-actions,
         footer,
-        .no-print {
+        .no-print,
+        .verify-block {
           display: none !important;
         }
         main.container {
@@ -95,12 +130,10 @@
           padding: 0;
           margin: 0;
         }
-        .certificate-sheet {
-          box-shadow: none;
-          border-width: 3px;
-          width: 100%;
+        .hours-statement-sheet {
+          border: none;
+          padding: 0;
           max-width: none;
-          min-height: 170mm;
         }
       }
     </style>
@@ -121,43 +154,41 @@
 
     <main id="main" class="container">
       <section class="no-print">
-        <h1>Hours certificate</h1>
-        <p>Download a printable certificate of your approved volunteer hours.</p>
-        <div class="cert-actions">
-          <button type="button" id="issueButton">Issue / refresh certificate</button>
-          <button type="button" id="printButton" class="secondary" hidden>Print / save PDF</button>
-          <a href="/pages/volunteer/my-hours.html" role="button" class="secondary outline">Back to my hours</a>
-        </div>
-        <div id="message" role="status" aria-live="polite"></div>
-        <p id="certificateEmpty" class="no-print" hidden>
-          No certificate issued yet. Use Issue / refresh certificate to create one from your approved hours.
+        <h1>Hours statement</h1>
+        <p>
+          Print a plain statement of your approved hours for school, Duke of Edinburgh,
+          or a job reference. Use Print and choose “Save as PDF” if you need a file.
         </p>
+        <form id="rangeForm" class="cert-actions">
+          <label for="startDate">
+            From
+            <input type="date" id="startDate" name="startDate" required />
+          </label>
+          <label for="endDate">
+            To
+            <input type="date" id="endDate" name="endDate" required />
+          </label>
+          <button type="submit" id="loadButton">Show statement</button>
+          <button type="button" id="printButton" class="secondary" hidden>Print</button>
+          <a href="/pages/volunteer/my-hours.html" role="button" class="secondary outline">Back to my hours</a>
+        </form>
+        <div id="message" role="status" aria-live="polite"></div>
       </section>
 
-      <article id="certificateSheet" class="certificate-sheet" hidden>
-        <p class="brand">ShelterLink</p>
-        <p class="subtitle" data-shelter-name></p>
-        <p class="certificate-title">Certificate of Volunteer Service</p>
-        <p>This certifies that</p>
-        <p class="volunteer-name" id="certName">—</p>
-        <p>has completed approved volunteer service with <span data-shelter-name></span>.</p>
-        <div class="stats">
-          <div class="stat">
-            <strong id="certHours">0</strong>
-            <span>Approved hours</span>
-          </div>
-          <div class="stat">
-            <strong id="certShifts">0</strong>
-            <span>Shifts completed</span>
-          </div>
+      <article id="statementSheet" class="hours-statement-sheet" hidden></article>
+
+      <section class="verify-block no-print" id="verifySection" hidden>
+        <h2>Verification code</h2>
+        <p>Optional snapshot with a public verification code for the totals above.</p>
+        <div class="cert-actions">
+          <button type="button" id="issueButton" class="secondary">Issue / refresh verification code</button>
         </div>
-        <div class="badges" id="certBadges"></div>
-        <p class="verify">
-          Issued on <span id="certIssued">—</span><br />
-          Verification code: <code id="certCode">—</code><br />
-          Verify at <span id="certVerifyUrl"></span>
+        <p id="verifyDetails" hidden>
+          Code: <code id="certCode">—</code>
+          · Issued <span id="certIssued">—</span>
+          · <span id="certVerifyUrl"></span>
         </p>
-      </article>
+      </section>
     </main>
 
     <footer class="container no-print">

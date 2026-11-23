@@ -729,6 +729,12 @@ const queries = {
   exportRange: z.object({ startDate: qdate, endDate: qdate, userId: qstr(20) }).strict(),
   exportOwn: z.object({ startDate: qdate, endDate: qdate }).strict(),
   impactReport: z.object({ startDate: qdate, endDate: qdate }).strict(),
+  hoursStatement: z
+    .object({
+      startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    })
+    .strict(),
   transportMileage: z.object({ run_id: qstr(20) }).strict(),
   active: z.object({ active: qstr(10) }).strict(),
   tags: z.object({ limit: qstr(10) }).strict(),

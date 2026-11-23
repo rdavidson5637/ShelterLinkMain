@@ -173,6 +173,54 @@ async function getTotalHours(userId) {
   }
 }
 
+/**
+ * Approved hours for a printable statement (school / DofE / job reference).
+ * Optional inclusive date range on vh.date.
+ */
+async function findApprovedStatement(userId, { startDate = null, endDate = null } = {}) {
+  if (!userId) throw new Error('userId is required');
+
+  const where = ['vh.user_id = ?', 'vh.approved = 1'];
+  const params = [Number(userId)];
+  if (startDate) {
+    where.push('vh.date >= ?');
+    params.push(startDate);
+  }
+  if (endDate) {
+    where.push('vh.date <= ?');
+    params.push(endDate);
+  }
+
+  const sql = `
+    SELECT
+      vh.record_id,
+      vh.date,
+      vh.hours,
+      o.title AS opportunity_title,
+      o.location AS opportunity_location
+    FROM ${TABLE} vh
+    LEFT JOIN opportunities o ON o.opportunity_id = vh.opportunity_id
+    WHERE ${where.join(' AND ')}
+    ORDER BY vh.date ASC, vh.record_id ASC
+  `;
+  const [rows] = await pool.execute(sql, params);
+  const shifts = rows.map((row) => ({
+    id: row.record_id,
+    date: row.date,
+    hours: Number(row.hours) || 0,
+    title: row.opportunity_title || 'Volunteer shift',
+    location: row.opportunity_location || null,
+  }));
+  const total_hours = shifts.reduce((sum, s) => sum + s.hours, 0);
+  return {
+    shifts,
+    total_hours,
+    shift_count: shifts.length,
+    start_date: startDate || null,
+    end_date: endDate || null,
+  };
+}
+
 module.exports = {
   create,
   findById,
@@ -181,4 +229,5 @@ module.exports = {
   findPending,
   approve,
   getTotalHours,
+  findApprovedStatement,
 };

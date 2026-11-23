@@ -2,13 +2,21 @@ import { apiRequest } from '../config.js';
 import { requireAuth, logout } from '../auth.js';
 import { formatDateOnly } from '../utils/dateFormat.js';
 import { escapeHtml } from '../utils/escapeHtml.js';
+import {
+  defaultStatementRange,
+  renderStatementSheet,
+} from '../hoursStatementShared.js';
 
 const messageEl = document.getElementById('message');
-const issueButton = document.getElementById('issueButton');
+const rangeForm = document.getElementById('rangeForm');
+const startInput = document.getElementById('startDate');
+const endInput = document.getElementById('endDate');
 const printButton = document.getElementById('printButton');
 const logoutButton = document.getElementById('logoutButton');
-const sheet = document.getElementById('certificateSheet');
-const emptyEl = document.getElementById('certificateEmpty');
+const sheet = document.getElementById('statementSheet');
+const issueButton = document.getElementById('issueButton');
+const verifySection = document.getElementById('verifySection');
+const verifyDetails = document.getElementById('verifyDetails');
 
 function setMessage(type, text) {
   if (!messageEl) return;
@@ -20,53 +28,34 @@ function setMessage(type, text) {
   messageEl.innerHTML = `<p class="${css}">${escapeHtml(text)}</p>`;
 }
 
-function renderCertificate(cert) {
-  if (!sheet || !cert) return;
-  const name = `${cert.first_name || ''} ${cert.last_name || ''}`.trim() || 'Volunteer';
-  document.getElementById('certName').textContent = name;
-  document.getElementById('certHours').textContent = Number(cert.hours_at_issue || 0).toFixed(1);
-  document.getElementById('certShifts').textContent = String(cert.shifts_at_issue || 0);
-  document.getElementById('certIssued').textContent =
-    formatDateOnly(cert.issued_at) || String(cert.issued_at || '').slice(0, 10);
-  document.getElementById('certCode').textContent = cert.code || '—';
-  const verifyUrl = `${window.location.origin}/api/public/verify-certificate/${encodeURIComponent(
-    cert.code || ''
-  )}`;
-  document.getElementById('certVerifyUrl').textContent = verifyUrl;
-
-  const badgesEl = document.getElementById('certBadges');
-  const badges = cert.badges || [];
-  if (badges.length) {
-    badgesEl.innerHTML = `<p><strong>Badges earned:</strong> ${badges
-      .map((b) => escapeHtml(String(b.label || '').trim()))
-      .join(', ')}</p>`;
-  } else {
-    badgesEl.innerHTML = '';
+async function loadStatement() {
+  setMessage();
+  const startDate = startInput?.value;
+  const endDate = endInput?.value;
+  if (!startDate || !endDate) {
+    setMessage('error', 'Choose a start and end date');
+    return;
+  }
+  if (startDate > endDate) {
+    setMessage('error', 'Start date must be on or before end date');
+    return;
   }
 
-  sheet.hidden = false;
-  if (emptyEl) emptyEl.hidden = true;
-  if (printButton) printButton.hidden = false;
-}
-
-async function loadLatest() {
   try {
-    const res = await apiRequest('/volunteer/certificate');
-    if (res.status === 404) {
-      sheet.hidden = true;
-      if (printButton) printButton.hidden = true;
-      if (emptyEl) emptyEl.hidden = false;
-      return;
-    }
+    const qs = new URLSearchParams({ startDate, endDate });
+    const res = await apiRequest(`/volunteer/hours-statement?${qs}`);
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      setMessage('error', err.error || 'Unable to load certificate');
+      setMessage('error', err.error || 'Unable to load hours statement');
       return;
     }
-    renderCertificate(await res.json());
+    const statement = await res.json();
+    renderStatementSheet(sheet, statement);
+    if (printButton) printButton.hidden = false;
+    if (verifySection) verifySection.hidden = false;
   } catch (error) {
-    console.error('[Certificate] load error:', error);
-    setMessage('error', 'Unable to load certificate');
+    console.error('[HoursStatement] load error:', error);
+    setMessage('error', 'Unable to load hours statement');
   }
 }
 
@@ -76,14 +65,22 @@ async function issueCertificate() {
     const res = await apiRequest('/volunteer/certificate', { method: 'POST' });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      setMessage('error', err.error || 'Unable to issue certificate');
+      setMessage('error', err.error || 'Unable to issue verification code');
       return;
     }
-    renderCertificate(await res.json());
-    setMessage('success', 'Certificate issued. Use Print to save a PDF.');
+    const cert = await res.json();
+    document.getElementById('certCode').textContent = cert.code || '—';
+    document.getElementById('certIssued').textContent =
+      formatDateOnly(cert.issued_at) || String(cert.issued_at || '').slice(0, 10);
+    const verifyUrl = `${window.location.origin}/api/public/verify-certificate/${encodeURIComponent(
+      cert.code || ''
+    )}`;
+    document.getElementById('certVerifyUrl').textContent = verifyUrl;
+    if (verifyDetails) verifyDetails.hidden = false;
+    setMessage('success', 'Verification code issued.');
   } catch (error) {
     console.error('[Certificate] issue error:', error);
-    setMessage('error', 'Unable to issue certificate');
+    setMessage('error', 'Unable to issue verification code');
   }
 }
 
@@ -93,9 +90,19 @@ async function init() {
     e.preventDefault();
     logout();
   });
-  issueButton?.addEventListener('click', issueCertificate);
+
+  const defaults = defaultStatementRange();
+  if (startInput && !startInput.value) startInput.value = defaults.startDate;
+  if (endInput && !endInput.value) endInput.value = defaults.endDate;
+
+  rangeForm?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    loadStatement();
+  });
   printButton?.addEventListener('click', () => window.print());
-  await loadLatest();
+  issueButton?.addEventListener('click', issueCertificate);
+
+  await loadStatement();
 }
 
 document.addEventListener('DOMContentLoaded', init);
