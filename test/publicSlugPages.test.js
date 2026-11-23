@@ -58,7 +58,7 @@ test.beforeEach(() => {
 test('/s/:slug/opportunities serves the page for a known slug', async () => {
   const res = await fetch(`${base}/s/second/opportunities`);
   assert.equal(res.status, 200);
-  assert.match(await res.text(), /Browse upcoming opportunities/);
+  assert.match(await res.text(), /Upcoming volunteer times/);
 });
 
 test('/s/:slug/opportunities is the 404 page for an unknown slug', async () => {

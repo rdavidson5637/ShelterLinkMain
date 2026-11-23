@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
     <link rel="stylesheet" href="/public/css/custom.css" />
   </head>
-  <body>
+  <body class="public-home">
     <a class="skip-link" href="#main">Skip to main content</a>
     <header class="site-header">
       <nav class="site-nav container" aria-label="Main navigation">
@@ -35,17 +35,26 @@
 
     <main id="main" class="container">
       <section class="hero">
-        <h1>Volunteer at <span data-shelter-name>your local shelter</span></h1>
-        <p>Browse open shifts, apply to help, and log your hours in one place.</p>
-        <div class="hero-actions">
-          <a href="/register.html" class="cta">Become a volunteer</a>
-          <a href="/pages/opportunities.html" class="text-link">See open shifts</a>
+        <div class="hero-copy">
+          <p class="hero-brand" aria-hidden="true">ShelterLink</p>
+          <h1>Volunteer at <span data-shelter-name>your local shelter</span></h1>
+          <p>Browse open shifts, apply to help, and log your hours after each visit.</p>
+          <div class="hero-actions">
+            <a href="/register.html" class="cta">Become a volunteer</a>
+            <a href="/pages/opportunities.html" class="text-link">See open shifts</a>
+          </div>
+        </div>
+        <div class="hero-media" role="img" aria-label="Shelter photograph placeholder">
+          <p class="hero-media-placeholder">
+            <strong>Shelter photo to come</strong>
+            Real photographs of the grounds and animals will sit here once the shelter supplies them.
+          </p>
         </div>
       </section>
 
       <section class="how-it-works">
-        <h2>How it works</h2>
-        <p>Four steps from signing up to logging your first hours.</p>
+        <h2>How a shift works</h2>
+        <p>From first account to logged hours, without a spreadsheet or group chat.</p>
         <ol>
           <li>
             <div>
@@ -56,32 +65,33 @@
           <li>
             <div>
               <strong>Get approved</strong>
-              Complete your profile. Staff review it before you can take shifts.
+              Finish your profile. Staff review it before you can take shifts.
             </div>
           </li>
           <li>
             <div>
-              <strong>Pick shifts</strong>
-              Browse open shifts, apply, and wait for a confirmation.
+              <strong>Pick a shift</strong>
+              Browse open times, apply, and wait for confirmation when the shelter requires it.
             </div>
           </li>
           <li>
             <div>
               <strong>Log hours</strong>
-              After each shift, record your hours and track your impact.
+              After the shift, record your hours so the day sheet stays accurate.
             </div>
           </li>
         </ol>
       </section>
 
       <section class="how-it-works">
-        <h2>If you are not signing up yourself</h2>
+        <h2>Other ways in</h2>
+        <p>Not ready to register, or booking for a group.</p>
         <ul class="choice-list">
           <li>
             <a href="/pages/opportunities.html">
               <span>
                 <strong>Open shifts</strong>
-                See what is available before you create an account.
+                See what is listed before you create an account.
               </span>
               <span class="choice-arrow" aria-hidden="true">→</span>
             </a>
@@ -99,12 +109,15 @@
       </section>
     </main>
 
-    <footer class="container">
-      <small>&copy; 2026 ShelterLink</small>
+    <footer class="site-footer">
+      <div class="container">
+        <small>&copy; <span data-footer-year>2026</span> ShelterLink</small>
+        <a class="text-link" href="/pages/privacy.html">Privacy</a>
+      </div>
     </footer>
 
     <script type="module" src="/js/components/publicNav.js"></script>
     <script type="module" src="/js/redirectIfAuthed.js"></script>
-      <script type="module" src="/js/utils/footerYear.js"></script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
   </body>
 </html>

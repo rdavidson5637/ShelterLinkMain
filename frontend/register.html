@@ -26,15 +26,16 @@
         </a>
         <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">Menu</button>
         <ul class="nav-menu" id="navMenu">
-          <li><a class="nav-link" href="/login.html"><span class="nav-icon" aria-hidden="true">&#128274;</span><span>Login</span></a></li>
+          <li><a class="nav-link" href="/login.html">Sign in</a></li>
+          <li><a class="nav-link" href="/pages/opportunities.html">Open shifts</a></li>
         </ul>
       </nav>
     </header>
 
-    <main id="main" class="container">
+    <main id="main" class="container auth-shell">
       <article class="auth-card">
-        <h1>Create an Account</h1>
-        <p>Sign up to volunteer with <span data-shelter-name>your shelter</span> on ShelterLink.</p>
+        <h1>Create an account</h1>
+        <p>Register to volunteer with <span data-shelter-name>your shelter</span>. Staff approve your profile before you can take shifts.</p>
 
         <div id="message" role="status" aria-live="polite"></div>
 
@@ -89,7 +90,7 @@
             I have read the <a href="/pages/privacy.html">privacy notice</a>
           </label>
 
-          <button type="submit">Create Account</button>
+          <button type="submit">Create account</button>
         </form>
 
         <p class="auth-links">
@@ -99,8 +100,10 @@
       </article>
     </main>
 
-    <footer class="container">
-      <small>&copy; 2026 ShelterLink</small>
+    <footer class="site-footer">
+      <div class="container">
+        <small>&copy; <span data-footer-year>2026</span> ShelterLink</small>
+      </div>
     </footer>
 
     <script type="module" src="/js/components/publicNav.js"></script>

@@ -17,7 +17,7 @@
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to main content</a>
-        <header class="site-header">
+    <header class="site-header">
       <nav class="site-nav container" aria-label="Volunteer navigation">
         <a class="site-brand" href="/pages/volunteer/dashboard.html">
           <span class="brand-mark" aria-hidden="true"></span>
@@ -31,28 +31,14 @@
 
     <main id="main" class="container">
       <div id="installPrompt"></div>
-      <section>
-        <article class="stat-card">
-          <strong>Notifications</strong>
-          <div id="pushToggle"></div>
-          <p><a href="/pages/volunteer/complete-profile.html#notifications">Choose which notifications</a></p>
-        </article>
-      </section>
-<div class="dashboard-main">
-        <section>
-          <h1>Welcome, <span id="userName">Volunteer</span>!</h1>
-          <p>Stay up to date with your volunteer status, upcoming shifts, and recent activity.</p>
+      <div class="dashboard-main">
+        <section class="page-lede">
+          <h1>Hello, <span id="userName">Volunteer</span></h1>
+          <p>Your next shift, onboarding gaps, and hours in one place.</p>
         </section>
 
         <section id="profileStatusBanner" class="status-banner" hidden>
           <p id="profileStatus"></p>
-        </section>
-
-        <section>
-          <article class="stat-card">
-            <strong>Onboarding checklist</strong>
-            <div id="onboardingChecklist">Loading…</div>
-          </article>
         </section>
 
         <section>
@@ -62,48 +48,100 @@
           </article>
         </section>
 
+        <section>
+          <article class="stat-card">
+            <strong>Onboarding checklist</strong>
+            <div id="onboardingChecklist">Loading…</div>
+          </article>
+        </section>
+
         <section class="stats-grid" id="statsGrid"></section>
 
         <section>
+          <h2>What to do next</h2>
+          <ul class="action-list">
+            <li>
+              <a href="/pages/volunteer/browse-shifts.html" id="browseShiftsButton">
+                <span>
+                  <strong>Find shifts</strong>
+                  Browse open times and apply.
+                </span>
+                <span class="choice-arrow" aria-hidden="true">→</span>
+              </a>
+            </li>
+            <li>
+              <a href="/pages/volunteer/calendar.html">
+                <span>
+                  <strong>Calendar</strong>
+                  See the shifts you already hold.
+                </span>
+                <span class="choice-arrow" aria-hidden="true">→</span>
+              </a>
+            </li>
+            <li>
+              <a href="/pages/volunteer/log-hours.html" id="logHoursButton">
+                <span>
+                  <strong>Log hours</strong>
+                  Record time after a completed shift.
+                </span>
+                <span class="choice-arrow" aria-hidden="true">→</span>
+              </a>
+            </li>
+            <li>
+              <button type="button" class="action-list-item" id="exportHoursCsvButton">
+                <span>
+                  <strong>Export my hours CSV</strong>
+                  Download a spreadsheet of your logged hours.
+                </span>
+                <span class="choice-arrow" aria-hidden="true">→</span>
+              </button>
+            </li>
+          </ul>
+        </section>
+
+        <section class="panel-stack">
+          <article class="stat-card">
+            <strong>Notifications</strong>
+            <div id="pushToggle"></div>
+            <p><a href="/pages/volunteer/complete-profile.html#notifications">Choose which notifications</a></p>
+          </article>
+
           <article class="stat-card" id="communityServiceCard" hidden>
             <strong>Community service progress</strong>
             <p id="communityServiceDetails">Loading…</p>
             <progress id="communityServiceProgress" max="100" value="0"></progress>
           </article>
-        </section>
 
-        <section>
           <article class="stat-card">
             <strong>Badges</strong>
             <div id="badgesList"></div>
             <p id="nextBadgeProgress">Loading badge progress...</p>
           </article>
+
           <article class="stat-card">
             <strong>Animals you have helped</strong>
             <div id="helpedAnimalsDetails">Loading…</div>
           </article>
-        </section>
 
-        <section>
           <article class="stat-card">
             <strong>Share my impact</strong>
             <p>Download a branded summary of your volunteering.</p>
-            <canvas id="impactCanvas" width="800" height="420" style="max-width:100%;border:1px solid #ddd;"></canvas>
+            <canvas id="impactCanvas" width="800" height="420" style="max-width:100%;border:1px solid var(--border);"></canvas>
             <p style="margin-top:0.75rem;">
               <button type="button" id="downloadImpactButton" class="secondary">Download image</button>
             </p>
           </article>
-        </section>
 
-        <section>
           <article class="stat-card">
             <strong>Recommended for you</strong>
             <div id="recommendedDetails">Loading recommendations...</div>
           </article>
+
           <article class="stat-card">
             <strong>My qualifications</strong>
             <div id="myQualificationsDetails">Loading your qualifications...</div>
           </article>
+
           <article class="stat-card">
             <strong>My documents</strong>
             <p>Reference letters and similar files. Do not upload AccessNI or disclosure certificates.</p>
@@ -121,6 +159,7 @@
             </form>
             <p id="documentUploadMessage" role="status" aria-live="polite"></p>
           </article>
+
           <article class="stat-card">
             <strong>Calendar feed</strong>
             <p id="icalFeedDetails">Loading subscribe URL...</p>
@@ -131,27 +170,19 @@
             </p>
           </article>
         </section>
-
-        <section>
-          <h2>Quick Actions</h2>
-          <div class="grid">
-            <a href="/pages/volunteer/calendar.html" role="button">Calendar</a>
-            <a href="/pages/volunteer/browse-shifts.html" role="button" id="browseShiftsButton">Find shifts</a>
-            <a href="/pages/volunteer/log-hours.html" role="button" id="logHoursButton" class="secondary">Log hours</a>
-            <button type="button" id="exportHoursCsvButton" class="secondary">Export My Hours CSV</button>
-          </div>
-        </section>
       </div>
     </main>
 
-    <footer class="container">
-      <small>&copy; 2026 ShelterLink</small>
+    <footer class="site-footer">
+      <div class="container">
+        <small>&copy; <span data-footer-year>2026</span> ShelterLink</small>
+      </div>
     </footer>
 
     <script type="module" src="/js/utils/errorHandler.js"></script>
     <script type="module" src="/js/utils/sessionManager.js"></script>
     <script type="module" src="/js/volunteer/dashboard.js"></script>
-      <script type="module" src="/js/utils/footerYear.js"></script>
-      <script type="module" src="/js/components/volunteerNav.js"></script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+    <script type="module" src="/js/components/volunteerNav.js"></script>
   </body>
 </html>
