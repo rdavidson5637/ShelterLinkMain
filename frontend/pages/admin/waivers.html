@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Waivers - ShelterLink</title>
-    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" />
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
     <link rel="stylesheet" href="/public/css/custom.css" />
   </head>
   <body>
@@ -66,6 +66,25 @@
         </article>
       </section>
 
+      <section aria-labelledby="ageRulesTitle">
+        <article style="max-width: 720px;">
+          <h2 id="ageRulesTitle">Minimum volunteer age</h2>
+          <p>
+            The youngest age this shelter accepts, worked out on the date of each shift.
+            Leave it empty to set no minimum. Anyone under 18 also needs a parent or
+            guardian to give consent on their profile before they can book.
+          </p>
+          <form id="ageSettingsForm" novalidate>
+            <label for="min_volunteer_age">
+              Minimum age
+              <input type="number" id="min_volunteer_age" name="min_volunteer_age" min="1" max="99" step="1" inputmode="numeric" />
+            </label>
+            <p id="ageSettingsSummary"></p>
+            <button type="submit" id="ageSettingsSave" data-admin-only>Save minimum age</button>
+          </form>
+        </article>
+      </section>
+
       <section>
         <h2>All waivers</h2>
         <div class="table-wrapper">
@@ -96,6 +115,7 @@
     <script type="module" src="/js/utils/errorHandler.js"></script>
     <script type="module" src="/js/utils/sessionManager.js"></script>
     <script type="module" src="/js/admin/waivers.js"></script>
+    <script type="module" src="/js/admin/age-settings.js"></script>
       <script type="module" src="/js/utils/footerYear.js"></script>
       <script type="module" src="/js/components/adminNav.js"></script>
   </body>

@@ -47,12 +47,20 @@ See `DEPLOY.md` for production setup and `ASSISI-DEMO.md` for the shelter demo s
 
 ## Vendored libraries
 
-| File | Version | Licence | Source |
-|---|---|---|---|
-| `frontend/public/css/vendor/pico-2.1.1.min.css` | 2.1.1 | MIT | https://cdn.jsdelivr.net/npm/@picocss/pico@2.1.1/css/pico.min.css |
-| `frontend/public/js/vendor/fullcalendar-6.1.19.min.js` | 6.1.19 | MIT | https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js |
+Fetched on `npm install` by `scripts/ensure-vendor.js` from jsDelivr, then served
+from `/public` so CSP stays `script-src 'self'`. The install script verifies a
+pinned Subresource Integrity (SRI) sha384 digest before keeping the file. HTML
+tags that load these assets carry the same `integrity` attribute.
 
-Check Pico and FullCalendar versions once a quarter.
+| File | Version | Licence | SRI | Source |
+|---|---|---|---|---|
+| `frontend/public/css/vendor/pico-2.1.1.min.css` | 2.1.1 | MIT | `sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU` | https://cdn.jsdelivr.net/npm/@picocss/pico@2.1.1/css/pico.min.css |
+| `frontend/public/js/vendor/fullcalendar-6.1.19.min.js` | 6.1.19 | MIT | `sha384-LjuMvep2w70bTtVscyL+xkqhYr7Y0kTM4t5cwWMy0xOTfl5duHb7MnP6K3J3/4Mk` | https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js |
+
+Pinned digests live in `scripts/vendor-manifest.js`. When bumping a version,
+update the URL, recompute the sha384, refresh the HTML `integrity` attributes,
+and run `node scripts/ensure-vendor.js`. Check Pico and FullCalendar versions
+once a quarter.
 
 ## Installing the app
 

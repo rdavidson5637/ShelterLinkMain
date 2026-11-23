@@ -12,6 +12,7 @@ const { positiveParam } = require('../middleware/validate');
 const {
   listApplications,
   approveApplication,
+  resendInvite,
   rejectApplication,
   listShelters,
   suspendShelter,
@@ -25,6 +26,7 @@ router.param('id', positiveParam('id'));
 router.get('/applications', listApplications);
 router.post('/applications/:id/approve', approveApplication);
 router.post('/applications/:id/reject', rejectApplication);
+router.post('/applications/:id/resend-invite', resendInvite);
 router.get('/shelters', listShelters);
 router.post('/shelters/:id/suspend', suspendShelter);
 

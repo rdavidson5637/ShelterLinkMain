@@ -3,6 +3,7 @@ import { requireAuth, checkAuth, logout, isStaffOrAdminRole, isAdminRole, applyR
 import { createStatusBadge } from '../components/statusBadge.js';
 import { createOverflowMenu, createIdentityCell } from '../components/overflowMenu.js';
 import { escapeHtml } from '../utils/escapeHtml.js';
+import { showConfirm } from '../components/confirmDialog.js';
 
 const logoutButton = document.getElementById('logoutButton');
 const searchInput = document.getElementById('searchInput');
@@ -423,6 +424,30 @@ async function viewProfile(userId) {
       waiversHtml = '<p>Unable to load waiver status.</p>';
     }
 
+    // Under-18 rules (SL-NOW-02): only shown when this volunteer is under 18
+    // or under the shelter minimum.
+    let guardianHtml = '';
+    let guardianActive = false;
+    try {
+      const gRes = await apiRequest(`/admin/volunteers/${userId}/guardian-consent`, { method: 'GET' });
+      if (gRes.ok) {
+        const g = await gRes.json();
+        guardianActive = Boolean(g.consent);
+        if (g.under_min_age) {
+          guardianHtml = `<p>Under this shelter's minimum volunteer age of ${escapeHtml(g.min_volunteer_age)}. Cannot book shifts.</p>`;
+        } else if (g.consent_required && g.consent) {
+          const c = g.consent;
+          const contact = [c.guardian_phone, c.guardian_email].filter(Boolean).join(' · ');
+          guardianHtml = `<p>Given by <strong>${escapeHtml(c.guardian_name)}</strong> (${escapeHtml(c.guardian_relationship)}) on ${escapeHtml(String(c.consented_at || '').slice(0, 10))}${contact ? ` · ${escapeHtml(contact)}` : ''}.</p>
+            <button type="button" class="secondary button-small" id="withdrawGuardianConsentBtn">Withdraw consent</button>`;
+        } else if (g.consent_required) {
+          guardianHtml = '<p>Under 18 with no parent or guardian consent. Cannot book shifts until it is given.</p>';
+        }
+      }
+    } catch {
+      guardianHtml = '<p>Unable to load guardian consent.</p>';
+    }
+
     let docsHtml = '<p>No documents uploaded.</p>';
     if (!isAdminRole(currentUser)) {
       docsHtml = '<p>Uploaded files are visible to admins only. Record the check status and dates. Reference numbers and notes are recorded by an admin. Do not upload disclosure certificates.</p>';
@@ -562,6 +587,14 @@ async function viewProfile(userId) {
           <strong>Waivers:</strong>
           ${waiversHtml}
         </div>
+        ${
+          guardianHtml
+            ? `<div>
+          <strong>Parent or guardian consent:</strong>
+          ${guardianHtml}
+        </div>`
+            : ''
+        }
         <div>
           <strong>Documents:</strong>
           ${docsHtml}
@@ -621,6 +654,34 @@ async function viewProfile(userId) {
     profileContent.innerHTML = profileHtml;
 
     await loadVettingSection(userId);
+
+    const withdrawConsentBtn = document.getElementById('withdrawGuardianConsentBtn');
+    if (withdrawConsentBtn && guardianActive) {
+      withdrawConsentBtn.addEventListener('click', () => {
+        showConfirm({
+          heading: 'Withdraw guardian consent?',
+          body: 'This volunteer will not be able to book shifts until a parent or guardian gives consent again. Shifts already accepted are not cancelled.',
+          confirmText: 'Withdraw consent',
+          cancelText: 'Keep consent',
+          onConfirm: async () => {
+            withdrawConsentBtn.disabled = true;
+            try {
+              const wRes = await apiRequest(`/admin/volunteers/${userId}/guardian-consent`, { method: 'DELETE' });
+              if (wRes.ok) {
+                setMessage('Guardian consent withdrawn.', 'success');
+                await viewProfile(userId);
+                return;
+              }
+              const body = await wRes.json().catch(() => ({}));
+              setMessage(body.error || 'Could not withdraw consent.', 'error');
+            } catch {
+              setMessage('Network error while withdrawing consent.', 'error');
+            }
+            withdrawConsentBtn.disabled = false;
+          },
+        });
+      });
+    }
 
     const serviceForm = document.getElementById('serviceSettingsForm');
     if (serviceForm) {

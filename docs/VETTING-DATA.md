@@ -37,7 +37,7 @@ It does not store the old or new text.
 
 ## Still open
 
-- DPIA for Article 10 data, signed by the controller.
+- DPIA for Article 10 data, signed by the controller. A blank template is in `docs/DPIA.md`.
 - Written controller/processor terms with Assisi, including who may see a
   reference number and how long it is kept.
 - Confirm the live Supabase region and that it is the region the controller agreed.
