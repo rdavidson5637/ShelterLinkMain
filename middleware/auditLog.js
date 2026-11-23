@@ -55,6 +55,9 @@ function inferFromRequest(req) {
   else if (segments.includes('qualifications') && resource === 'admin') {
     action = method === 'POST' ? 'volunteer.qualification.award' : 'volunteer.qualification.revoke';
   }
+  else if (resource === 'admin' && segments[1] === 'volunteers' && segments.includes('merge')) {
+    action = segments.includes('preview') ? 'volunteer.merge.preview' : 'volunteer.merge';
+  }
 
   const entityType =
     resource === 'admin' && segments[1] === 'volunteers'

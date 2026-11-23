@@ -91,6 +91,7 @@ const { validateBody, validateQuery, positiveParam } = require('../middleware/va
 const { listStaffInvites, createStaffInvite, revokeStaffInvite } = require('../controllers/staffInviteController');
 const { bodies, queries } = require('../validation/bodies');
 const { previewImport, runImport, sendInvites } = require('../controllers/volunteerImportController');
+const { previewMerge, runMerge } = require('../controllers/volunteerMergeController');
 const { MAX_BYTES: IMPORT_MAX_BYTES } = require('../utils/volunteerCsv');
 const { listEmailPreviews } = require('../controllers/emailPreviewController');
 
@@ -137,6 +138,21 @@ function readCsvBody(req, res, next) {
 router.post('/volunteers/import/preview', isAuthenticated, adminOnly, readCsvBody, previewImport);
 router.post('/volunteers/import', isAuthenticated, adminOnly, readCsvBody, runImport);
 router.post('/volunteers/invites', isAuthenticated, staffOrAdmin, messageLimiter, validateBody(bodies.volunteerInvites), sendInvites);
+// SL-DAY-03: merge duplicates. Mounted before :userId so "merge" is not a param.
+router.post(
+  '/volunteers/merge/preview',
+  isAuthenticated,
+  staffOrAdmin,
+  validateBody(bodies.volunteerMerge),
+  previewMerge
+);
+router.post(
+  '/volunteers/merge',
+  isAuthenticated,
+  staffOrAdmin,
+  validateBody(bodies.volunteerMerge),
+  runMerge
+);
 router.get('/volunteers/:userId', isAuthenticated, staffOrAdmin, getVolunteerProfile);
 router.get('/volunteers/:userId/reliability', isAuthenticated, staffOrAdmin, getVolunteerReliability);
 router.get(

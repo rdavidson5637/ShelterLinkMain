@@ -136,6 +136,9 @@ CREATE TABLE users (
   created_at          TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   last_login          TIMESTAMP     DEFAULT NULL,
   anonymised_at       TIMESTAMP     DEFAULT NULL,
+  -- Set when staff merge a duplicate onto another volunteer (SL-DAY-03)
+  archived_at         TIMESTAMP     DEFAULT NULL,
+  merged_into_user_id INTEGER       DEFAULT NULL,
   reset_token         VARCHAR(64)   DEFAULT NULL,
   reset_token_expires TIMESTAMP     DEFAULT NULL,
   -- sha256 hex of the personal calendar feed secret (never the raw token)
@@ -147,11 +150,15 @@ CREATE TABLE users (
   totp_last_counter   BIGINT        DEFAULT NULL,
   totp_recovery_codes TEXT          DEFAULT NULL,
   CONSTRAINT uq_users_email UNIQUE (email),
-  CONSTRAINT uq_users_ical_token UNIQUE (ical_token)
+  CONSTRAINT uq_users_ical_token UNIQUE (ical_token),
+  CONSTRAINT users_merged_into_user_id_fkey
+    FOREIGN KEY (merged_into_user_id) REFERENCES users (user_id)
+    ON DELETE SET NULL
 );
 
 CREATE INDEX idx_users_reset_token ON users (reset_token);
 CREATE INDEX idx_users_role ON users (role);
+CREATE INDEX idx_users_archived_at ON users (archived_at) WHERE archived_at IS NOT NULL;
 CREATE UNIQUE INDEX uq_users_email_lower ON users (lower(email));
 
 -- ----------------------------------------------------------------------------

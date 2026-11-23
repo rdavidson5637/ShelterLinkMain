@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Merge duplicate volunteers - ShelterLink</title>
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body class="staff-app">
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Account">
+        <a class="site-brand" href="/pages/admin/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" aria-label="Toggle navigation">Menu</button>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main id="main" class="container dashboard-layout">
+      <aside id="admin-nav" class="sidebar-nav"></aside>
+      <div class="dashboard-main">
+      <section class="page-lede">
+        <h1>Merge duplicate volunteers</h1>
+        <p>When the same person has two accounts at this shelter, keep one and move the other&rsquo;s bookings, notes, qualifications and membership onto it. The duplicate is then archived and can no longer sign in. You cannot merge across shelters.</p>
+      </section>
+
+      <section aria-labelledby="pick-heading">
+        <h2 id="pick-heading">Choose two accounts</h2>
+        <form id="mergeForm" class="merge-form">
+          <label for="keepSelect">
+            Keep this volunteer
+            <select id="keepSelect" name="keep_user_id" required>
+              <option value="">Select volunteer</option>
+            </select>
+          </label>
+          <label for="duplicateSelect">
+            Archive this duplicate
+            <select id="duplicateSelect" name="duplicate_user_id" required>
+              <option value="">Select volunteer</option>
+            </select>
+          </label>
+          <button type="submit" id="previewButton">Preview merge</button>
+        </form>
+        <div id="message" role="status" aria-live="polite"></div>
+      </section>
+
+      <section id="previewSection" aria-labelledby="preview-heading" hidden>
+        <h2 id="preview-heading">What will move</h2>
+        <div class="table-wrapper staff-dense merge-preview">
+          <table>
+            <caption>Side-by-side comparison before confirming</caption>
+            <thead>
+              <tr>
+                <th scope="col">Field</th>
+                <th scope="col">Keep</th>
+                <th scope="col">Duplicate (will archive)</th>
+              </tr>
+            </thead>
+            <tbody id="compareBody"></tbody>
+          </table>
+        </div>
+        <div class="table-wrapper staff-dense merge-counts">
+          <table>
+            <caption>Records that will move onto the kept volunteer</caption>
+            <thead>
+              <tr>
+                <th scope="col">Type</th>
+                <th scope="col" class="numeric-cell">Move</th>
+                <th scope="col" class="numeric-cell">Conflicts dropped</th>
+              </tr>
+            </thead>
+            <tbody id="countsBody"></tbody>
+          </table>
+        </div>
+        <p class="muted" id="mergeNote">Conflicting bookings or qualifications already on the kept account are dropped from the duplicate. Membership at this shelter on the duplicate is removed. Other shelters are never changed.</p>
+        <div class="import-confirm">
+          <button type="button" id="confirmButton">Merge and archive duplicate</button>
+          <button type="button" id="cancelButton" class="secondary">Choose different people</button>
+        </div>
+      </section>
+      </div>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2026 ShelterLink</small>
+    </footer>
+
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/admin/volunteer-merge.js"></script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+    <script type="module" src="/js/components/adminNav.js"></script>
+  </body>
+</html>
