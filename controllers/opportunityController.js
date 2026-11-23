@@ -466,6 +466,24 @@ async function flagOpportunityUrgent(req, res) {
       });
     }
 
+    // Replica-safe claim for this UTC day. The opportunity row update is the
+    // longer 24h lock; this stops concurrent clicks in the same second.
+    const { claimJobRun } = require('../utils/jobLog');
+    const dayKey = new Date().toISOString().slice(0, 10);
+    const claimed = await claimJobRun('urgentCoverBroadcast', `opp:${id}:${dayKey}`);
+    if (!claimed) {
+      return res.status(429).json({
+        error: 'Urgent cover was already broadcast in the last 24 hours',
+      });
+    }
+
+    const flagged = await Opportunity.flagUrgentIfAllowed(id);
+    if (!flagged) {
+      return res.status(429).json({
+        error: 'Urgent cover was already broadcast in the last 24 hours',
+      });
+    }
+
     const recipients = await Opportunity.resolveUrgentCoverRecipients(id, { limit: 200 });
     const whenLabel = String(opportunity.start_date || '').slice(0, 10);
     const subject = `Cover needed: ${opportunity.title || 'shift'}${whenLabel ? ` ${whenLabel}` : ''}`;
@@ -479,7 +497,6 @@ async function flagOpportunityUrgent(req, res) {
     const { sent, failed } = delivery.email;
     const pushResult = delivery.push;
 
-    const flagged = await Opportunity.flagUrgent(id);
     await AdminMessage.createMessageLog({
       adminId: req.session.userId,
       subject,
@@ -494,6 +511,8 @@ async function flagOpportunityUrgent(req, res) {
       sent,
       failed,
       push: pushResult,
+      skippedQuiet: delivery.skippedQuiet || 0,
+      skippedPref: delivery.skippedPref || 0,
     });
   } catch (error) {
     console.error('[Opportunity] flagOpportunityUrgent error:', error.message);

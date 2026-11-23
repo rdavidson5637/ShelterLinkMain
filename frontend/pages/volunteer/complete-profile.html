@@ -166,6 +166,18 @@
                 <label><input type="checkbox" id="prefer_reminders" name="prefer_reminders" value="1" checked /> Shift reminders</label>
                 <label><input type="checkbox" id="prefer_threads" name="prefer_threads" value="1" /> Message thread alerts</label>
                 <label><input type="checkbox" id="prefer_fosters" name="prefer_fosters" value="1" /> Foster match alerts</label>
+                <fieldset class="quiet-hours">
+                  <legend>Quiet hours</legend>
+                  <p><small>No shift reminders or urgent cover alerts between these times (shelter local time). Leave blank for none.</small></p>
+                  <label for="quiet_hours_start">
+                    From
+                    <input type="time" id="quiet_hours_start" name="quiet_hours_start" />
+                  </label>
+                  <label for="quiet_hours_end">
+                    Until
+                    <input type="time" id="quiet_hours_end" name="quiet_hours_end" />
+                  </label>
+                </fieldset>
                 <div id="pushToggle"></div>
                 <p style="margin-top:0.5rem;">
                   <button type="button" id="savePrefsButton" class="secondary">Save notification prefs</button>

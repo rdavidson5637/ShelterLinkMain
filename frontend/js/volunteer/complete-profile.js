@@ -361,6 +361,8 @@ function collectNotificationPrefs() {
     prefer_reminders: document.getElementById('prefer_reminders')?.checked ? 1 : 0,
     prefer_threads: document.getElementById('prefer_threads')?.checked ? 1 : 0,
     prefer_fosters: document.getElementById('prefer_fosters')?.checked ? 1 : 0,
+    quiet_hours_start: document.getElementById('quiet_hours_start')?.value || null,
+    quiet_hours_end: document.getElementById('quiet_hours_end')?.value || null,
   };
 }
 
@@ -377,6 +379,18 @@ function fillNotificationPrefs(prefs = {}) {
     const raw = prefs[id];
     el.checked = raw == null ? Boolean(fallback) : Number(raw) === 1;
   });
+  const startEl = document.getElementById('quiet_hours_start');
+  const endEl = document.getElementById('quiet_hours_end');
+  if (startEl) {
+    startEl.value = prefs.quiet_hours_start
+      ? String(prefs.quiet_hours_start).slice(0, 5)
+      : '';
+  }
+  if (endEl) {
+    endEl.value = prefs.quiet_hours_end
+      ? String(prefs.quiet_hours_end).slice(0, 5)
+      : '';
+  }
 }
 
 async function loadNotificationPrefs() {

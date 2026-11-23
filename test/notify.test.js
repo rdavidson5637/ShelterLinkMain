@@ -209,3 +209,52 @@ test('channelStatus reflects email and push configuration', () => {
   setEmail(false);
   assert.equal(notify.channelStatus().email, false);
 });
+
+test('reminder respects prefer_reminders off and quiet hours', async () => {
+  reset();
+  setEmail(true);
+  let result = await notify.notifyShiftReminder({ ...app, prefer_reminders: 0 }, {});
+  assert.equal(result.skipped, true);
+  assert.equal(result.skipReason, 'prefer_reminders_off');
+  assert.equal(emailCalls.length, 0);
+
+  const previous = process.env.SHELTER_TIMEZONE;
+  process.env.SHELTER_TIMEZONE = 'UTC';
+  try {
+    result = await notify.notifyShiftReminder(
+      { ...app, prefer_reminders: 1, quiet_hours_start: '22:00', quiet_hours_end: '08:00' },
+      {},
+      { now: new Date('2026-06-10T23:00:00Z') }
+    );
+    assert.equal(result.skipReason, 'quiet_hours');
+    assert.equal(emailCalls.length, 0);
+  } finally {
+    if (previous === undefined) delete process.env.SHELTER_TIMEZONE;
+    else process.env.SHELTER_TIMEZONE = previous;
+  }
+});
+
+test('urgent cover skips quiet-hours recipients', async () => {
+  reset();
+  setEmail(true);
+  const previous = process.env.SHELTER_TIMEZONE;
+  process.env.SHELTER_TIMEZONE = 'UTC';
+  try {
+    const result = await notify.notifyUrgentCover({
+      recipients: [
+        { user_id: 1, email: 'a@example.com', first_name: 'Ann', quiet_hours_start: '22:00', quiet_hours_end: '08:00' },
+        { user_id: 2, email: 'b@example.com', first_name: 'Ben' },
+      ],
+      opportunity: { id: 3, title: 'Walk', location: 'Yard' },
+      subject: 'Cover needed',
+      whenLabel: '2026-06-11',
+      now: new Date('2026-06-10T23:00:00Z'),
+    });
+    assert.equal(result.skippedQuiet, 1);
+    assert.equal(result.email.sent, 1);
+    assert.deepEqual(pushCalls[0][0], [2]);
+  } finally {
+    if (previous === undefined) delete process.env.SHELTER_TIMEZONE;
+    else process.env.SHELTER_TIMEZONE = previous;
+  }
+});

@@ -8,12 +8,32 @@ Shift reminders and urgent-cover broadcasts go through `utils/notify/index.js`.
 | Push | `utils/pushService.js` (Web Push) | VAPID keys are set. Volunteer preferences `prefer_reminders` and `prefer_urgent` apply |
 | SMS | `utils/notify/smsProvider.js` | Never. The only provider is the disabled one |
 
+## Preferences and quiet hours (SL-LATER-16)
+
+- `prefer_reminders` / `prefer_urgent` gate both email and push. The reminder job and urgent-cover recipient query also filter in SQL.
+- `quiet_hours_start` / `quiet_hours_end` (shelter local time) hold reminders and urgent-cover alerts. Incomplete pairs mean no quiet hours. Overnight windows (e.g. 22:00–08:00) wrap midnight.
+- Volunteers set these on their profile notification prefs.
+
 ## What each send does
 
-- `notifyShiftReminder(app, details)`: emails the volunteer when email is configured, then sends a push in the `reminders` category. The job marks the reminder sent only if the email or a push went out. If email is configured and the volunteer has no address, the reminder counts as failed.
-- `notifyUrgentCover({ recipients, opportunity, subject, whenLabel })`: emails every resolved recipient (a failure on one address does not stop the rest), then sends one push batch in the `urgent` category.
+- `notifyShiftReminder(app, details)`: skips when reminders are off or quiet hours are active; otherwise emails when configured, then pushes in the `reminders` category. The job marks the reminder sent only if email or push went out. If email is configured and the volunteer has no address, the reminder counts as failed.
+- `notifyUrgentCover({ recipients, opportunity, subject, whenLabel })`: emails every active recipient (a failure on one address does not stop the rest), then sends one push batch in the `urgent` category. Preference and quiet-hours skips are counted separately.
 
-Each call returns results per channel (`sent`, `failed`, `skipped`). A push failure never stops email, and email never waits on push.
+## Replica-safe dedupe
+
+- The scheduler claims each cron minute in `job_runs.run_key` before running a job.
+- `jobs/shiftReminders.js` also claims `shiftReminderSend` / `app:{id}:{hour}` so two replicas never double-send the same reminder in the same hour.
+- Staff urgent-cover claims `urgentCoverBroadcast` / `opp:{id}:{day}` and atomically flags the opportunity before sending.
+
+## Urgent cover eligibility
+
+Staff can broadcast cover for an understaffed upcoming shift. Recipients are approved volunteers who:
+
+- have not already applied
+- hold every required qualification (and animal training quals), not expired
+- opted into urgent alerts and are not away
+- meet the shelter minimum age / guardian consent rules
+- are outside quiet hours
 
 ## SMS
 
