@@ -24,6 +24,9 @@ const ALLOWED_PROFILE_FIELDS = new Set([
   'date_of_birth',
   'address',
   'emergency_contact',
+  'emergency_contact_name',
+  'emergency_contact_relationship',
+  'emergency_contact_phone',
   'skills',
   'availability',
   'home_type',
@@ -44,6 +47,77 @@ const ALLOWED_PROFILE_FIELDS = new Set([
   'quiet_hours_end',
   'marketing_consent',
 ]);
+
+const EMERGENCY_STRUCTURED_FIELDS = [
+  'emergency_contact_name',
+  'emergency_contact_relationship',
+  'emergency_contact_phone',
+];
+
+/**
+ * Build the legacy free-text emergency_contact from structured fields so day
+ * sheets and older readers keep working without selecting the new columns.
+ */
+function composeEmergencyContact(fields = {}) {
+  const name = fields.emergency_contact_name != null
+    ? String(fields.emergency_contact_name).trim()
+    : '';
+  const relationship = fields.emergency_contact_relationship != null
+    ? String(fields.emergency_contact_relationship).trim()
+    : '';
+  const phone = fields.emergency_contact_phone != null
+    ? String(fields.emergency_contact_phone).trim()
+    : '';
+  const parts = [];
+  if (name) parts.push(name);
+  if (relationship) parts.push(`(${relationship})`);
+  if (phone) parts.push(phone);
+  const joined = parts.join(' ').replace(/\s+/g, ' ').trim();
+  return joined || null;
+}
+
+function blankToNull(value) {
+  if (value == null) return null;
+  const s = String(value).trim();
+  return s === '' ? null : s;
+}
+
+/**
+ * When any structured emergency field is present in a write, normalise the
+ * three columns and keep emergency_contact in sync (unless the client also
+ * sent an explicit emergency_contact override).
+ * @param {object} [existing] current profile row used to fill omitted fields
+ */
+function applyEmergencyContactFields(sanitized = {}, original = {}, existing = null) {
+  const touched = EMERGENCY_STRUCTURED_FIELDS.some((key) =>
+    Object.prototype.hasOwnProperty.call(original, key)
+  );
+  if (!touched) return sanitized;
+
+  for (const key of EMERGENCY_STRUCTURED_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(original, key)) {
+      sanitized[key] = blankToNull(original[key]);
+    }
+  }
+  if (!Object.prototype.hasOwnProperty.call(original, 'emergency_contact')) {
+    const merged = {
+      emergency_contact_name:
+        sanitized.emergency_contact_name !== undefined
+          ? sanitized.emergency_contact_name
+          : existing?.emergency_contact_name,
+      emergency_contact_relationship:
+        sanitized.emergency_contact_relationship !== undefined
+          ? sanitized.emergency_contact_relationship
+          : existing?.emergency_contact_relationship,
+      emergency_contact_phone:
+        sanitized.emergency_contact_phone !== undefined
+          ? sanitized.emergency_contact_phone
+          : existing?.emergency_contact_phone,
+    };
+    sanitized.emergency_contact = composeEmergencyContact(merged);
+  }
+  return sanitized;
+}
 
 /**
  * Marketing consent is explicit opt-in. When the volunteer ticks it we store
@@ -90,6 +164,11 @@ function sanitizeProfileData(profileData = {}) {
   const sanitized = {};
   Object.entries(profileData).forEach(([key, value]) => {
     if (!ALLOWED_PROFILE_FIELDS.has(key)) return;
+
+    if (EMERGENCY_STRUCTURED_FIELDS.includes(key)) {
+      sanitized[key] = blankToNull(value);
+      return;
+    }
 
     if (key === 'home_type') {
       if (value == null || value === '') {
@@ -152,8 +231,10 @@ function sanitizeProfileData(profileData = {}) {
   return sanitized;
 }
 
-function buildUpdateClause(data = {}) {
-  const sanitized = applyMarketingConsent(sanitizeProfileData(data));
+function buildUpdateClause(data = {}, existing = null) {
+  const sanitized = applyMarketingConsent(
+    applyEmergencyContactFields(sanitizeProfileData(data), data, existing)
+  );
   const entries = Object.entries(sanitized).filter(
     ([, value]) => typeof value !== 'undefined'
   );
@@ -174,7 +255,9 @@ function buildUpdateClause(data = {}) {
 async function create(userId, profileData = {}) {
   if (!userId) throw new Error('userId is required');
 
-  const sanitized = applyMarketingConsent(sanitizeProfileData(profileData));
+  const sanitized = applyMarketingConsent(
+    applyEmergencyContactFields(sanitizeProfileData(profileData), profileData, null)
+  );
   const dynamicKeys = Object.keys(sanitized);
 
   const columns = ['user_id', ...dynamicKeys];
@@ -208,7 +291,15 @@ async function findByUserId(userId) {
 async function update(userId, profileData = {}) {
   if (!userId) throw new Error('userId is required');
 
-  const { clause, values } = buildUpdateClause(profileData);
+  const needsExisting = EMERGENCY_STRUCTURED_FIELDS.some((key) =>
+    Object.prototype.hasOwnProperty.call(profileData, key)
+  );
+  const existing = needsExisting ? await findByUserId(userId) : null;
+  if (needsExisting && !existing) {
+    return null;
+  }
+
+  const { clause, values } = buildUpdateClause(profileData, existing);
   const sql = `UPDATE ${TABLE} SET ${clause} WHERE user_id = ?`;
 
   const params = [...values, userId];
@@ -294,8 +385,10 @@ module.exports = {
   updateFosterApproved,
   updateServiceSettings,
   isAway,
+  composeEmergencyContact,
   ALLOWED_VOLUNTEER_TYPES,
   ALLOWED_PROFILE_FIELDS,
+  EMERGENCY_STRUCTURED_FIELDS,
   HOME_TYPES,
   FOSTER_SIZES,
 };

@@ -11,6 +11,9 @@ const CONTACT_FIELDS = [
   'phone',
   'address',
   'emergency_contact',
+  'emergency_contact_name',
+  'emergency_contact_relationship',
+  'emergency_contact_phone',
   'user_email',
   'volunteer_email',
   'admin_email',
@@ -89,6 +92,9 @@ function hasContactLeak(payload) {
       lower === 'phone' ||
       lower === 'address' ||
       lower === 'emergency_contact' ||
+      lower === 'emergency_contact_name' ||
+      lower === 'emergency_contact_relationship' ||
+      lower === 'emergency_contact_phone' ||
       lower === 'user_email' ||
       lower === 'volunteer_email' ||
       lower === 'claim_token'

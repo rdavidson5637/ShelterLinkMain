@@ -222,6 +222,10 @@ async function getAllVolunteers(req, res) {
         vp.volunteer_type,
         vp.required_hours,
         vp.away_until,
+        vp.emergency_contact,
+        vp.emergency_contact_name,
+        vp.emergency_contact_relationship,
+        vp.emergency_contact_phone,
         ${INVITE_STATUS_SQL} AS invite_status,
         COALESCE(SUM(CASE WHEN vh.approved = 1 THEN vh.hours ELSE 0 END), 0) AS total_hours,
         (
@@ -234,7 +238,7 @@ async function getAllVolunteers(req, res) {
       LEFT JOIN volunteer_profiles vp ON vp.user_id = u.user_id
       LEFT JOIN volunteer_hours vh ON vh.user_id = u.user_id
       WHERE u.role = 'volunteer'
-      GROUP BY u.user_id, u.first_name, u.last_name, u.email, u.phone, u.password, u.reset_token_expires, vp.approved, vp.foster_approved, vp.skills, vp.availability, vp.volunteer_type, vp.required_hours, vp.away_until
+      GROUP BY u.user_id, u.first_name, u.last_name, u.email, u.phone, u.password, u.reset_token_expires, vp.approved, vp.foster_approved, vp.skills, vp.availability, vp.volunteer_type, vp.required_hours, vp.away_until, vp.emergency_contact, vp.emergency_contact_name, vp.emergency_contact_relationship, vp.emergency_contact_phone
       ORDER BY u.first_name, u.last_name
     `;
 
@@ -425,6 +429,41 @@ async function updateVolunteerServiceSettings(req, res) {
   }
 }
 
+async function updateVolunteerEmergencyContact(req, res) {
+  try {
+    if (!ensureAuthenticated(req, res)) return;
+    if (!isStaffOrAdmin(req)) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const { userId } = req.params;
+    const body = req.body || {};
+    const result = await VolunteerProfile.update(userId, {
+      emergency_contact_name: body.emergency_contact_name,
+      emergency_contact_relationship: body.emergency_contact_relationship,
+      emergency_contact_phone: body.emergency_contact_phone,
+    });
+    if (!result) {
+      return res.status(404).json({ error: 'Profile not found' });
+    }
+    try {
+      await recordAudit(req, {
+        action: 'volunteer.emergency_contact.update',
+        entityType: 'volunteer',
+        entityId: userId,
+        detail: { user_id: Number(userId) },
+      });
+    } catch (auditError) {
+      console.error('[Profile] emergency contact audit error:', auditError.message);
+    }
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[Profile] updateVolunteerEmergencyContact error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
 module.exports = {
   createProfile,
   getProfile,
@@ -435,4 +474,5 @@ module.exports = {
   getVolunteerReliability,
   getBadges,
   updateVolunteerServiceSettings,
+  updateVolunteerEmergencyContact,
 };

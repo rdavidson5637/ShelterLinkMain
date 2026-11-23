@@ -237,7 +237,7 @@ function renderTable() {
   const cardList = volunteersCardList;
 
   if (!filteredVolunteers.length) {
-    volunteersTableBody.innerHTML = '<tr><td colspan="9">No volunteers found</td></tr>';
+    volunteersTableBody.innerHTML = '<tr><td colspan="10">No volunteers found</td></tr>';
     if (cardList) cardList.innerHTML = '<p>No volunteers found</p>';
     return;
   }
@@ -273,6 +273,9 @@ function renderTable() {
     const phoneTd = document.createElement('td');
     phoneTd.textContent = volunteer.phone || 'N/A';
 
+    const emergencyTd = document.createElement('td');
+    emergencyTd.textContent = formatEmergencyContact(volunteer) || '—';
+
     const statusTd = document.createElement('td');
     statusTd.appendChild(createStatusBadge(isApproved ? 'approved' : 'pending'));
     if (canInvite(volunteer)) {
@@ -298,7 +301,7 @@ function renderTable() {
     const actionsTd = document.createElement('td');
     actionsTd.appendChild(volunteerActions(volunteer, isApproved));
 
-    tr.append(phoneTd, statusTd, ...countCells, actionsTd);
+    tr.append(phoneTd, emergencyTd, statusTd, ...countCells, actionsTd);
     volunteersTableBody.appendChild(tr);
 
     if (cardList) {
@@ -308,11 +311,17 @@ function renderTable() {
       name.textContent = fullName;
       const email = document.createElement('small');
       email.textContent = volunteer.email || '';
+      const emergency = document.createElement('p');
+      emergency.className = 'person-card-meta';
+      const emergencyText = formatEmergencyContact(volunteer);
+      emergency.textContent = emergencyText
+        ? `Emergency: ${emergencyText}`
+        : 'Emergency contact not set';
       const meta = document.createElement('p');
       meta.className = 'person-card-meta';
       meta.textContent = `Last 12 months: ${attended} attended · ${noShows} no-shows · ${lateCancellations} late cancellations · ${hours} hours${canInvite(volunteer) ? ` · ${INVITE_LABELS[volunteer.invite_status]}` : ''}`;
       const status = createStatusBadge(isApproved ? 'approved' : 'pending');
-      card.append(name, email, status, meta, volunteerActions(volunteer, isApproved));
+      card.append(name, email, status, emergency, meta, volunteerActions(volunteer, isApproved));
       cardList.appendChild(card);
     }
   });
@@ -326,6 +335,20 @@ function checkTypeLabel(value) {
     other: 'Other check',
   };
   return labels[value] || 'Background check';
+}
+
+function formatEmergencyContact(row = {}) {
+  const name = (row.emergency_contact_name || '').trim();
+  const relationship = (row.emergency_contact_relationship || '').trim();
+  const phone = (row.emergency_contact_phone || '').trim();
+  if (name || relationship || phone) {
+    const parts = [];
+    if (name) parts.push(name);
+    if (relationship) parts.push(`(${relationship})`);
+    if (phone) parts.push(phone);
+    return parts.join(' ');
+  }
+  return (row.emergency_contact || '').trim() || '';
 }
 
 async function loadVettingSection(userId) {
@@ -640,8 +663,31 @@ async function viewProfile(userId) {
         <div>
           <strong>Address:</strong> ${escapeHtml(profile.address || 'N/A')}
         </div>
-        <div>
-          <strong>Emergency Contact:</strong> ${escapeHtml(profile.emergency_contact || 'N/A')}
+        <div style="border-top: 1px solid #ddd; padding-top: 0.75rem;">
+          <strong>Emergency contact</strong>
+          <form id="emergencyContactForm" style="display:grid; gap:0.5rem; margin-top:0.5rem;">
+            <label>
+              Name
+              <input type="text" id="emergencyContactName" name="emergency_contact_name" maxlength="120"
+                value="${escapeHtml(profile.emergency_contact_name || '')}" required />
+            </label>
+            <label>
+              Relationship
+              <input type="text" id="emergencyContactRelationship" name="emergency_contact_relationship" maxlength="80"
+                value="${escapeHtml(profile.emergency_contact_relationship || '')}" required />
+            </label>
+            <label>
+              Phone
+              <input type="tel" id="emergencyContactPhone" name="emergency_contact_phone" maxlength="40"
+                value="${escapeHtml(profile.emergency_contact_phone || '')}" required />
+            </label>
+            ${
+              !profile.emergency_contact_name && profile.emergency_contact
+                ? `<p><small>Previous free-text entry: ${escapeHtml(profile.emergency_contact)}</small></p>`
+                : ''
+            }
+            <button type="submit" class="button-small">Save emergency contact</button>
+          </form>
         </div>
         <div>
           <strong>Availability:</strong> ${escapeHtml(profile.availability || 'N/A')}
@@ -847,6 +893,36 @@ async function viewProfile(userId) {
         } catch (error) {
           console.error('[Admin] service settings error:', error);
           setMessage('Network error saving service settings', 'error');
+        }
+      });
+    }
+
+    const emergencyForm = document.getElementById('emergencyContactForm');
+    if (emergencyForm) {
+      emergencyForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const payload = {
+          emergency_contact_name: document.getElementById('emergencyContactName')?.value || '',
+          emergency_contact_relationship:
+            document.getElementById('emergencyContactRelationship')?.value || '',
+          emergency_contact_phone: document.getElementById('emergencyContactPhone')?.value || '',
+        };
+        try {
+          const saveRes = await apiRequest(`/admin/volunteers/${userId}/emergency-contact`, {
+            method: 'PUT',
+            body: payload,
+          });
+          const body = await saveRes.json().catch(() => ({}));
+          if (!saveRes.ok) {
+            setMessage(body.error || 'Failed to save emergency contact', 'error');
+            return;
+          }
+          setMessage('Emergency contact saved.', 'success');
+          await loadVolunteers();
+          await viewProfile(userId);
+        } catch (error) {
+          console.error('[Admin] emergency contact error:', error);
+          setMessage('Network error saving emergency contact', 'error');
         }
       });
     }
@@ -1083,7 +1159,7 @@ async function loadVolunteers({ keepMessage = false } = {}) {
   try {
     const res = await apiRequest('/admin/volunteers', { method: 'GET' });
     if (!res.ok) {
-      volunteersTableBody.innerHTML = '<tr><td colspan="9">Failed to load volunteers</td></tr>';
+      volunteersTableBody.innerHTML = '<tr><td colspan="10">Failed to load volunteers</td></tr>';
       setMessage('Failed to load volunteers', 'error');
       return;
     }
@@ -1097,7 +1173,7 @@ async function loadVolunteers({ keepMessage = false } = {}) {
     if (!keepMessage) setMessage('');
   } catch (error) {
     console.error('[Volunteers] loadVolunteers error:', error);
-    volunteersTableBody.innerHTML = '<tr><td colspan="9">Error loading volunteers</td></tr>';
+    volunteersTableBody.innerHTML = '<tr><td colspan="10">Error loading volunteers</td></tr>';
     setMessage('Error loading volunteers', 'error');
   }
 }

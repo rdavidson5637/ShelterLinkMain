@@ -16,6 +16,7 @@ const saveInterestsButton = document.getElementById('saveInterestsButton');
 const saveFosterButton = document.getElementById('saveFosterButton');
 const saveAwayButton = document.getElementById('saveAwayButton');
 const saveMarketingButton = document.getElementById('saveMarketingButton');
+const saveEmergencyContactButton = document.getElementById('saveEmergencyContactButton');
 const awayUntilInput = document.getElementById('away_until');
 const marketingConsentInput = document.getElementById('marketing_consent');
 
@@ -177,12 +178,21 @@ function renderCustomFields(fields = [], valuesById = {}) {
   });
 }
 
+function collectEmergencyContactFields(formElement) {
+  const data = new FormData(formElement);
+  return {
+    emergency_contact_name: data.get('emergency_contact_name'),
+    emergency_contact_relationship: data.get('emergency_contact_relationship'),
+    emergency_contact_phone: data.get('emergency_contact_phone'),
+  };
+}
+
 function formDataToPayload(formElement) {
   const data = new FormData(formElement);
   return {
     date_of_birth: data.get('date_of_birth'),
     address: data.get('address'),
-    emergency_contact: data.get('emergency_contact'),
+    ...collectEmergencyContactFields(formElement),
     skills: data.get('skills'),
     availability: data.get('availability'),
     marketing_consent: marketingConsentInput?.checked ? 1 : 0,
@@ -220,7 +230,8 @@ function setFormViewOnly(isViewOnly) {
     const inFoster = el.closest('#fosterHomeSection');
     const inAway = el.closest('#awayModeSection');
     const inMarketing = el.closest('#marketingConsentSection');
-    if (inFoster || inAway || inMarketing) {
+    const inEmergency = el.closest('#emergencyContactSection');
+    if (inFoster || inAway || inMarketing || inEmergency) {
       el.readOnly = false;
       el.disabled = false;
       return;
@@ -329,6 +340,45 @@ async function saveAwayMode() {
   } catch (error) {
     console.error('[Profile] saveAwayMode error:', error);
     setMessage('error', 'Network error while saving away mode');
+  }
+}
+
+async function saveEmergencyContact() {
+  setMessage();
+  clearFormErrors(form);
+  if (!form) return;
+  const payload = collectEmergencyContactFields(form);
+  const errors = [];
+  if (!payload.emergency_contact_name) {
+    errors.push({ field: 'emergency_contact_name', message: 'Enter the emergency contact name.' });
+  }
+  if (!payload.emergency_contact_relationship) {
+    errors.push({
+      field: 'emergency_contact_relationship',
+      message: 'Enter the relationship to this person.',
+    });
+  }
+  if (!payload.emergency_contact_phone) {
+    errors.push({ field: 'emergency_contact_phone', message: 'Enter the emergency contact phone.' });
+  }
+  if (errors.length) {
+    showFormErrors(form, errors);
+    return;
+  }
+  try {
+    const response = await apiRequest('/volunteer/profile', {
+      method: 'PUT',
+      body: payload,
+    });
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => ({}));
+      setMessage('error', errorBody?.error || 'Failed to save emergency contact');
+      return;
+    }
+    setMessage('success', 'Emergency contact updated.');
+  } catch (error) {
+    console.error('[Profile] saveEmergencyContact error:', error);
+    setMessage('error', 'Network error while saving emergency contact');
   }
 }
 
@@ -454,6 +504,7 @@ async function checkExistingProfile() {
       if (saveFosterButton) saveFosterButton.hidden = false;
       if (saveAwayButton) saveAwayButton.hidden = false;
       if (saveMarketingButton) saveMarketingButton.hidden = false;
+      if (saveEmergencyContactButton) saveEmergencyContactButton.hidden = false;
       return profile;
     }
 
@@ -464,6 +515,7 @@ async function checkExistingProfile() {
     if (saveFosterButton) saveFosterButton.hidden = false;
     if (saveAwayButton) saveAwayButton.hidden = false;
     if (saveMarketingButton) saveMarketingButton.hidden = false;
+    if (saveEmergencyContactButton) saveEmergencyContactButton.hidden = false;
     return profile;
   } catch (error) {
     console.error('[Profile] checkExistingProfile error:', error);
@@ -481,8 +533,17 @@ async function handleSubmit(event) {
   const payload = formDataToPayload(form);
   const errors = [];
   if (!payload.date_of_birth) errors.push({ field: 'date_of_birth', message: 'Enter your date of birth.' });
-  if (!payload.emergency_contact) {
-    errors.push({ field: 'emergency_contact', message: 'Enter an emergency contact name and phone number.' });
+  if (!payload.emergency_contact_name) {
+    errors.push({ field: 'emergency_contact_name', message: 'Enter the emergency contact name.' });
+  }
+  if (!payload.emergency_contact_relationship) {
+    errors.push({
+      field: 'emergency_contact_relationship',
+      message: 'Enter the relationship to this person.',
+    });
+  }
+  if (!payload.emergency_contact_phone) {
+    errors.push({ field: 'emergency_contact_phone', message: 'Enter the emergency contact phone.' });
   }
   if (!payload.address) errors.push({ field: 'address', message: 'Enter your address.' });
   if (!payload.availability) errors.push({ field: 'availability', message: 'Select your availability.' });
@@ -545,6 +606,11 @@ async function init() {
   saveMarketingButton?.addEventListener('click', (event) => {
     event.preventDefault();
     saveMarketingConsent();
+  });
+
+  saveEmergencyContactButton?.addEventListener('click', (event) => {
+    event.preventDefault();
+    saveEmergencyContact();
   });
 
   document.getElementById('savePrefsButton')?.addEventListener('click', (event) => {

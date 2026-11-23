@@ -9,6 +9,7 @@ const {
   getVolunteerProfile,
   getVolunteerReliability,
   updateVolunteerServiceSettings,
+  updateVolunteerEmergencyContact,
 } = require('../controllers/profileController');
 const { updateFosterApproval } = require('../controllers/fosterController');
 const {
@@ -143,6 +144,13 @@ router.get(
 router.put('/volunteers/:userId/approval', isAuthenticated, adminOnly, validateBody(bodies.approval), updateVolunteerApproval);
 router.put('/volunteers/:userId/foster-approval', isAuthenticated, staffOrAdmin, validateBody(bodies.fosterApproval), updateFosterApproval);
 router.put('/volunteers/:userId/service-settings', isAuthenticated, staffOrAdmin, validateBody(bodies.serviceSettings), updateVolunteerServiceSettings);
+router.put(
+  '/volunteers/:userId/emergency-contact',
+  isAuthenticated,
+  staffOrAdmin,
+  validateBody(bodies.emergencyContact),
+  updateVolunteerEmergencyContact
+);
 router.get('/volunteers/:userId/qualifications', isAuthenticated, staffOrAdmin, getVolunteerQualifications);
 router.post('/volunteers/:userId/qualifications', isAuthenticated, staffOrAdmin, validateBody(bodies.awardQualification), awardQualification);
 router.delete(
