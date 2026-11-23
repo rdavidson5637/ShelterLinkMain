@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Sign-in sheet - ShelterLink</title>
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+    <style>
+      .signin-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: end;
+        margin-bottom: 1.5rem;
+      }
+      .signin-toolbar label {
+        margin: 0;
+      }
+      .signin-sheet {
+        max-width: 210mm;
+      }
+      .signin-shift {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border, #ccc);
+      }
+      .signin-shift:last-child {
+        border-bottom: none;
+      }
+      .signin-shift h2 {
+        margin: 0 0 0.25rem;
+        font-family: var(--font-display);
+        font-size: var(--text-xl);
+        line-height: var(--leading-heading);
+      }
+      .signin-meta {
+        color: var(--text-secondary, #5b6670);
+        margin: 0 0 0.75rem;
+        max-width: 70ch;
+      }
+      .signin-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+      }
+      .signin-table th,
+      .signin-table td {
+        border: 1px solid var(--text, #1f2937);
+        padding: 0.45rem 0.5rem;
+        text-align: left;
+        vertical-align: middle;
+      }
+      .signin-table th {
+        font-weight: 600;
+        background: transparent;
+      }
+      .signin-table .col-name {
+        width: 32%;
+      }
+      .signin-table .col-time {
+        width: 14%;
+      }
+      .signin-table .col-sign {
+        width: 40%;
+      }
+      .signin-blank {
+        height: 2.25rem;
+      }
+      .signin-walkin td {
+        color: var(--text-secondary, #5b6670);
+      }
+      .signin-staff-note {
+        margin: 1.25rem 0 0;
+        padding: 0.75rem 0 0;
+        border-top: 1px solid var(--border, #ccc);
+        max-width: 70ch;
+        line-height: 1.55;
+        font-size: var(--text-sm, 0.875rem);
+      }
+      .signin-staff-note strong {
+        display: block;
+        margin-bottom: 0.25rem;
+        font-size: var(--text-base, 1rem);
+      }
+      .page-lede p {
+        max-width: 70ch;
+        line-height: 1.6;
+      }
+      @media print {
+        @page {
+          size: A4 portrait;
+          margin: 12mm;
+        }
+        body {
+          background: #fff !important;
+        }
+        .site-header,
+        .sidebar-nav,
+        .signin-toolbar,
+        .page-lede,
+        .nav-toggle,
+        #logoutButton,
+        footer,
+        .no-print {
+          display: none !important;
+        }
+        main.container,
+        .dashboard-layout,
+        .dashboard-main {
+          display: block;
+          max-width: none;
+          margin: 0;
+          padding: 0;
+        }
+        .signin-sheet {
+          max-width: none;
+        }
+        .signin-shift {
+          page-break-after: always;
+          border: none;
+          margin-bottom: 0;
+          padding-bottom: 0;
+        }
+        .signin-shift:last-child {
+          page-break-after: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header no-print">
+      <nav class="site-nav container" aria-label="Account">
+        <a class="site-brand" href="/pages/admin/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" aria-label="Toggle navigation">Menu</button>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main id="main" class="container dashboard-layout">
+      <aside id="admin-nav" class="sidebar-nav no-print"></aside>
+      <div class="dashboard-main">
+        <section class="page-lede no-print">
+          <h1>Sign-in sheet</h1>
+          <p>
+            Print this when the kiosk is unavailable. Booked volunteers write time in, time out, and a signature.
+            For the full roster with codes and animals, use the
+            <a href="/pages/admin/day-sheet.html">day sheet</a>.
+          </p>
+          <div id="message" role="status" aria-live="polite"></div>
+        </section>
+
+        <section class="signin-toolbar no-print">
+          <label for="sheetDate">
+            Date
+            <input type="date" id="sheetDate" />
+          </label>
+          <label for="shiftFilter">
+            Shift
+            <select id="shiftFilter">
+              <option value="">All shifts this day</option>
+            </select>
+          </label>
+          <button type="button" id="loadButton">Load</button>
+          <button type="button" id="printButton" class="secondary">Print</button>
+        </section>
+
+        <section id="signInSheetContent" class="signin-sheet" aria-live="polite">
+          <p>Pick a date and load the sheet.</p>
+        </section>
+      </div>
+    </main>
+
+    <footer class="container no-print">
+      <small>&copy; <span data-footer-year></span> ShelterLink</small>
+    </footer>
+
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/admin/sign-in-sheet.js"></script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+    <script type="module" src="/js/components/adminNav.js"></script>
+  </body>
+</html>
