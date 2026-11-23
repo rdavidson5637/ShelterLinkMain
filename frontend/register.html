@@ -90,6 +90,11 @@
             I have read the <a href="/pages/privacy.html">privacy notice</a>
           </label>
 
+          <!-- Honeypot. Hidden from people and screen readers; bots fill it in. -->
+          <div class="visually-hidden" aria-hidden="true">
+            <label for="website">Leave this empty <input type="text" id="website" name="website" tabindex="-1" autocomplete="off" /></label>
+          </div>
+
           <button type="submit">Create account</button>
         </form>
 

@@ -82,12 +82,19 @@ async function registrationShelterId(body) {
 
 async function register(req, res) {
   try {
-    const { first_name, last_name, email, password, phone } = req.body || {};
+    const body = req.body || {};
+    // Honeypot: a field people never see. Bots that fill it get the normal
+    // answer and nothing is stored.
+    if (typeof body.website === 'string' && body.website.trim()) {
+      return res.status(201).json({ message: 'Registration successful' });
+    }
+
+    const { first_name, last_name, email, password, phone } = body;
     if (!first_name || !last_name || !email || !password) {
       return res.status(400).json({ error: 'first_name, last_name, email, and password are required' });
     }
 
-    const shelterId = await registrationShelterId(req.body);
+    const shelterId = await registrationShelterId(body);
     if (shelterId === UNKNOWN_SHELTER) {
       return res.status(404).json({ error: 'We could not find that shelter. Check the link and try again.' });
     }

@@ -12,14 +12,20 @@ test('rate limiters match live production budgets', () => {
   assert.strictEqual(LIMITS.loginAccount, 5);
   assert.strictEqual(LIMITS.api, 300);
   assert.ok(LIMITS.register <= 10);
+  assert.ok(LIMITS.registerEmail <= 5);
   assert.ok(LIMITS.forgotPassword <= 10);
   assert.strictEqual(LIMITS.forgotAccount, 5);
   const authRoute = fs.readFileSync(path.join(__dirname, '../routes/auth.js'), 'utf8');
   assert.match(authRoute, /forgotAccountLimiter,\s*forgotPasswordLimiter/);
+  assert.match(authRoute, /registerEmailLimiter,\s*registerLimiter/);
   assert.ok(LIMITS.resetPassword <= 10);
+  assert.ok(LIMITS.shelterApply <= 10);
+  assert.ok(LIMITS.shelterApplyEmail <= 5);
   assert.strictEqual(LIMITS.groupBookingEmail, 3);
   const groupRoute = fs.readFileSync(path.join(__dirname, '../routes/groupBookings.js'), 'utf8');
   assert.match(groupRoute, /groupBookingEmailLimiter/);
+  const publicRoute = fs.readFileSync(path.join(__dirname, '../routes/public.js'), 'utf8');
+  assert.match(publicRoute, /shelterApplyEmailLimiter,\s*shelterApplyLimiter/);
 });
 
 test('non-production defaults to the in-process rate limit store', () => {

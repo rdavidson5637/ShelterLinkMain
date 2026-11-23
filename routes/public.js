@@ -1,5 +1,9 @@
 const express = require('express');
-const { apiLimiter, shelterApplyLimiter } = require('../middleware/rateLimiter');
+const {
+  apiLimiter,
+  shelterApplyLimiter,
+  shelterApplyEmailLimiter,
+} = require('../middleware/rateLimiter');
 const { submitShelterApplication } = require('../controllers/shelterApplicationController');
 const {
   listPublicOpportunities,
@@ -30,6 +34,7 @@ router.get('/opportunities', apiLimiter, listPublicOpportunities);
 router.get('/opportunities.ics', apiLimiter, publicOpportunitiesIcs);
 router.post(
   '/shelter-applications',
+  shelterApplyEmailLimiter,
   shelterApplyLimiter,
   validateBody(bodies.shelterApplication),
   submitShelterApplication

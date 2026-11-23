@@ -7,6 +7,7 @@ const {
   loginAccountLimiter,
   twoFactorAccountLimiter,
   registerLimiter,
+  registerEmailLimiter,
   forgotPasswordLimiter,
   forgotAccountLimiter,
   resetPasswordLimiter,
@@ -27,7 +28,13 @@ function adminRegistrationEnabled(req, res, next) {
   return next();
 }
 
-router.post('/register', registerLimiter, validateBody(bodies.register), authController.register);
+router.post(
+  '/register',
+  registerEmailLimiter,
+  registerLimiter,
+  validateBody(bodies.register),
+  authController.register
+);
 router.post('/register-admin', adminRegistrationEnabled, validateBody(bodies.registerAdmin), authController.registerAdmin);
 router.post('/login', loginAccountLimiter, loginLimiter, validateBody(bodies.login), authController.login);
 
