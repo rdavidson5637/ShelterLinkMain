@@ -17,6 +17,13 @@ const {
 } = require('../controllers/qualificationController');
 const { getVolunteerCustomValues } = require('../controllers/customFieldController');
 const { getVolunteerWaiverStatus } = require('../controllers/waiverController');
+const {
+  getVolunteerGuardianConsent,
+  recordVolunteerGuardianConsent,
+  withdrawVolunteerGuardianConsent,
+  getAgeSettings,
+  updateAgeSettings,
+} = require('../controllers/guardianConsentController');
 const { listVolunteerDocuments } = require('../controllers/documentController');
 const {
   listAuditLog,
@@ -26,6 +33,11 @@ const {
   updateUserRole,
 } = require('../controllers/gdprController');
 const { getDaySheet } = require('../controllers/daySheetController');
+const {
+  getImpactReport,
+  getImpactReportCsv,
+  getImpactReportPdf,
+} = require('../controllers/impactReportController');
 const { getWeekSheet, getWeekSheetIcs } = require('../controllers/weekSheetController');
 
 const { validateBody, validateQuery, positiveParam } = require('../middleware/validate');
@@ -43,6 +55,9 @@ router.get('/day-sheet', isAuthenticated, staffOrAdmin, validateQuery(queries.da
 router.get('/week-sheet', isAuthenticated, staffOrAdmin, validateQuery(queries.week), getWeekSheet);
 router.get('/week-sheet.ics', isAuthenticated, staffOrAdmin, validateQuery(queries.week), getWeekSheetIcs);
 router.get('/stats', isAuthenticated, staffOrAdmin, validateQuery(queries.year), getAdminStats);
+router.get('/reports/impact', isAuthenticated, staffOrAdmin, validateQuery(queries.impactReport), getImpactReport);
+router.get('/reports/impact.csv', isAuthenticated, staffOrAdmin, validateQuery(queries.impactReport), getImpactReportCsv);
+router.get('/reports/impact.pdf', isAuthenticated, staffOrAdmin, validateQuery(queries.impactReport), getImpactReportPdf);
 router.get('/stats/leaderboard', isAuthenticated, staffOrAdmin, validateQuery(queries.year), getLeaderboard);
 router.get('/stats/monthly-hours', isAuthenticated, staffOrAdmin, validateQuery(queries.year), getMonthlyHoursChart);
 router.get('/volunteers', isAuthenticated, staffOrAdmin, getAllVolunteers);
@@ -60,6 +75,11 @@ router.delete(
 );
 router.get('/volunteers/:userId/custom-fields', isAuthenticated, staffOrAdmin, getVolunteerCustomValues);
 router.get('/volunteers/:userId/waivers', isAuthenticated, staffOrAdmin, getVolunteerWaiverStatus);
+router.get('/volunteers/:userId/guardian-consent', isAuthenticated, staffOrAdmin, getVolunteerGuardianConsent);
+router.post('/volunteers/:userId/guardian-consent', isAuthenticated, staffOrAdmin, validateBody(bodies.guardianConsent), recordVolunteerGuardianConsent);
+router.delete('/volunteers/:userId/guardian-consent', isAuthenticated, staffOrAdmin, withdrawVolunteerGuardianConsent);
+router.get('/settings/age', isAuthenticated, staffOrAdmin, getAgeSettings);
+router.put('/settings/age', isAuthenticated, adminOnly, validateBody(bodies.ageSettings), updateAgeSettings);
 router.get('/volunteers/:userId/documents', isAuthenticated, adminOnly, listVolunteerDocuments);
 
 router.get('/messages/recipients', isAuthenticated, adminOnly, validateQuery(queries.recipients), previewRecipients);

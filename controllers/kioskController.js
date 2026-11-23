@@ -3,7 +3,11 @@
 const bcrypt = require('bcrypt');
 const { DUMMY_PASSWORD_HASH } = require('../utils/password');
 const { pool } = require('../config/database');
-const { clearSessionCookie, regenerateSession } = require('../utils/sessionCookie');
+const {
+  clearSessionCookie,
+  regenerateSession,
+  applySessionLifetime,
+} = require('../utils/sessionCookie');
 const Application = require('../models/Application');
 const VolunteerHours = require('../models/VolunteerHours');
 const { hasRole } = require('../middleware/auth');
@@ -83,6 +87,8 @@ async function unlockKiosk(req, res) {
       shelterId: user.shelter_id,
       kioskMode: true,
     });
+    // Kiosk sessions never get remember-me.
+    applySessionLifetime(req, { role: user.role, kioskMode: true });
 
     return res.status(200).json({
       kiosk: true,

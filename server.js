@@ -15,7 +15,11 @@ const { apiLimiter } = require('./middleware/rateLimiter');
 const { errorHandler } = require('./middleware/errorHandler');
 const { validateEnv, logStartupWarnings } = require('./utils/validateEnv');
 const { corsOriginDelegate } = require('./utils/corsOrigins');
-const { sessionCookieOptions } = require('./utils/sessionCookie');
+const {
+  sessionCookieOptions,
+  DEFAULT_SESSION_MS,
+  enforceSessionLifetime,
+} = require('./utils/sessionCookie');
 const { securityHeaders, permissionsPolicy } = require('./utils/securityHeaders');
 const { buildServiceWorker, getSwVersion } = require('./utils/serviceWorker');
 
@@ -127,9 +131,11 @@ app.use(session({
   store: sessionStore,
   cookie: {
     ...sessionCookieOptions(),
-    maxAge: 3600000, // 1 hour of inactivity
+    maxAge: DEFAULT_SESSION_MS, // 1 hour of inactivity
   },
 }));
+// Only opted-in volunteer sessions may outlive the 1-hour default.
+app.use(enforceSessionLifetime);
 
 // Sanitize incoming request input before route controllers.
 app.use(sanitizeInput);
@@ -157,6 +163,7 @@ const exportRoutes = require('./routes/export');
 const publicRoutes = require('./routes/public');
 const statsRoutes = require('./routes/stats');
 const qualificationRoutes = require('./routes/qualifications');
+const trainingRoutes = require('./routes/training');
 const customFieldRoutes = require('./routes/customFields');
 const waiverRoutes = require('./routes/waivers');
 const documentRoutes = require('./routes/documents');
@@ -191,6 +198,7 @@ app.use('/api/export', exportRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/qualifications', qualificationRoutes);
+app.use('/api/training', trainingRoutes);
 app.use('/api/custom-fields', customFieldRoutes);
 app.use('/api/waivers', waiverRoutes);
 app.use('/api/documents', documentRoutes);
@@ -282,6 +290,21 @@ for (const [suffix, file] of Object.entries(SHELTER_PAGES)) {
     }
   });
 }
+
+// One-time invite link from an invite email: /invite#<token>. The token is
+// in the fragment, so it never reaches the server; the page reads it and
+// checks it by POST. no-referrer and no-store are kept as belt and braces,
+// and the service worker skips /invite too.
+const INVITE_PAGE = path.join(__dirname, 'frontend', 'invite.html');
+const { invitePageLimiter } = require('./middleware/rateLimiter');
+app.get('/invite', invitePageLimiter, (req, res) => {
+  res.set({
+    'Referrer-Policy': 'no-referrer',
+    'Cache-Control': 'no-store',
+    'X-Robots-Tag': 'noindex',
+  });
+  res.sendFile(INVITE_PAGE);
+});
 
 app.get('/launch', require('./controllers/launchController').launch);
 

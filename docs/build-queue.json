@@ -1,0 +1,171 @@
+{
+  "project": "shelterlink",
+  "updated": "2026-11-23T01:20:00Z",
+  "max_attempts": 2,
+  "stall_minutes": 45,
+  "tasks": [
+    {
+      "id": "SL-PLAN-01",
+      "title": "Build plan document",
+      "lane": "coordinator",
+      "depends": [],
+      "branch": "docs/sl-build-plan-2026-11",
+      "avoid_files": []
+    },
+    {
+      "id": "SL-NOW-06",
+      "title": "Read-only production RLS check",
+      "lane": "coordinator",
+      "depends": [],
+      "branch": "docs/sl-build-plan-2026-11",
+      "avoid_files": []
+    },
+    {
+      "id": "SL-NOW-01",
+      "title": "30-day remember-me for volunteers only",
+      "lane": "D-SL-A",
+      "depends": [],
+      "branch": "lane/sl-now-01-remember-me",
+      "avoid_files": [
+        "controllers/applicationController.js",
+        "models/VolunteerProfile.js"
+      ]
+    },
+    {
+      "id": "SL-NOW-07",
+      "title": "Homepage Belfast-for-every-shelter bug",
+      "lane": "D-SL-A",
+      "depends": [],
+      "branch": "lane/sl-now-07-homepage-town",
+      "avoid_files": []
+    },
+    {
+      "id": "SL-NEXT-07",
+      "title": "Notification framework, email and push only",
+      "lane": "D-SL-A",
+      "depends": [
+        "SL-NOW-01"
+      ],
+      "branch": "lane/sl-next-07-notify-framework",
+      "avoid_files": []
+    },
+    {
+      "id": "SL-NEXT-06",
+      "title": "Staff two-factor sign-in",
+      "lane": "D-SL-A",
+      "depends": [
+        "SL-NOW-01"
+      ],
+      "branch": "lane/sl-next-06-staff-2fa",
+      "avoid_files": [
+        "middleware/auth.js"
+      ]
+    },
+    {
+      "id": "SL-NOW-02",
+      "title": "Under-18 rules and guardian consent",
+      "lane": "D-SL-B",
+      "depends": [],
+      "branch": "lane/sl-now-02-under-18",
+      "avoid_files": [
+        "server.js",
+        "controllers/applicationController.js"
+      ]
+    },
+    {
+      "id": "SL-NOW-03",
+      "title": "Per-shelter approval, instant booking, waitlist auto-fill",
+      "lane": "D-SL-B",
+      "depends": [
+        "SL-NOW-02"
+      ],
+      "branch": "lane/sl-now-03-booking-approval",
+      "avoid_files": [
+        "server.js"
+      ]
+    },
+    {
+      "id": "SL-NEXT-04",
+      "title": "Training-module gates",
+      "lane": "D-SL-B",
+      "depends": [
+        "SL-NOW-02",
+        "SL-NOW-03"
+      ],
+      "branch": "lane/sl-next-04-training-gates",
+      "avoid_files": []
+    },
+    {
+      "id": "SL-NOW-04",
+      "title": "Funder impact report",
+      "lane": "D-SL-C",
+      "depends": [],
+      "branch": "lane/sl-now-04-impact-report",
+      "avoid_files": [
+        "server.js",
+        "controllers/applicationController.js",
+        "models/VolunteerProfile.js"
+      ]
+    },
+    {
+      "id": "SL-NOW-05",
+      "title": "DPIA template and backup-restore runbook drafts",
+      "lane": "D-SL-C",
+      "depends": [],
+      "branch": "lane/sl-now-05-launch-docs",
+      "avoid_files": []
+    },
+    {
+      "id": "SL-NEXT-05",
+      "title": "QR check-in",
+      "lane": "D-SL-C",
+      "depends": [
+        "SL-NOW-04",
+        "SL-NOW-05"
+      ],
+      "branch": "lane/sl-next-05-qr-checkin",
+      "avoid_files": [
+        "models/Opportunity.js"
+      ]
+    },
+    {
+      "id": "SL-NEXT-01",
+      "title": "Refresh PRs #17 to #21 onto current main",
+      "lane": "any-free",
+      "depends": [],
+      "branch": null,
+      "avoid_files": [
+        "middleware/shelter.js",
+        "server.js",
+        "test/publicSlug.test.js",
+        "test/tenantIsolation.run.js"
+      ],
+      "sequential": true
+    },
+    {
+      "id": "SL-NEXT-02",
+      "title": "Written design brief",
+      "lane": "any-free",
+      "depends": [
+        "SL-NOW-01",
+        "SL-NOW-02",
+        "SL-NOW-03",
+        "SL-NOW-04",
+        "SL-NOW-05",
+        "SL-NOW-07"
+      ],
+      "branch": "lane/sl-next-02-design-brief",
+      "avoid_files": []
+    },
+    {
+      "id": "SL-NEXT-03",
+      "title": "Full human-designed redesign",
+      "lane": "any-free",
+      "depends": [
+        "SL-NEXT-02"
+      ],
+      "branch": "lane/sl-next-03-redesign",
+      "avoid_files": []
+    }
+  ]
+}

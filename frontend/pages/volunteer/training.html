@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Training - ShelterLink</title>
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Account">
+        <a class="site-brand" href="/pages/volunteer/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="volunteer-nav" aria-label="Toggle navigation">Menu</button>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main id="main" class="container dashboard-layout">
+      <aside id="volunteer-nav" class="sidebar-nav"></aside>
+      <div class="dashboard-main">
+        <section>
+          <h1>Training</h1>
+          <p>Complete a module and reach the pass mark to earn the linked qualification for gated shifts.</p>
+          <div id="message" role="status" aria-live="polite"></div>
+        </section>
+
+        <section id="moduleListSection">
+          <h2>Available modules</h2>
+          <div id="moduleList">Loading...</div>
+        </section>
+
+        <section id="moduleDetailSection" hidden>
+          <p><button type="button" id="backToListButton" class="secondary">Back to list</button></p>
+          <article style="max-width: 720px;">
+            <h2 id="moduleTitle"></h2>
+            <p id="moduleMeta"></p>
+            <div id="moduleContent" class="training-content"></div>
+            <form id="quizForm">
+              <fieldset>
+                <legend>Quiz</legend>
+                <div id="quizQuestions"></div>
+              </fieldset>
+              <button type="submit" id="submitQuizButton">Submit answers</button>
+            </form>
+            <div id="attemptResult" hidden></div>
+          </article>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="/js/components/volunteerNav.js"></script>
+    <script type="module" src="/js/volunteer/training.js"></script>
+  </body>
+</html>

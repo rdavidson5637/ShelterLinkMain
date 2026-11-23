@@ -19,8 +19,9 @@ test('filterNavForRole hides admin-only destinations from staff', async () => {
   const manage = filterNavForRole(ADMIN_MANAGE, 'staff').map((i) => i.id);
   const insight = filterNavForRole(ADMIN_INSIGHT, 'staff').map((i) => i.id);
   assert.deepEqual(manage, ['onboarding', 'groups', 'messages']);
-  assert.deepEqual(insight, ['feedback', 'staff-guide']);
+  assert.deepEqual(insight, ['impact-report', 'feedback', 'staff-guide']);
   assert.ok(!manage.includes('qualifications'));
+  assert.ok(!manage.includes('training'));
   assert.ok(!manage.includes('custom-fields'));
   assert.ok(!manage.includes('waivers'));
   assert.ok(!insight.includes('reports'));
@@ -33,7 +34,7 @@ test('filterNavForRole hides admin navigation from volunteers', async () => {
     '../frontend/js/components/navConfig.js'
   );
   assert.deepEqual(filterNavForRole(ADMIN_PRIMARY, 'volunteer'), []);
-  assert.equal(VOLUNTEER_NAV.length, 9);
+  assert.equal(VOLUNTEER_NAV.length, 10);
   const applications = VOLUNTEER_NAV.find((item) => item.id === 'applications');
   assert.equal(applications.href, '/pages/volunteer/my-applications.html');
 });
@@ -48,11 +49,22 @@ test('volunteer nav keeps daily items primary and tucks the rest under More', as
   );
   assert.deepEqual(
     VOLUNTEER_MORE.map((item) => item.label),
-    ['Applications', 'Hours', 'Foster', 'Transport', 'Profile']
+    ['Applications', 'Hours', 'Training', 'Foster', 'Transport', 'Profile']
   );
   assert.deepEqual(
     VOLUNTEER_NAV.map((item) => item.id),
-    ['dashboard', 'browse', 'calendar', 'messages', 'applications', 'hours', 'foster', 'transport', 'profile']
+    [
+      'dashboard',
+      'browse',
+      'calendar',
+      'messages',
+      'applications',
+      'hours',
+      'training',
+      'foster',
+      'transport',
+      'profile',
+    ]
   );
 });
 

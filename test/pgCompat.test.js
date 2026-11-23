@@ -102,6 +102,34 @@ test('shapeExecuteResult maps UPDATE/DELETE to affectedRows', () => {
   assert.strictEqual(del.affectedRows, 0);
 });
 
+test('shapeExecuteResult keeps the rows of UPDATE/DELETE ... RETURNING', () => {
+  const returned = [{ id: 11, shelter_id: 5, email: 'a@b.c', role: 'admin' }];
+  const [upd] = shapeExecuteResult(
+    `UPDATE admin_invites SET used_at = NOW()
+     WHERE token_hash = ? AND used_at IS NULL
+     RETURNING id, shelter_id, email, role`,
+    { rows: returned, rowCount: 1 }
+  );
+  assert.ok(Array.isArray(upd), 'rows come back as an array');
+  assert.deepStrictEqual([...upd], returned);
+  assert.strictEqual(upd.affectedRows, 1);
+
+  const [none] = shapeExecuteResult('UPDATE admin_invites SET used_at = NOW() WHERE id = ? RETURNING id', {
+    rows: [],
+    rowCount: 0,
+  });
+  assert.ok(Array.isArray(none));
+  assert.strictEqual(none.length, 0);
+  assert.strictEqual(none.affectedRows, 0);
+
+  const [del] = shapeExecuteResult('DELETE FROM tags WHERE id = ? RETURNING id', {
+    rows: [{ id: 3 }],
+    rowCount: 1,
+  });
+  assert.deepStrictEqual([...del], [{ id: 3 }]);
+  assert.strictEqual(del.affectedRows, 1);
+});
+
 test('shapeExecuteResult returns row arrays for SELECT', () => {
   const rows = [{ user_id: 1 }];
   const [out] = shapeExecuteResult('SELECT * FROM users WHERE user_id = ?', {

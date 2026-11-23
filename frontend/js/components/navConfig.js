@@ -18,6 +18,7 @@ export const ADMIN_PRIMARY = [
 export const ADMIN_MANAGE = [
   { id: 'onboarding', label: 'Onboarding', href: '/pages/admin/onboarding.html' },
   { id: 'qualifications', label: 'Qualifications', href: '/pages/admin/qualifications.html', adminOnly: true },
+  { id: 'training', label: 'Training modules', href: '/pages/admin/training.html', adminOnly: true },
   { id: 'custom-fields', label: 'Custom fields', href: '/pages/admin/custom-fields.html', adminOnly: true },
   { id: 'waivers', label: 'Waivers', href: '/pages/admin/waivers.html', adminOnly: true },
   { id: 'groups', label: 'Groups', href: '/pages/admin/group-bookings.html' },
@@ -26,6 +27,7 @@ export const ADMIN_MANAGE = [
 
 export const ADMIN_INSIGHT = [
   { id: 'reports', label: 'Reports', href: '/pages/admin/reports.html', adminOnly: true },
+  { id: 'impact-report', label: 'Impact report', href: '/pages/admin/impact-report.html' },
   { id: 'feedback', label: 'Feedback', href: '/pages/admin/feedback.html' },
   { id: 'staff-guide', label: 'Staff guide', href: '/pages/admin/staff-guide.html' },
   { id: 'audit', label: 'Audit log', href: '/pages/admin/audit-log.html', adminOnly: true },
@@ -44,6 +46,7 @@ export const VOLUNTEER_PRIMARY = [
 export const VOLUNTEER_MORE = [
   { id: 'applications', label: 'Applications', href: '/pages/volunteer/my-applications.html' },
   { id: 'hours', label: 'Hours', href: '/pages/volunteer/my-hours.html' },
+  { id: 'training', label: 'Training', href: '/pages/volunteer/training.html' },
   { id: 'foster', label: 'Foster', href: '/pages/volunteer/foster.html' },
   { id: 'transport', label: 'Transport', href: '/pages/volunteer/transport.html' },
   { id: 'profile', label: 'Profile', href: '/pages/volunteer/complete-profile.html' },

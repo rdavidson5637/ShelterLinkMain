@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Training modules - ShelterLink</title>
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Account">
+        <a class="site-brand" href="/pages/admin/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" aria-label="Toggle navigation">Menu</button>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main id="main" class="container dashboard-layout">
+      <aside id="admin-nav" class="sidebar-nav"></aside>
+      <div class="dashboard-main">
+        <section>
+          <h1>Training modules</h1>
+          <p>
+            Write short modules with a pass mark. Passing can award a qualification that already
+            gates shifts (for example Dog walking level 1).
+          </p>
+          <div id="message" role="status" aria-live="polite"></div>
+        </section>
+
+        <section>
+          <article style="max-width: 720px;">
+            <h2 id="formTitle">Add module</h2>
+            <form id="moduleForm">
+              <input type="hidden" id="module_id" />
+              <label for="name">
+                Name
+                <input type="text" id="name" name="name" required maxlength="255" />
+              </label>
+              <label for="description">
+                Short description
+                <textarea id="description" name="description" rows="2"></textarea>
+              </label>
+              <label for="content">
+                Reading content
+                <textarea id="content" name="content" rows="8"></textarea>
+              </label>
+              <label for="pass_mark_percent">
+                Pass mark (%)
+                <input type="number" id="pass_mark_percent" name="pass_mark_percent" min="1" max="100" value="80" required />
+              </label>
+              <label for="awards_qualification_id">
+                Award qualification on pass
+                <select id="awards_qualification_id" name="awards_qualification_id">
+                  <option value="">None</option>
+                </select>
+              </label>
+              <label>
+                <input type="checkbox" id="active" name="active" checked />
+                Active for volunteers
+              </label>
+
+              <fieldset>
+                <legend>Questions</legend>
+                <p>Volunteers never see which choice is correct until after they submit.</p>
+                <div id="questionsList"></div>
+                <button type="button" id="addQuestionButton" class="secondary">Add question</button>
+              </fieldset>
+
+              <div class="opportunity-actions">
+                <button type="submit" id="saveButton">Save</button>
+                <button type="button" id="cancelEditButton" class="secondary" hidden>Cancel edit</button>
+              </div>
+            </form>
+          </article>
+        </section>
+
+        <section>
+          <h2>All modules</h2>
+          <div class="table-wrapper">
+            <table>
+              <caption>Training modules</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Name</th>
+                  <th scope="col">Pass mark</th>
+                  <th scope="col">Awards</th>
+                  <th scope="col">Questions</th>
+                  <th scope="col">Active</th>
+                  <th scope="col">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="modulesTableBody">
+                <tr><td colspan="6">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="/js/components/adminNav.js"></script>
+    <script type="module" src="/js/admin/training.js"></script>
+  </body>
+</html>

@@ -7,6 +7,8 @@ const {
   clearSessionCookie,
   regenerateSession,
   destroyUserSessions,
+  applySessionLifetime,
+  parseRememberMe,
 } = require('../utils/sessionCookie');
 const pushService = require('../utils/pushService');
 const {
@@ -153,15 +155,9 @@ async function login(req, res) {
       shelterId: user.shelter_id,
     });
 
-    if (!req.session.cookie) req.session.cookie = {};
     req.session.loginAt = Date.now();
-    if (rememberMe) {
-      if (user.role === 'volunteer') {
-        req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000;
-      } else if (user.role === 'staff' || user.role === 'admin') {
-        req.session.cookie.maxAge = 8 * 60 * 60 * 1000;
-      }
-    }
+    // Volunteers may opt in to 30 days on their own device. Staff and admin stay at 1 hour.
+    applySessionLifetime(req, { role: user.role, rememberMe: parseRememberMe(rememberMe) });
 
     const rounds = bcrypt.getRounds(String(user.password));
     const shelterId = user.shelter_id == null ? null : user.shelter_id;
