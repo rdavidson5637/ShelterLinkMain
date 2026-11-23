@@ -47,6 +47,12 @@ const {
   updateBrandSettings,
   uploadBrandLogo,
 } = require('../controllers/shelterBrandController');
+const {
+  getSetupChecklist,
+  dismissSetupChecklist,
+  getPrivacyContact,
+  updatePrivacyContact,
+} = require('../controllers/setupChecklistController');
 const { getDaySheet } = require('../controllers/daySheetController');
 const {
   getImpactReport,
@@ -150,6 +156,24 @@ router.post(
     });
   },
   uploadBrandLogo
+);
+
+// SL-LATER-17: new-shelter setup checklist (progress from real data).
+router.get('/setup-checklist', isAuthenticated, adminOnly, getSetupChecklist);
+router.post(
+  '/setup-checklist/dismiss',
+  isAuthenticated,
+  adminOnly,
+  validateBody(bodies.empty),
+  dismissSetupChecklist
+);
+router.get('/settings/privacy-contact', isAuthenticated, staffOrAdmin, getPrivacyContact);
+router.put(
+  '/settings/privacy-contact',
+  isAuthenticated,
+  adminOnly,
+  validateBody(bodies.privacyContact),
+  updatePrivacyContact
 );
 
 module.exports = router;

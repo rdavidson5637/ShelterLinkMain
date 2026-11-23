@@ -268,6 +268,12 @@ const brandSettings = z
     ]),
   })
   .strict();
+// SL-LATER-17: privacy contact email for the shelter privacy notice.
+const privacyContact = z
+  .object({
+    privacy_contact_email: z.union([optStr(254), z.literal('')]).optional().nullable(),
+  })
+  .strict();
 const fosterApproval = z.object({ foster_approved: optFlag }).strict();
 const serviceSettings = z
   .object({
@@ -767,6 +773,7 @@ const bodies = {
   ageSettings,
   retentionSettings,
   brandSettings,
+  privacyContact,
   awardQualification,
   bulkMessage,
   erase,

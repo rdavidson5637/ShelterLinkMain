@@ -102,6 +102,7 @@ CREATE TABLE shelters (
   status TEXT NOT NULL DEFAULT 'active' CONSTRAINT shelters_status_chk CHECK (status IN ('active','suspended')),
   privacy_contact_email VARCHAR(255),
   primary_colour VARCHAR(7) CONSTRAINT shelters_primary_colour_chk CHECK (primary_colour ~ '^#[0-9A-Fa-f]{6}$'),
+  setup_checklist_dismissed_at TIMESTAMP NULL,
   CONSTRAINT shelters_slug_key UNIQUE (slug),
   CONSTRAINT shelters_slug_lowercase_chk CHECK (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'),
   CONSTRAINT shelters_charity_pair_chk CHECK ((charity_regulator IS NULL) = (charity_number IS NULL))

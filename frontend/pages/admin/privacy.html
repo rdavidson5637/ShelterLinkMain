@@ -38,6 +38,25 @@
 
       <section id="message"></section>
 
+      <section class="staff-panel" aria-labelledby="privacyContactHeading">
+        <h2 id="privacyContactHeading">Privacy contact</h2>
+        <p>The email people use for data requests about this shelter. Completing this finishes the privacy step on the setup checklist.</p>
+        <form id="privacyContactForm" novalidate>
+          <label for="privacy_contact_email">
+            Privacy contact email
+            <input
+              type="email"
+              id="privacy_contact_email"
+              name="privacy_contact_email"
+              maxlength="254"
+              autocomplete="email"
+            />
+          </label>
+          <p id="privacyContactStatus" class="form-status" role="status" aria-live="polite"></p>
+          <button type="submit" id="privacyContactSave">Save privacy contact</button>
+        </form>
+      </section>
+
       <ul class="export-list">
         <li>
           <div>
