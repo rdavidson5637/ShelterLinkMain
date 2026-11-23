@@ -1005,10 +1005,14 @@ textarea:focus,
 select:focus {
   border-color: var(--green);
   box-shadow: 0 0 0 3px var(--green-tint-border);
+}
+
+/* Keep mouse click chrome quiet; always show a ring for keyboard focus. */
+:is(a, button, [role='button'], input, select, textarea, summary):focus {
   outline: none;
 }
 
-:is(a, button, [role='button'], input, select, textarea):focus-visible {
+:is(a, button, [role='button'], input, select, textarea, summary):focus-visible {
   outline: 2px solid var(--green);
   outline-offset: 2px;
 }
