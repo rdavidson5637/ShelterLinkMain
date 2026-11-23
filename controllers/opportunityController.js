@@ -348,13 +348,13 @@ async function updateOpportunity(req, res) {
       (!Number.isFinite(previousMax) || previousMax <= 0 || newMax > previousMax);
 
     if (maxIncreased) {
-      const { promoteOldestWaitlisted } = require('./applicationController');
+      const { fillFromWaitlist } = require('./applicationController');
       const capacity = await Opportunity.getCurrentCapacity(id);
       if (capacity < newMax) {
         if (opportunity.status === 'closed') {
           await Opportunity.updateStatus(id, 'open');
         }
-        await promoteOldestWaitlisted(id);
+        await fillFromWaitlist(id);
       }
     }
 

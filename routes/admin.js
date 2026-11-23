@@ -32,6 +32,11 @@ const {
   runRetention,
   updateUserRole,
 } = require('../controllers/gdprController');
+const {
+  getBookingSettings,
+  updateBookingSettings,
+  updateVolunteerTrusted,
+} = require('../controllers/bookingPolicyController');
 const { getDaySheet } = require('../controllers/daySheetController');
 const {
   getImpactReport,
@@ -98,5 +103,10 @@ router.put('/users/:userId/role', isAuthenticated, adminOnly, validateBody(bodie
 router.get('/invites', isAuthenticated, adminOnly, listStaffInvites);
 router.post('/invites', isAuthenticated, adminOnly, messageLimiter, validateBody(bodies.staffInvite), createStaffInvite);
 router.post('/invites/:inviteId/revoke', isAuthenticated, adminOnly, validateBody(bodies.empty), revokeStaffInvite);
+
+// SL-NOW-03: booking approval policy. Trust is admin-granted only.
+router.get('/settings/booking', isAuthenticated, staffOrAdmin, getBookingSettings);
+router.put('/settings/booking', isAuthenticated, adminOnly, validateBody(bodies.bookingSettings), updateBookingSettings);
+router.put('/volunteers/:userId/trusted', isAuthenticated, adminOnly, validateBody(bodies.trustedVolunteer), updateVolunteerTrusted);
 
 module.exports = router;

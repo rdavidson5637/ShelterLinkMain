@@ -36,6 +36,10 @@ function inferFromRequest(req) {
   else if (resource === 'admin' && segments[1] === 'invites') {
     action = segments.includes('revoke') ? 'invite.revoke' : 'invite.create';
   }
+  else if (segments.includes('trusted') && resource === 'admin') action = 'volunteer.trusted';
+  else if (resource === 'admin' && segments[1] === 'settings' && segments[2] === 'booking') {
+    action = 'booking_policy.update';
+  }
   else if (segments.includes('qualifications') && resource === 'admin') {
     action = method === 'POST' ? 'volunteer.qualification.award' : 'volunteer.qualification.revoke';
   }

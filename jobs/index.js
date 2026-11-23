@@ -22,6 +22,9 @@ const HOUSEKEEPING = { includeSuspended: true };
 /**
  * Register all scheduled jobs. Importing this module must be safe under test
  * (no timers started — server.js calls scheduler.start()).
+ *
+ * Replica safety: utils/scheduler claims each cron minute in job_runs.run_key
+ * before invoking the handler, so only one app instance runs a given tick.
  */
 function registerAllJobs() {
   // Hourly: remind volunteers of accepted shifts starting within 24 hours.

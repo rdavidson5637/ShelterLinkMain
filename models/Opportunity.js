@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const { pool } = require('../config/database');
 
 const TABLE = 'opportunities';
@@ -54,7 +55,7 @@ function generateCheckInCode() {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code = '';
   for (let i = 0; i < 6; i += 1) {
-    code += alphabet[Math.floor(Math.random() * alphabet.length)];
+    code += alphabet[crypto.randomInt(alphabet.length)];
   }
   return code;
 }

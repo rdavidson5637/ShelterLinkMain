@@ -92,7 +92,11 @@ app.use(express.static(path.join(__dirname, 'frontend'), {
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
       return;
     }
-    if (rel.includes('/public/icons/') || rel.includes('/public/images/')) {
+    if (
+      rel.includes('/public/icons/') ||
+      rel.includes('/public/images/') ||
+      rel.includes('/public/fonts/')
+    ) {
       res.setHeader('Cache-Control', 'public, max-age=604800');
       return;
     }
@@ -171,6 +175,7 @@ const tagRoutes = require('./routes/tags');
 const feedbackRoutes = require('./routes/feedback');
 const groupBookingRoutes = require('./routes/groupBookings');
 const kioskRoutes = require('./routes/kiosk');
+const checkinRoutes = require('./routes/checkin');
 const animalRoutes = require('./routes/animals');
 const fosterRoutes = require('./routes/fosters');
 const transportRoutes = require('./routes/transport');
@@ -205,6 +210,7 @@ app.use('/api/tags', tagRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/group-bookings', groupBookingRoutes);
 app.use('/api/kiosk', kioskRoutes);
+app.use('/api/checkin', checkinRoutes);
 app.use('/api/animals', animalRoutes);
 app.use('/api/fosters', fosterRoutes);
 app.use('/api/transport', transportRoutes);

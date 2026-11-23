@@ -26,16 +26,16 @@
         </a>
         <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation">Menu</button>
         <ul class="nav-menu" id="navMenu">
-          <li><a class="nav-link" href="/pages/opportunities.html"><span class="nav-icon" aria-hidden="true">&#128197;</span><span>Open shifts</span></a></li>
-          <li><a class="nav-link" href="/register.html"><span class="nav-icon" aria-hidden="true">&#9998;</span><span>Register</span></a></li>
+          <li><a class="nav-link" href="/pages/opportunities.html">Open shifts</a></li>
+          <li><a class="nav-link" href="/register.html">Register</a></li>
         </ul>
       </nav>
     </header>
 
-    <main id="main" class="container">
+    <main id="main" class="container auth-shell">
       <article class="auth-card">
-        <h1>Sign In</h1>
-        <p>Access your ShelterLink account to manage volunteer activities.</p>
+        <h1>Sign in</h1>
+        <p>Use your email and password to open shifts, applications, and hours.</p>
 
         <div id="message" role="status" aria-live="polite"></div>
 
@@ -44,7 +44,7 @@
             <div class="form-section form-full-width">
               <div class="form-grid">
                 <label for="email">
-                  Email Address
+                  Email address
                   <input type="email" id="email" name="email" required autocomplete="email" />
                 </label>
 
@@ -61,11 +61,11 @@
             </div>
           </div>
 
-          <button type="submit">Sign In</button>
+          <button type="submit">Sign in</button>
         </form>
 
         <p class="auth-links">
-          Don't have an account? <a href="/register.html">Register</a>
+          No account yet? <a href="/register.html">Register</a>
           · <a href="/pages/opportunities.html">Browse open shifts</a>
           · <a href="/pages/privacy.html">Privacy</a>
         </p>
@@ -81,8 +81,10 @@
       </article>
     </main>
 
-    <footer class="container">
-      <small>&copy; 2026 ShelterLink</small>
+    <footer class="site-footer">
+      <div class="container">
+        <small>&copy; <span data-footer-year>2026</span> ShelterLink</small>
+      </div>
     </footer>
 
     <script type="module" src="/js/components/publicNav.js"></script>

@@ -6,6 +6,8 @@
 -- ============================================================================
 
 DROP TABLE IF EXISTS
+  trusted_volunteers,
+  shelter_booking_policy,
   training_attempts,
   training_questions,
   training_modules,
@@ -52,6 +54,7 @@ DROP TABLE IF EXISTS
   opportunity_qualifications,
   volunteer_qualifications,
   qualifications,
+  rate_limit_hits,
   job_runs,
   volunteer_hours,
   swap_requests,
@@ -337,10 +340,25 @@ CREATE TABLE job_runs (
   job_name  VARCHAR(100)  NOT NULL,
   ran_at    TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   status    TEXT          NOT NULL CHECK (status IN ('ok','error')),
-  detail    TEXT          DEFAULT NULL
+  detail    TEXT          DEFAULT NULL,
+  run_key   VARCHAR(64)   DEFAULT NULL
 );
 
 CREATE INDEX idx_job_runs_name_ran ON job_runs (job_name, ran_at);
+CREATE UNIQUE INDEX uq_job_runs_name_run_key
+  ON job_runs (job_name, run_key)
+  WHERE run_key IS NOT NULL;
+
+-- ----------------------------------------------------------------------------
+-- rate_limit_hits (shared express-rate-limit counters across replicas)
+-- ----------------------------------------------------------------------------
+CREATE TABLE rate_limit_hits (
+  key       TEXT          PRIMARY KEY,
+  hits      INTEGER       NOT NULL DEFAULT 0 CHECK (hits >= 0),
+  reset_at  TIMESTAMPTZ   NOT NULL
+);
+
+CREATE INDEX idx_rate_limit_hits_reset ON rate_limit_hits (reset_at);
 
 -- ----------------------------------------------------------------------------
 -- qualifications
@@ -1310,6 +1328,38 @@ CREATE TABLE training_attempts (
 CREATE INDEX training_attempts_shelter_id_idx ON training_attempts (shelter_id);
 CREATE INDEX training_attempts_module_user_idx ON training_attempts (module_id, user_id);
 CREATE INDEX training_attempts_user_id_idx ON training_attempts (user_id);
+
+-- ----------------------------------------------------------------------------
+-- Booking approval policy (same definitions as database/044_booking_policy.pg.sql).
+-- Both per shelter; 044 still runs after 033 on a fresh setup to add row level
+-- security, triggers, and grants. No row in shelter_booking_policy means
+-- 'approval'.
+-- ----------------------------------------------------------------------------
+CREATE TABLE shelter_booking_policy (
+  shelter_id    INTEGER PRIMARY KEY DEFAULT (NULLIF(current_setting('app.shelter_id', true), '')::integer),
+  booking_mode  VARCHAR(20) NOT NULL DEFAULT 'approval',
+  updated_by    INTEGER,
+  updated_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT shelter_booking_policy_mode_chk CHECK (booking_mode IN ('approval', 'instant')),
+  CONSTRAINT shelter_booking_policy_shelter_id_fkey
+    FOREIGN KEY (shelter_id) REFERENCES shelters (id) ON DELETE RESTRICT,
+  CONSTRAINT shelter_booking_policy_updated_by_fkey
+    FOREIGN KEY (updated_by) REFERENCES users (user_id) ON DELETE SET NULL
+);
+
+CREATE TABLE trusted_volunteers (
+  shelter_id  INTEGER NOT NULL DEFAULT (NULLIF(current_setting('app.shelter_id', true), '')::integer),
+  user_id     INTEGER NOT NULL,
+  granted_by  INTEGER,
+  granted_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT trusted_volunteers_pkey PRIMARY KEY (shelter_id, user_id),
+  CONSTRAINT trusted_volunteers_shelter_id_fkey
+    FOREIGN KEY (shelter_id) REFERENCES shelters (id) ON DELETE RESTRICT,
+  CONSTRAINT trusted_volunteers_user_id_fkey
+    FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE,
+  CONSTRAINT trusted_volunteers_granted_by_fkey
+    FOREIGN KEY (granted_by) REFERENCES users (user_id) ON DELETE SET NULL
+);
 
 -- ----------------------------------------------------------------------------
 -- schema_migrations (used by scripts/migrate.js)

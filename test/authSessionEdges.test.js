@@ -18,6 +18,7 @@ const kiosk = require('../controllers/kioskController');
 const {
   attachUser,
   isAuthenticated,
+  requireRole,
   requireKiosk,
 } = require('../middleware/auth');
 const { PRIVACY_NOTICE_VERSION } = require('../config/privacyNotice');
@@ -156,6 +157,44 @@ test('isAuthenticated rejects a missing session userId', async () => {
   });
   assert.equal(nextCalled, false);
   assert.equal(res.statusCode, 401);
+});
+
+test('isAuthenticated returns 401 when the user row is missing', async () => {
+  mock.setHandler(async () => [[]]);
+  const res = makeRes();
+  let nextCalled = false;
+  await isAuthenticated({ session: { userId: 7, role: 'admin' } }, res, () => {
+    nextCalled = true;
+  });
+  assert.equal(nextCalled, false);
+  assert.equal(res.statusCode, 401);
+  assert.equal(res.body.error, 'Unauthorized');
+});
+
+test('isAuthenticated calls next when the user row exists', async () => {
+  mock.setHandler(async () => [[userRow()]]);
+  const req = { session: { userId: 7, role: 'volunteer' } };
+  const res = makeRes();
+  let nextCalled = false;
+  await isAuthenticated(req, res, () => {
+    nextCalled = true;
+  });
+  assert.equal(nextCalled, true);
+  assert.equal(res.statusCode, 200);
+  assert.equal(req.user.user_id, 7);
+});
+
+test('requireRole returns 401 when the user row is missing (no session-role fallback)', async () => {
+  mock.setHandler(async () => [[]]);
+  const guard = requireRole('admin');
+  const res = makeRes();
+  let nextCalled = false;
+  await guard({ session: { userId: 7, role: 'admin' } }, res, () => {
+    nextCalled = true;
+  });
+  assert.equal(nextCalled, false);
+  assert.equal(res.statusCode, 401);
+  assert.equal(res.body.error, 'Unauthorized');
 });
 
 test('requireKiosk rejects a normal signed-in session', async () => {

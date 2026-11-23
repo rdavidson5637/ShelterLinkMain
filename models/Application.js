@@ -405,6 +405,77 @@ async function findOldestWaitlisted(opportunityId) {
   }
 }
 
+/**
+ * Atomically confirm an application if the shift still has a seat (SL-NOW-03).
+ * Locks the opportunity row so two instant bookings for the last seat cannot
+ * both win. Only moves pending or waitlisted applications.
+ * Returns the new status: 'accepted' when a seat was claimed, otherwise
+ * fallbackStatus ('waitlisted' or 'pending'), or null if the application is
+ * gone or no longer pending/waitlisted.
+ */
+async function claimSeat(applicationId, opportunityId, fallbackStatus = 'waitlisted') {
+  if (!applicationId || !opportunityId) {
+    throw new Error('applicationId and opportunityId are required');
+  }
+  const fallback = fallbackStatus === 'pending' ? 'pending' : 'waitlisted';
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [oppRows] = await connection.execute(
+      `SELECT opportunity_id, max_volunteers
+         FROM opportunities
+        WHERE opportunity_id = ?
+        LIMIT 1
+        FOR UPDATE`,
+      [opportunityId]
+    );
+    const opportunity = oppRows[0];
+    if (!opportunity) {
+      await connection.rollback();
+      return null;
+    }
+
+    const maxVolunteers = Number(opportunity.max_volunteers);
+    let hasSeat = true;
+    if (Number.isFinite(maxVolunteers) && maxVolunteers > 0) {
+      const [countRows] = await connection.execute(
+        `SELECT (
+            (SELECT COUNT(*) FROM applications
+              WHERE opportunity_id = ? AND status IN ('accepted', 'approved'))
+            +
+            (SELECT COALESCE(SUM(size), 0) FROM group_bookings
+              WHERE opportunity_id = ? AND status = 'confirmed')
+          ) AS current_count`,
+        [opportunityId, opportunityId]
+      );
+      hasSeat = Number(countRows[0]?.current_count || 0) < maxVolunteers;
+    }
+
+    const nextStatus = hasSeat ? 'accepted' : fallback;
+    const [updateResult] = await connection.execute(
+      `UPDATE ${TABLE}
+          SET status = ?
+        WHERE application_id = ?
+          AND opportunity_id = ?
+          AND status IN ('pending', 'waitlisted')`,
+      [nextStatus, applicationId, opportunityId]
+    );
+    await connection.commit();
+    if (!updateResult || !updateResult.affectedRows) return null;
+    return nextStatus;
+  } catch (error) {
+    try {
+      await connection.rollback();
+    } catch {
+      /* ignore */
+    }
+    console.error('[Application] claimSeat error:', error.message);
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
 async function findAcceptedNeedingReminder(now = new Date()) {
   try {
     const sql = `
@@ -522,6 +593,7 @@ module.exports = {
   countApprovedByUserId,
   cancelApplication,
   findOldestWaitlisted,
+  claimSeat,
   findAcceptedNeedingReminder,
   markReminderSent,
   markNoShow,
