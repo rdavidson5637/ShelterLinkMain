@@ -1,6 +1,7 @@
 const express = require('express');
 const { isAuthenticated, requireStaff, requireRole } = require('../middleware/auth');
 const { auditMutations } = require('../middleware/auditLog');
+const { messageLimiter } = require('../middleware/rateLimiter');
 const {
   createOpportunity,
   getAllOpportunities,
@@ -15,6 +16,10 @@ const {
   createNote,
   deleteNote,
 } = require('../controllers/shiftNoteController');
+const {
+  listUsualAvailabilityForOpportunity,
+  emailUsualAvailabilityMatch,
+} = require('../controllers/usualAvailabilityController');
 
 const { listUpcomingClosures } = require('../controllers/closureController');
 
@@ -31,6 +36,21 @@ router.get('/closures', isAuthenticated, listUpcomingClosures);
 router.get('/:id/notes', isAuthenticated, listNotes);
 router.post('/:id/notes', isAuthenticated, requireStaff, auditMutations, validateBody(bodies.shiftNote), createNote);
 router.delete('/:id/notes/:noteId', isAuthenticated, requireRole('admin'), auditMutations, deleteNote);
+router.get(
+  '/:id/usual-availability',
+  isAuthenticated,
+  requireStaff,
+  listUsualAvailabilityForOpportunity
+);
+router.post(
+  '/:id/usual-availability/email',
+  isAuthenticated,
+  requireStaff,
+  auditMutations,
+  messageLimiter,
+  validateBody(bodies.usualAvailabilityEmail),
+  emailUsualAvailabilityMatch
+);
 router.get('/:id', isAuthenticated, getOpportunity);
 router.put('/:id', isAuthenticated, requireStaff, auditMutations, validateBody(bodies.opportunity), updateOpportunity);
 router.delete('/:id', isAuthenticated, requireStaff, auditMutations, validateQuery(queries.opportunities), deleteOpportunity);

@@ -19,6 +19,7 @@ const {
   buildMilestoneThankYou,
   buildBuddyAssigned,
   buildExpiryReminder,
+  buildUsualAvailabilityAsk,
 } = require('./emailService');
 
 const APP_BASE = () => String(process.env.APP_URL || 'https://shelterlink.online').replace(/\/$/, '');
@@ -83,6 +84,13 @@ function sampleData(shelterNamePlain) {
       kind: 'background_check',
       expiresOn: '2026-12-15',
       message: '',
+    },
+    usualAvailability: {
+      firstName: 'Alex',
+      opportunityTitle: 'Morning kennel walk',
+      whenLabel: 'Sat 28 Nov, 09:00 - 12:00',
+      location: shelterNamePlain ? `${shelterNamePlain} yard` : 'Shelter yard',
+      matchLabel: 'Saturday morning',
     },
   };
 }
@@ -166,6 +174,14 @@ const CATALOG = [
     description: 'Optional staff-sent reminder when a check, document, or qualification expires soon.',
     build(brand, samples) {
       return buildExpiryReminder(samples.expiryReminder, brand);
+    },
+  },
+  {
+    id: 'usual_availability_ask',
+    label: 'Usual availability ask',
+    description: 'Optional staff email when a short-staffed shift matches a volunteer usual days.',
+    build(brand, samples) {
+      return buildUsualAvailabilityAsk(samples.usualAvailability, brand);
     },
   },
 ];

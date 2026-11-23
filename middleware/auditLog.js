@@ -75,6 +75,13 @@ function inferFromRequest(req) {
     if (segments.includes('claim') || segments.includes('claim-by-token')) action = 'swap.claim';
     else if (method === 'DELETE') action = 'swap.cancel';
   }
+  else if (
+    resource === 'opportunities' &&
+    segments.includes('usual-availability') &&
+    method === 'POST'
+  ) {
+    action = 'usual_availability.email';
+  }
 
   const entityType =
     resource === 'admin' && segments[1] === 'volunteers'
