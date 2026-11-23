@@ -1733,6 +1733,10 @@ CREATE TABLE volunteer_shift_notes (
 );
 
 CREATE INDEX volunteer_shift_notes_shelter_user_idx
+  ON volunteer_shift_notes (shelter_id, user_id, created_at DESC);
+
+CREATE INDEX volunteer_shift_notes_shelter_opportunity_idx
+  ON volunteer_shift_notes (shelter_id, opportunity_id, created_at DESC);
 
 -- ----------------------------------------------------------------------------
 -- volunteer_usual_availability
