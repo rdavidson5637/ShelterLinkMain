@@ -98,6 +98,12 @@ const {
   clearVolunteerBuddy,
 } = require('../controllers/buddyController');
 const {
+  listVolunteerStaffNotes,
+  createVolunteerStaffNote,
+  updateVolunteerStaffNote,
+  deleteVolunteerStaffNote,
+} = require('../controllers/staffNoteController');
+const {
   listExpiringItems,
   sendExpiryReminder,
 } = require('../controllers/expiryDashboardController');
@@ -115,6 +121,7 @@ router.param('userId', positiveParam('userId'));
 router.param('inviteId', positiveParam('inviteId'));
 router.param('closureId', positiveParam('closureId'));
 router.param('itemId', positiveParam('itemId'));
+router.param('noteId', positiveParam('noteId'));
 
 router.use(auditMutations);
 
@@ -245,6 +252,27 @@ router.put(
   assignVolunteerBuddy
 );
 router.delete('/volunteers/:userId/buddy', isAuthenticated, staffOrAdmin, clearVolunteerBuddy);
+router.get('/volunteers/:userId/staff-notes', isAuthenticated, staffOrAdmin, listVolunteerStaffNotes);
+router.post(
+  '/volunteers/:userId/staff-notes',
+  isAuthenticated,
+  staffOrAdmin,
+  validateBody(bodies.volunteerStaffNote),
+  createVolunteerStaffNote
+);
+router.put(
+  '/volunteers/:userId/staff-notes/:noteId',
+  isAuthenticated,
+  staffOrAdmin,
+  validateBody(bodies.volunteerStaffNote),
+  updateVolunteerStaffNote
+);
+router.delete(
+  '/volunteers/:userId/staff-notes/:noteId',
+  isAuthenticated,
+  staffOrAdmin,
+  deleteVolunteerStaffNote
+);
 router.get('/volunteers/:userId/guardian-consent', isAuthenticated, staffOrAdmin, getVolunteerGuardianConsent);
 router.post('/volunteers/:userId/guardian-consent', isAuthenticated, staffOrAdmin, validateBody(bodies.guardianConsent), recordVolunteerGuardianConsent);
 router.delete('/volunteers/:userId/guardian-consent', isAuthenticated, staffOrAdmin, withdrawVolunteerGuardianConsent);
