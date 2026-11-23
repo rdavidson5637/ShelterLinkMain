@@ -64,6 +64,27 @@
           <button type="submit">Sign In</button>
         </form>
 
+        <form id="twoFactorForm" hidden>
+          <h2>Enter your sign-in code</h2>
+          <p id="twoFactorHint">Open your authenticator app and type the 6-digit code for ShelterLink.</p>
+          <label for="twoFactorCode">
+            Code
+            <input
+              type="text"
+              id="twoFactorCode"
+              name="code"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              maxlength="32"
+              aria-describedby="twoFactorHint twoFactorRecoveryHint"
+              required
+            />
+          </label>
+          <small id="twoFactorRecoveryHint">Lost your phone? Type one of your recovery codes instead.</small>
+          <button type="submit">Confirm code</button>
+          <button type="button" id="twoFactorCancel" class="secondary outline">Start again</button>
+        </form>
+
         <p class="auth-links">
           Don't have an account? <a href="/register.html">Register</a>
           · <a href="/pages/opportunities.html">Browse open shifts</a>

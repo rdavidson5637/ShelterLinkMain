@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Sign-in security - ShelterLink</title>
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+        <header class="site-header">
+      <nav class="site-nav container" aria-label="Account">
+        <a class="site-brand" href="/pages/admin/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" aria-label="Toggle navigation">Menu</button>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main id="main" class="container dashboard-layout">
+      <aside id="admin-nav" class="sidebar-nav"></aside>
+      <div class="dashboard-main">
+      <section>
+        <h1>Sign-in security</h1>
+        <p>
+          Staff and admin accounts can see vetting and AccessNI details. Adding a code from an
+          authenticator app means a stolen password is not enough to get in.
+        </p>
+      </section>
+
+      <section id="message" role="status" aria-live="polite"></section>
+
+      <section>
+        <article id="statusCard">
+          <header><h2>Two-factor sign-in</h2></header>
+          <p id="statusText">Checking&hellip;</p>
+          <button type="button" id="startSetupBtn" hidden>Turn on two-factor sign-in</button>
+        </article>
+      </section>
+
+      <section id="setupSection" hidden>
+        <article>
+          <header><h2>Set up your authenticator app</h2></header>
+          <form id="passwordForm">
+            <p>Confirm your password to start.</p>
+            <label for="setupPassword">
+              Password
+              <input type="password" id="setupPassword" name="password" autocomplete="current-password" required />
+            </label>
+            <button type="submit">Continue</button>
+          </form>
+
+          <form id="enableForm" hidden>
+            <ol>
+              <li>Open an authenticator app on your phone, such as Google Authenticator, Microsoft Authenticator or 1Password.</li>
+              <li>
+                Add an account and type this key, or on this phone
+                <a id="otpauthLink" href="#">open it in your app</a>.
+                <p><code id="secretText"></code></p>
+              </li>
+              <li>Type the 6-digit code the app shows.</li>
+            </ol>
+            <label for="enableCode">
+              Code
+              <input type="text" id="enableCode" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="8" required />
+            </label>
+            <button type="submit">Turn on</button>
+          </form>
+        </article>
+      </section>
+
+      <section id="recoverySection" hidden>
+        <article>
+          <header><h2>Your recovery codes</h2></header>
+          <p>
+            Each code works once if you lose your phone. Write them down or print this page now.
+            You will not see them again.
+          </p>
+          <ul id="recoveryList"></ul>
+          <button type="button" id="recoveryDoneBtn">I have saved these codes</button>
+        </article>
+      </section>
+
+      <section id="disableSection" hidden>
+        <article>
+          <header><h2>Turn off two-factor sign-in</h2></header>
+          <p>Do this before you move to a new phone, then set it up again on the new one.</p>
+          <form id="disableForm">
+            <label for="disablePassword">
+              Password
+              <input type="password" id="disablePassword" name="password" autocomplete="current-password" required />
+            </label>
+            <label for="disableCode">
+              Code from your app, or a recovery code
+              <input type="text" id="disableCode" name="code" autocomplete="one-time-code" maxlength="32" required />
+            </label>
+            <button type="submit" class="secondary">Turn off</button>
+          </form>
+        </article>
+      </section>
+      </div>
+    </main>
+
+    <footer class="container" data-site-footer></footer>
+<script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/admin/security.js"></script>
+      <script type="module" src="/js/utils/footerYear.js"></script>
+      <script type="module" src="/js/components/adminNav.js"></script>
+  </body>
+</html>

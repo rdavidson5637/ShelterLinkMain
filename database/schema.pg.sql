@@ -121,6 +121,10 @@ CREATE TABLE users (
   ical_token          VARCHAR(64)   DEFAULT NULL,
   consent_given_at    TIMESTAMP     DEFAULT NULL,
   privacy_notice_version VARCHAR(32) DEFAULT NULL,
+  totp_secret         TEXT          DEFAULT NULL,
+  totp_enabled_at     TIMESTAMP     DEFAULT NULL,
+  totp_last_counter   BIGINT        DEFAULT NULL,
+  totp_recovery_codes TEXT          DEFAULT NULL,
   CONSTRAINT uq_users_email UNIQUE (email),
   CONSTRAINT uq_users_ical_token UNIQUE (ical_token)
 );

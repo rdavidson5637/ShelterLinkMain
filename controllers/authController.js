@@ -22,6 +22,7 @@ const {
 } = require('../utils/shelterContext');
 const { assisiShelterId, shelterIdFromSlug } = require('../middleware/shelter');
 const { PRIVACY_NOTICE_VERSION } = require('../config/privacyNotice');
+const twoFactor = require('./twoFactorController');
 
 function privacyNoticeAccepted(value) {
   return value === true || value === 'on' || value === 'true';
@@ -29,7 +30,19 @@ function privacyNoticeAccepted(value) {
 
 function respondSafeUser(row) {
   if (!row) return null;
-  const { password, reset_token, reset_token_expires, shelter_id, consent_given_at, privacy_notice_version, ...safe } = row;
+  const {
+    password,
+    reset_token,
+    reset_token_expires,
+    shelter_id,
+    consent_given_at,
+    privacy_notice_version,
+    totp_secret,
+    totp_enabled_at,
+    totp_last_counter,
+    totp_recovery_codes,
+    ...safe
+  } = row;
   safe.needsPrivacyNotice = privacy_notice_version !== PRIVACY_NOTICE_VERSION;
   return safe;
 }
@@ -118,6 +131,77 @@ async function register(req, res) {
   }
 }
 
+function hashNeedsUpgrade(user) {
+  if (process.env.NODE_ENV === 'test' || !user || !user.password) return false;
+  const rounds = bcrypt.getRounds(String(user.password));
+  return Number.isFinite(rounds) && rounds < SALT_ROUNDS;
+}
+
+/** Rehash a weak bcrypt hash without recording a login (used before the 2FA step). */
+async function upgradeWeakHash(user, password) {
+  if (!hashNeedsUpgrade(user)) return;
+  const upgraded = await hashPassword(password);
+  await pool.execute(
+    'UPDATE users SET password = ? WHERE user_id = ? AND shelter_id IS NOT DISTINCT FROM ?',
+    [upgraded, user.user_id, user.shelter_id == null ? null : user.shelter_id]
+  );
+}
+
+/**
+ * Turn a verified user into a signed-in session: new session id, cookie
+ * lifetime, last_login, push endpoint hand-over, safe user body. Shared by
+ * the password step and the two-factor step. `password` is only passed from
+ * the password step, where a weak hash can be upgraded in the same write.
+ */
+async function completeSignIn(req, res, user, { rememberMe, pushEndpoint, password = null, extra = null } = {}) {
+  await regenerateSession(req, {
+    userId: user.user_id,
+    role: user.role,
+    shelterId: user.shelter_id,
+  });
+
+  if (!req.session.cookie) req.session.cookie = {};
+  req.session.loginAt = Date.now();
+  if (rememberMe) {
+    if (user.role === 'volunteer') {
+      req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000;
+    } else if (user.role === 'staff' || user.role === 'admin') {
+      req.session.cookie.maxAge = 8 * 60 * 60 * 1000;
+    }
+  }
+
+  const shelterId = user.shelter_id == null ? null : user.shelter_id;
+  if (password != null && hashNeedsUpgrade(user)) {
+    const upgraded = await hashPassword(password);
+    await pool.execute(
+      'UPDATE users SET password = ?, last_login = NOW() WHERE user_id = ? AND shelter_id IS NOT DISTINCT FROM ?',
+      [upgraded, user.user_id, shelterId]
+    );
+  } else {
+    await pool.execute(
+      'UPDATE users SET last_login = NOW() WHERE user_id = ? AND shelter_id IS NOT DISTINCT FROM ?',
+      [user.user_id, shelterId]
+    );
+  }
+
+  let pushReset = false;
+  if (pushEndpoint) {
+    try {
+      const existing = await pushService.findByEndpoint(pushEndpoint);
+      if (existing && Number(existing.user_id) !== Number(user.user_id)) {
+        await pushService.removeByEndpoint(pushEndpoint);
+        pushReset = true;
+      }
+    } catch (pushError) {
+      console.warn('[Auth] pushEndpoint check failed:', pushError.message);
+    }
+  }
+
+  const body = { ...respondSafeUser(user), ...(extra || {}) };
+  if (pushReset) body.pushReset = true;
+  return res.status(200).json(body);
+}
+
 async function login(req, res) {
   if (!isBypass()) return runWithoutShelter(() => login(req, res));
   try {
@@ -147,53 +231,12 @@ async function login(req, res) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    await regenerateSession(req, {
-      userId: user.user_id,
-      role: user.role,
-      shelterId: user.shelter_id,
-    });
-
-    if (!req.session.cookie) req.session.cookie = {};
-    req.session.loginAt = Date.now();
-    if (rememberMe) {
-      if (user.role === 'volunteer') {
-        req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000;
-      } else if (user.role === 'staff' || user.role === 'admin') {
-        req.session.cookie.maxAge = 8 * 60 * 60 * 1000;
-      }
+    if (await twoFactor.isEnabledFor(user)) {
+      await upgradeWeakHash(user, password);
+      return twoFactor.beginChallenge(req, res, user, { rememberMe, pushEndpoint, regenerateSession });
     }
 
-    const rounds = bcrypt.getRounds(String(user.password));
-    const shelterId = user.shelter_id == null ? null : user.shelter_id;
-    if (process.env.NODE_ENV !== 'test' && Number.isFinite(rounds) && rounds < SALT_ROUNDS) {
-      const upgraded = await hashPassword(password);
-      await pool.execute(
-        'UPDATE users SET password = ?, last_login = NOW() WHERE user_id = ? AND shelter_id IS NOT DISTINCT FROM ?',
-        [upgraded, user.user_id, shelterId]
-      );
-    } else {
-      await pool.execute(
-        'UPDATE users SET last_login = NOW() WHERE user_id = ? AND shelter_id IS NOT DISTINCT FROM ?',
-        [user.user_id, shelterId]
-      );
-    }
-
-    let pushReset = false;
-    if (pushEndpoint) {
-      try {
-        const existing = await pushService.findByEndpoint(pushEndpoint);
-        if (existing && Number(existing.user_id) !== Number(user.user_id)) {
-          await pushService.removeByEndpoint(pushEndpoint);
-          pushReset = true;
-        }
-      } catch (pushError) {
-        console.warn('[Auth] pushEndpoint check failed:', pushError.message);
-      }
-    }
-
-    const body = respondSafeUser(user);
-    if (pushReset) body.pushReset = true;
-    return res.status(200).json(body);
+    return completeSignIn(req, res, user, { rememberMe, pushEndpoint, password });
   } catch (error) {
     console.error('[Auth] login error:', error.message);
     if (error.status === 404) return res.status(404).json({ error: 'Not found' });
@@ -513,7 +556,10 @@ async function resetPassword(req, res) {
   }
 }
 
+const verifyTwoFactor = twoFactor.makeVerify({ completeSignIn });
+
 module.exports = {
+  verifyTwoFactor,
   register,
   registerAdmin,
   login,
