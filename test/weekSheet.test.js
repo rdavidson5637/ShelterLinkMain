@@ -127,6 +127,15 @@ test('getForWeek groups opportunities by day and includes phones', async () => {
   assert.strictEqual(sheet.days[2].opportunities.length, 1);
   assert.strictEqual(sheet.days[2].opportunities[0].title, 'Wednesday clean');
   assert.strictEqual(sheet.days[1].opportunities.length, 0);
+  assert.ok(sheet.coverage, 'week sheet includes coverage summary');
+  assert.strictEqual(sheet.coverage.days.length, 7);
+  assert.strictEqual(sheet.coverage.days[0].filled, 1);
+  assert.strictEqual(sheet.coverage.days[0].open, 3);
+  assert.strictEqual(sheet.coverage.days[0].level, 'short');
+  assert.strictEqual(sheet.coverage.days[2].filled, 0);
+  assert.strictEqual(sheet.coverage.days[2].open, 2);
+  assert.strictEqual(sheet.coverage.days[2].level, 'empty');
+  assert.ok(sheet.coverage.roles.some((r) => r.title === 'Monday walks'));
 });
 
 test('getForWeek rejects non-Monday', async () => {

@@ -1,6 +1,7 @@
 'use strict';
 
 const { pool } = require('../config/database');
+const { buildWeekCoverage } = require('../utils/weekCoverage');
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -321,6 +322,7 @@ async function getForWeek(weekStart) {
     week_end: weekEnd,
     days,
     opportunities: range.opportunities,
+    coverage: buildWeekCoverage(days),
   };
 }
 

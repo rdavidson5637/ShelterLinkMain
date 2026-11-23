@@ -120,14 +120,92 @@ function renderShift(opp) {
   `;
 }
 
-function renderDay(day) {
+function coverageLabel(row) {
+  if (!row || row.level === 'none') return 'No shifts';
+  if (row.capped_shifts === 0) {
+    return `${row.filled} booked · no capacity set`;
+  }
+  return `${row.filled} filled · ${row.open} open of ${row.capacity}`;
+}
+
+function weekdayShort(dateIso) {
+  const d = new Date(`${dateIso}T12:00:00`);
+  return d.toLocaleDateString('en-GB', { weekday: 'short' });
+}
+
+function renderCoverageDayCell(day) {
+  const level = day.level || 'none';
+  return `<th scope="col" class="coverage-heat-cell is-${escapeHtml(level)}">
+    <span class="coverage-heat-day">${escapeHtml(weekdayShort(day.date))}</span>
+    <span class="coverage-heat-level">${escapeHtml(day.level_label || 'Coverage')}</span>
+    <span class="coverage-heat-counts">${escapeHtml(coverageLabel(day))}</span>
+  </th>`;
+}
+
+function renderCoverageRoleRow(role) {
+  return `<tr class="coverage-role-row is-${escapeHtml(role.level || 'none')}">
+    <th scope="row">${escapeHtml(role.title)}</th>
+    <td>${escapeHtml(role.level_label || '')}</td>
+    <td>${escapeHtml(coverageLabel(role))}</td>
+    <td>${Number(role.shift_count) || 0}</td>
+  </tr>`;
+}
+
+function renderCoverage(coverage) {
+  if (!coverage) return '';
+  const days = coverage.days || [];
+  const roles = coverage.roles || [];
+  const week = coverage.week || {};
+  const roleBody = roles.length
+    ? roles.map(renderCoverageRoleRow).join('')
+    : '<tr><td colspan="4">No shifts this week.</td></tr>';
+  return `
+    <section class="coverage-heat no-print" aria-labelledby="coverageHeatHeading">
+      <header class="coverage-heat-header">
+        <h2 id="coverageHeatHeading">Coverage this week</h2>
+        <p>
+          Open places against filled bookings from the rota.
+          ${escapeHtml(week.level_label || '')}: ${escapeHtml(coverageLabel(week))}.
+        </p>
+      </header>
+      <table class="coverage-heat-table">
+        <caption class="visually-hidden">Fill level for each day of the week</caption>
+        <thead>
+          <tr>${days.map(renderCoverageDayCell).join('')}</tr>
+        </thead>
+      </table>
+      <h3 class="coverage-roles-heading">By shift title</h3>
+      <p class="coverage-roles-lede">Shift titles are the roles on the rota. Sorted with the most open places first.</p>
+      <table class="coverage-roles-table">
+        <caption class="visually-hidden">Open slots by shift title</caption>
+        <thead>
+          <tr>
+            <th scope="col">Shift</th>
+            <th scope="col">Status</th>
+            <th scope="col">Places</th>
+            <th scope="col">Shifts</th>
+          </tr>
+        </thead>
+        <tbody>${roleBody}</tbody>
+      </table>
+    </section>
+  `;
+}
+
+function renderDay(day, dayCoverage) {
   const shifts = day.opportunities || [];
   const body = shifts.length
     ? shifts.map(renderShift).join('')
     : '<p>No shifts this day.</p>';
+  const coverNote = dayCoverage
+    ? `<p class="week-sheet-day-coverage">${escapeHtml(dayCoverage.level_label)} — ${escapeHtml(
+        coverageLabel(dayCoverage)
+      )}</p>`
+    : '';
   return `
     <section class="week-sheet-day">
       <h2>${escapeHtml(formatDayHeading(day.date))}</h2>
+      ${coverNote}
       ${body}
     </section>
   `;
@@ -152,11 +230,17 @@ async function loadSheet() {
     }
     const sheet = await res.json();
     const total = sheet.opportunities?.length || 0;
+    const coverageByDate = new Map(
+      (sheet.coverage?.days || []).map((d) => [d.date, d])
+    );
     contentEl.innerHTML = `
       <h2 class="no-print">Week of ${escapeHtml(sheet.week_start)} – ${escapeHtml(
         sheet.week_end
       )} (${total} shift${total === 1 ? '' : 's'})</h2>
-      ${(sheet.days || []).map(renderDay).join('')}
+      ${renderCoverage(sheet.coverage)}
+      ${(sheet.days || [])
+        .map((day) => renderDay(day, coverageByDate.get(day.date)))
+        .join('')}
     `;
   } catch (error) {
     console.error('[WeekSheet] load error:', error);
