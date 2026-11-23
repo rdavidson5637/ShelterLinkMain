@@ -23,6 +23,7 @@ const LIMITS = {
   invitePage: positiveInt('RATE_LIMIT_INVITE_PAGE', 60),
   inviteCheck: positiveInt('RATE_LIMIT_INVITE_CHECK', 30),
   inviteAccept: positiveInt('RATE_LIMIT_INVITE', 8),
+  shelterApply: positiveInt('RATE_LIMIT_SHELTER_APPLY', 5),
   message: positiveInt('RATE_LIMIT_MESSAGE', 10),
   groupBooking: positiveInt('RATE_LIMIT_GROUP_BOOKING', 8),
   groupBookingEmail: positiveInt('RATE_LIMIT_GROUP_BOOKING_EMAIL', 3),
@@ -153,6 +154,16 @@ const inviteAcceptLimiter = rateLimit({
   store: storeFor('rl:invite-accept:'),
 });
 
+// Public shelter applications. Real charities apply once; this keeps the
+// platform owner's queue free of floods.
+const shelterApplyLimiter = rateLimit({
+  windowMs: WINDOW_MS,
+  max: LIMITS.shelterApply,
+  message: 'Too many applications from this connection. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 const messageLimiter = rateLimit({
   windowMs: WINDOW_MS,
   max: LIMITS.message,
@@ -215,6 +226,7 @@ module.exports = {
   invitePageLimiter,
   inviteCheckLimiter,
   inviteAcceptLimiter,
+  shelterApplyLimiter,
   groupBookingLimiter,
   groupBookingEmailLimiter,
   messageLimiter,

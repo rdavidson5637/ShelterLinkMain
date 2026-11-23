@@ -39,6 +39,40 @@ ON CONFLICT (user_id) DO NOTHING;
 
 Sign in as that user and open `/platform/shelters`.
 
+## Where applications come from
+
+Charities apply at `/apply` (`POST /api/public/shelter-applications`). The
+form asks for the shelter name, a web address (slug), the regulator, the
+charity number, and a contact name and email.
+
+- Only `ccni` and `ccew` are accepted for now. Scottish and Irish charities
+  are told they cannot apply yet.
+- The charity number is checked against the register's format and
+  normalised (`nic 100123` becomes `NIC100123`). The register lookup
+  result is saved in `register_snapshot` for you to read. It never
+  approves anything, and an unavailable register does not block the
+  application.
+- A slug used by a shelter or a pending application, a reserved slug
+  (`admin`, `platform`, `invite`, `join`, `demo`, `test`, `pages`,
+  `healthz` and so on), a charity that already has a shelter, and a
+  charity with a pending application are all refused. Once
+  `database/040_shelter_applications_pending_unique.pg.sql` is applied
+  (not yet applied anywhere), partial unique indexes enforce the
+  pending-slug and pending-charity rules in the database too, so two
+  submissions at the same moment cannot both get in.
+- A form sent less than 3 seconds after the page loaded (or with no
+  start time, or after 12 hours) is refused with a "take a moment" or
+  "reload" message.
+- At most `SHELTER_APPLY_MAX_PENDING` (default 100) pending applications
+  in total, and `SHELTER_APPLY_MAX_PENDING_PER_EMAIL` (default 3) per
+  contact email. Past that, new applications are turned away (503 / 429)
+  until the queue is worked through.
+- A hidden honeypot field catches simple bots: they get the normal
+  "thanks" answer and nothing is stored. `RATE_LIMIT_SHELTER_APPLY`
+  (default 5 per window) limits each connection.
+- No email is sent when an application arrives. Check the queue at
+  `/platform/shelters`.
+
 ## 2. Invite emails and the accept page
 
 Approving an application creates the shelter and a 7-day, single-use admin
@@ -115,3 +149,39 @@ invites for the applicant's email, creates a new 7-day admin invite, writes an
 `invite.created` row to `platform_audit`, and prints the raw token once. Open
 `<APP_URL>/invite#<token>` to accept it. Do not paste tokens into tickets or
 chat.
+
+## 3. Suspending a shelter
+
+**Suspend** on `/platform/shelters` (`POST /api/platform/shelters/:id/suspend`)
+sets `shelters.status` to `suspended` and writes a `shelter.suspended` row to
+`platform_audit`, with the optional reason. Nothing is deleted. You cannot
+suspend the shelter your own account belongs to.
+
+From then on:
+
+| What | Behaviour |
+|---|---|
+| Signed-in staff and volunteers | Signed out on their next request: 403 `shelter_suspended`, session destroyed, cookie cleared |
+| Sign-in | The right password gets 403 `shelter_suspended` and no session. A wrong password still gets the usual 401, so it never reveals the status |
+| Forgot password | The usual generic 200, but no reset email is sent and no token is issued |
+| A platform owner whose own account is in the suspended shelter | Can still sign in and reset their password, and keeps `/platform` and `/api/platform/*` (plus `/api/auth/me` and logout). The shelter's own API answers 403 `shelter_suspended` without signing them out |
+| `/s/<slug>`, `/s/<slug>/opportunities`, `/s/<slug>/group-booking`, `/join/<slug>` | Normal 404 page |
+| `?shelter=<slug>` on public APIs (board, ICS feed, brand, group booking, sign-up) | 404. A suspended slug never falls back to Assisi, so an ICS subscriber or embedded board does not start showing another shelter's shifts |
+| Invite links (PR6) | Not valid, and accepting is refused |
+| Scheduled jobs | Reminders, digests, expiry notices and feedback requests skip the shelter. Data retention and expired-token cleanup keep running |
+
+Slug and status lookups are cached for 30 seconds per server instance. The
+instance that handles the suspend clears its cache at once; any other
+instance catches up within 30 seconds.
+
+An unknown slug on a public API is also a 404 now, the same as the page
+routes (`/s/<slug>`, `/join/<slug>`). Only a request with no slug at all
+falls back to the signed-in shelter, then Assisi.
+
+**Reactivate** on a suspended shelter (`POST
+/api/platform/shelters/:id/reactivate`) sets it back to `active`, writes a
+`shelter.reactivated` row with the optional reason, and clears this
+instance's cache. Its people can sign in again, its pages and feeds come
+back, and jobs pick it up on their next run. Sessions ended by the
+suspension stay ended, so people sign in again. Needs migration
+`039_platform_audit_reactivate.pg.sql` (`npm run migrate`).

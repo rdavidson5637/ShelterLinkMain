@@ -102,7 +102,7 @@ test('requestedShelterSlug reads :slug, then ?shelter=, then shelter_slug; ignor
   assert.equal(requestedShelterSlug({ query: { shelter: '   ' } }), null);
 });
 
-test('publicShelterId: no slug -> Assisi, known slug -> that shelter, unknown -> no shelter', async () => {
+test('publicShelterId: no slug -> Assisi, known slug -> that shelter, unknown -> null (404)', async () => {
   assert.equal(await publicShelterId({}), 1);
   assert.equal(await publicShelterId({ query: { shelter: 'second' } }), 2);
   assert.equal(await publicShelterId({ query: { shelter: 'nowhere' } }), null);
@@ -113,7 +113,7 @@ test('publicShelterId: a known slug wins over the session; no slug keeps the ses
   await runWithShelter(2, async () => {
     assert.equal(await publicShelterId({}), 2);
     assert.equal(await publicShelterId({ query: { shelter: 'assisi' } }), 1);
-    assert.equal(await publicShelterId({ query: { shelter: 'nowhere' } }), null);
+    assert.equal(await publicShelterId({ query: { shelter: 'nowhere' } }), null, 'an unknown slug never falls back to the session');
   });
 });
 
