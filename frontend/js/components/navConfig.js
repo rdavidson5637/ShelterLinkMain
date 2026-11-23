@@ -31,6 +31,7 @@ export const ADMIN_INSIGHT = [
   { id: 'reports', label: 'Reports', href: '/pages/admin/reports.html', adminOnly: true },
   { id: 'impact-report', label: 'Impact report', href: '/pages/admin/impact-report.html' },
   { id: 'feedback', label: 'Feedback', href: '/pages/admin/feedback.html' },
+  { id: 'staff-help', label: 'Staff help', href: '/pages/admin/help/index.html' },
   { id: 'staff-guide', label: 'Staff guide', href: '/pages/admin/staff-guide.html' },
   { id: 'team', label: 'Team invites', href: '/pages/admin/team.html', adminOnly: true },
   { id: 'security', label: 'Sign-in security', href: '/pages/admin/security.html' },
@@ -78,6 +79,9 @@ export function isCurrentPath(href, pathname = '') {
     return true;
   }
   if (file === 'my-hours.html' && (pathname.includes('log-hours.html') || pathname.includes('certificate.html'))) {
+    return true;
+  }
+  if (String(href).includes('/pages/admin/help/') && pathname.includes('/pages/admin/help/')) {
     return true;
   }
   return false;

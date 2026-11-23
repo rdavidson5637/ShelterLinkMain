@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Staff how-tos - ShelterLink</title>
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body class="staff-app">
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Account">
+        <a class="site-brand" href="/pages/admin/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" aria-label="Toggle navigation">Menu</button>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main id="main" class="container dashboard-layout">
+      <aside id="admin-nav" class="sidebar-nav"></aside>
+      <div class="dashboard-main">
+        <section class="page-lede">
+          <h1>Staff how-tos</h1>
+          <p>Short guides for the jobs you do most. Written the way we would explain it on the yard.</p>
+        </section>
+
+        <ul class="action-list">
+          <li>
+            <a href="/pages/admin/help/post-a-shift.html">
+              <span>
+                <strong>Post a shift</strong>
+                Publish an opportunity volunteers can apply for.
+              </span>
+              <span class="choice-arrow" aria-hidden="true">→</span>
+            </a>
+          </li>
+          <li>
+            <a href="/pages/admin/help/approve-bookings.html">
+              <span>
+                <strong>Approve bookings</strong>
+                Clear pending and waitlisted applications.
+              </span>
+              <span class="choice-arrow" aria-hidden="true">→</span>
+            </a>
+          </li>
+          <li>
+            <a href="/pages/admin/help/trusted-volunteers.html">
+              <span>
+                <strong>Trusted volunteers</strong>
+                Let known people book instantly when that mode is on.
+              </span>
+              <span class="choice-arrow" aria-hidden="true">→</span>
+            </a>
+          </li>
+          <li>
+            <a href="/pages/admin/help/training-modules.html">
+              <span>
+                <strong>Training modules</strong>
+                Pass marks that award qualifications for gated shifts.
+              </span>
+              <span class="choice-arrow" aria-hidden="true">→</span>
+            </a>
+          </li>
+          <li>
+            <a href="/pages/admin/help/qr-check-in-poster.html">
+              <span>
+                <strong>QR check-in poster</strong>
+                Print a poster so volunteers check in on their phone.
+              </span>
+              <span class="choice-arrow" aria-hidden="true">→</span>
+            </a>
+          </li>
+          <li>
+            <a href="/pages/admin/help/impact-report.html">
+              <span>
+                <strong>Impact report</strong>
+                Hours and animal care totals for funders.
+              </span>
+              <span class="choice-arrow" aria-hidden="true">→</span>
+            </a>
+          </li>
+          <li>
+            <a href="/pages/admin/help/mileage-claims.html">
+              <span>
+                <strong>Mileage claims</strong>
+                Approve volunteer travel miles.
+              </span>
+              <span class="choice-arrow" aria-hidden="true">→</span>
+            </a>
+          </li>
+          <li>
+            <a href="/pages/admin/help/two-factor.html">
+              <span>
+                <strong>Two-factor sign-in</strong>
+                Protect staff accounts that see vetting data.
+              </span>
+              <span class="choice-arrow" aria-hidden="true">→</span>
+            </a>
+          </li>
+        </ul>
+
+        <p class="staff-help-related">
+          <a href="/pages/admin/staff-guide.html">Morning staff guide</a>
+        </p>
+      </div>
+    </main>
+
+    <footer class="container site-footer">
+      <small>&copy; <span data-footer-year></span> ShelterLink</small>
+    </footer>
+
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/admin/staff-help.js"></script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+    <script type="module" src="/js/components/adminNav.js"></script>
+  </body>
+</html>

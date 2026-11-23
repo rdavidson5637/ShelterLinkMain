@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>How to print a QR check-in poster - ShelterLink</title>
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body class="staff-app">
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Account">
+        <a class="site-brand" href="/pages/admin/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" aria-label="Toggle navigation">Menu</button>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main id="main" class="container dashboard-layout">
+      <aside id="admin-nav" class="sidebar-nav"></aside>
+      <div class="dashboard-main">
+        <article class="staff-help">
+          <p class="staff-help-back"><a href="/pages/admin/help/index.html">All staff how-tos</a></p>
+          <section class="page-lede">
+            <h1>How to print a QR check-in poster</h1>
+            <p>Put a poster where people arrive so they check in on their own phone. The tablet kiosk still works.</p>
+          </section>
+          <ol class="staff-help-steps">
+          <li>
+            <strong>Find the shift on Shifts</strong>
+            <p>Open the opportunity you need a poster for.</p>
+          </li>
+          <li>
+            <strong>Open the check-in poster</strong>
+            <p>Use the Check-in poster link on that shift. It opens a page with the QR code and a backup code.</p>
+          </li>
+          <li>
+            <strong>Print it</strong>
+            <p>Tap Print poster and put the sheet at reception or the yard gate.</p>
+          </li>
+          <li>
+            <strong>Tell volunteers what to do</strong>
+            <p>They scan with their phone camera, sign in if asked, then tap Check in. Scan again before leaving and tap Check out.</p>
+          </li>
+          <li>
+            <strong>No camera?</strong>
+            <p>The poster also shows a short code they can enter from My applications.</p>
+          </li>
+          </ol>
+          <p class="staff-help-open"><a href="/pages/admin/opportunities.html">Open shifts</a></p>
+        </article>
+      </div>
+    </main>
+
+    <footer class="container site-footer">
+      <small>&copy; <span data-footer-year></span> ShelterLink</small>
+    </footer>
+
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/admin/staff-help.js"></script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+    <script type="module" src="/js/components/adminNav.js"></script>
+  </body>
+</html>

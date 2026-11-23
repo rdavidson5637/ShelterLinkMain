@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>How to set up training modules - ShelterLink</title>
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body class="staff-app">
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Account">
+        <a class="site-brand" href="/pages/admin/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" aria-label="Toggle navigation">Menu</button>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main id="main" class="container dashboard-layout">
+      <aside id="admin-nav" class="sidebar-nav"></aside>
+      <div class="dashboard-main">
+        <article class="staff-help">
+          <p class="staff-help-back"><a href="/pages/admin/help/index.html">All staff how-tos</a></p>
+          <section class="page-lede">
+            <h1>How to set up training modules</h1>
+            <p>Short modules with a pass mark. Passing can award a qualification that already gates shifts.</p>
+          </section>
+          <ol class="staff-help-steps">
+          <li>
+            <strong>Admins only</strong>
+            <p>Training modules sit under Manage for admin accounts.</p>
+          </li>
+          <li>
+            <strong>Add a module</strong>
+            <p>Name it clearly (for example Dog walking level 1). Add a short description volunteers will see.</p>
+          </li>
+          <li>
+            <strong>Set the pass mark and content</strong>
+            <p>Write the questions or material and the score they need to pass.</p>
+          </li>
+          <li>
+            <strong>Link a qualification</strong>
+            <p>When someone passes, award a qualification you already use to gate shifts. Create the qualification first if it does not exist yet.</p>
+          </li>
+          <li>
+            <strong>Publish</strong>
+            <p>Save the module. Volunteers see it under Training. Shifts that require that qualification stay blocked until they pass.</p>
+          </li>
+          </ol>
+          <p class="staff-help-open"><a href="/pages/admin/training.html">Open training modules</a></p>
+        </article>
+      </div>
+    </main>
+
+    <footer class="container site-footer">
+      <small>&copy; <span data-footer-year></span> ShelterLink</small>
+    </footer>
+
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/admin/staff-help.js"></script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+    <script type="module" src="/js/components/adminNav.js"></script>
+  </body>
+</html>
