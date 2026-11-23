@@ -199,6 +199,18 @@ async function seed(admin) {
     INSERT INTO applications (
       application_id, user_id, opportunity_id, status, notes, shelter_id
     ) VALUES (1, 2, 1, 'accepted', 'MarkerA', 1);
+    -- A past shelter A shift with a no-show, so attendance counts are non-zero
+    -- for shelter A and must stay invisible to shelter B (SL-LATER-34).
+    INSERT INTO opportunities (
+      opportunity_id, title, description, location, start_date, end_date, max_volunteers,
+      status, created_by, check_in_code, shelter_id
+    ) VALUES (
+      2, 'MarkerA past shift', 'MarkerA', 'Yard', NOW() - INTERVAL '30 days',
+      NOW() - INTERVAL '30 days' + INTERVAL '2 hours', 4, 'closed', 1, 'ABC124', 1
+    );
+    INSERT INTO applications (
+      application_id, user_id, opportunity_id, status, no_show, notes, shelter_id
+    ) VALUES (2, 2, 2, 'accepted', 1, 'MarkerA', 1);
     INSERT INTO shift_feedback (id, application_id, rating, comment, shelter_id)
       VALUES (1, 1, 3, 'MarkerA', 1);
     INSERT INTO swap_requests (id, application_id, status, claim_token, waitlist_offered_to_user_id, shelter_id)
@@ -508,6 +520,7 @@ function cases(feedbackToken) {
     deny('PUT', '/api/hours/1/approve'),
     deny('POST', '/api/hours', { opportunityId: 1, date: '2020-01-01', hours: 1 }),
     deny('GET', '/api/admin/volunteers/2'),
+    deny('GET', '/api/admin/volunteers/2/reliability'),
     deny('GET', '/api/admin/volunteers/2/hours-statement?startDate=2026-01-01&endDate=2026-12-31'),
     deny('PUT', '/api/admin/volunteers/2/approval', { approved: false }),
     deny('PUT', '/api/admin/volunteers/2/foster-approval', { foster_approved: false }),
@@ -705,6 +718,31 @@ async function main() {
           failures.push(`stats leaked other shelter counts ${response.text}`);
         }
       }
+    }
+
+    // SL-LATER-34: shelter B sees only its own attendance counts.
+    const bList = await request(port, 'GET', '/api/admin/volunteers', { cookie });
+    if (bList.status === 200) {
+      const rows = JSON.parse(bList.text);
+      if (rows.some((r) => Number(r.user_id) === 2)) failures.push('volunteer list showed shelter A volunteer');
+      if (rows.some((r) => Number(r.no_shows_12m) !== 0 || Number(r.attended_12m) !== 0)) {
+        failures.push(`volunteer list leaked attendance counts ${bList.text.slice(0, 180)}`);
+      }
+    }
+    const bOwn = await request(port, 'GET', '/api/admin/volunteers/4/reliability', { cookie });
+    if (bOwn.status !== 200 || Number(JSON.parse(bOwn.text || '{}').no_shows) !== 0) {
+      failures.push(`own reliability -> ${bOwn.status} ${bOwn.text.slice(0, 180)}`);
+    }
+    // Shelter A's own staff do see the A no-show: the query works on Postgres.
+    const aLogin = await request(port, 'POST', '/api/auth/login', {
+      json: { email: 'a.admin@example.test', password: 'Password1' },
+    });
+    const aCookie = sessionCookie(aLogin.setCookie);
+    const aOwn = aCookie
+      ? await request(port, 'GET', '/api/admin/volunteers/2/reliability', { cookie: aCookie })
+      : { status: aLogin.status, text: aLogin.text };
+    if (aOwn.status !== 200 || Number(JSON.parse(aOwn.text || '{}').no_shows) !== 1) {
+      failures.push(`shelter A reliability -> ${aOwn.status} ${String(aOwn.text).slice(0, 180)}`);
     }
 
     const photo = Buffer.concat([

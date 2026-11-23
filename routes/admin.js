@@ -3,7 +3,13 @@ const { isAuthenticated, requireRole, requireStaff } = require('../middleware/au
 const { auditMutations } = require('../middleware/auditLog');
 const { messageLimiter } = require('../middleware/rateLimiter');
 const { getAdminStats, getLeaderboard, getMonthlyHoursChart } = require('../controllers/statsController');
-const { getAllVolunteers, updateVolunteerApproval, getVolunteerProfile, updateVolunteerServiceSettings } = require('../controllers/profileController');
+const {
+  getAllVolunteers,
+  updateVolunteerApproval,
+  getVolunteerProfile,
+  getVolunteerReliability,
+  updateVolunteerServiceSettings,
+} = require('../controllers/profileController');
 const { updateFosterApproval } = require('../controllers/fosterController');
 const {
   previewRecipients,
@@ -126,6 +132,7 @@ router.post('/volunteers/import/preview', isAuthenticated, adminOnly, readCsvBod
 router.post('/volunteers/import', isAuthenticated, adminOnly, readCsvBody, runImport);
 router.post('/volunteers/invites', isAuthenticated, staffOrAdmin, messageLimiter, validateBody(bodies.volunteerInvites), sendInvites);
 router.get('/volunteers/:userId', isAuthenticated, staffOrAdmin, getVolunteerProfile);
+router.get('/volunteers/:userId/reliability', isAuthenticated, staffOrAdmin, getVolunteerReliability);
 router.get(
   '/volunteers/:userId/hours-statement',
   isAuthenticated,

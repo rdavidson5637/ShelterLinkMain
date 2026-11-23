@@ -4,6 +4,7 @@ import { createStatusBadge } from '../components/statusBadge.js';
 import { createOverflowMenu, createIdentityCell } from '../components/overflowMenu.js';
 import { escapeHtml } from '../utils/escapeHtml.js';
 import { showConfirm } from '../components/confirmDialog.js';
+import { sortVolunteers, reliabilitySectionHtml } from './reliability.js';
 
 const logoutButton = document.getElementById('logoutButton');
 const searchInput = document.getElementById('searchInput');
@@ -85,6 +86,35 @@ async function sendInvites(ids) {
   }
 }
 
+let sortKey = 'name';
+let sortDir = 'ascending';
+
+const volunteersTableHead = document.getElementById('volunteersTableHead');
+
+function updateSortHeaders() {
+  if (!volunteersTableHead) return;
+  volunteersTableHead.querySelectorAll('th[data-sort-key]').forEach((th) => {
+    th.setAttribute('aria-sort', th.dataset.sortKey === sortKey ? sortDir : 'none');
+  });
+}
+
+function handleSortClick(event) {
+  const button = event.target.closest('.sort-button');
+  if (!button) return;
+  const th = button.closest('th[data-sort-key]');
+  if (!th) return;
+  const key = th.dataset.sortKey;
+  if (key === sortKey) {
+    sortDir = sortDir === 'ascending' ? 'descending' : 'ascending';
+  } else {
+    sortKey = key;
+    // Counts are most useful largest first; names read A to Z.
+    sortDir = key === 'name' ? 'ascending' : 'descending';
+  }
+  updateSortHeaders();
+  filterVolunteers();
+}
+
 function setMessage(text, tone = 'neutral') {
   if (!messageEl) return;
   if (!text) {
@@ -122,6 +152,7 @@ function filterVolunteers() {
 
     return matchesSearch && matchesStatus;
   });
+  filteredVolunteers = sortVolunteers(filteredVolunteers, sortKey, sortDir);
 
   renderTable();
 }
@@ -206,7 +237,7 @@ function renderTable() {
   const cardList = volunteersCardList;
 
   if (!filteredVolunteers.length) {
-    volunteersTableBody.innerHTML = '<tr><td colspan="7">No volunteers found</td></tr>';
+    volunteersTableBody.innerHTML = '<tr><td colspan="9">No volunteers found</td></tr>';
     if (cardList) cardList.innerHTML = '<p>No volunteers found</p>';
     return;
   }
@@ -217,8 +248,10 @@ function renderTable() {
   filteredVolunteers.forEach((volunteer) => {
     const fullName = `${volunteer.first_name || ''} ${volunteer.last_name || ''}`.trim() || 'N/A';
     const isApproved = volunteer.approved === true || volunteer.approved === 1;
-    const hours = formatNumber(volunteer.total_hours || 0);
-    const noShows = String(volunteer.no_show_count || 0);
+    const attended = String(volunteer.attended_12m || 0);
+    const noShows = String(volunteer.no_shows_12m || 0);
+    const lateCancellations = String(volunteer.late_cancellations_12m || 0);
+    const hours = formatNumber(volunteer.hours_12m || 0);
 
     const tr = document.createElement('tr');
     const selectTd = document.createElement('td');
@@ -255,18 +288,17 @@ function renderTable() {
       statusTd.appendChild(away);
     }
 
-    const hoursTd = document.createElement('td');
-    hoursTd.className = 'numeric-cell';
-    hoursTd.textContent = hours;
-
-    const noShowTd = document.createElement('td');
-    noShowTd.className = 'numeric-cell';
-    noShowTd.textContent = noShows;
+    const countCells = [attended, noShows, lateCancellations, hours].map((value) => {
+      const td = document.createElement('td');
+      td.className = 'numeric-cell';
+      td.textContent = value;
+      return td;
+    });
 
     const actionsTd = document.createElement('td');
     actionsTd.appendChild(volunteerActions(volunteer, isApproved));
 
-    tr.append(phoneTd, statusTd, hoursTd, noShowTd, actionsTd);
+    tr.append(phoneTd, statusTd, ...countCells, actionsTd);
     volunteersTableBody.appendChild(tr);
 
     if (cardList) {
@@ -278,7 +310,7 @@ function renderTable() {
       email.textContent = volunteer.email || '';
       const meta = document.createElement('p');
       meta.className = 'person-card-meta';
-      meta.textContent = `${hours} hours · ${noShows} no-shows${canInvite(volunteer) ? ` · ${INVITE_LABELS[volunteer.invite_status]}` : ''}`;
+      meta.textContent = `Last 12 months: ${attended} attended · ${noShows} no-shows · ${lateCancellations} late cancellations · ${hours} hours${canInvite(volunteer) ? ` · ${INVITE_LABELS[volunteer.invite_status]}` : ''}`;
       const status = createStatusBadge(isApproved ? 'approved' : 'pending');
       card.append(name, email, status, meta, volunteerActions(volunteer, isApproved));
       cardList.appendChild(card);
@@ -461,6 +493,16 @@ async function viewProfile(userId) {
 
     const profile = await res.json();
 
+    let reliabilityHtml = '<p>Unable to load attendance.</p>';
+    try {
+      const relRes = await apiRequest(`/admin/volunteers/${userId}/reliability`, { method: 'GET' });
+      if (relRes.ok) {
+        reliabilityHtml = reliabilitySectionHtml(await relRes.json());
+      }
+    } catch {
+      reliabilityHtml = '<p>Unable to load attendance.</p>';
+    }
+
     let qualsHtml = '<p>No qualifications awarded.</p>';
     try {
       const qualsRes = await apiRequest(`/admin/volunteers/${userId}/qualifications`, { method: 'GET' });
@@ -638,6 +680,10 @@ async function viewProfile(userId) {
               ? ` · target ${profile.required_hours} hours`
               : ''
           }
+        </div>
+        <div>
+          <strong>Attendance, last 12 months</strong>
+          ${reliabilityHtml}
         </div>
         <div>
           <strong>Hours statement:</strong>
@@ -1037,7 +1083,7 @@ async function loadVolunteers({ keepMessage = false } = {}) {
   try {
     const res = await apiRequest('/admin/volunteers', { method: 'GET' });
     if (!res.ok) {
-      volunteersTableBody.innerHTML = '<tr><td colspan="7">Failed to load volunteers</td></tr>';
+      volunteersTableBody.innerHTML = '<tr><td colspan="9">Failed to load volunteers</td></tr>';
       setMessage('Failed to load volunteers', 'error');
       return;
     }
@@ -1051,7 +1097,7 @@ async function loadVolunteers({ keepMessage = false } = {}) {
     if (!keepMessage) setMessage('');
   } catch (error) {
     console.error('[Volunteers] loadVolunteers error:', error);
-    volunteersTableBody.innerHTML = '<tr><td colspan="7">Error loading volunteers</td></tr>';
+    volunteersTableBody.innerHTML = '<tr><td colspan="9">Error loading volunteers</td></tr>';
     setMessage('Error loading volunteers', 'error');
   }
 }
@@ -1066,6 +1112,7 @@ function attachEventListeners() {
   }
 
   sendInvitesButton?.addEventListener('click', () => sendInvites([...selectedForInvite]));
+  volunteersTableHead?.addEventListener('click', handleSortClick);
 
   const exportNewsletterAudienceButton = document.getElementById('exportNewsletterAudienceButton');
   if (exportNewsletterAudienceButton) {

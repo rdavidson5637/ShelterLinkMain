@@ -3,6 +3,7 @@ const VolunteerHours = require('../models/VolunteerHours');
 const CustomField = require('../models/CustomField');
 const Tag = require('../models/Tag');
 const { calculateBadges } = require('../models/Badge');
+const Reliability = require('../models/Reliability');
 const { pool } = require('../config/database');
 const { sendVolunteerApprovalNotification } = require('../utils/emailService');
 const { isStaffOrAdmin, isAdminUser } = require('../middleware/auth');
@@ -237,8 +238,21 @@ async function getAllVolunteers(req, res) {
       ORDER BY u.first_name, u.last_name
     `;
 
-    const [rows] = await pool.execute(sql);
-    const withId = rows.map((row) => ({ ...row, id: row.user_id }));
+    const [[rows], reliability] = await Promise.all([
+      pool.execute(sql),
+      Reliability.countsByUser(),
+    ]);
+    const withId = rows.map((row) => {
+      const counts = reliability.byUser.get(Number(row.user_id)) || Reliability.emptyCounts();
+      return {
+        ...row,
+        id: row.user_id,
+        attended_12m: counts.attended,
+        no_shows_12m: counts.no_shows,
+        late_cancellations_12m: counts.late_cancellations,
+        hours_12m: counts.hours,
+      };
+    });
     try {
       await recordAudit(req, {
         action: 'volunteer.list.view',
@@ -341,6 +355,30 @@ async function getVolunteerProfile(req, res) {
   }
 }
 
+// Staff-only attendance summary for one volunteer (SL-LATER-34). The user
+// lookup runs under row-level security, so another shelter's volunteer is a 404.
+async function getVolunteerReliability(req, res) {
+  try {
+    if (!ensureAuthenticated(req, res)) return;
+    if (!isStaffOrAdmin(req)) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    const userId = Number(req.params.userId);
+    const [users] = await pool.execute(
+      "SELECT user_id FROM users WHERE user_id = ? AND role = 'volunteer' LIMIT 1",
+      [userId]
+    );
+    if (!users.length) {
+      return res.status(404).json({ error: 'Volunteer not found' });
+    }
+    const summary = await Reliability.forVolunteer(userId);
+    return res.status(200).json(summary);
+  } catch (error) {
+    console.error('[Profile] getVolunteerReliability error:', error.message);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
 async function getBadges(req, res) {
   try {
     if (!ensureAuthenticated(req, res)) return;
@@ -394,6 +432,7 @@ module.exports = {
   getAllVolunteers,
   updateVolunteerApproval,
   getVolunteerProfile,
+  getVolunteerReliability,
   getBadges,
   updateVolunteerServiceSettings,
 };
