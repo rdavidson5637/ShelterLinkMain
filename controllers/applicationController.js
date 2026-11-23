@@ -22,6 +22,7 @@ const {
   sendApplicationRejection,
   sendWaitlistPromotion,
   sendBookingConfirmed,
+  sendNoShowFollowUp,
 } = require('../utils/emailService');
 const waitlistOffers = require('../utils/waitlistOffers');
 const { isStaffOrAdmin } = require('../middleware/auth');
@@ -557,6 +558,93 @@ async function markApplicationNoShow(req, res) {
   }
 }
 
+/**
+ * Staff queue of recent no-shows for this shelter. No scores or labels.
+ */
+async function listNoShows(req, res) {
+  try {
+    if (!ensureAuthenticated(req, res)) return;
+    if (!isAdmin(req)) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const contactedRaw = String(req.query.contacted || 'open').toLowerCase();
+    const contacted = ['open', 'contacted', 'all'].includes(contactedRaw) ? contactedRaw : 'open';
+    const days = req.query.days != null ? Number(req.query.days) : 90;
+    const limit = req.query.limit != null ? Number(req.query.limit) : 100;
+
+    const items = await Application.listRecentNoShows({ days, contacted, limit });
+    return res.status(200).json({ items, contacted, days });
+  } catch (error) {
+    console.error('[Application] listNoShows error:', error.message);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+/**
+ * Mark a no-show as contacted. Optionally send a follow-up email when staff
+ * explicitly sets send_email. Never auto-sends. Email only (no SMS).
+ */
+async function markNoShowContacted(req, res) {
+  try {
+    if (!ensureAuthenticated(req, res)) return;
+    if (!isAdmin(req)) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const { id } = req.params;
+    const application = await Application.findById(id);
+    if (!application) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+    if (!Number(application.no_show)) {
+      return res.status(400).json({ error: 'Application is not marked as a no-show' });
+    }
+
+    const rawSend = req.body?.send_email;
+    const sendEmailFlag =
+      rawSend === true ||
+      rawSend === 1 ||
+      rawSend === '1' ||
+      String(rawSend || '').toLowerCase() === 'true';
+    const message = req.body?.message != null ? String(req.body.message).trim().slice(0, 2000) : '';
+
+    let emailSent = false;
+    if (sendEmailFlag) {
+      const to = application.email;
+      if (!to) {
+        return res.status(400).json({ error: 'Volunteer has no email address' });
+      }
+      try {
+        await sendNoShowFollowUp(to, {
+          volunteerName: application.name,
+          opportunityTitle: application.opportunity_title,
+          shiftDate: application.opportunity_start_date,
+          message: message || undefined,
+        });
+        emailSent = true;
+      } catch (emailError) {
+        console.error('[Application] no-show follow-up email error:', emailError.message);
+        return res.status(502).json({ error: 'Failed to send follow-up email' });
+      }
+    }
+
+    const updated = await Application.markNoShowContacted(id, {
+      contactedBy: req.session.userId,
+      followupSent: emailSent,
+    });
+    if (!updated) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+
+    return res.status(200).json({ application: updated, email_sent: emailSent });
+  } catch (error) {
+    console.error('[Application] markNoShowContacted error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
 function isWithinCheckInWindow(opportunityStart, now = new Date()) {
   const start = new Date(opportunityStart);
   if (Number.isNaN(start.getTime())) return false;
@@ -677,6 +765,8 @@ module.exports = {
   fillFromWaitlist,
   claimWaitlistOffer,
   markApplicationNoShow,
+  listNoShows,
+  markNoShowContacted,
   checkInApplication,
   checkOutApplication,
   isWithinCheckInWindow,

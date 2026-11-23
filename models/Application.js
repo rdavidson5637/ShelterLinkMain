@@ -150,6 +150,9 @@ async function findAll(filters = {}) {
           a.notes,
           a.reminder_sent_at,
           a.no_show,
+          a.no_show_contacted_at,
+          a.no_show_contacted_by,
+          a.no_show_followup_sent_at,
           u.first_name,
           u.last_name,
           u.name,
@@ -289,6 +292,9 @@ async function findById(applicationId) {
         a.rejection_reason,
         a.reminder_sent_at,
         a.no_show,
+        a.no_show_contacted_at,
+        a.no_show_contacted_by,
+        a.no_show_followup_sent_at,
         a.checked_in_at,
         a.checked_out_at,
         u.name,
@@ -552,6 +558,92 @@ async function markNoShow(applicationId, noShow = true) {
   return findById(applicationId);
 }
 
+/**
+ * Recent no-shows for the staff follow-up queue.
+ * contacted: 'open' (default) | 'contacted' | 'all'
+ * days: how far back by opportunity start date (default 90, max 365)
+ */
+async function listRecentNoShows({ days = 90, contacted = 'open', limit = 100 } = {}) {
+  const dayCount = Number.isFinite(Number(days)) ? Math.min(Math.max(Number(days), 1), 365) : 90;
+  const rowLimit = Number.isInteger(limit) && limit > 0 ? Math.min(limit, 200) : 100;
+  const where = ['COALESCE(a.no_show, 0) = 1', 'o.start_date >= (CURRENT_TIMESTAMP - (? * INTERVAL \'1 day\'))'];
+  const params = [dayCount];
+
+  if (contacted === 'open') {
+    where.push('a.no_show_contacted_at IS NULL');
+  } else if (contacted === 'contacted') {
+    where.push('a.no_show_contacted_at IS NOT NULL');
+  }
+
+  params.push(rowLimit);
+
+  const sql = `
+    SELECT
+      a.application_id,
+      a.user_id,
+      a.opportunity_id,
+      a.status,
+      a.applied_at,
+      a.no_show,
+      a.no_show_contacted_at,
+      a.no_show_contacted_by,
+      a.no_show_followup_sent_at,
+      u.first_name,
+      u.last_name,
+      u.name,
+      u.email,
+      o.title AS opportunity_title,
+      o.location AS opportunity_location,
+      o.start_date AS opportunity_start_date,
+      o.end_date AS opportunity_end_date
+    FROM ${TABLE} a
+    LEFT JOIN users u ON u.user_id = a.user_id
+    LEFT JOIN opportunities o ON o.opportunity_id = a.opportunity_id
+    WHERE ${where.join(' AND ')}
+    ORDER BY o.start_date DESC, a.application_id DESC
+    LIMIT ?
+  `;
+  const [rows] = await pool.execute(sql, params);
+  return rows.map((row) => {
+    row.id = row.application_id;
+    row.created_at = row.applied_at;
+    const first = row.first_name || '';
+    const last = row.last_name || '';
+    const combined = `${first} ${last}`.trim();
+    row.volunteer_name = combined || row.name || null;
+    return row;
+  });
+}
+
+/**
+ * Mark a no-show as contacted by staff. Optionally record that a follow-up
+ * email was sent on this same action. Idempotent for contacted_at.
+ */
+async function markNoShowContacted(applicationId, { contactedBy = null, followupSent = false, when = new Date() } = {}) {
+  const whenSql = when.toISOString().slice(0, 19).replace('T', ' ');
+  const sql = `
+    UPDATE ${TABLE}
+    SET
+      no_show_contacted_at = COALESCE(no_show_contacted_at, ?),
+      no_show_contacted_by = COALESCE(no_show_contacted_by, ?),
+      no_show_followup_sent_at = CASE
+        WHEN ? = 1 THEN COALESCE(no_show_followup_sent_at, ?)
+        ELSE no_show_followup_sent_at
+      END
+    WHERE application_id = ?
+      AND COALESCE(no_show, 0) = 1
+  `;
+  const [result] = await pool.execute(sql, [
+    whenSql,
+    contactedBy,
+    followupSent ? 1 : 0,
+    whenSql,
+    applicationId,
+  ]);
+  if (!result.affectedRows) return null;
+  return findById(applicationId);
+}
+
 async function countNoShowsByUserId(userId) {
   const sql = `
     SELECT COUNT(*) AS cnt
@@ -611,6 +703,8 @@ module.exports = {
   findAcceptedNeedingReminder,
   markReminderSent,
   markNoShow,
+  listRecentNoShows,
+  markNoShowContacted,
   countNoShowsByUserId,
   setCheckIn,
   setCheckOut,

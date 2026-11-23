@@ -664,6 +664,19 @@ const volunteerBuddy = z
     message: 'Choose a buddy from the volunteer list.',
   });
 
+const volunteerStaffNote = z
+  .object({
+    body: str(4000).optional(),
+    note: str(4000).optional(),
+  })
+  .strict()
+  .refine((body) => {
+    const text = String(body.body ?? body.note ?? '').trim();
+    return text.length > 0;
+  }, {
+    message: 'Write a note before saving.',
+  });
+
 const shelterResourceLink = z
   .object({
     title: optStr(200),
@@ -795,6 +808,13 @@ const queries = {
     })
     .strict(),
   applications: z.object({ status: qstr(40), limit: qstr(10) }).strict(),
+  noShows: z
+    .object({
+      contacted: z.enum(['open', 'contacted', 'all']).optional(),
+      days: qstr(10),
+      limit: qstr(10),
+    })
+    .strict(),
   animals: z.object({ species: qstr(40), status: qstr(40) }).strict(),
   careGaps: z.object({ days: z.string().regex(/^\d{1,2}$/).optional() }).strict(),
   expiryDashboard: z
@@ -865,6 +885,18 @@ const queries = {
       all: qstr(10),
     })
     .strict(),
+  shelterAnnouncements: z
+    .object({
+      all: qstr(10),
+      archived: qstr(10),
+    })
+    .strict(),
+  shelterWishlist: z
+    .object({
+      all: qstr(10),
+      archived: qstr(10),
+    })
+    .strict(),
 };
 
 const weekCopy = z
@@ -874,10 +906,20 @@ const weekCopy = z
   })
   .strict();
 
+const noShowContacted = z
+  .object({
+    send_email: z
+      .union([z.boolean(), z.number().int().min(0).max(1), z.string().regex(/^(true|false|0|1)$/i)])
+      .optional(),
+    message: optStr(2000),
+  })
+  .strict();
+
 const bodies = {
   empty,
   changePassword,
   weekCopy,
+  noShowContacted,
   register,
   privacyNotice,
   registerAdmin,
@@ -947,6 +989,7 @@ const bodies = {
   inductionItem,
   inductionProgress,
   volunteerBuddy,
+  volunteerStaffNote,
   expiryReminder: z
     .object({
       kind: z.enum(['background_check', 'document', 'qualification']),
@@ -994,6 +1037,80 @@ const bodies = {
   shelterResourceLink,
   shelterResourceFileMeta,
   shelterResourceUpdate,
+  // SL-DAY-17: short dated shelter notices for volunteers.
+  shelterAnnouncementCreate: z
+    .object({
+      title: optStr(160),
+      body: optStr(2000),
+      message: optStr(2000),
+      posted_on: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .nullable(),
+      postedOn: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .nullable(),
+      expires_on: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .nullable(),
+      expiresOn: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .nullable(),
+    })
+    .strict(),
+  shelterAnnouncementUpdate: z
+    .object({
+      title: optStr(160),
+      body: optStr(2000),
+      message: optStr(2000),
+      posted_on: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .nullable(),
+      postedOn: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .nullable(),
+      expires_on: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .nullable(),
+      expiresOn: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .nullable(),
+    })
+    .strict(),
+  // SL-DAY-18: public supplies wishlist items (name, quantity, priority, note).
+  shelterWishlistCreate: z
+    .object({
+      name: optStr(160),
+      quantity: z.union([z.number().int().min(1).max(9999), z.string().regex(/^[1-9]\d{0,3}$/)]),
+      priority: z.enum(['high', 'medium', 'low']).optional(),
+      note: optStr(500),
+    })
+    .strict(),
+  shelterWishlistUpdate: z
+    .object({
+      name: optStr(160),
+      quantity: z
+        .union([z.number().int().min(1).max(9999), z.string().regex(/^[1-9]\d{0,3}$/)])
+        .optional(),
+      priority: z.enum(['high', 'medium', 'low']).optional(),
+      note: optStr(500),
+    })
+    .strict(),
   reorderFields,
   template,
   templateFromForm,
