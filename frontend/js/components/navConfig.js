@@ -26,6 +26,7 @@ export const ADMIN_MANAGE = [
 
 export const ADMIN_INSIGHT = [
   { id: 'reports', label: 'Reports', href: '/pages/admin/reports.html', adminOnly: true },
+  { id: 'impact-report', label: 'Impact report', href: '/pages/admin/impact-report.html' },
   { id: 'feedback', label: 'Feedback', href: '/pages/admin/feedback.html' },
   { id: 'staff-guide', label: 'Staff guide', href: '/pages/admin/staff-guide.html' },
   { id: 'audit', label: 'Audit log', href: '/pages/admin/audit-log.html', adminOnly: true },
