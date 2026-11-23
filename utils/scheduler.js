@@ -4,11 +4,22 @@
  * Minimal in-process job scheduler.
  * Uses a 60s tick + a small cron matcher (no native deps).
  * Jobs never crash the process — errors are logged and recorded.
+ *
+ * Across replicas, claimJobRun(job_name, minuteKey) inserts a unique
+ * job_runs.run_key so only one instance executes each cron minute.
  */
+
+const { claimJobRun } = require('./jobLog');
 
 const jobs = new Map();
 let started = false;
 let tickTimer = null;
+let claimFn = claimJobRun;
+
+/** Test hook: replace the DB claim (or restore with null). */
+function setClaimFnForTests(fn) {
+  claimFn = typeof fn === 'function' ? fn : claimJobRun;
+}
 
 function matchesField(field, value) {
   if (field === '*') return true;
@@ -140,6 +151,8 @@ async function tick(now = new Date()) {
       if (!matchesCron(job.cronExpression, now)) continue;
       if (job.lastRunMinuteKey === minuteKey) continue;
       job.lastRunMinuteKey = minuteKey;
+      const claimed = await claimFn(job.name, minuteKey);
+      if (!claimed) continue;
       await runJob(job);
     } catch (error) {
       console.error(`[Scheduler] unexpected error in job "${job.name}":`, error.message);
@@ -183,6 +196,7 @@ function listJobs() {
 function resetForTests() {
   stop();
   jobs.clear();
+  claimFn = claimJobRun;
 }
 
 module.exports = {
@@ -195,4 +209,5 @@ module.exports = {
   runJob,
   tick,
   resetForTests,
+  setClaimFnForTests,
 };

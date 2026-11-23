@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
-const { LIMITS, WINDOW_MS } = require('../middleware/rateLimiter');
+const { LIMITS, WINDOW_MS, useSharedStore } = require('../middleware/rateLimiter');
 
 test('rate limiters match live production budgets', () => {
   assert.strictEqual(WINDOW_MS, 15 * 60 * 1000);
@@ -20,4 +20,17 @@ test('rate limiters match live production budgets', () => {
   assert.strictEqual(LIMITS.groupBookingEmail, 3);
   const groupRoute = fs.readFileSync(path.join(__dirname, '../routes/groupBookings.js'), 'utf8');
   assert.match(groupRoute, /groupBookingEmailLimiter/);
+});
+
+test('non-production defaults to the in-process rate limit store', () => {
+  assert.notStrictEqual(process.env.NODE_ENV, 'production');
+  assert.strictEqual(useSharedStore(), false);
+});
+
+test('rate limiter wires a Postgres store for production', () => {
+  const source = fs.readFileSync(path.join(__dirname, '../middleware/rateLimiter.js'), 'utf8');
+  assert.match(source, /createPgRateLimitStore/);
+  assert.match(source, /storeFor\('rl:login:'\)/);
+  assert.match(source, /NODE_ENV === 'production'/);
+  assert.match(source, /RATE_LIMIT_STORE/);
 });

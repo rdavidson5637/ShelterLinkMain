@@ -63,3 +63,38 @@ test('matchesCron uses SHELTER_TIMEZONE when it is set', () => {
     else process.env.SHELTER_TIMEZONE = previous;
   }
 });
+
+test('tick skips a job when another replica already claimed the minute', async () => {
+  scheduler.resetForTests();
+  const ran = [];
+  const claims = [];
+  scheduler.setClaimFnForTests(async (name, key) => {
+    claims.push({ name, key });
+    return false;
+  });
+  scheduler.registerJob('dedupe-skip', '* * * * *', async () => {
+    ran.push('ran');
+    return 'ok';
+  });
+  await scheduler.tick(new Date(2026, 10, 23, 3, 14, 5));
+  assert.deepStrictEqual(ran, []);
+  assert.equal(claims.length, 1);
+  assert.equal(claims[0].name, 'dedupe-skip');
+  scheduler.resetForTests();
+});
+
+test('tick runs a job after a successful claim', async () => {
+  scheduler.resetForTests();
+  const ran = [];
+  scheduler.setClaimFnForTests(async () => true);
+  scheduler.registerJob('dedupe-run', '* * * * *', async () => {
+    ran.push('ran');
+    return 'ok';
+  });
+  await scheduler.tick(new Date(2026, 10, 23, 3, 15, 5));
+  assert.deepStrictEqual(ran, ['ran']);
+  // Same minute must not claim or run again in-process.
+  await scheduler.tick(new Date(2026, 10, 23, 3, 15, 40));
+  assert.deepStrictEqual(ran, ['ran']);
+  scheduler.resetForTests();
+});

@@ -99,6 +99,7 @@ async function run() {
     await applySql(pgPool, loadSql('041_under_18_guardian_consent.pg.sql'));
     await applySql(pgPool, loadSql('043_training_modules.pg.sql'));
     await applySql(pgPool, loadSql('044_booking_policy.pg.sql'));
+    await applySql(pgPool, loadSql('046_rate_limit_job_dedupe.pg.sql'));
     console.log('  ✓ Shelter tenancy applied.');
 
     if (withSeed) {

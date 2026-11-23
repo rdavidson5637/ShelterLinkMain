@@ -28,6 +28,7 @@ test('mentionsTenantTable detects every tenant-scoped table and ignores global t
   assert.equal(mentionsTenantTable('SELECT 1 AS ok'), false);
   assert.equal(mentionsTenantTable('SELECT * FROM session WHERE sid = $1'), false);
   assert.equal(mentionsTenantTable('INSERT INTO job_runs (job_name, status) VALUES ($1, $2)'), false);
+  assert.equal(mentionsTenantTable('INSERT INTO rate_limit_hits (key, hits, reset_at) VALUES ($1, 1, NOW())'), false);
   assert.equal(mentionsTenantTable('SELECT filename FROM schema_migrations'), false);
 });
 
