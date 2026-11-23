@@ -15,9 +15,9 @@
     <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
     <link rel="stylesheet" href="/public/css/custom.css" />
   </head>
-  <body>
+  <body class="staff-app">
     <a class="skip-link" href="#main">Skip to main content</a>
-        <header class="site-header">
+    <header class="site-header">
       <nav class="site-nav container" aria-label="Account">
         <a class="site-brand" href="/pages/admin/dashboard.html">
           <span class="brand-mark" aria-hidden="true"></span>
@@ -31,12 +31,12 @@
     <main id="main" class="container dashboard-layout">
       <aside id="admin-nav" class="sidebar-nav"></aside>
       <div class="dashboard-main">
-      <section>
-        <h1>Review Applications</h1>
-        <p>Approve or reject volunteer applications.</p>
+      <section class="page-lede">
+        <h1>Review applications</h1>
+        <p>Approve or reject volunteer applications waiting on staff.</p>
       </section>
 
-      <section id="bookingPolicy" class="booking-policy" aria-labelledby="booking-policy-title">
+      <section id="bookingPolicy" class="booking-policy staff-panel" aria-labelledby="booking-policy-title">
         <h2 id="booking-policy-title">How bookings are confirmed</h2>
         <p id="bookingModeSummary"></p>
         <fieldset>
@@ -62,21 +62,20 @@
       </section>
 
       <section>
-        <label for="statusFilter" style="max-width: 240px;">
-          Filter by status
-          <select id="statusFilter" name="status">
-            <option value="pending" selected>Pending</option>
-            <option value="waitlisted">Waitlisted</option>
-            <option value="accepted">Accepted</option>
-            <option value="rejected">Rejected</option>
-            <option value="all">All</option>
-          </select>
-        </label>
-      </section>
-
-      <section>
+        <div class="staff-toolbar">
+          <label for="statusFilter">
+            Filter by status
+            <select id="statusFilter" name="status">
+              <option value="pending" selected>Pending</option>
+              <option value="waitlisted">Waitlisted</option>
+              <option value="accepted">Accepted</option>
+              <option value="rejected">Rejected</option>
+              <option value="all">All</option>
+            </select>
+          </label>
+        </div>
         <div id="message" role="status" aria-live="polite"></div>
-        <div class="table-wrapper directory-table">
+        <div class="table-wrapper staff-dense directory-table">
           <table>
             <caption>Volunteer applications</caption>
             <thead>
@@ -100,9 +99,9 @@
     <dialog id="notesModal" aria-labelledby="reject-modal-title">
       <article>
         <header>
-          <strong id="reject-modal-title">Add Notes for Rejection</strong>
+          <strong id="reject-modal-title">Add notes for rejection</strong>
         </header>
-        <p>Please provide optional notes for the volunteer.</p>
+        <p>Optional notes for the volunteer.</p>
         <label for="rejectNotes">
           Notes
           <textarea id="rejectNotes" rows="3" placeholder="Reason for rejection (optional)"></textarea>

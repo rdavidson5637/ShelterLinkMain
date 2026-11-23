@@ -57,3 +57,71 @@ test('public opportunities page uses a shift list surface', () => {
   const html = fs.readFileSync(path.join(ROOT, 'frontend/pages/opportunities.html'), 'utf8');
   assert.match(html, /id="opportunitiesList"[^>]*class="[^"]*shift-list/);
 });
+
+// SL-LATER-12: staff / admin surfaces share the redesign tokens and stay table-first
+
+const STAFF_PAGES = [
+  'frontend/pages/admin/dashboard.html',
+  'frontend/pages/admin/opportunities.html',
+  'frontend/pages/admin/review-applications.html',
+  'frontend/pages/admin/volunteers.html',
+  'frontend/pages/admin/animals.html',
+  'frontend/pages/admin/reports.html',
+  'frontend/pages/admin/privacy.html',
+];
+
+test('staff admin pages load custom.css only (no extra skin over Pico)', () => {
+  for (const rel of STAFF_PAGES) {
+    const html = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+    assert.match(html, /href="\/public\/css\/custom\.css"/, rel);
+    assert.doesNotMatch(html, /design-pro|admin-skin|staff-theme\.css/, rel);
+    assert.match(html, /class="[^"]*staff-app/, rel);
+  }
+});
+
+test('admin dashboard is metric-strip + tables, not a card grid of stats', () => {
+  const html = fs.readFileSync(
+    path.join(ROOT, 'frontend/pages/admin/dashboard.html'),
+    'utf8'
+  );
+  assert.match(html, /class="metric-strip"/);
+  assert.match(html, /id="statsGrid"/);
+  assert.match(html, /id="recentApplicationsTable"/);
+  assert.match(html, /class="action-list"/);
+  assert.doesNotMatch(html, /renderStatCards|class="stats-grid"/);
+  assert.match(html, /<h1>Admin dashboard<\/h1>/);
+});
+
+test('staff list pages keep a table-first layout with page ledes', () => {
+  for (const rel of [
+    'frontend/pages/admin/opportunities.html',
+    'frontend/pages/admin/review-applications.html',
+    'frontend/pages/admin/volunteers.html',
+    'frontend/pages/admin/animals.html',
+  ]) {
+    const html = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+    assert.match(html, /class="[^"]*page-lede/, rel);
+    assert.match(html, /class="[^"]*table-wrapper[^"]*staff-dense/, rel);
+    assert.match(html, /<table>/, rel);
+  }
+});
+
+test('reports and privacy settings use ruled export rows, not card grids', () => {
+  for (const rel of [
+    'frontend/pages/admin/reports.html',
+    'frontend/pages/admin/privacy.html',
+  ]) {
+    const html = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+    assert.match(html, /class="export-list"/, rel);
+    assert.match(html, /class="[^"]*page-lede/, rel);
+    assert.doesNotMatch(html, /stats-grid|three-up|feature-grid/, rel);
+  }
+});
+
+test('custom.css defines staff metric strip and dense table helpers', () => {
+  const css = fs.readFileSync(CSS, 'utf8');
+  assert.match(css, /\.metric-strip\s*\{/);
+  assert.match(css, /\.staff-dense/);
+  assert.match(css, /\.export-list\s*\{/);
+  assert.doesNotMatch(css, /linear-gradient\([^)]*purple|radial-gradient\(/i);
+});

@@ -14,24 +14,10 @@
     <title>Shifts - ShelterLink</title>
     <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
     <link rel="stylesheet" href="/public/css/custom.css" />
-    <style>
-      .opportunity-actions {
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-      }
-
-      .repeat-indicator {
-        display: inline-block;
-        margin-left: 0.25rem;
-        color: var(--text-secondary);
-        font-size: var(--text-sm);
-      }
-    </style>
   </head>
-  <body>
+  <body class="staff-app">
     <a class="skip-link" href="#main">Skip to main content</a>
-        <header class="site-header">
+    <header class="site-header">
       <nav class="site-nav container" aria-label="Account">
         <a class="site-brand" href="/pages/admin/dashboard.html">
           <span class="brand-mark" aria-hidden="true"></span>
@@ -45,50 +31,48 @@
     <main id="main" class="container dashboard-layout">
       <aside id="admin-nav" class="sidebar-nav"></aside>
       <div class="dashboard-main">
-      <section class="page-toolbar">
+      <section class="page-lede page-toolbar">
         <div>
           <h1>Shifts</h1>
-          <p>Review active and closed opportunities. Edit details or close openings directly from this page.</p>
+          <p>Review active and closed opportunities. Edit details or close openings from this list.</p>
         </div>
         <a href="/pages/admin/create-opportunity.html" role="button">Create opportunity</a>
       </section>
 
       <section>
-        <article>
-          <div>
-            <label for="statusFilter">
-              Status Filter
-              <select id="statusFilter" name="statusFilter">
-                <option value="">All statuses</option>
-                <option value="open">Open</option>
-                <option value="closed">Closed</option>
-              </select>
-            </label>
-          </div>
-          <div id="message" role="status" aria-live="polite"></div>
-          <div class="table-wrapper">
-            <table>
+        <div class="staff-toolbar">
+          <label for="statusFilter">
+            Status filter
+            <select id="statusFilter" name="statusFilter">
+              <option value="">All statuses</option>
+              <option value="open">Open</option>
+              <option value="closed">Closed</option>
+            </select>
+          </label>
+        </div>
+        <div id="message" role="status" aria-live="polite"></div>
+        <div class="table-wrapper staff-dense directory-table">
+          <table>
             <caption>Shifts</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Title</th>
-                  <th scope="col">Location</th>
-                  <th scope="col">Dates</th>
-                  <th scope="col">Status</th>
-                  <th scope="col">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="opportunitiesTableBody">
-                <tr><td colspan="5">Loading opportunities...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </article>
+            <thead>
+              <tr>
+                <th scope="col">Title</th>
+                <th scope="col">Location</th>
+                <th scope="col">Dates</th>
+                <th scope="col">Status</th>
+                <th scope="col">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="opportunitiesTableBody">
+              <tr><td colspan="5">Loading opportunities...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section>
-        <article style="max-width: 760px; margin-inline: auto;">
-          <h2>Edit Opportunity</h2>
+        <div class="form-panel">
+          <h2>Edit opportunity</h2>
           <p>Select an opportunity from the list to edit it.</p>
           <form id="editOpportunityForm">
             <input type="hidden" id="opportunity_id" name="opportunity_id" />
@@ -113,31 +97,31 @@
               </div>
               <div class="form-section">
                 <label for="start_date">
-                  Start Date
+                  Start date
                   <input type="date" id="start_date" name="start_date" required />
                 </label>
               </div>
               <div class="form-section">
                 <label for="start_time">
-                  Start Time
+                  Start time
                   <input type="time" id="start_time" name="start_time" required />
                 </label>
               </div>
               <div class="form-section">
                 <label for="end_date">
-                  End Date
+                  End date
                   <input type="date" id="end_date" name="end_date" required />
                 </label>
               </div>
               <div class="form-section">
                 <label for="end_time">
-                  End Time
+                  End time
                   <input type="time" id="end_time" name="end_time" required />
                 </label>
               </div>
               <div class="form-section">
                 <label for="max_volunteers">
-                  Max Volunteers
+                  Max volunteers
                   <input type="number" id="max_volunteers" name="max_volunteers" min="1" />
                 </label>
               </div>
@@ -190,11 +174,11 @@
               </div>
             </div>
             <div class="opportunity-actions">
-              <button type="submit" id="saveButton" disabled>Save Changes</button>
+              <button type="submit" id="saveButton" disabled>Save changes</button>
               <button type="button" id="cancelEditButton" class="secondary button-secondary">Cancel</button>
             </div>
           </form>
-        </article>
+        </div>
       </section>
       </div>
     </main>

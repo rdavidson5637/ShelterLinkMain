@@ -15,9 +15,9 @@
     <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
     <link rel="stylesheet" href="/public/css/custom.css" />
   </head>
-  <body>
+  <body class="staff-app">
     <a class="skip-link" href="#main">Skip to main content</a>
-        <header class="site-header">
+    <header class="site-header">
       <nav class="site-nav container" aria-label="Account">
         <a class="site-brand" href="/pages/admin/dashboard.html">
           <span class="brand-mark" aria-hidden="true"></span>
@@ -31,73 +31,68 @@
     <main id="main" class="container dashboard-layout">
       <aside id="admin-nav" class="sidebar-nav"></aside>
       <div class="dashboard-main">
-      <section>
-        <h1>Reports & Exports</h1>
+      <section class="page-lede">
+        <h1>Reports and exports</h1>
         <p>Download CSV reports for volunteers and hours with optional filters.</p>
       </section>
 
-      <section>
-        <article>
-          <header>
-            <h3>Volunteer Exports</h3>
-          </header>
-          <p>Download a full list of volunteers with profile details and total hours.</p>
-          <button id="exportAllVolunteersButton">Export All Volunteers</button>
-        </article>
-      </section>
-
-      <section>
-        <article>
-          <header>
-            <h3>Community service report</h3>
-          </header>
-          <p>
-            Export community-service volunteers with target hours, approved hours, and completion date
-            (suitable for probation or school paperwork).
-          </p>
-          <button id="exportCommunityServiceButton" class="secondary">Export Community Service CSV</button>
-        </article>
-      </section>
-
-      <section>
-        <article>
-          <header>
-            <h3>Hours Exports</h3>
-          </header>
-          <form id="hoursExportForm">
-            <div class="form-grid">
-              <div class="form-section"><label for="reportUserId">
-                Volunteer User ID (optional)
-                <input type="number" id="reportUserId" name="reportUserId" min="1" />
-              </label></div>
-              <div class="form-section"><label for="reportStartDate">
-                Start Date (optional)
-                <input type="date" id="reportStartDate" name="reportStartDate" />
-              </label></div>
-              <div class="form-section"><label for="reportEndDate">
-                End Date (optional)
-                <input type="date" id="reportEndDate" name="reportEndDate" />
-              </label></div>
-            </div>
-            <div class="form-full-width" style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-              <button type="submit">Export Hours</button>
-              <button type="button" id="clearReportFiltersButton" class="secondary button-secondary">Clear Filters</button>
-            </div>
-          </form>
-        </article>
-      </section>
+      <ul class="export-list">
+        <li>
+          <div>
+            <h2>Volunteer exports</h2>
+            <p>Full list of volunteers with profile details and total hours.</p>
+          </div>
+          <div class="export-actions">
+            <button id="exportAllVolunteersButton" type="button">Export all volunteers</button>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h2>Community service report</h2>
+            <p>Target hours, approved hours, and completion date for probation or school paperwork.</p>
+          </div>
+          <div class="export-actions">
+            <button id="exportCommunityServiceButton" type="button" class="secondary">Export community service CSV</button>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h2>Hours exports</h2>
+            <form id="hoursExportForm">
+              <div class="form-grid">
+                <div class="form-section"><label for="reportUserId">
+                  Volunteer user id (optional)
+                  <input type="number" id="reportUserId" name="reportUserId" min="1" />
+                </label></div>
+                <div class="form-section"><label for="reportStartDate">
+                  Start date (optional)
+                  <input type="date" id="reportStartDate" name="reportStartDate" />
+                </label></div>
+                <div class="form-section"><label for="reportEndDate">
+                  End date (optional)
+                  <input type="date" id="reportEndDate" name="reportEndDate" />
+                </label></div>
+              </div>
+              <div class="export-actions">
+                <button type="submit">Export hours</button>
+                <button type="button" id="clearReportFiltersButton" class="secondary button-secondary">Clear filters</button>
+              </div>
+            </form>
+          </div>
+        </li>
+      </ul>
 
       <section>
         <h2>Impact this year</h2>
-        <div class="grid">
-          <article>
-            <header><h3>Leaderboard</h3></header>
+        <div class="impact-split">
+          <section>
+            <h3>Leaderboard</h3>
             <div id="leaderboard"></div>
-          </article>
-          <article>
-            <header><h3>Hours by month</h3></header>
+          </section>
+          <section>
+            <h3>Hours by month</h3>
             <div id="monthlyChart"></div>
-          </article>
+          </section>
         </div>
       </section>
       </div>
@@ -110,7 +105,7 @@
     <script type="module" src="/js/utils/errorHandler.js"></script>
     <script type="module" src="/js/utils/sessionManager.js"></script>
     <script type="module" src="/js/admin/reports.js"></script>
-      <script type="module" src="/js/utils/footerYear.js"></script>
-      <script type="module" src="/js/components/adminNav.js"></script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+    <script type="module" src="/js/components/adminNav.js"></script>
   </body>
 </html>
