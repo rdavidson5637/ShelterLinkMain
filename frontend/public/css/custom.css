@@ -1951,3 +1951,15 @@ small,
 .privacy-notice-actions button {
   min-height: 2.75rem;
 }
+
+/* Booking approval policy panel (SL-NOW-03) */
+.booking-policy fieldset small {
+  display: block;
+  margin: -0.25rem 0 0.75rem 1.75rem;
+  color: var(--pico-muted-color);
+}
+.booking-policy #trustedList li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}

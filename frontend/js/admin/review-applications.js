@@ -3,6 +3,8 @@ import { requireAuth, checkAuth, logout, isStaffOrAdminRole, applyRoleVisibility
 import { formatDateOnly } from '../utils/dateFormat.js';
 import { createStatusBadge } from '../components/statusBadge.js';
 import { createOverflowMenu, createIdentityCell } from '../components/overflowMenu.js';
+import { isAdminRole } from '../utils/roles.js';
+import { initBookingPolicy, isTrustedUser, canManageTrust, setTrusted } from './booking-policy.js';
 
 const statusFilter = document.getElementById('statusFilter');
 const messageEl = document.getElementById('message');
@@ -76,6 +78,13 @@ function buildApplicationActions(app, isAccepted, isPast) {
   actions.appendChild(approveBtn);
 
   const menuItems = [{ label: 'Reject', destructive: true, onSelect: () => openModal(app.id) }];
+  if (canManageTrust() && app.user_id != null) {
+    const trusted = isTrustedUser(app.user_id);
+    menuItems.unshift({
+      label: trusted ? 'Remove trusted status' : 'Trust to book instantly',
+      onSelect: () => setTrusted(app.user_id, !trusted),
+    });
+  }
   if (isAccepted && isPast && !Number(app.no_show)) {
     menuItems.unshift({ label: 'Mark no-show', onSelect: () => markNoShow(app.id) });
   }
@@ -296,8 +305,9 @@ async function enforceAdmin() {
 async function init() {
   tableBody = document.getElementById('applicationsTableBody');
   await requireAuth();
-  await enforceAdmin();
+  const user = await enforceAdmin();
   attachEventListeners();
+  await initBookingPolicy({ isAdmin: isAdminRole(user), onChange: renderRows });
   await fetchApplications();
 }
 
