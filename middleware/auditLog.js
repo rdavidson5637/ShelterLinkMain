@@ -88,6 +88,11 @@ function inferFromRequest(req) {
     else if (method === 'POST') action = 'announcement.create';
     else if (method === 'PUT' || method === 'PATCH') action = 'announcement.update';
   }
+  else if (resource === 'wishlist') {
+    if (segments.includes('archive') && method === 'POST') action = 'wishlist.archive';
+    else if (method === 'POST') action = 'wishlist.create';
+    else if (method === 'PUT' || method === 'PATCH') action = 'wishlist.update';
+  }
 
   const entityType =
     resource === 'admin' && segments[1] === 'volunteers'

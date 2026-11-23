@@ -871,6 +871,12 @@ const queries = {
       archived: qstr(10),
     })
     .strict(),
+  shelterWishlist: z
+    .object({
+      all: qstr(10),
+      archived: qstr(10),
+    })
+    .strict(),
 };
 
 const weekCopy = z
@@ -1053,6 +1059,25 @@ const bodies = {
         .regex(/^\d{4}-\d{2}-\d{2}$/)
         .optional()
         .nullable(),
+    })
+    .strict(),
+  // SL-DAY-18: public supplies wishlist items (name, quantity, priority, note).
+  shelterWishlistCreate: z
+    .object({
+      name: optStr(160),
+      quantity: z.union([z.number().int().min(1).max(9999), z.string().regex(/^[1-9]\d{0,3}$/)]),
+      priority: z.enum(['high', 'medium', 'low']).optional(),
+      note: optStr(500),
+    })
+    .strict(),
+  shelterWishlistUpdate: z
+    .object({
+      name: optStr(160),
+      quantity: z
+        .union([z.number().int().min(1).max(9999), z.string().regex(/^[1-9]\d{0,3}$/)])
+        .optional(),
+      priority: z.enum(['high', 'medium', 'low']).optional(),
+      note: optStr(500),
     })
     .strict(),
   reorderFields,

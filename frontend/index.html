@@ -117,6 +117,13 @@
           </li>
         </ul>
       </section>
+
+      <section id="publicWishlistSection" class="public-wishlist" hidden>
+        <h2>Supplies needed</h2>
+        <p>Items this shelter has asked for. Drop them off with staff when you visit; there is no online payment here.</p>
+        <p id="publicWishlistUpdatedOn" class="wishlist-updated" hidden></p>
+        <ul id="publicWishlistList" class="wishlist-home-list"></ul>
+      </section>
     </main>
 
     <footer class="site-footer">
@@ -128,6 +135,7 @@
 
     <script type="module" src="/js/components/publicNav.js"></script>
     <script type="module" src="/js/redirectIfAuthed.js"></script>
+    <script type="module" src="/js/public/wishlist.js"></script>
     <script type="module" src="/js/utils/footerYear.js"></script>
   </body>
 </html>
