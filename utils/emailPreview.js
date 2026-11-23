@@ -20,6 +20,7 @@ const {
   buildBuddyAssigned,
   buildExpiryReminder,
   buildUsualAvailabilityAsk,
+  buildShelterAnnouncement,
 } = require('./emailService');
 
 const APP_BASE = () => String(process.env.APP_URL || 'https://shelterlink.online').replace(/\/$/, '');
@@ -91,6 +92,13 @@ function sampleData(shelterNamePlain) {
       whenLabel: 'Sat 28 Nov, 09:00 - 12:00',
       location: shelterNamePlain ? `${shelterNamePlain} yard` : 'Shelter yard',
       matchLabel: 'Saturday morning',
+    },
+    shelterAnnouncement: {
+      firstName: 'Alex',
+      title: 'Yard closed Saturday morning',
+      body: 'We are resurfacing the walk yard. Please use the indoor enrichment room for Saturday morning shifts.',
+      postedOn: '2026-11-23',
+      expiresOn: '2026-11-30',
     },
   };
 }
@@ -182,6 +190,14 @@ const CATALOG = [
     description: 'Optional staff email when a short-staffed shift matches a volunteer usual days.',
     build(brand, samples) {
       return buildUsualAvailabilityAsk(samples.usualAvailability, brand);
+    },
+  },
+  {
+    id: 'shelter_announcement',
+    label: 'Shelter announcement',
+    description: 'Optional staff email of a dated shelter notice to active volunteers only.',
+    build(brand, samples) {
+      return buildShelterAnnouncement(samples.shelterAnnouncement, brand);
     },
   },
 ];

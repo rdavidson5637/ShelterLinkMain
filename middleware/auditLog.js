@@ -82,6 +82,12 @@ function inferFromRequest(req) {
   ) {
     action = 'usual_availability.email';
   }
+  else if (resource === 'announcements') {
+    if (segments.includes('email') && method === 'POST') action = 'announcement.email';
+    else if (segments.includes('archive') && method === 'POST') action = 'announcement.archive';
+    else if (method === 'POST') action = 'announcement.create';
+    else if (method === 'PUT' || method === 'PATCH') action = 'announcement.update';
+  }
 
   const entityType =
     resource === 'admin' && segments[1] === 'volunteers'

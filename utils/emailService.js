@@ -906,6 +906,38 @@ async function sendUsualAvailabilityAsk(volunteerEmail, details = {}) {
   return sendEmail(volunteerEmail, parts.subject, parts.html, parts.text);
 }
 
+/**
+ * Staff-triggered shelter announcement email (SL-DAY-17).
+ * Sent only on an explicit click to active volunteers. Email only; no SMS.
+ */
+function buildShelterAnnouncement(details = {}, brand) {
+  const name = escapeHtml(details.firstName || 'there');
+  const title = escapeHtml(details.title || 'Shelter notice');
+  const body = escapeHtml(String(details.body || ''))
+    .replace(/\n/g, '<br/>');
+  const posted = details.postedOn ? escapeHtml(String(details.postedOn).slice(0, 10)) : '';
+  const expires = details.expiresOn ? escapeHtml(String(details.expiresOn).slice(0, 10)) : '';
+  return withText(
+    `${details.title || 'Shelter notice'} - ShelterLink`,
+    `
+    <p>Hi ${name},</p>
+    <p>A notice from ${brand.name || 'your shelter'}:</p>
+    <p><strong>${title}</strong></p>
+    <p>${body}</p>
+    ${posted ? `<p>Posted: ${posted}</p>` : ''}
+    ${expires ? `<p>Expires: ${expires}</p>` : ''}
+    <p>You can also read current notices on your ShelterLink home page.</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
+    `
+  );
+}
+
+async function sendShelterAnnouncement(volunteerEmail, details = {}) {
+  const brand = await brandBits();
+  const parts = buildShelterAnnouncement(details, brand);
+  return sendEmail(volunteerEmail, parts.subject, parts.html, parts.text);
+}
+
 module.exports = {
   currentShelterName,
   brandBits,
@@ -960,4 +992,6 @@ module.exports = {
   sendExpiryReminder,
   buildUsualAvailabilityAsk,
   sendUsualAvailabilityAsk,
+  buildShelterAnnouncement,
+  sendShelterAnnouncement,
 };

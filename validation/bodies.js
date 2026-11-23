@@ -865,6 +865,12 @@ const queries = {
       all: qstr(10),
     })
     .strict(),
+  shelterAnnouncements: z
+    .object({
+      all: qstr(10),
+      archived: qstr(10),
+    })
+    .strict(),
 };
 
 const weekCopy = z
@@ -994,6 +1000,61 @@ const bodies = {
   shelterResourceLink,
   shelterResourceFileMeta,
   shelterResourceUpdate,
+  // SL-DAY-17: short dated shelter notices for volunteers.
+  shelterAnnouncementCreate: z
+    .object({
+      title: optStr(160),
+      body: optStr(2000),
+      message: optStr(2000),
+      posted_on: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .nullable(),
+      postedOn: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .nullable(),
+      expires_on: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .nullable(),
+      expiresOn: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .nullable(),
+    })
+    .strict(),
+  shelterAnnouncementUpdate: z
+    .object({
+      title: optStr(160),
+      body: optStr(2000),
+      message: optStr(2000),
+      posted_on: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .nullable(),
+      postedOn: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .nullable(),
+      expires_on: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .nullable(),
+      expiresOn: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .nullable(),
+    })
+    .strict(),
   reorderFields,
   template,
   templateFromForm,
