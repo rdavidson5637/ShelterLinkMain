@@ -203,7 +203,8 @@ test('a correct code finishes sign-in with the staff cookie rules', async () => 
   assert.equal(res.body.role, 'admin');
   assert.equal(req.session.userId, 7);
   assert.equal(req.session.pendingTwoFactor, undefined);
-  assert.equal(req.session.cookie.maxAge, 8 * 60 * 60 * 1000);
+  // Staff/admin stay at 1 hour even with remember-me (volunteers only get 30 days).
+  assert.equal(req.session.cookie.maxAge, 60 * 60 * 1000);
   for (const key of ['totp_secret', 'totp_enabled_at', 'totp_last_counter', 'totp_recovery_codes', 'password']) {
     assert.equal(key in res.body, false, key);
   }
