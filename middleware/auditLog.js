@@ -65,6 +65,9 @@ function inferFromRequest(req) {
     if (method === 'PUT') action = 'volunteer.buddy.assign';
     else if (method === 'DELETE') action = 'volunteer.buddy.clear';
   }
+  else if (resource === 'admin' && segments[1] === 'expiry-dashboard' && segments.includes('remind')) {
+    action = 'expiry.reminder.email';
+  }
 
   const entityType =
     resource === 'admin' && segments[1] === 'volunteers'

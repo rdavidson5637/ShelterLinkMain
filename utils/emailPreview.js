@@ -18,6 +18,7 @@ const {
   buildPasswordReset,
   buildMilestoneThankYou,
   buildBuddyAssigned,
+  buildExpiryReminder,
 } = require('./emailService');
 
 const APP_BASE = () => String(process.env.APP_URL || 'https://shelterlink.online').replace(/\/$/, '');
@@ -75,6 +76,13 @@ function sampleData(shelterNamePlain) {
     buddy: {
       buddyFirstName: 'Sam',
       volunteerName: 'Alex',
+    },
+    expiryReminder: {
+      firstName: 'Alex',
+      itemLabel: 'AccessNI Basic',
+      kind: 'background_check',
+      expiresOn: '2026-12-15',
+      message: '',
     },
   };
 }
@@ -150,6 +158,14 @@ const CATALOG = [
     description: 'Optional staff-sent notice when a volunteer is asked to buddy someone new.',
     build(brand, samples) {
       return buildBuddyAssigned(samples.buddy, brand);
+    },
+  },
+  {
+    id: 'expiry_reminder',
+    label: 'Document expiry reminder',
+    description: 'Optional staff-sent reminder when a check, document, or qualification expires soon.',
+    build(brand, samples) {
+      return buildExpiryReminder(samples.expiryReminder, brand);
     },
   },
 ];
