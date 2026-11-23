@@ -31,6 +31,7 @@ router.post('/login', loginAccountLimiter, loginLimiter, validateBody(bodies.log
 router.post('/logout', validateBody(bodies.empty), authController.logout);
 router.post('/logout-all', isAuthenticated, validateBody(bodies.empty), authController.logoutAll);
 router.get('/me', isAuthenticated, authController.getCurrentUser);
+router.get('/memberships', isAuthenticated, authController.listMyMemberships);
 router.post(
   '/privacy-notice',
   isAuthenticated,

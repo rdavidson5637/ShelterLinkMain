@@ -16,11 +16,9 @@ Postgres row level security policy `tenant_isolation` applies to role `shelterli
 
 ## Users
 
-Today one `users` row has one `role` and one `shelter_id`. A person cannot volunteer at two shelters without a second account.
+Today one `users` row has one `role` and one `shelter_id`. Auth and `bindShelter` still read those columns.
 
-Recommendation: keep one user row per person, and add a membership table later (`user_id`, `shelter_id`, `role`). Leave the current `users.role` and `users.shelter_id` in place until the code reads membership instead. That does not block two shelters later, and it does not force a second login system now.
-
-Trade-off: until membership exists, a person who helps at two sanctuaries needs two accounts. Building membership now, before a second shelter is using the app, adds a migration and a role lookup on every request for no current user.
+`memberships` (`user_id`, `shelter_id`, `role`) is in place (migration `048_memberships.pg.sql`). Each existing user with a shelter is backfilled. A trigger keeps the primary membership aligned when `users.role` or `users.shelter_id` changes. A second sanctuary is another membership row on the same user, not a second login. Do not switch request auth to membership until a later task; leave `users.role` and `users.shelter_id` as the live source until then.
 
 ## Roles
 
