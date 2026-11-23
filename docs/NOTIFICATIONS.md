@@ -18,6 +18,7 @@ Shift reminders and urgent-cover broadcasts go through `utils/notify/index.js`.
 
 - `notifyShiftReminder(app, details)`: skips when reminders are off or quiet hours are active; otherwise emails when configured, then pushes in the `reminders` category. The job marks the reminder sent only if email or push went out. If email is configured and the volunteer has no address, the reminder counts as failed.
 - `notifyUrgentCover({ recipients, opportunity, subject, whenLabel })`: emails every active recipient (a failure on one address does not stop the rest), then sends one push batch in the `urgent` category. Preference and quiet-hours skips are counted separately.
+- `notifyWaitlistSeatOffer(recipient, details)` (SL-LATER-23): when a seat frees, the first eligible waitlisted volunteer gets a time-limited claim link by email and push. Quiet hours delay the send (claim clock starts on notify). No preference gate. The `waitlistOffers` job expires unclaimed offers and cascades to the next eligible person; `job_runs` dedupes notify and expire.
 
 ## Replica-safe dedupe
 

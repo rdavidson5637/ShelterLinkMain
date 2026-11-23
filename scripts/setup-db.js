@@ -108,6 +108,7 @@ async function run() {
     await applySql(pgPool, loadSql('051_quiet_hours.pg.sql'));
     await applySql(pgPool, loadSql('052_setup_checklist_dismiss.pg.sql'));
     await applySql(pgPool, loadSql('053_shelter_retention.pg.sql'));
+    await applySql(pgPool, loadSql('054_waitlist_offers.pg.sql'));
     console.log('  ✓ Shelter tenancy applied.');
 
     console.log('→ Applying shelter application indexes...');

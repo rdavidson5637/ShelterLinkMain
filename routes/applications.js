@@ -7,6 +7,7 @@ const {
   getAllApplications,
   updateApplicationStatus,
   cancelApplication,
+  claimWaitlistOffer,
   markApplicationNoShow,
   checkInApplication,
   checkOutApplication,
@@ -29,6 +30,7 @@ router.get('/my-applications', isAuthenticated, getMyApplications);
 router.get('/swaps/available', isAuthenticated, listAvailableSwaps);
 router.post('/swaps/claim-by-token', isAuthenticated, validateBody(bodies.claimToken), claimSwapByToken);
 router.post('/swaps/:id/claim', isAuthenticated, validateBody(bodies.empty), claimSwap);
+router.post('/waitlist/claim-by-token', isAuthenticated, validateBody(bodies.claimToken), claimWaitlistOffer);
 router.delete('/swaps/:id', isAuthenticated, cancelSwap);
 router.post('/:id/swap', isAuthenticated, validateBody(bodies.empty), requestSwap);
 router.get('/', isAuthenticated, requireStaff, validateQuery(queries.applications), getAllApplications);

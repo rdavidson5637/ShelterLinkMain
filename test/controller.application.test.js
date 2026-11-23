@@ -17,8 +17,28 @@ require.cache[emailPath] = {
     sendApplicationCancellation: async (...args) => { emailCalls.push(['cancel', ...args]); },
     sendApplicationRejection: async (...args) => { emailCalls.push(['reject', ...args]); },
     sendWaitlistPromotion: async (...args) => { emailCalls.push(['promote', ...args]); },
+    sendBookingConfirmed: async (...args) => { emailCalls.push(['booked', ...args]); },
     sendHoursApproval: async () => {},
     sendVolunteerApprovalNotification: async () => {},
+  },
+};
+
+const offerCalls = [];
+const waitlistOffersPath = require.resolve('../utils/waitlistOffers');
+require.cache[waitlistOffersPath] = {
+  id: waitlistOffersPath,
+  filename: waitlistOffersPath,
+  loaded: true,
+  exports: {
+    offerNextWaitlisted: async (opportunityId) => {
+      offerCalls.push(['offer', opportunityId]);
+      return { id: 1, opportunity_id: opportunityId, status: 'offered' };
+    },
+    fillFromWaitlist: async (opportunityId) => {
+      offerCalls.push(['fill', opportunityId]);
+      return [{ id: 1, opportunity_id: opportunityId, status: 'offered' }];
+    },
+    claimOfferByToken: async () => ({ error: 'not stubbed', status: 500 }),
   },
 };
 
@@ -191,49 +211,24 @@ test('happy path: open + approved + space → 201 pending', async () => {
   assert.strictEqual(res.body.status, 'pending');
 });
 
-test('cancellation of accepted application promotes oldest waitlisted and emails', async () => {
+test('cancellation of accepted application starts a timed waitlist offer', async () => {
   resetEmail();
+  offerCalls.length = 0;
   mock.resetCalls();
   mock.setHandler(async (sql, params) => {
     if (/DELETE FROM applications/i.test(sql)) {
       return [{ affectedRows: 1 }];
     }
-    if (/UPDATE applications SET status = \?/i.test(sql)) {
-      assert.strictEqual(params[0], 'pending');
-      return [{ affectedRows: 1 }];
-    }
-    if (/status = 'waitlisted'/i.test(sql)) {
-      return [[{
-        application_id: 8,
-        user_id: 3,
-        opportunity_id: 1,
-        status: 'waitlisted',
-        email: 'wait@x.com',
-        opportunity_title: 'Dog Walk',
-        applied_at: '2026-01-01',
-      }]];
-    }
-    if (/AS current_count/i.test(sql)) return [[{ current_count: 0 }]];
     if (/FROM opportunities/i.test(sql)) {
-      return [[{ opportunity_id: 1, status: 'open', max_volunteers: 1 }]];
+      return [[{ opportunity_id: 1, status: 'open', max_volunteers: 1, cancellation_cutoff_hours: 0 }]];
     }
     if (/WHERE a\.application_id = \?/i.test(sql) || /WHERE application_id = \?/i.test(sql)) {
-      if (Number(params[0]) === 5) {
-        return [[{
-          application_id: 5,
-          user_id: 2,
-          opportunity_id: 1,
-          status: 'accepted',
-          email: 'accepter@x.com',
-          opportunity_title: 'Dog Walk',
-        }]];
-      }
       return [[{
-        application_id: 8,
-        user_id: 3,
+        application_id: 5,
+        user_id: 2,
         opportunity_id: 1,
-        status: 'pending',
-        email: 'wait@x.com',
+        status: 'accepted',
+        email: 'accepter@x.com',
         opportunity_title: 'Dog Walk',
       }]];
     }
@@ -242,12 +237,12 @@ test('cancellation of accepted application promotes oldest waitlisted and emails
 
   const res = makeRes();
   await appCtrl.cancelApplication(
-    makeReq({ params: { id: 5 }, body: {} }),
+    makeReq({ session: { userId: 1, role: 'admin' }, params: { id: 5 }, body: {} }),
     res
   );
   assert.strictEqual(res.statusCode, 200);
-  assert.ok(emailCalls.some((c) => c[0] === 'promote'));
-  assert.ok(emailCalls.some((c) => c[0] === 'promote' && c[1] === 'wait@x.com'));
+  assert.ok(offerCalls.some((c) => c[0] === 'fill' && c[1] === 1));
+  assert.ok(emailCalls.some((c) => c[0] === 'cancel'));
 });
 
 test('cancelling an accepted application revokes shift-chat access', async () => {
