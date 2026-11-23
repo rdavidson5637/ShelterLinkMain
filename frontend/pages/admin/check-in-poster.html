@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Check-in poster - ShelterLink</title>
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+        <header class="site-header">
+    <style>
+      .poster {
+        max-width: 34rem;
+        margin: 0 auto;
+        text-align: center;
+      }
+      .poster h2 { margin-bottom: 0.25rem; }
+      .poster-meta { color: var(--text-secondary); margin: 0; }
+      .poster-qr {
+        display: block;
+        width: 100%;
+        max-width: 22rem;
+        height: auto;
+        margin: 1.5rem auto 1rem;
+        image-rendering: pixelated;
+      }
+      .poster-steps { text-align: left; margin: 1rem auto; max-width: 26rem; }
+      .poster-code {
+        font-size: 2.25rem;
+        letter-spacing: 0.2em;
+        padding: 0.25rem 0.75rem;
+      }
+      .poster-toolbar { margin-bottom: 1.5rem; }
+      @media print {
+        .site-header,
+        .sidebar-nav,
+        .poster-toolbar,
+        .nav-toggle,
+        #logoutButton,
+        #message,
+        footer,
+        .skip-link {
+          display: none !important;
+        }
+        body { background: #fff; }
+        main.container,
+        .dashboard-layout,
+        .dashboard-main {
+          display: block;
+          max-width: none;
+          margin: 0;
+          padding: 0;
+        }
+        .poster { max-width: none; }
+        .poster h1 { font-size: 2rem; }
+        .poster-qr { max-width: 12cm; }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Account">
+        <a class="site-brand" href="/pages/admin/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" aria-label="Toggle navigation">Menu</button>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main id="main" class="container dashboard-layout">
+      <aside id="admin-nav" class="sidebar-nav"></aside>
+      <div class="dashboard-main">
+        <div class="poster-toolbar">
+          <p>Put this up where volunteers arrive. They scan it with their phone camera, sign in if asked, and tap Check in. The kiosk keeps working alongside it.</p>
+          <button type="button" id="printButton" disabled>Print poster</button>
+          <a href="/pages/admin/opportunities.html">Back to opportunities</a>
+        </div>
+
+        <div id="message" role="status" aria-live="polite"></div>
+
+        <article class="poster" id="poster" hidden>
+          <h1>Check in for your shift</h1>
+          <h2 id="posterTitle"></h2>
+          <p class="poster-meta" id="posterWhen"></p>
+          <p class="poster-meta" id="posterWhere"></p>
+          <img class="poster-qr" id="posterQr" alt="QR code that opens ShelterLink check-in for this shift" width="290" height="290" />
+          <ol class="poster-steps">
+            <li>Open your phone camera and point it at the code.</li>
+            <li>Tap the link and sign in to ShelterLink if asked.</li>
+            <li>Tap <strong>Check in</strong>. Scan again before you leave and tap <strong>Check out</strong>.</li>
+          </ol>
+          <p>No camera? Enter this code in My applications:</p>
+          <p><code class="poster-code" id="posterCode"></code></p>
+        </article>
+      </div>
+    </main>
+
+    <footer class="container">
+      <small>&copy; <span data-footer-year></span> ShelterLink</small>
+    </footer>
+
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/admin/check-in-poster.js"></script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+    <script type="module" src="/js/components/adminNav.js"></script>
+  </body>
+</html>
