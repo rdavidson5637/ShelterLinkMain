@@ -8,7 +8,10 @@ const Waiver = require('../models/Waiver');
 const SwapRequest = require('../models/SwapRequest');
 const Vetting = require('../models/Vetting');
 const GuardianConsent = require('../models/GuardianConsent');
+const BookingPolicy = require('../models/BookingPolicy');
+const bookingPolicy = require('../utils/bookingPolicy');
 const { ageMessage } = require('../utils/ageRules');
+const { recordAudit } = require('../middleware/auditLog');
 const {
   sendSwapOpened,
   sendSwapWaitlistOffer,
@@ -20,6 +23,23 @@ const {
   toOwnerSafeSwap,
   toVolunteerSafeApplication,
 } = require('../utils/contactPrivacy');
+
+/**
+ * Claimer status from shelter booking mode: instant + trusted → accepted;
+ * otherwise pending for staff (same rules as waitlist seat claims).
+ */
+async function resolveClaimerStatus(userId) {
+  try {
+    const mode = await BookingPolicy.getMode();
+    if (mode === 'instant') {
+      const trusted = await BookingPolicy.isTrusted(userId);
+      return bookingPolicy.promotionStatus({ mode, trusted, eligible: true });
+    }
+  } catch (policyError) {
+    console.error('[Swap] booking policy error:', policyError.message);
+  }
+  return 'pending';
+}
 
 function ensureAuthenticated(req, res) {
   if (!req.session || !req.session.userId) {
@@ -107,6 +127,21 @@ async function requestSwap(req, res) {
       }
     } catch (emailError) {
       console.error('[Swap] opened email error:', emailError.message);
+    }
+
+    try {
+      await recordAudit(req, {
+        action: 'swap.request',
+        entityType: 'swap_request',
+        entityId: swap.id,
+        detail: {
+          application_id: Number(applicationId),
+          opportunity_id: Number(application.opportunity_id),
+          waitlist_offered: waitlistOffered,
+        },
+      });
+    } catch (auditError) {
+      console.error('[Swap] request audit error:', auditError.message);
     }
 
     return res.status(201).json({
@@ -234,6 +269,7 @@ async function assertClaimerEligible(userId, opportunityId) {
 
 async function finalizeClaim(result) {
   const title = result.opportunityTitle || 'Opportunity';
+  const confirmed = result.confirmed === true;
   try {
     if (result.original?.email) {
       await sendSwapClaimedToOriginal(result.original.email, title);
@@ -243,7 +279,7 @@ async function finalizeClaim(result) {
   }
   try {
     if (result.claimerApplication?.email) {
-      await sendSwapClaimedToClaimer(result.claimerApplication.email, title);
+      await sendSwapClaimedToClaimer(result.claimerApplication.email, title, { confirmed });
     }
   } catch (emailError) {
     console.error('[Swap] claim email (claimer) error:', emailError.message);
@@ -258,10 +294,11 @@ async function finalizeClaim(result) {
     [result.original?.first_name, result.original?.last_name].filter(Boolean).join(' ') ||
     `user #${result.original?.user_id}`;
 
+  const claimerOutcome = confirmed ? 'accepted' : 'pending staff approval';
   try {
     await Opportunity.appendActivityNote(
       result.opportunityId,
-      `Shift swap claimed: ${originalName} cancelled; ${claimerName} accepted (swap #${result.swap?.id}).`
+      `Shift swap claimed: ${originalName} cancelled; ${claimerName} ${claimerOutcome} (swap #${result.swap?.id}).`
     );
   } catch (noteError) {
     console.error('[Swap] activity note error:', noteError.message);
@@ -304,13 +341,33 @@ async function claimSwap(req, res) {
 
     await SwapRequest.publishExpiredWaitlistOffers();
 
-    const result = await SwapRequest.claimAtomically(swapId, userId);
+    const claimerStatus = await resolveClaimerStatus(userId);
+    const result = await SwapRequest.claimAtomically(swapId, userId, { claimerStatus });
     await finalizeClaim(result);
 
+    try {
+      await recordAudit(req, {
+        action: 'swap.claim',
+        entityType: 'swap_request',
+        entityId: result.swap?.id || swapId,
+        detail: {
+          opportunity_id: Number(result.opportunityId),
+          claimer_status: result.claimerStatus,
+          confirmed: result.confirmed === true,
+        },
+      });
+    } catch (auditError) {
+      console.error('[Swap] claim audit error:', auditError.message);
+    }
+
     return res.status(200).json({
-      message: 'Shift claimed successfully',
+      message: result.confirmed
+        ? 'Shift claimed successfully'
+        : 'Cover request submitted. Staff will review it before it is confirmed.',
       swap: toOwnerSafeSwap(result.swap),
       application: toVolunteerSafeApplication(result.claimerApplication),
+      confirmed: result.confirmed === true,
+      status: result.claimerStatus,
     });
   } catch (error) {
     return mapClaimError(error, res);
@@ -346,13 +403,37 @@ async function claimSwapByToken(req, res) {
       });
     }
 
-    const result = await SwapRequest.claimAtomically(swap.id, userId, { viaToken: token });
+    const claimerStatus = await resolveClaimerStatus(userId);
+    const result = await SwapRequest.claimAtomically(swap.id, userId, {
+      viaToken: token,
+      claimerStatus,
+    });
     await finalizeClaim(result);
 
+    try {
+      await recordAudit(req, {
+        action: 'swap.claim',
+        entityType: 'swap_request',
+        entityId: result.swap?.id || swap.id,
+        detail: {
+          opportunity_id: Number(result.opportunityId),
+          claimer_status: result.claimerStatus,
+          confirmed: result.confirmed === true,
+          via_token: true,
+        },
+      });
+    } catch (auditError) {
+      console.error('[Swap] claim-by-token audit error:', auditError.message);
+    }
+
     return res.status(200).json({
-      message: 'Shift claimed successfully from waitlist offer',
+      message: result.confirmed
+        ? 'Shift claimed successfully from waitlist offer'
+        : 'Cover request submitted from waitlist offer. Staff will review it before it is confirmed.',
       swap: toOwnerSafeSwap(result.swap),
       application: toVolunteerSafeApplication(result.claimerApplication),
+      confirmed: result.confirmed === true,
+      status: result.claimerStatus,
     });
   } catch (error) {
     return mapClaimError(error, res);
@@ -375,6 +456,18 @@ async function cancelSwap(req, res) {
     if (result.invalidStatus) {
       return res.status(400).json({ error: 'Swap cannot be cancelled in its current status' });
     }
+
+    try {
+      await recordAudit(req, {
+        action: 'swap.cancel',
+        entityType: 'swap_request',
+        entityId: result.id || swapId,
+        detail: { application_id: Number(result.application_id) },
+      });
+    } catch (auditError) {
+      console.error('[Swap] cancel audit error:', auditError.message);
+    }
+
     return res.status(200).json({ message: 'Swap cancelled', swap: toOwnerSafeSwap(result) });
   } catch (error) {
     console.error('[Swap] cancelSwap error:', error.message);

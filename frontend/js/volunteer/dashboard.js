@@ -73,6 +73,43 @@ function setImpactStats(stats = {}) {
   if (currentStreakEl) currentStreakEl.textContent = stats.currentStreak ?? 0;
 }
 
+async function loadShelterAnnouncements() {
+  const section = document.getElementById('shelterAnnouncementsSection');
+  const list = document.getElementById('shelterAnnouncementsList');
+  if (!section || !list) return;
+  try {
+    const res = await apiRequest('/announcements', { method: 'GET' });
+    if (!res.ok) {
+      section.hidden = true;
+      return;
+    }
+    const data = await res.json();
+    const items = Array.isArray(data.items) ? data.items : [];
+    if (!items.length) {
+      section.hidden = true;
+      list.innerHTML = '';
+      return;
+    }
+    list.innerHTML = items
+      .map((item) => {
+        const posted = item.posted_on ? String(item.posted_on).slice(0, 10) : '';
+        const expires = item.expires_on ? String(item.expires_on).slice(0, 10) : '';
+        return `<li>
+          <strong>${escapeHtml(item.title || 'Notice')}</strong>
+          <p>${escapeHtml(item.body || '')}</p>
+          <p class="announcement-meta">Posted ${escapeHtml(posted)}${
+            expires ? ` · Until ${escapeHtml(expires)}` : ''
+          }</p>
+        </li>`;
+      })
+      .join('');
+    section.hidden = false;
+  } catch (error) {
+    console.error('[Dashboard] announcements error:', error);
+    section.hidden = true;
+  }
+}
+
 async function loadOnboardingChecklist() {
   const el = document.getElementById('onboardingChecklist');
   if (!el) return;
@@ -697,6 +734,7 @@ async function init() {
     userNameEl.textContent = displayName;
   }
   await loadOnboardingChecklist();
+  await loadShelterAnnouncements();
   await loadInductionChecklist();
   await loadBuddy();
   const profile = await fetchProfile();

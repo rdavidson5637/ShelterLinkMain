@@ -25,6 +25,8 @@ const {
   buildBuddyAssigned,
   buildExpiryReminder,
   buildNoShowFollowUp,
+  buildUsualAvailabilityAsk,
+  buildShelterAnnouncement,
 } = require('../utils/emailService');
 const { catalogIds, renderEmailPreviews, sampleData } = require('../utils/emailPreview');
 const { listEmailPreviews } = require('../controllers/emailPreviewController');
@@ -97,6 +99,14 @@ const BUILDERS = [
   {
     id: 'noshow_followup',
     build: (brand, samples) => buildNoShowFollowUp(samples.noShow, brand),
+  },
+  {
+    id: 'usual_availability_ask',
+    build: (brand, samples) => buildUsualAvailabilityAsk(samples.usualAvailability, brand),
+  },
+  {
+    id: 'shelter_announcement',
+    build: (brand, samples) => buildShelterAnnouncement(samples.shelterAnnouncement, brand),
   },
 ];
 

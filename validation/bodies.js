@@ -872,6 +872,12 @@ const queries = {
       all: qstr(10),
     })
     .strict(),
+  shelterAnnouncements: z
+    .object({
+      all: qstr(10),
+      archived: qstr(10),
+    })
+    .strict(),
 };
 
 const weekCopy = z
@@ -972,9 +978,100 @@ const bodies = {
       send_email: optFlag,
     })
     .strict(),
+  // SL-DAY-14: replace usual weekday + part-of-day slots.
+  usualAvailability: z
+    .object({
+      slots: z
+        .array(
+          z
+            .object({
+              weekday: z.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']),
+              part_of_day: z.enum(['morning', 'afternoon', 'evening']),
+            })
+            .strict()
+        )
+        .max(21)
+        .optional(),
+      availability: z
+        .array(
+          z
+            .object({
+              weekday: z.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']),
+              part_of_day: z.enum(['morning', 'afternoon', 'evening']),
+            })
+            .strict()
+        )
+        .max(21)
+        .optional(),
+    })
+    .strict(),
+  usualAvailabilityEmail: z
+    .object({
+      user_id: idValue.optional(),
+      userId: idValue.optional(),
+    })
+    .strict()
+    .refine((body) => body.user_id != null || body.userId != null, {
+      message: 'user_id is required',
+    }),
   shelterResourceLink,
   shelterResourceFileMeta,
   shelterResourceUpdate,
+  // SL-DAY-17: short dated shelter notices for volunteers.
+  shelterAnnouncementCreate: z
+    .object({
+      title: optStr(160),
+      body: optStr(2000),
+      message: optStr(2000),
+      posted_on: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .nullable(),
+      postedOn: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .nullable(),
+      expires_on: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .nullable(),
+      expiresOn: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .nullable(),
+    })
+    .strict(),
+  shelterAnnouncementUpdate: z
+    .object({
+      title: optStr(160),
+      body: optStr(2000),
+      message: optStr(2000),
+      posted_on: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .nullable(),
+      postedOn: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .nullable(),
+      expires_on: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .nullable(),
+      expiresOn: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .nullable(),
+    })
+    .strict(),
   reorderFields,
   template,
   templateFromForm,

@@ -3292,3 +3292,204 @@ body.staff-app .dashboard-main > section {
     border-bottom-width: 1px;
   }
 }
+
+/* SL-DAY-14: usual days matrix + week-sheet match list (ruled, not cards) */
+.usual-availability-table {
+  width: 100%;
+  max-width: 36rem;
+  border-collapse: collapse;
+  margin: 0.5rem 0 0;
+}
+
+.usual-availability-table th,
+.usual-availability-table td {
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.usual-availability-table thead th {
+  font-weight: 600;
+  background: var(--surface);
+  font-size: var(--text-sm);
+}
+
+.usual-availability-table tbody th {
+  font-weight: 500;
+}
+
+.usual-availability-table input[type='checkbox'] {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.usual-availability-panel {
+  margin: 1rem 0 0;
+  padding: 0.85rem 0 0;
+  border-top: 1px solid var(--border);
+}
+
+.usual-availability-heading {
+  margin: 0 0 0.25rem;
+  font-size: var(--text-md);
+  line-height: 1.2;
+}
+
+.usual-availability-lede,
+.usual-availability-loading,
+.usual-availability-empty {
+  margin: 0 0 0.65rem;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  max-width: var(--measure);
+}
+
+.usual-availability-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.usual-availability-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.usual-availability-row:last-child {
+  border-bottom: 0;
+}
+
+.usual-availability-email {
+  display: block;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+/* SL-DAY-17: shelter announcements — ruled lists, not card grids */
+.shelter-announcements {
+  margin: 0 0 var(--section-gap);
+  max-width: var(--measure);
+}
+
+.shelter-announcements h2 {
+  margin: 0 0 0.5rem;
+  font-size: var(--text-lg);
+  line-height: 1.15;
+}
+
+.announcement-home-list,
+.announcement-ruled-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.announcement-home-list > li,
+.announcement-ruled-list > li {
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.announcement-home-list > li:last-child,
+.announcement-ruled-list > li:last-child {
+  border-bottom: 0;
+}
+
+.announcement-home-list strong,
+.announcement-ruled-main strong {
+  display: block;
+  margin: 0 0 0.25rem;
+  font-size: var(--text-md);
+  line-height: 1.2;
+  color: var(--text);
+}
+
+.announcement-home-list p,
+.announcement-ruled-main p {
+  margin: 0 0 0.35rem;
+  max-width: var(--measure);
+  line-height: 1.55;
+}
+
+.announcement-meta {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.announcement-compose {
+  margin: 0 0 var(--section-gap);
+  max-width: 40rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.announcement-compose h2,
+.announcement-list-header h2 {
+  margin: 0 0 0.65rem;
+  font-size: var(--text-lg);
+  line-height: 1.15;
+}
+
+.announcement-date-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+}
+
+.announcement-date-row label {
+  flex: 1 1 12rem;
+}
+
+.announcement-list-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.announcement-archived-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.announcement-ruled-list > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem 1.25rem;
+}
+
+.announcement-ruled-main {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.announcement-ruled-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.announcement-ruled-actions button {
+  margin: 0;
+}
+
+.announcement-empty {
+  margin: 0;
+  color: var(--text-secondary);
+}
