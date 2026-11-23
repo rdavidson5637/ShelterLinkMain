@@ -42,7 +42,11 @@ async function isAuthenticated(req, res, next) {
   if (!req.session || !req.session.userId) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
-  await attachUser(req);
+  const user = await attachUser(req);
+  // Session cookie alone is not enough: deleted or unreadable users must not pass.
+  if (!user) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
   return next();
 }
 
@@ -58,7 +62,11 @@ function requireRole(...roles) {
     if (!req.session || !req.session.userId) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-    await attachUser(req);
+    const user = await attachUser(req);
+    // Do not fall back to a stale session role when the user row is gone.
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     if (!hasRole(req, ...roles)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
