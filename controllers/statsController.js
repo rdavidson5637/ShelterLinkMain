@@ -30,6 +30,53 @@ async function getApprovedHourMonths(userId) {
   return rows.map((r) => r.ym);
 }
 
+/** Approved hours in a calendar year (existing volunteer_hours rows only). */
+async function getApprovedHoursForYear(userId, year) {
+  const [rows] = await pool.execute(
+    `
+      SELECT COALESCE(SUM(hours), 0) AS total_hours
+      FROM volunteer_hours
+      WHERE user_id = ?
+        AND approved = 1
+        AND EXTRACT(YEAR FROM date)::int = ?
+    `,
+    [userId, year]
+  );
+  return Number(rows[0]?.total_hours) || 0;
+}
+
+/**
+ * Distinct shelters with approved hours for this volunteer.
+ * Tenant RLS scopes the rows; the count is still a real column aggregate.
+ */
+async function countSheltersHelped(userId) {
+  const [rows] = await pool.execute(
+    `
+      SELECT COUNT(DISTINCT shelter_id)::int AS cnt
+      FROM volunteer_hours
+      WHERE user_id = ?
+        AND approved = 1
+        AND shelter_id IS NOT NULL
+    `,
+    [userId]
+  );
+  return Number(rows[0]?.cnt) || 0;
+}
+
+/** Distinct training modules with a passing attempt. */
+async function countTrainingCompleted(userId) {
+  const [rows] = await pool.execute(
+    `
+      SELECT COUNT(DISTINCT module_id)::int AS cnt
+      FROM training_attempts
+      WHERE user_id = ?
+        AND passed = 1
+    `,
+    [userId]
+  );
+  return Number(rows[0]?.cnt) || 0;
+}
+
 async function getAdminStats(req, res) {
   try {
     if (!isAdmin(req)) {
@@ -97,10 +144,22 @@ async function getMyImpactStats(req, res) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
     const userId = req.session.userId;
+    const year = new Date().getFullYear();
 
-    const [totalHoursRaw, shiftsCompleted, months, badges] = await Promise.all([
+    const [
+      totalHoursRaw,
+      hoursThisYear,
+      shiftsCompleted,
+      sheltersHelped,
+      trainingCompleted,
+      months,
+      badges,
+    ] = await Promise.all([
       VolunteerHours.getTotalHours(userId),
+      getApprovedHoursForYear(userId, year),
       Application.countApprovedByUserId(userId),
+      countSheltersHelped(userId),
+      countTrainingCompleted(userId),
       getApprovedHourMonths(userId),
       Badge.calculateBadges(userId),
     ]);
@@ -110,8 +169,13 @@ async function getMyImpactStats(req, res) {
     const nextBadgeProgress = nextBadgeProgressFrom(badges.nextBadge);
 
     return res.status(200).json({
+      hoursThisYear: Number(hoursThisYear) || 0,
       totalHours,
       shiftsCompleted: Number(shiftsCompleted) || 0,
+      sheltersHelped: Number(sheltersHelped) || 0,
+      trainingCompleted: Number(trainingCompleted) || 0,
+      year,
+      // Kept for the existing dashboard share card; the my-impact page does not show these.
       currentStreak,
       badges: {
         earned: badges.earned,
@@ -211,4 +275,7 @@ module.exports = {
   getMonthlyHoursChart,
   calculateStreakFromMonths,
   nextBadgeProgressFrom,
+  getApprovedHoursForYear,
+  countSheltersHelped,
+  countTrainingCompleted,
 };

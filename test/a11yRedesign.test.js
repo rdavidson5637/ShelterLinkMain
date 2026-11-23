@@ -29,6 +29,7 @@ const REDESIGNED_PAGES = [
   'frontend/pages/volunteer/certificate.html',
   'frontend/pages/volunteer/mileage.html',
   'frontend/pages/volunteer/training.html',
+  'frontend/pages/volunteer/my-impact.html',
   'frontend/pages/admin/dashboard.html',
   'frontend/pages/admin/opportunities.html',
   'frontend/pages/admin/review-applications.html',

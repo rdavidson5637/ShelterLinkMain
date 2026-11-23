@@ -3760,3 +3760,51 @@ body.staff-app .dashboard-main > section {
   margin: 0;
   color: var(--text-secondary);
 }
+
+/* Volunteer my-impact (SL-DAY-21): editorial ruled figures, not a card grid */
+.my-impact-figures {
+  margin: 0 0 var(--section-gap);
+  padding: 0;
+  border-top: 2px solid var(--text);
+  max-width: 36rem;
+}
+
+.my-impact-figures > div {
+  display: grid;
+  grid-template-columns: minmax(5.5rem, 7.5rem) 1fr;
+  gap: 1rem;
+  align-items: baseline;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.my-impact-figures dt {
+  order: 2;
+  margin: 0;
+  font-weight: 400;
+  color: var(--text);
+}
+
+.my-impact-figures dd {
+  order: 1;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: var(--leading-heading);
+  color: var(--text);
+}
+
+.my-impact-note {
+  margin: 0 0 var(--section-gap);
+  max-width: var(--measure);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.55;
+}
+
+.my-impact-links {
+  margin: 0 0 var(--section-gap);
+  max-width: 40rem;
+}
