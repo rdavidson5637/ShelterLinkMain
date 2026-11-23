@@ -969,6 +969,14 @@ function attachEventListeners() {
     statusFilter.addEventListener('change', filterVolunteers);
   }
 
+  const exportNewsletterAudienceButton = document.getElementById('exportNewsletterAudienceButton');
+  if (exportNewsletterAudienceButton) {
+    exportNewsletterAudienceButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      window.location.href = `${API_URL}/admin/reports/newsletter-audience.csv`;
+    });
+  }
+
   if (logoutButton) {
     logoutButton.addEventListener('click', (event) => {
       event.preventDefault();

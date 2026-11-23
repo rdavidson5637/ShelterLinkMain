@@ -226,6 +226,8 @@ CREATE TABLE volunteer_profiles (
   prefer_reminders  SMALLINT      NOT NULL DEFAULT 1,
   prefer_threads    SMALLINT      NOT NULL DEFAULT 0,
   prefer_fosters    SMALLINT      NOT NULL DEFAULT 0,
+  marketing_consent SMALLINT      NOT NULL DEFAULT 0,
+  marketing_consent_at TIMESTAMP  DEFAULT NULL,
   created_at        TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT uq_profiles_user UNIQUE (user_id),
   CONSTRAINT fk_profiles_user
