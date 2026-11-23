@@ -3125,3 +3125,159 @@ body.staff-app .dashboard-main > section {
 .opportunity-card.is-closed-day h3 {
   color: var(--text-secondary);
 }
+
+/* SL-DAY-07: week coverage heat strip (ruled table, not a card grid) */
+.coverage-heat {
+  margin: 0 0 var(--section-gap);
+  padding: 0 0 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.coverage-heat-header {
+  max-width: var(--measure);
+  margin-bottom: 1rem;
+}
+
+.coverage-heat-header h2 {
+  margin: 0 0 0.25rem;
+}
+
+.coverage-heat-header p {
+  margin: 0;
+  color: var(--text-secondary);
+  max-width: var(--measure);
+}
+
+.coverage-heat-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  margin: 0 0 1.5rem;
+}
+
+.coverage-heat-table th {
+  vertical-align: top;
+  text-align: left;
+  font-weight: 600;
+  padding: 0.65rem 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.coverage-heat-day {
+  display: block;
+  font-size: var(--text-sm);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.coverage-heat-level {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: var(--text-md);
+  line-height: 1.2;
+}
+
+.coverage-heat-counts {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: var(--text-sm);
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+.coverage-heat-cell.is-full {
+  background: var(--green-tint);
+  border-color: var(--green-tint-border);
+}
+
+.coverage-heat-cell.is-partial {
+  background: var(--green-tint);
+  border-color: var(--border-strong);
+}
+
+.coverage-heat-cell.is-short {
+  background: var(--warning-tint);
+  border-color: var(--warning-border);
+  color: var(--accent-ink);
+}
+
+.coverage-heat-cell.is-empty {
+  background: var(--danger-tint);
+  border-color: var(--danger-border);
+}
+
+.coverage-heat-cell.is-none,
+.coverage-heat-cell.is-uncapped_empty {
+  background: var(--surface);
+}
+
+.coverage-heat-cell.is-uncapped {
+  background: var(--green-tint);
+  border-color: var(--green-tint-border);
+}
+
+.coverage-roles-heading {
+  margin: 0 0 0.25rem;
+  font-size: var(--text-lg);
+  line-height: 1.15;
+}
+
+.coverage-roles-lede {
+  margin: 0 0 0.75rem;
+  color: var(--text-secondary);
+  max-width: var(--measure);
+  font-size: var(--text-sm);
+}
+
+.coverage-roles-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.coverage-roles-table th,
+.coverage-roles-table td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.55rem 0.6rem 0.55rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.coverage-roles-table tbody th {
+  font-weight: 600;
+}
+
+.coverage-role-row.is-empty th,
+.coverage-role-row.is-short th {
+  color: var(--accent-text);
+}
+
+.coverage-role-row.is-full th {
+  color: var(--green-hover);
+}
+
+.week-sheet-day-coverage {
+  margin: -0.35rem 0 0.85rem;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+@media (max-width: 48rem) {
+  .coverage-heat-table,
+  .coverage-heat-table thead,
+  .coverage-heat-table tr,
+  .coverage-heat-table th {
+    display: block;
+    width: 100%;
+  }
+
+  .coverage-heat-table th {
+    border-bottom-width: 0;
+  }
+
+  .coverage-heat-table th:last-child {
+    border-bottom-width: 1px;
+  }
+}
