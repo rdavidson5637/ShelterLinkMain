@@ -51,6 +51,7 @@ const SELECT_COLUMNS = `
   ) AS spots_filled
 `;
 
+/** Six-char kiosk / poster check-in code from crypto.randomInt (CSPRNG). */
 function generateCheckInCode() {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code = '';
