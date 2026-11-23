@@ -68,8 +68,28 @@ function inferFromRequest(req) {
   else if (resource === 'admin' && segments[1] === 'expiry-dashboard' && segments.includes('remind')) {
     action = 'expiry.reminder.email';
   }
+  else if (resource === 'applications' && segments.includes('swap')) {
+    action = method === 'DELETE' ? 'swap.cancel' : 'swap.request';
+  }
+  else if (resource === 'applications' && segments.includes('swaps')) {
+    if (segments.includes('claim') || segments.includes('claim-by-token')) action = 'swap.claim';
+    else if (method === 'DELETE') action = 'swap.cancel';
+  }
   else if (resource === 'volunteer-shift-notes' && method === 'POST') {
     action = 'volunteer.shift_note.save';
+  }
+  else if (
+    resource === 'opportunities' &&
+    segments.includes('usual-availability') &&
+    method === 'POST'
+  ) {
+    action = 'usual_availability.email';
+  }
+  else if (resource === 'announcements') {
+    if (segments.includes('email') && method === 'POST') action = 'announcement.email';
+    else if (segments.includes('archive') && method === 'POST') action = 'announcement.archive';
+    else if (method === 'POST') action = 'announcement.create';
+    else if (method === 'PUT' || method === 'PATCH') action = 'announcement.update';
   }
 
   const entityType =

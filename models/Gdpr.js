@@ -212,6 +212,13 @@ async function buildVolunteerExport(userId) {
      ORDER BY m.id`,
     [id]
   );
+  const [usualAvailability] = await pool.execute(
+    `SELECT weekday, part_of_day, updated_at
+     FROM volunteer_usual_availability
+     WHERE user_id = ?
+     ORDER BY weekday, part_of_day`,
+    [id]
+  );
 
   const hoursTotal = hours
     .filter((h) => Number(h.approved) === 1)
@@ -239,6 +246,7 @@ async function buildVolunteerExport(userId) {
     training_attempts: trainingAttempts,
     mileage_claims: mileageClaims,
     memberships,
+    usual_availability: usualAvailability,
   };
 }
 
@@ -342,6 +350,7 @@ async function anonymiseUser(userId, { reason = 'gdpr_erasure' } = {}) {
         WHERE volunteer_user_id = ? OR buddy_user_id = ?`,
       [id, id]
     );
+    await conn.execute('DELETE FROM volunteer_usual_availability WHERE user_id = ?', [id]);
     await conn.execute(
       `UPDATE messages SET body = '[removed]' WHERE user_id = ?`,
       [id]

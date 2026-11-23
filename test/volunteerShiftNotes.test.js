@@ -131,7 +131,7 @@ test('migration 067 creates volunteer_shift_notes with tenant isolation', () => 
   assert.match(MIGRATION, /char_length\(body\) <= 500/);
   assert.match(SCHEMA, /CREATE TABLE volunteer_shift_notes/);
   assert.match(SCHEMA, /DROP TABLE IF EXISTS[\s\S]*volunteer_shift_notes/);
-  assert.match(SETUP_DB, /067_volunteer_shift_notes\.pg\.sql/);
+  assert.match(SETUP_DB, /068_volunteer_shift_notes\.pg\.sql/);
   assert.ok(TENANT_TABLES.includes('volunteer_shift_notes'));
 });
 

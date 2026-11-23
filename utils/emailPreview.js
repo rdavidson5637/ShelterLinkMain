@@ -19,6 +19,8 @@ const {
   buildMilestoneThankYou,
   buildBuddyAssigned,
   buildExpiryReminder,
+  buildUsualAvailabilityAsk,
+  buildShelterAnnouncement,
   buildVolunteerShiftNoteAlert,
 } = require('./emailService');
 
@@ -90,6 +92,20 @@ function sampleData(shelterNamePlain) {
       title: 'Morning kennel walk',
       date: 'Saturday 28 November',
       body: 'The yard gate latch sticks unless you lift it slightly.',
+    },
+    usualAvailability: {
+      firstName: 'Alex',
+      opportunityTitle: 'Morning kennel walk',
+      whenLabel: 'Sat 28 Nov, 09:00 - 12:00',
+      location: shelterNamePlain ? `${shelterNamePlain} yard` : 'Shelter yard',
+      matchLabel: 'Saturday morning',
+    },
+    shelterAnnouncement: {
+      firstName: 'Alex',
+      title: 'Yard closed Saturday morning',
+      body: 'We are resurfacing the walk yard. Please use the indoor enrichment room for Saturday morning shifts.',
+      postedOn: '2026-11-23',
+      expiresOn: '2026-11-30',
     },
   };
 }
@@ -173,6 +189,22 @@ const CATALOG = [
     description: 'Optional staff-sent reminder when a check, document, or qualification expires soon.',
     build(brand, samples) {
       return buildExpiryReminder(samples.expiryReminder, brand);
+    },
+  },
+  {
+    id: 'usual_availability_ask',
+    label: 'Usual availability ask',
+    description: 'Optional staff email when a short-staffed shift matches a volunteer usual days.',
+    build(brand, samples) {
+      return buildUsualAvailabilityAsk(samples.usualAvailability, brand);
+    },
+  },
+  {
+    id: 'shelter_announcement',
+    label: 'Shelter announcement',
+    description: 'Optional staff email of a dated shelter notice to active volunteers only.',
+    build(brand, samples) {
+      return buildShelterAnnouncement(samples.shelterAnnouncement, brand);
     },
   },
   {

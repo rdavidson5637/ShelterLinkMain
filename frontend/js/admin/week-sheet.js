@@ -84,6 +84,16 @@ function renderAnimal(a) {
   }${handling}</span></li>`;
 }
 
+function isShortStaffedShift(opp) {
+  const filled = (opp.volunteers || []).length;
+  const max =
+    opp.max_volunteers == null || opp.max_volunteers === ''
+      ? null
+      : Number(opp.max_volunteers);
+  if (max == null) return filled === 0;
+  return filled < max;
+}
+
 function renderShift(opp) {
   const animals = (opp.animals || []).map(renderAnimal).join('');
   const volunteers = opp.volunteers || [];
@@ -91,6 +101,16 @@ function renderShift(opp) {
     ? volunteers.map(renderVolunteerRow).join('')
     : '<tr><td colspan="3">No accepted volunteers yet.</td></tr>';
   const urgent = opp.is_urgent ? ' <strong>(URGENT)</strong>' : '';
+  const shortStaffed = isShortStaffedShift(opp);
+  const usualPanel = shortStaffed
+    ? `<div
+         class="usual-availability-panel no-print"
+         data-opportunity-id="${Number(opp.opportunity_id)}"
+         aria-live="polite"
+       >
+         <p class="usual-availability-loading">Looking up usual availability…</p>
+       </div>`
+    : '';
 
   return `
     <article class="week-sheet-shift">
@@ -116,8 +136,124 @@ function renderShift(opp) {
         </thead>
         <tbody>${tableBody}</tbody>
       </table>
+      ${usualPanel}
     </article>
   `;
+}
+
+function renderUsualAvailabilityPanel(panel, summary) {
+  const match = summary.match || {};
+  const volunteers = Array.isArray(summary.volunteers) ? summary.volunteers : [];
+  const matchLabel = [match.weekday_label, match.part_label]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  if (!volunteers.length) {
+    panel.innerHTML = `<p class="usual-availability-empty">No approved volunteers marked usual availability for ${escapeHtml(
+      matchLabel || 'this part of the day'
+    )}.</p>`;
+    return;
+  }
+
+  const rows = volunteers
+    .map((v) => {
+      const name = escapeHtml(v.name || 'Volunteer');
+      const email = escapeHtml(v.email || '');
+      const disabled = v.email ? '' : ' disabled';
+      return `<li class="usual-availability-row">
+        <div>
+          <strong>${name}</strong>
+          ${email ? `<span class="usual-availability-email">${email}</span>` : ''}
+        </div>
+        <button
+          type="button"
+          class="secondary button-secondary button-small"
+          data-email-user="${Number(v.user_id)}"
+          ${disabled}
+        >Email about this shift</button>
+      </li>`;
+    })
+    .join('');
+
+  panel.innerHTML = `
+    <h4 class="usual-availability-heading">Usually available (${escapeHtml(matchLabel)})</h4>
+    <p class="usual-availability-lede">Same shelter only. Email sends only when you click.</p>
+    <ul class="usual-availability-list">${rows}</ul>
+  `;
+
+  panel.querySelectorAll('[data-email-user]').forEach((button) => {
+    button.addEventListener('click', () => {
+      emailUsualAvailability(
+        Number(panel.getAttribute('data-opportunity-id')),
+        Number(button.getAttribute('data-email-user')),
+        button
+      );
+    });
+  });
+}
+
+async function loadUsualAvailabilityPanels() {
+  if (!contentEl) return;
+  const panels = Array.from(
+    contentEl.querySelectorAll('.usual-availability-panel[data-opportunity-id]')
+  );
+  await Promise.all(
+    panels.map(async (panel) => {
+      const id = Number(panel.getAttribute('data-opportunity-id'));
+      try {
+        const res = await apiRequest(`/opportunities/${id}/usual-availability`, {
+          method: 'GET',
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          panel.innerHTML = `<p class="usual-availability-empty">${escapeHtml(
+            err.error || 'Could not load usual availability.'
+          )}</p>`;
+          return;
+        }
+        const summary = await res.json();
+        renderUsualAvailabilityPanel(panel, summary);
+      } catch (error) {
+        console.error('[WeekSheet] usual availability error:', error);
+        panel.innerHTML =
+          '<p class="usual-availability-empty">Could not load usual availability.</p>';
+      }
+    })
+  );
+}
+
+async function emailUsualAvailability(opportunityId, userId, button) {
+  if (!opportunityId || !userId) return;
+  const original = button?.textContent || 'Email about this shift';
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'Sending…';
+  }
+  try {
+    const res = await apiRequest(`/opportunities/${opportunityId}/usual-availability/email`, {
+      method: 'POST',
+      body: { user_id: userId },
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setMessage('error', body.error || 'Could not send email.');
+      if (button) {
+        button.disabled = false;
+        button.textContent = original;
+      }
+      return;
+    }
+    setMessage('success', 'Email sent.');
+    if (button) button.textContent = 'Emailed';
+  } catch (error) {
+    console.error('[WeekSheet] email usual availability error:', error);
+    setMessage('error', 'Network error while sending email.');
+    if (button) {
+      button.disabled = false;
+      button.textContent = original;
+    }
+  }
 }
 
 function coverageLabel(row) {
@@ -242,6 +378,7 @@ async function loadSheet() {
         .map((day) => renderDay(day, coverageByDate.get(day.date)))
         .join('')}
     `;
+    await loadUsualAvailabilityPanels();
   } catch (error) {
     console.error('[WeekSheet] load error:', error);
     setMessage('error', 'Network error loading week sheet.');
