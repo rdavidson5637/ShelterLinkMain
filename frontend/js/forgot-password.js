@@ -40,11 +40,11 @@ form.addEventListener('submit', async (e) => {
       form.style.display = 'none';
     } else {
       submitButton.disabled = false;
-      submitButton.textContent = 'Send Reset Link';
+      submitButton.textContent = 'Send reset link';
     }
   } catch (err) {
     showFormErrors(form, [{ message: 'Network error. Please check your connection and try again.' }]);
     submitButton.disabled = false;
-    submitButton.textContent = 'Send Reset Link';
+    submitButton.textContent = 'Send reset link';
   }
 });
