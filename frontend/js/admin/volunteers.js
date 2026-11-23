@@ -556,6 +556,15 @@ async function viewProfile(userId) {
               : ''
           }
         </div>
+        <div>
+          <strong>Hours statement:</strong>
+          <a
+            href="/pages/admin/hours-statement.html?userId=${encodeURIComponent(userId)}"
+            role="button"
+            class="secondary button-small"
+            style="margin-left:0.5rem;"
+          >Print hours statement</a>
+        </div>
         <div style="border-top: 1px solid #ddd; padding-top: 0.75rem;">
           <strong>Community service / type settings</strong>
           <form id="serviceSettingsForm" style="display:grid; gap:0.5rem; margin-top:0.5rem;">

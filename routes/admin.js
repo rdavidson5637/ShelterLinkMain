@@ -65,6 +65,7 @@ const {
   postNewsletterSync,
 } = require('../controllers/newsletterAudienceController');
 const { getWeekSheet, getWeekSheetIcs } = require('../controllers/weekSheetController');
+const { getVolunteerHoursStatement } = require('../controllers/hoursStatementController');
 
 const { validateBody, validateQuery, positiveParam } = require('../middleware/validate');
 const { listStaffInvites, createStaffInvite, revokeStaffInvite } = require('../controllers/staffInviteController');
@@ -93,6 +94,13 @@ router.get('/stats/leaderboard', isAuthenticated, staffOrAdmin, validateQuery(qu
 router.get('/stats/monthly-hours', isAuthenticated, staffOrAdmin, validateQuery(queries.year), getMonthlyHoursChart);
 router.get('/volunteers', isAuthenticated, staffOrAdmin, getAllVolunteers);
 router.get('/volunteers/:userId', isAuthenticated, staffOrAdmin, getVolunteerProfile);
+router.get(
+  '/volunteers/:userId/hours-statement',
+  isAuthenticated,
+  staffOrAdmin,
+  validateQuery(queries.hoursStatement),
+  getVolunteerHoursStatement
+);
 router.put('/volunteers/:userId/approval', isAuthenticated, adminOnly, validateBody(bodies.approval), updateVolunteerApproval);
 router.put('/volunteers/:userId/foster-approval', isAuthenticated, staffOrAdmin, validateBody(bodies.fosterApproval), updateFosterApproval);
 router.put('/volunteers/:userId/service-settings', isAuthenticated, staffOrAdmin, validateBody(bodies.serviceSettings), updateVolunteerServiceSettings);
