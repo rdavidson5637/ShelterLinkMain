@@ -163,7 +163,7 @@ async function applySchema(admin) {
   const selfServe = fs.readFileSync(path.join(ROOT, 'database', '036_self_serve_shelters.pg.sql'), 'utf8');
   const appRoles = fs.readFileSync(path.join(ROOT, 'database', '062_app_roles_no_bypass.pg.sql'), 'utf8');
   const volunteerShiftNotes = fs.readFileSync(
-    path.join(ROOT, 'database', '066_volunteer_shift_notes.pg.sql'),
+    path.join(ROOT, 'database', '067_volunteer_shift_notes.pg.sql'),
     'utf8'
   );
   await admin.query(schema);

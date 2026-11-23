@@ -70,7 +70,7 @@ const { TENANT_TABLES, runWithShelter } = require('../utils/shelterContext');
 
 const ROOT = path.join(__dirname, '..');
 const MIGRATION = fs.readFileSync(
-  path.join(ROOT, 'database/066_volunteer_shift_notes.pg.sql'),
+  path.join(ROOT, 'database/067_volunteer_shift_notes.pg.sql'),
   'utf8'
 );
 const SCHEMA = fs.readFileSync(path.join(ROOT, 'database/schema.pg.sql'), 'utf8');
