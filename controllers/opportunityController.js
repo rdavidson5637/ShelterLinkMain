@@ -36,29 +36,38 @@ function normalizeAnimalIds(body = {}) {
 
 async function applyQualificationIds(opportunityIds, qualificationIds) {
   if (qualificationIds == null) return;
-  const ids = Array.isArray(opportunityIds) ? opportunityIds : [opportunityIds];
-  for (const opportunityId of ids) {
-    if (!opportunityId) continue;
-    await Qualification.setRequiredForOpportunity(opportunityId, qualificationIds);
+  const ids = (Array.isArray(opportunityIds) ? opportunityIds : [opportunityIds])
+    .filter(Boolean);
+  if (!ids.length) return;
+  if (ids.length === 1) {
+    await Qualification.setRequiredForOpportunity(ids[0], qualificationIds);
+    return;
   }
+  await Qualification.setRequiredForOpportunities(ids, qualificationIds);
 }
 
 async function applyTagIds(opportunityIds, tagIds) {
   if (tagIds == null) return;
-  const ids = Array.isArray(opportunityIds) ? opportunityIds : [opportunityIds];
-  for (const opportunityId of ids) {
-    if (!opportunityId) continue;
-    await Tag.setOpportunityTags(opportunityId, tagIds);
+  const ids = (Array.isArray(opportunityIds) ? opportunityIds : [opportunityIds])
+    .filter(Boolean);
+  if (!ids.length) return;
+  if (ids.length === 1) {
+    await Tag.setOpportunityTags(ids[0], tagIds);
+    return;
   }
+  await Tag.setOpportunityTagsForMany(ids, tagIds);
 }
 
 async function applyAnimalIds(opportunityIds, animalIds) {
   if (animalIds == null) return;
-  const ids = Array.isArray(opportunityIds) ? opportunityIds : [opportunityIds];
-  for (const opportunityId of ids) {
-    if (!opportunityId) continue;
-    await Animal.setOpportunityAnimals(opportunityId, animalIds);
+  const ids = (Array.isArray(opportunityIds) ? opportunityIds : [opportunityIds])
+    .filter(Boolean);
+  if (!ids.length) return;
+  if (ids.length === 1) {
+    await Animal.setOpportunityAnimals(ids[0], animalIds);
+    return;
   }
+  await Animal.setOpportunityAnimalsForMany(ids, animalIds);
 }
 
 async function withExtras(opportunityOrList) {

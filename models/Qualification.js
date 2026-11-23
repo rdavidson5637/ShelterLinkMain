@@ -176,14 +176,55 @@ async function setRequiredForOpportunity(opportunityId, qualificationIds = []) {
       .filter((id) => Number.isFinite(id) && id > 0)
   )];
 
-  for (const qid of ids) {
+  if (ids.length) {
+    const placeholders = ids.map(() => '(?, ?)').join(', ');
+    const params = ids.flatMap((qid) => [opportunityId, qid]);
     await pool.execute(
-      `INSERT INTO opportunity_qualifications (opportunity_id, qualification_id) VALUES (?, ?)`,
-      [opportunityId, qid]
+      `INSERT INTO opportunity_qualifications (opportunity_id, qualification_id) VALUES ${placeholders}`,
+      params
     );
   }
 
   return findRequiredForOpportunity(opportunityId);
+}
+
+/**
+ * Same required quals on many opportunities (series create) in two queries.
+ */
+async function setRequiredForOpportunities(opportunityIds = [], qualificationIds = []) {
+  const oppIds = [...new Set(
+    (Array.isArray(opportunityIds) ? opportunityIds : [opportunityIds])
+      .map((id) => Number(id))
+      .filter((id) => Number.isFinite(id) && id > 0)
+  )];
+  if (!oppIds.length) return;
+
+  const qIds = [...new Set(
+    (qualificationIds || [])
+      .map((id) => Number(id))
+      .filter((id) => Number.isFinite(id) && id > 0)
+  )];
+
+  const oppPlaceholders = oppIds.map(() => '?').join(', ');
+  await pool.execute(
+    `DELETE FROM opportunity_qualifications WHERE opportunity_id IN (${oppPlaceholders})`,
+    oppIds
+  );
+
+  if (!qIds.length) return;
+
+  const rowPlaceholders = [];
+  const params = [];
+  for (const opportunityId of oppIds) {
+    for (const qid of qIds) {
+      rowPlaceholders.push('(?, ?)');
+      params.push(opportunityId, qid);
+    }
+  }
+  await pool.execute(
+    `INSERT INTO opportunity_qualifications (opportunity_id, qualification_id) VALUES ${rowPlaceholders.join(', ')}`,
+    params
+  );
 }
 
 /**
@@ -443,6 +484,7 @@ module.exports = {
   remove,
   findRequiredForOpportunity,
   setRequiredForOpportunity,
+  setRequiredForOpportunities,
   attachRequiredQualifications,
   findByUserId,
   awardToUser,

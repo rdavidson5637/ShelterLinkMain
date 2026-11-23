@@ -304,14 +304,50 @@ async function setOpportunityAnimals(opportunityId, animalIds = []) {
   await pool.execute(`DELETE FROM opportunity_animals WHERE opportunity_id = ?`, [
     opportunityId,
   ]);
-  for (const animalId of ids) {
+  if (ids.length) {
+    const placeholders = ids.map(() => '(?, ?)').join(', ');
+    const params = ids.flatMap((animalId) => [opportunityId, animalId]);
     await pool.execute(
-      `INSERT INTO opportunity_animals (opportunity_id, animal_id) VALUES (?, ?)
+      `INSERT INTO opportunity_animals (opportunity_id, animal_id) VALUES ${placeholders}
        ON CONFLICT (opportunity_id, animal_id) DO NOTHING`,
-      [opportunityId, animalId]
+      params
     );
   }
   return findForOpportunity(opportunityId);
+}
+
+/**
+ * Same animals on many opportunities (series create) in two queries.
+ */
+async function setOpportunityAnimalsForMany(opportunityIds = [], animalIds = []) {
+  const oppIds = [...new Set(
+    (Array.isArray(opportunityIds) ? opportunityIds : [opportunityIds])
+      .map((id) => Number(id))
+      .filter((id) => Number.isFinite(id) && id > 0)
+  )];
+  if (!oppIds.length) return;
+
+  const ids = normalizeAnimalIds(animalIds) || [];
+  const oppPlaceholders = oppIds.map(() => '?').join(', ');
+  await pool.execute(
+    `DELETE FROM opportunity_animals WHERE opportunity_id IN (${oppPlaceholders})`,
+    oppIds
+  );
+  if (!ids.length) return;
+
+  const rowPlaceholders = [];
+  const params = [];
+  for (const opportunityId of oppIds) {
+    for (const animalId of ids) {
+      rowPlaceholders.push('(?, ?)');
+      params.push(opportunityId, animalId);
+    }
+  }
+  await pool.execute(
+    `INSERT INTO opportunity_animals (opportunity_id, animal_id) VALUES ${rowPlaceholders.join(', ')}
+     ON CONFLICT (opportunity_id, animal_id) DO NOTHING`,
+    params
+  );
 }
 
 async function attachAnimals(opportunityOrList) {
@@ -536,6 +572,7 @@ module.exports = {
   setStatus,
   findForOpportunity,
   setOpportunityAnimals,
+  setOpportunityAnimalsForMany,
   attachAnimals,
   findMissingQualificationsForUser,
   logActivity,

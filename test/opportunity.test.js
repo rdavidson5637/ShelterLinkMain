@@ -124,13 +124,33 @@ test('recurrence caps at 26 total occurrences (25 children)', () => {
   assert.strictEqual(offsets[offsets.length - 1], 25);
 });
 
-test('createWithRecurrence weekly inserts parent then children', async () => {
+test('createWithRecurrence weekly inserts parent then batches children', async () => {
   mock.resetCalls();
   let nextId = 1;
   mock.setHandler(async (sql, params) => {
+    if (/INSERT INTO/i.test(sql) && /RETURNING opportunity_id/i.test(sql)) {
+      const rowCount = (String(sql).match(/\(\?, \?, \?, \?, \?, \?, \?, \?, \?, \?, \?, \?, \?, \?, \?\)/g) || []).length;
+      const rows = [];
+      for (let i = 0; i < rowCount; i += 1) {
+        rows.push({ opportunity_id: nextId++ });
+      }
+      rows.insertId = rows[0] && rows[0].opportunity_id;
+      rows.affectedRows = rowCount;
+      return [rows];
+    }
     if (/INSERT INTO/i.test(sql)) {
       const id = nextId++;
       return [{ insertId: id }];
+    }
+    if (/WHERE opportunity_id IN/i.test(sql)) {
+      return [params.map((id, idx) => ({
+        opportunity_id: id,
+        title: 'Walk',
+        status: 'open',
+        recurrence_rule: 'none',
+        parent_opportunity_id: 1,
+        start_date: `2026-08-${String(10 + idx * 7).padStart(2, '0')}`,
+      }))];
     }
     if (/WHERE opportunity_id = \?/i.test(sql)) {
       const id = params[0];
@@ -160,8 +180,9 @@ test('createWithRecurrence weekly inserts parent then children', async () => {
   assert.strictEqual(result.total, 5);
   assert.strictEqual(result.children.length, 4);
   const inserts = mock.calls.filter((c) => /INSERT INTO/i.test(c.sql));
-  assert.strictEqual(inserts.length, 5);
+  assert.strictEqual(inserts.length, 2, 'parent insert + one batched children insert');
   assert.strictEqual(inserts[0].params[9], 'weekly');
+  assert.match(inserts[1].sql, /RETURNING opportunity_id/i);
   assert.strictEqual(inserts[1].params[9], 'none');
   assert.strictEqual(inserts[1].params[11], 1, 'child links to parent');
   assert.strictEqual(inserts[1].params[4], '2026-08-10');
