@@ -1,8 +1,13 @@
 import { apiRequest } from './config.js';
 import { redirectIfAuthenticated } from './auth.js';
 import { showFormErrors, clearFormErrors } from './utils/formErrors.js';
-import { loadBrand } from './brand.js';
+import { loadBrand, applyShelterBrand } from './brand.js';
 import { currentShelterSlug } from './shelterSlug.js';
+import {
+  getPasswordChecks,
+  allPasswordChecksPass,
+  getStrengthInfo,
+} from './utils/passwordStrength.js';
 
 const form = document.getElementById('registerForm');
 const messageEl = document.getElementById('message');
@@ -15,17 +20,6 @@ let shelterMissing = false;
 let meterTextEl = null;
 let checklistItems = null;
 
-function getPasswordChecks(password = '') {
-  const value = String(password);
-  return {
-    minLength: value.length >= 10,
-  };
-}
-
-function allPasswordChecksPass(checks) {
-  return checks.minLength;
-}
-
 function updateSubmitState() {
   if (!submitButton || !passwordInput) return;
   if (shelterMissing) {
@@ -36,27 +30,36 @@ function updateSubmitState() {
   submitButton.disabled = !allPasswordChecksPass(checks);
 }
 
-function getStrengthInfo(checks, passwordValue = '') {
-  if (!passwordValue || !checks.minLength) return { label: 'Too short', color: 'var(--danger)' };
-  if (passwordValue.length < 14) return { label: 'Long enough', color: 'var(--accent-text)' };
-  return { label: 'Long', color: 'var(--green)' };
-}
-
-function renderChecklistItem(li, passed, text) {
+function renderChecklistItem(li, passed, text, idle) {
   if (!li) return;
+  if (idle) {
+    li.textContent = text;
+    li.style.color = 'var(--text-secondary)';
+    return;
+  }
   li.textContent = `${passed ? '✓' : '✗'} ${text}`;
   li.style.color = passed ? 'var(--green)' : 'var(--danger)';
 }
 
 function updatePasswordFeedback() {
   if (!passwordInput || !meterTextEl || !checklistItems) return;
-  const checks = getPasswordChecks(passwordInput.value);
-  const strength = getStrengthInfo(checks, passwordInput.value);
+  const value = passwordInput.value;
+  const checks = getPasswordChecks(value);
+  const strength = getStrengthInfo(value);
 
-  meterTextEl.textContent = `Strength: ${strength.label}`;
+  if (strength.idle) {
+    meterTextEl.textContent = 'Strength';
+  } else {
+    meterTextEl.textContent = `Strength: ${strength.label}`;
+  }
   meterTextEl.style.color = strength.color;
 
-  renderChecklistItem(checklistItems.minLength, checks.minLength, 'At least 10 characters');
+  renderChecklistItem(
+    checklistItems.minLength,
+    checks.minLength,
+    'At least 10 characters',
+    strength.idle
+  );
 
   updateSubmitState();
 }
@@ -193,10 +196,14 @@ function markShelterMissing() {
 
 // Brand returns 404 for an unknown slug (no Assisi fallback). A mismatch
 // means the same: the slug in this link is not a shelter we know.
+// On success, fill the heading from the shelter record (no hard-coded names).
 async function checkShelter() {
-  if (!shelterSlug) return;
   const brand = await loadBrand();
-  if (!brand || (brand.slug && brand.slug !== shelterSlug)) markShelterMissing();
+  if (shelterSlug && (!brand || (brand.slug && brand.slug !== shelterSlug))) {
+    markShelterMissing();
+    return;
+  }
+  if (brand) applyShelterBrand(brand);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -208,4 +215,3 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', handleRegister);
   }
 });
-
