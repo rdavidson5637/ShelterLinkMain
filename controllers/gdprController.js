@@ -4,6 +4,9 @@ const AuditLog = require('../models/AuditLog');
 const Gdpr = require('../models/Gdpr');
 const { recordAudit } = require('../middleware/auditLog');
 const { isAdminUser } = require('../middleware/auth');
+const platformOwner = require('../middleware/platformOwner');
+const shelterContext = require('../utils/shelterContext');
+const { convertToCSV } = require('../utils/csvExport');
 
 function ensureAdmin(req, res) {
   if (!req.session || !req.session.userId) {
@@ -17,22 +20,104 @@ function ensureAdmin(req, res) {
   return true;
 }
 
+function auditFiltersFromQuery(query = {}) {
+  return {
+    action: query.action || undefined,
+    entityType: query.entityType || undefined,
+    userId: query.userId || undefined,
+    from: query.from || undefined,
+    to: query.to || undefined,
+    limit: query.limit,
+    offset: query.offset,
+  };
+}
+
+/**
+ * Shelter admins stay inside RLS. Platform owners read every shelter's
+ * audit_log (who / what / when / target) without a tenant filter.
+ */
+async function loadAuditPage(req, filters) {
+  const platform = await platformOwner.isPlatformOwnerUser(req.session.userId);
+  const run = () => AuditLog.findAll(filters);
+  const page = platform ? await shelterContext.runWithoutShelter(run) : await run();
+  return { page, scope: platform ? 'all' : 'shelter' };
+}
+
+function formatDetailForCsv(detail) {
+  if (detail == null) return '';
+  if (typeof detail === 'string') return detail;
+  try {
+    return JSON.stringify(detail);
+  } catch (_) {
+    return String(detail);
+  }
+}
+
+function actorLabelForCsv(row) {
+  const name = `${row.actor_first_name || ''} ${row.actor_last_name || ''}`.trim();
+  if (name && row.actor_email) return `${name} (${row.actor_email})`;
+  return row.actor_email || (row.user_id != null ? `User #${row.user_id}` : 'System');
+}
+
 async function listAuditLog(req, res) {
   try {
     if (!ensureAdmin(req, res)) return;
-    const { action, entityType, userId, from, to, limit, offset } = req.query || {};
-    const rows = await AuditLog.findAll({
-      action: action || undefined,
-      entityType: entityType || undefined,
-      userId: userId || undefined,
-      from: from || undefined,
-      to: to || undefined,
-      limit,
-      offset,
+    const { page, scope } = await loadAuditPage(req, auditFiltersFromQuery(req.query));
+    return res.status(200).json({
+      rows: page.rows,
+      total: page.total,
+      limit: page.limit,
+      offset: page.offset,
+      scope,
     });
-    return res.status(200).json(rows);
   } catch (error) {
     console.error('[Admin] listAuditLog error:', error.message);
+    if (error.status === 404) return res.status(404).json({ error: 'Not found' });
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+async function exportAuditLogCsv(req, res) {
+  try {
+    if (!ensureAdmin(req, res)) return;
+    const filters = {
+      ...auditFiltersFromQuery(req.query),
+      forExport: true,
+      offset: 0,
+    };
+    const { page, scope } = await loadAuditPage(req, filters);
+    const fields = [
+      'when',
+      'actor',
+      'action',
+      'entity_type',
+      'entity_id',
+      'detail',
+    ];
+    if (scope === 'all') {
+      fields.push('shelter_id', 'shelter_name');
+    }
+    const data = page.rows.map((row) => {
+      const out = {
+        when: row.created_at == null ? '' : String(row.created_at),
+        actor: actorLabelForCsv(row),
+        action: row.action || '',
+        entity_type: row.entity_type || '',
+        entity_id: row.entity_id == null ? '' : String(row.entity_id),
+        detail: formatDetailForCsv(row.detail_json),
+      };
+      if (scope === 'all') {
+        out.shelter_id = row.shelter_id == null ? '' : String(row.shelter_id);
+        out.shelter_name = row.shelter_name || '';
+      }
+      return out;
+    });
+    const csv = convertToCSV(data, fields);
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="audit-log.csv"');
+    return res.status(200).send(csv);
+  } catch (error) {
+    console.error('[Admin] exportAuditLogCsv error:', error.message);
     if (error.status === 404) return res.status(404).json({ error: 'Not found' });
     return res.status(500).json({ error: 'Internal server error' });
   }
@@ -242,6 +327,7 @@ async function updateUserRole(req, res) {
 
 module.exports = {
   listAuditLog,
+  exportAuditLogCsv,
   exportVolunteerGdpr,
   eraseVolunteer,
   getRetentionSettings,

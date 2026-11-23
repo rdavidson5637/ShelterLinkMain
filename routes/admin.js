@@ -27,6 +27,7 @@ const {
 const { listVolunteerDocuments } = require('../controllers/documentController');
 const {
   listAuditLog,
+  exportAuditLogCsv,
   exportVolunteerGdpr,
   eraseVolunteer,
   getRetentionSettings,
@@ -126,6 +127,7 @@ router.get('/messages', isAuthenticated, adminOnly, listMessages);
 router.post('/messages', isAuthenticated, adminOnly, messageLimiter, validateBody(bodies.bulkMessage), sendBulkMessage);
 
 router.get('/audit-log', isAuthenticated, adminOnly, validateQuery(queries.audit), listAuditLog);
+router.get('/audit-log.csv', isAuthenticated, adminOnly, validateQuery(queries.audit), exportAuditLogCsv);
 router.get('/gdpr/volunteers/:userId/export', isAuthenticated, adminOnly, exportVolunteerGdpr);
 router.post('/gdpr/volunteers/:userId/erase', isAuthenticated, adminOnly, validateBody(bodies.erase), eraseVolunteer);
 router.get('/settings/retention', isAuthenticated, adminOnly, getRetentionSettings);

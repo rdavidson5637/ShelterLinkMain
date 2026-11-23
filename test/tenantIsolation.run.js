@@ -444,6 +444,7 @@ function cases(feedbackToken) {
     own('GET', '/api/admin/volunteers'),
     own('GET', '/api/admin/messages'),
     own('GET', '/api/admin/audit-log'),
+    own('GET', '/api/admin/audit-log.csv'),
     own('GET', '/api/export/volunteers'),
     own('GET', '/api/export/hours'),
     own('GET', '/api/export/community-service'),
