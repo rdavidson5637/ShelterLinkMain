@@ -2601,3 +2601,89 @@ body.staff-app .dashboard-main > section {
     grid-template-columns: 1fr;
   }
 }
+
+/* --------------------------------------------------------------------------
+   Staff how-to help (SL-LATER-20)
+   -------------------------------------------------------------------------- */
+.staff-help {
+  max-width: var(--measure);
+}
+
+.staff-help-back {
+  margin: 0 0 1rem;
+  font-size: var(--text-sm);
+}
+
+.staff-help-back a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.staff-help-steps {
+  list-style: none;
+  margin: 0 0 var(--section-gap);
+  padding: 0;
+  border-top: 1px solid var(--border);
+  counter-reset: help-step;
+}
+
+.staff-help-steps > li {
+  counter-increment: help-step;
+  position: relative;
+  padding: 1rem 0 1rem 2.5rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+.staff-help-steps > li::before {
+  content: counter(help-step);
+  position: absolute;
+  left: 0;
+  top: 1rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.staff-help-steps > li > strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--text);
+}
+
+.staff-help-steps > li > p {
+  margin: 0.35rem 0 0;
+  color: var(--text-secondary);
+}
+
+.staff-help-open {
+  margin: 0;
+}
+
+.staff-help-open a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.staff-help-related {
+  margin: var(--section-gap) 0 0;
+  font-size: var(--text-sm);
+}
+
+.staff-help-related a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
