@@ -39,6 +39,14 @@ const privacyNotice = z
   })
   .strict();
 
+// A 6-digit authenticator code ("123 456" allowed) or a recovery code ("ab12c-3de45").
+const twoFactorCode = z.string().min(6).max(32);
+
+const twoFactorVerify = z.object({ code: twoFactorCode }).strict();
+const twoFactorSetup = z.object({ password: str(200) }).strict();
+const twoFactorEnable = z.object({ code: twoFactorCode }).strict();
+const twoFactorDisable = z.object({ password: str(200), code: twoFactorCode }).strict();
+
 const register = z
   .object({
     first_name: optStr(80),
@@ -713,6 +721,10 @@ const bodies = {
   privacyNotice,
   registerAdmin,
   login,
+  twoFactorVerify,
+  twoFactorSetup,
+  twoFactorEnable,
+  twoFactorDisable,
   forgot,
   reset,
   inviteCheck,

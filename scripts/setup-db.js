@@ -98,6 +98,7 @@ async function run() {
     await applySql(pgPool, loadSql('038_platform_audit.pg.sql'));
     await applySql(pgPool, loadSql('039_platform_audit_reactivate.pg.sql'));
     await applySql(pgPool, loadSql('041_under_18_guardian_consent.pg.sql'));
+    await applySql(pgPool, loadSql('042_staff_totp.pg.sql'));
     await applySql(pgPool, loadSql('043_training_modules.pg.sql'));
     await applySql(pgPool, loadSql('044_booking_policy.pg.sql'));
     await applySql(pgPool, loadSql('046_rate_limit_job_dedupe.pg.sql'));
