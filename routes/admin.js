@@ -92,6 +92,11 @@ const {
   previewMilestoneEmail,
   sendMilestoneEmail,
 } = require('../controllers/milestoneController');
+const {
+  getVolunteerBuddy,
+  assignVolunteerBuddy,
+  clearVolunteerBuddy,
+} = require('../controllers/buddyController');
 
 const { validateBody, validateQuery, positiveParam } = require('../middleware/validate');
 const { listStaffInvites, createStaffInvite, revokeStaffInvite } = require('../controllers/staffInviteController');
@@ -211,6 +216,16 @@ router.put(
   validateBody(bodies.inductionProgress),
   setVolunteerInductionItem
 );
+router.get('/volunteers/:userId/buddy', isAuthenticated, staffOrAdmin, getVolunteerBuddy);
+router.put(
+  '/volunteers/:userId/buddy',
+  isAuthenticated,
+  staffOrAdmin,
+  messageLimiter,
+  validateBody(bodies.volunteerBuddy),
+  assignVolunteerBuddy
+);
+router.delete('/volunteers/:userId/buddy', isAuthenticated, staffOrAdmin, clearVolunteerBuddy);
 router.get('/volunteers/:userId/guardian-consent', isAuthenticated, staffOrAdmin, getVolunteerGuardianConsent);
 router.post('/volunteers/:userId/guardian-consent', isAuthenticated, staffOrAdmin, validateBody(bodies.guardianConsent), recordVolunteerGuardianConsent);
 router.delete('/volunteers/:userId/guardian-consent', isAuthenticated, staffOrAdmin, withdrawVolunteerGuardianConsent);

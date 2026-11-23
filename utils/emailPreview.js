@@ -17,6 +17,7 @@ const {
   buildWeeklyDigest,
   buildPasswordReset,
   buildMilestoneThankYou,
+  buildBuddyAssigned,
 } = require('./emailService');
 
 const APP_BASE = () => String(process.env.APP_URL || 'https://shelterlink.online').replace(/\/$/, '');
@@ -70,6 +71,10 @@ function sampleData(shelterNamePlain) {
       firstName: 'Alex',
       kind: 'anniversary_1y',
       label: 'One year volunteering',
+    },
+    buddy: {
+      buddyFirstName: 'Sam',
+      volunteerName: 'Alex',
     },
   };
 }
@@ -137,6 +142,14 @@ const CATALOG = [
     description: 'Staff-sent thank-you for one year or 50 attended shifts.',
     build(brand, samples) {
       return buildMilestoneThankYou(samples.milestone, brand);
+    },
+  },
+  {
+    id: 'buddy',
+    label: 'Buddy assignment',
+    description: 'Optional staff-sent notice when a volunteer is asked to buddy someone new.',
+    build(brand, samples) {
+      return buildBuddyAssigned(samples.buddy, brand);
     },
   },
 ];

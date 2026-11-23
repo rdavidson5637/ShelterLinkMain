@@ -631,6 +631,60 @@ async function viewProfile(userId) {
       inductionHtml = '<p>Unable to load induction progress.</p>';
     }
 
+    let buddyHtml = '<p>Unable to load buddy pairing.</p>';
+    let currentBuddyId = '';
+    try {
+      const buddyRes = await apiRequest(`/admin/volunteers/${userId}/buddy`, { method: 'GET' });
+      if (buddyRes.ok) {
+        const buddyData = await buddyRes.json();
+        const pairing = buddyData.pairing || null;
+        currentBuddyId = pairing ? String(pairing.buddy_user_id) : '';
+        const options = allVolunteers
+          .filter((v) => String(v.id) !== String(userId))
+          .map((v) => {
+            const label =
+              `${v.first_name || ''} ${v.last_name || ''}`.trim() || v.name || v.email || `Volunteer ${v.id}`;
+            const selected = String(v.id) === currentBuddyId ? 'selected' : '';
+            return `<option value="${escapeHtml(v.id)}" ${selected}>${escapeHtml(label)}</option>`;
+          })
+          .join('');
+        const currentLine = pairing
+          ? `<p>Current buddy: <strong>${escapeHtml(pairing.buddy?.name || 'Volunteer')}</strong>${
+              pairing.notify_emailed_at
+                ? ` · emailed ${escapeHtml(String(pairing.notify_emailed_at).slice(0, 10))}`
+                : ''
+            }</p>`
+          : '<p>No buddy assigned yet.</p>';
+        buddyHtml = `
+          ${currentLine}
+          <form id="buddyAssignForm" style="display:grid; gap:0.5rem; margin-top:0.5rem;">
+            <label>
+              Buddy volunteer
+              <select id="buddyUserId" name="buddy_user_id" required>
+                <option value="">Select a volunteer…</option>
+                ${options}
+              </select>
+            </label>
+            <label>
+              <input type="checkbox" id="buddyNotify" name="notify" />
+              Email the buddy about this pairing
+            </label>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+              <button type="submit" class="button-small">Save buddy</button>
+              ${
+                pairing
+                  ? '<button type="button" class="secondary button-small" id="buddyClearBtn">Clear buddy</button>'
+                  : ''
+              }
+            </div>
+            <p id="buddyAssignStatus" class="form-status" hidden></p>
+          </form>
+        `;
+      }
+    } catch {
+      buddyHtml = '<p>Unable to load buddy pairing.</p>';
+    }
+
     // Under-18 rules (SL-NOW-02): only shown when this volunteer is under 18
     // or under the shelter minimum.
     let guardianHtml = '';
@@ -840,6 +894,11 @@ async function viewProfile(userId) {
           <strong>Induction checklist:</strong>
           ${inductionHtml}
         </div>
+        <div style="border-top: 1px solid #ddd; padding-top: 0.75rem;">
+          <strong>Buddy</strong>
+          <p><small>Pair a new volunteer with an experienced buddy. Both see it on their home page.</small></p>
+          ${buddyHtml}
+        </div>
         ${
           guardianHtml
             ? `<div>
@@ -931,6 +990,76 @@ async function viewProfile(userId) {
         box.disabled = false;
       });
     });
+
+    const buddyForm = document.getElementById('buddyAssignForm');
+    if (buddyForm) {
+      buddyForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const select = document.getElementById('buddyUserId');
+        const notifyBox = document.getElementById('buddyNotify');
+        const statusEl = document.getElementById('buddyAssignStatus');
+        const buddyUserId = Number(select?.value);
+        if (!Number.isInteger(buddyUserId) || buddyUserId <= 0) {
+          setMessage('Choose a buddy from the list.', 'error');
+          return;
+        }
+        const submitBtn = buddyForm.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
+        if (statusEl) {
+          statusEl.hidden = false;
+          statusEl.textContent = 'Saving buddy…';
+        }
+        try {
+          const saveRes = await apiRequest(`/admin/volunteers/${userId}/buddy`, {
+            method: 'PUT',
+            body: {
+              buddy_user_id: buddyUserId,
+              notify: Boolean(notifyBox?.checked),
+            },
+          });
+          const body = await saveRes.json().catch(() => ({}));
+          if (!saveRes.ok) {
+            const err = body.error || 'Could not save buddy.';
+            if (statusEl) statusEl.textContent = err;
+            setMessage(err, 'error');
+            if (submitBtn) submitBtn.disabled = false;
+            return;
+          }
+          const msg = body.emailed
+            ? 'Buddy saved and email sent.'
+            : body.email_error || 'Buddy saved.';
+          setMessage(msg, body.email_error ? 'error' : 'success');
+          await viewProfile(userId);
+        } catch {
+          if (statusEl) statusEl.textContent = 'Network error saving buddy.';
+          setMessage('Network error saving buddy.', 'error');
+          if (submitBtn) submitBtn.disabled = false;
+        }
+      });
+    }
+
+    const buddyClearBtn = document.getElementById('buddyClearBtn');
+    if (buddyClearBtn) {
+      buddyClearBtn.addEventListener('click', async () => {
+        buddyClearBtn.disabled = true;
+        try {
+          const clearRes = await apiRequest(`/admin/volunteers/${userId}/buddy`, {
+            method: 'DELETE',
+          });
+          const body = await clearRes.json().catch(() => ({}));
+          if (!clearRes.ok) {
+            setMessage(body.error || 'Could not clear buddy.', 'error');
+            buddyClearBtn.disabled = false;
+            return;
+          }
+          setMessage('Buddy cleared.', 'success');
+          await viewProfile(userId);
+        } catch {
+          setMessage('Network error clearing buddy.', 'error');
+          buddyClearBtn.disabled = false;
+        }
+      });
+    }
 
     profileContent.querySelectorAll('.milestone-send-btn').forEach((btn) => {
       btn.addEventListener('click', async () => {

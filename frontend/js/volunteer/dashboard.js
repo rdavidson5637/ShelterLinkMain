@@ -124,6 +124,44 @@ async function loadInductionChecklist() {
   }
 }
 
+async function loadBuddy() {
+  const card = document.getElementById('buddyCard');
+  const el = document.getElementById('buddyDetails');
+  if (!card || !el) return;
+  try {
+    const res = await apiRequest('/buddy/me', { method: 'GET' });
+    if (!res.ok) {
+      card.hidden = true;
+      return;
+    }
+    const data = await res.json();
+    const lines = [];
+    if (data.as_volunteer?.buddy?.name) {
+      lines.push(
+        `<p>Your buddy is <strong>${escapeHtml(data.as_volunteer.buddy.name)}</strong>.</p>`
+      );
+    }
+    const mentees = Array.isArray(data.as_buddy) ? data.as_buddy : [];
+    if (mentees.length) {
+      const names = mentees
+        .map((row) => escapeHtml(row.volunteer?.name || 'a volunteer'))
+        .join(', ');
+      lines.push(
+        `<p>You are a buddy for <strong>${names}</strong>.</p>`
+      );
+    }
+    if (!lines.length) {
+      card.hidden = true;
+      return;
+    }
+    card.hidden = false;
+    el.innerHTML = lines.join('');
+  } catch (error) {
+    console.error('[Dashboard] buddy error:', error);
+    card.hidden = true;
+  }
+}
+
 function renderBadges(badges = {}) {
   if (badgesListEl) {
     const earned = badges.earned || [];
@@ -620,6 +658,7 @@ async function init() {
   }
   await loadOnboardingChecklist();
   await loadInductionChecklist();
+  await loadBuddy();
   const profile = await fetchProfile();
   if (profile === null) {
     renderProfileIncomplete();
