@@ -83,6 +83,15 @@ export function createThreadsController({
   let selectedId = null;
   let detail = null;
   let muted = false;
+  let syncTimer = null;
+  let syncInFlight = false;
+  const SYNC_MS = 15000;
+
+  function messageFingerprint(list) {
+    if (!Array.isArray(list) || !list.length) return '0';
+    const last = list[list.length - 1];
+    return `${list.length}:${last?.id || ''}:${last?.deleted_at || ''}`;
+  }
 
   function renderThreadList() {
     if (!threadsListEl) return;
@@ -207,10 +216,10 @@ export function createThreadsController({
     selectedId = null;
   }
 
-  async function loadThreads() {
+  async function loadThreads({ quiet = false } = {}) {
     const res = await apiRequest('/threads', { method: 'GET' });
     if (!res.ok) {
-      setStatus(statusEl, 'Failed to load threads', 'error');
+      if (!quiet) setStatus(statusEl, 'Failed to load threads', 'error');
       return;
     }
     threads = await res.json();
@@ -218,21 +227,64 @@ export function createThreadsController({
     renderThreadList();
   }
 
-  async function selectThread(id) {
+  async function selectThread(id, { quiet = false } = {}) {
     selectedId = Number(id);
     const res = await apiRequest(`/threads/${selectedId}`, { method: 'GET' });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      setStatus(statusEl, err.error || 'Failed to open thread', 'error');
+      if (!quiet) setStatus(statusEl, err.error || 'Failed to open thread', 'error');
       return;
     }
-    detail = await res.json();
+    const next = await res.json();
+    const prevFp = messageFingerprint(detail?.messages);
+    const nextFp = messageFingerprint(next?.messages);
+    detail = next;
     // Keep list unread in sync
     threads = threads.map((t) =>
       Number(t.id) === selectedId ? { ...t, unread_count: 0 } : t
     );
     renderThreadList();
-    showDetail();
+    if (!quiet || prevFp !== nextFp) {
+      showDetail();
+    }
+  }
+
+  async function syncFromServer() {
+    if (syncInFlight || document.hidden) return;
+    syncInFlight = true;
+    try {
+      const openId = selectedId;
+      await loadThreads({ quiet: true });
+      if (openId) {
+        await selectThread(openId, { quiet: true });
+      }
+    } catch {
+      /* ignore transient sync errors */
+    } finally {
+      syncInFlight = false;
+    }
+  }
+
+  function stopSync() {
+    if (syncTimer) {
+      clearInterval(syncTimer);
+      syncTimer = null;
+    }
+    document.removeEventListener('visibilitychange', onVisibilityChange);
+  }
+
+  function onVisibilityChange() {
+    if (!document.hidden) {
+      syncFromServer().catch(() => {});
+    }
+  }
+
+  function startSync() {
+    stopSync();
+    syncTimer = setInterval(() => {
+      syncFromServer().catch(() => {});
+    }, SYNC_MS);
+    document.addEventListener('visibilitychange', onVisibilityChange);
   }
 
   async function sendMessage(event) {
@@ -312,8 +364,10 @@ export function createThreadsController({
       } else {
         hideDetail();
       }
+      startSync();
     },
     loadThreads,
     selectThread,
+    stopSync,
   };
 }

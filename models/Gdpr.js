@@ -4,6 +4,7 @@ const { hashPassword } = require('../utils/password');
 const { pool } = require('../config/database');
 const { destroyUserSessions } = require('../utils/sessionCookie');
 const { periods } = require('../config/retention');
+const UserDocument = require('./UserDocument');
 
 function retentionYears() {
   return periods().inactiveVolunteerYears;
@@ -117,6 +118,21 @@ async function buildVolunteerExport(userId) {
      ORDER BY a.id`,
     [id]
   );
+  const [mileageClaims] = await pool.execute(
+    `SELECT id, travel_date, miles, purpose, transport_leg_id, opportunity_id,
+            status, reviewed_at, created_at
+     FROM mileage_claims WHERE user_id = ? ORDER BY id`,
+    [id]
+  );
+  const [memberships] = await pool.execute(
+    `SELECT m.id, m.shelter_id, m.role, m.created_at, m.updated_at,
+            s.name AS shelter_name, s.slug AS shelter_slug
+     FROM memberships m
+     LEFT JOIN shelters s ON s.id = m.shelter_id
+     WHERE m.user_id = ?
+     ORDER BY m.id`,
+    [id]
+  );
 
   const hoursTotal = hours
     .filter((h) => Number(h.approved) === 1)
@@ -141,6 +157,8 @@ async function buildVolunteerExport(userId) {
     background_checks: checks,
     guardian_consents: guardianConsents,
     training_attempts: trainingAttempts,
+    mileage_claims: mileageClaims,
+    memberships,
   };
 }
 
@@ -222,6 +240,8 @@ async function anonymiseUser(userId, { reason = 'gdpr_erasure' } = {}) {
     );
 
     // Remove free-text custom field answers and document binaries metadata path.
+    // Drop object-storage blobs before the rows so keys are not orphaned.
+    await UserDocument.deleteStoredObjectsForUser(id);
     await conn.execute('DELETE FROM custom_field_values WHERE user_id = ?', [id]);
     await conn.execute('DELETE FROM user_documents WHERE user_id = ?', [id]);
     await conn.execute('DELETE FROM volunteer_tags WHERE user_id = ?', [id]);
@@ -230,6 +250,7 @@ async function anonymiseUser(userId, { reason = 'gdpr_erasure' } = {}) {
     // Guardian details are a third party's personal data.
     await conn.execute('DELETE FROM guardian_consents WHERE user_id = ?', [id]);
     await conn.execute('DELETE FROM training_attempts WHERE user_id = ?', [id]);
+    await conn.execute('DELETE FROM mileage_claims WHERE user_id = ?', [id]);
     await conn.execute(
       `UPDATE messages SET body = '[removed]' WHERE user_id = ?`,
       [id]

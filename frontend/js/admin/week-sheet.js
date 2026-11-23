@@ -69,7 +69,7 @@ function renderVolunteerRow(v) {
 
 function renderAnimal(a) {
   const photo = a.photo_filename
-    ? `<img class="animal-thumb" src="/api/animals/${Number(a.id)}/photo" alt="" width="40" height="40" />`
+    ? `<img class="animal-thumb" src="/api/animals/${Number(a.id)}/photo" alt="" aria-hidden="true" width="40" height="40" />`
     : '';
   const handling = a.handling_notes
     ? ` — <span class="handling-warn">${escapeHtml(a.handling_notes)}</span>`

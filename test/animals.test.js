@@ -125,13 +125,17 @@ test('setStatus rejects unknown status', async () => {
 
 test('setPhoto upserts bytes into animal_photos, not onto animals', async () => {
   mock.resetCalls();
-  mock.setHandler(async () => [{ affectedRows: 1 }]);
+  mock.setHandler(async (sql) => {
+    if (/SELECT\s+storage_key/i.test(sql)) return [[]];
+    return [{ affectedRows: 1 }];
+  });
   await Animal.setPhoto(3, { content: Buffer.from('jpegbytes'), mimeType: 'image/png' });
-  const call = mock.calls.find((c) => /animal_photos/i.test(c.sql));
+  const call = mock.calls.find((c) => /INSERT INTO animal_photos/i.test(c.sql));
   assert.ok(call, 'wrote to animal_photos');
   assert.match(call.sql, /ON CONFLICT/i);
   assert.ok(Buffer.isBuffer(call.params[1]));
   assert.strictEqual(call.params[2], 'image/png');
+  assert.strictEqual(call.params[3], null, 'storage_key null when object storage is off');
   assert.ok(!mock.calls.some((c) => /UPDATE animals/i.test(c.sql)));
 });
 

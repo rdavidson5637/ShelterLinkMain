@@ -78,11 +78,14 @@ SMTP or the token is rolled back. Expired reset tokens are cleared by an hourly 
 | `CCEW_API_KEY` | Optional. Charity Commission for England and Wales Register API key. Without it, E&W lookups report `not_configured` and the platform owner checks the register by hand. `npm run check-prod` reports whether it is set |
 | `OSCR_API_KEY` | Reserved. Scottish lookups are not live yet |
 | `DB_CONNECTION_LIMIT` | `10` (Supabase free-tier budget) |
+| `OBJECT_STORAGE_ENDPOINT` `OBJECT_STORAGE_BUCKET` `OBJECT_STORAGE_ACCESS_KEY_ID` `OBJECT_STORAGE_SECRET_ACCESS_KEY` | Optional. All four required to move new uploads to an S3-compatible bucket. See `docs/OBJECT-STORAGE.md` |
 
 The app writes no user files to disk, so no persistent volume is required.
-Uploaded volunteer documents (AccessNI, references) and animal photos are
-stored as `bytea` in Postgres, so they survive redeploys on hosts with an
-ephemeral filesystem and are captured by `npm run backup` (`pg_dump`).
+Uploaded volunteer documents and animal photos default to Postgres `bytea`
+(survive redeploys; captured by `npm run backup`). Before a third shelter,
+set the optional `OBJECT_STORAGE_*` variables to an S3-compatible bucket so
+new uploads leave the database; see `docs/OBJECT-STORAGE.md`. Incomplete
+config is ignored and bytea remains in use.
 
 Create the first real admin after deploy (`POST /api/auth/register-admin` stays 404 in production):
 

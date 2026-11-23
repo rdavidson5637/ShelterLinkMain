@@ -15,9 +15,9 @@
     <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
     <link rel="stylesheet" href="/public/css/custom.css" />
   </head>
-  <body>
+  <body class="staff-app">
     <a class="skip-link" href="#main">Skip to main content</a>
-        <header class="site-header">
+    <header class="site-header">
       <nav class="site-nav container" aria-label="Account">
         <a class="site-brand" href="/pages/admin/dashboard.html">
           <span class="brand-mark" aria-hidden="true"></span>
@@ -31,32 +31,29 @@
     <main id="main" class="container dashboard-layout">
       <aside id="admin-nav" class="sidebar-nav"></aside>
       <div class="dashboard-main">
-      <section>
-        <h1>Volunteer Directory</h1>
+      <section class="page-lede">
+        <h1>Volunteer directory</h1>
+        <p>Search profiles, hours, and approval status in one table.</p>
       </section>
 
-      <!-- Filter Section -->
-      <section>
-        <div class="grid" style="grid-template-columns: 2fr 1fr; gap: 1rem;">
-          <label for="searchInput">
-            Search by name or email
-            <input type="text" id="searchInput" name="search" placeholder="Search volunteers..." />
-          </label>
-          <label for="statusFilter">
-            Filter by approval status
-            <select id="statusFilter" name="status">
-              <option value="all">All</option>
-              <option value="approved">Approved</option>
-              <option value="pending">Pending</option>
-            </select>
-          </label>
-        </div>
+      <section class="filter-bar" aria-label="Filters">
+        <label for="searchInput">
+          Search by name or email
+          <input type="text" id="searchInput" name="search" placeholder="Search volunteers..." />
+        </label>
+        <label for="statusFilter">
+          Filter by approval status
+          <select id="statusFilter" name="status">
+            <option value="all">All</option>
+            <option value="approved">Approved</option>
+            <option value="pending">Pending</option>
+          </select>
+        </label>
       </section>
 
-      <!-- Volunteers Table -->
       <section>
         <div id="message" role="status" aria-live="polite"></div>
-        <div class="table-wrapper directory-table">
+        <div class="table-wrapper staff-dense directory-table">
           <table>
             <caption>Registered volunteers</caption>
             <thead>
@@ -83,7 +80,7 @@
     <dialog id="profileModal" aria-labelledby="profile-modal-title">
       <article>
         <header>
-          <strong id="profile-modal-title">Volunteer Profile</strong>
+          <strong id="profile-modal-title">Volunteer profile</strong>
           <button aria-label="Close" rel="prev" id="closeModalButton" class="close"></button>
         </header>
         <div id="profileContent">

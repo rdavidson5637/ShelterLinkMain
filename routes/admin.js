@@ -37,6 +37,13 @@ const {
   updateBookingSettings,
   updateVolunteerTrusted,
 } = require('../controllers/bookingPolicyController');
+const {
+  upload: brandLogoUpload,
+  handleMulterError: handleBrandLogoMulterError,
+  getBrandSettings,
+  updateBrandSettings,
+  uploadBrandLogo,
+} = require('../controllers/shelterBrandController');
 const { getDaySheet } = require('../controllers/daySheetController');
 const {
   getImpactReport,
@@ -46,10 +53,12 @@ const {
 const { getWeekSheet, getWeekSheetIcs } = require('../controllers/weekSheetController');
 
 const { validateBody, validateQuery, positiveParam } = require('../middleware/validate');
+const { listStaffInvites, createStaffInvite, revokeStaffInvite } = require('../controllers/staffInviteController');
 const { bodies, queries } = require('../validation/bodies');
 
 const router = express.Router();
 router.param('userId', positiveParam('userId'));
+router.param('inviteId', positiveParam('inviteId'));
 
 router.use(auditMutations);
 
@@ -97,9 +106,30 @@ router.post('/gdpr/volunteers/:userId/erase', isAuthenticated, adminOnly, valida
 router.post('/gdpr/retention/run', isAuthenticated, adminOnly, validateBody(bodies.empty), runRetention);
 router.put('/users/:userId/role', isAuthenticated, adminOnly, validateBody(bodies.role), updateUserRole);
 
+// Team invites: admins invite staff and other admins to their own shelter.
+router.get('/invites', isAuthenticated, adminOnly, listStaffInvites);
+router.post('/invites', isAuthenticated, adminOnly, messageLimiter, validateBody(bodies.staffInvite), createStaffInvite);
+router.post('/invites/:inviteId/revoke', isAuthenticated, adminOnly, validateBody(bodies.empty), revokeStaffInvite);
+
 // SL-NOW-03: booking approval policy. Trust is admin-granted only.
 router.get('/settings/booking', isAuthenticated, staffOrAdmin, getBookingSettings);
 router.put('/settings/booking', isAuthenticated, adminOnly, validateBody(bodies.bookingSettings), updateBookingSettings);
 router.put('/volunteers/:userId/trusted', isAuthenticated, adminOnly, validateBody(bodies.trustedVolunteer), updateVolunteerTrusted);
+
+// SL-LATER-10: per-shelter accent colour and logo.
+router.get('/settings/brand', isAuthenticated, staffOrAdmin, getBrandSettings);
+router.put('/settings/brand', isAuthenticated, adminOnly, validateBody(bodies.brandSettings), updateBrandSettings);
+router.post(
+  '/settings/brand/logo',
+  isAuthenticated,
+  adminOnly,
+  (req, res, next) => {
+    brandLogoUpload.single('logo')(req, res, (err) => {
+      if (handleBrandLogoMulterError(err, res)) return;
+      return next();
+    });
+  },
+  uploadBrandLogo
+);
 
 module.exports = router;

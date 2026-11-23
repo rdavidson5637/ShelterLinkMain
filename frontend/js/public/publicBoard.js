@@ -1,5 +1,6 @@
 // Keep in sync with utils/publicOpportunityFilter.js
-export const HIDDEN_PUBLIC_TITLE = /smoke|test|runthrough/i;
+// Word boundaries matter: bare /test/ also matches "Latest" and "Contest".
+export const HIDDEN_PUBLIC_TITLE = /\b(?:smoke|test|runthrough)\b/i;
 const HIDDEN_STATUSES = new Set(['cancelled', 'closed', 'completed']);
 
 export function isHiddenFromPublicBoard(opp) {

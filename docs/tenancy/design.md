@@ -16,11 +16,9 @@ Postgres row level security policy `tenant_isolation` applies to role `shelterli
 
 ## Users
 
-Today one `users` row has one `role` and one `shelter_id`. A person cannot volunteer at two shelters without a second account.
+Today one `users` row has one `role` and one `shelter_id`. Auth and `bindShelter` still read those columns.
 
-Recommendation: keep one user row per person, and add a membership table later (`user_id`, `shelter_id`, `role`). Leave the current `users.role` and `users.shelter_id` in place until the code reads membership instead. That does not block two shelters later, and it does not force a second login system now.
-
-Trade-off: until membership exists, a person who helps at two sanctuaries needs two accounts. Building membership now, before a second shelter is using the app, adds a migration and a role lookup on every request for no current user.
+`memberships` (`user_id`, `shelter_id`, `role`) is in place (migration `048_memberships.pg.sql`). Each existing user with a shelter is backfilled. A trigger keeps the primary membership aligned when `users.role` or `users.shelter_id` changes. A second sanctuary is another membership row on the same user, not a second login. Do not switch request auth to membership until a later task; leave `users.role` and `users.shelter_id` as the live source until then.
 
 ## Roles
 
@@ -46,7 +44,7 @@ MySQL views do not apply. This database is Postgres. Row level security is alrea
 
 ## Branding
 
-`shelters` already has name, slug, and logo. Colours, contact email, privacy contact, and retention periods are not columns. Custom volunteer fields already exist as rows, not as per-shelter config beyond `shelter_id` on those rows. Add colours and contact email only when a second shelter needs them. Retention stays in the environment until Assisi sets numbers. Per-shelter retention needs a column and is a migration.
+`shelters` has name, slug, logo / logo_mime, optional `logo_storage_key` (049), and `primary_colour` (036). Shelter admins set the accent colour and logo under admin branding settings (`/api/admin/settings/brand`). Public and volunteer pages load `/api/public/brand` and map a passing colour onto `--green` redesign tokens; failed contrast or a null colour keeps the default teal. Logo bytes use the same upload path as other images (bytea, or object storage when configured). Privacy contact and retention periods remain separate.
 
 ## Data protection
 
@@ -71,6 +69,6 @@ Each shelter should be its own controller once a second shelter is live. The pri
 
 16. One module at a time, make sure each query runs inside the existing shelter switch. Do not add a second helper with a different name.
 
-17. Resolve the shelter from the user row, which `bindShelter` already does. Branding reads `shelters.name` and the logo. Do not invent colours.
+17. Resolve the shelter from the user row, which `bindShelter` already does. Branding reads `shelters.name`, logo, and `primary_colour` (with contrast check). Do not invent colours outside the admin-set hex.
 
 18. Extend `test/tenantIsolation.run.js` for any route that prompt 16 changes. Keep the localhost and `shelterlink_tenant_test` refusal.

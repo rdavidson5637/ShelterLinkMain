@@ -1,7 +1,8 @@
 'use strict';
 
 // Keep in sync with frontend/js/public/publicBoard.js
-const HIDDEN_PUBLIC_TITLE = /smoke|test|runthrough/i;
+// Word boundaries matter: bare /test/ also matches "Latest" and "Contest".
+const HIDDEN_PUBLIC_TITLE = /\b(?:smoke|test|runthrough)\b/i;
 const HIDDEN_STATUSES = new Set(['cancelled', 'closed', 'completed']);
 
 function isHiddenFromPublicBoard(opp) {

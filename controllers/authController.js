@@ -22,8 +22,15 @@ const {
   isBypass,
   currentShelterId,
 } = require('../utils/shelterContext');
-const { assisiShelterId, shelterIdFromSlug } = require('../middleware/shelter');
+const {
+  assisiShelterId,
+  shelterIdFromSlug,
+  shelterStatus,
+  isActiveStatus,
+  SUSPENDED_MESSAGE,
+} = require('../middleware/shelter');
 const { PRIVACY_NOTICE_VERSION } = require('../config/privacyNotice');
+const { isPlatformOwnerUser } = require('../middleware/platformOwner');
 const twoFactor = require('./twoFactorController');
 
 function privacyNoticeAccepted(value) {
@@ -227,6 +234,15 @@ async function login(req, res) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    // Checked only after the password matches, so a wrong password never
+    // learns whether a shelter is suspended. No session is created.
+    // A platform owner can still sign in, so they can reach /platform and
+    // reactivate the shelter; bindShelter keeps them out of its own API.
+    if (user.shelter_id != null && !isActiveStatus(await shelterStatus(user.shelter_id))
+      && !(await isPlatformOwnerUser(user.user_id))) {
+      return res.status(403).json({ error: SUSPENDED_MESSAGE, code: 'shelter_suspended' });
+    }
+
     if (await twoFactor.isEnabledFor(user)) {
       await upgradeWeakHash(user, password);
       return twoFactor.beginChallenge(req, res, user, { rememberMe, pushEndpoint, regenerateSession });
@@ -379,6 +395,22 @@ async function getCurrentUser(req, res) {
   }
 }
 
+/** Sanctuary memberships for the signed-in person (one login, many shelters). */
+async function listMyMemberships(req, res) {
+  try {
+    if (!req.session || !req.session.userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const Membership = require('../models/Membership');
+    const memberships = await Membership.listForUser(req.session.userId);
+    return res.status(200).json({ memberships });
+  } catch (error) {
+    console.error('[Auth] listMyMemberships error:', error.message);
+    if (error.status === 400) return res.status(400).json({ error: error.message });
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
 // ─── Password Reset ────────────────────────────────────────────────────────────
 
 const GENERIC_RESET_MESSAGE = 'If that email is registered, a reset link has been sent.';
@@ -411,6 +443,14 @@ async function forgotPassword(req, res) {
       return generic();
     }
     const user = rows[0];
+
+    // People at a suspended shelter cannot sign in, so they get no reset
+    // email either. Same generic 200, so the response never reveals the
+    // shelter's status. A platform owner can still reset.
+    if (user.shelter_id != null && !isActiveStatus(await shelterStatus(user.shelter_id))
+      && !(await isPlatformOwnerUser(user.user_id))) {
+      return generic();
+    }
 
     const { raw, hash } = createResetToken();
     const expires = new Date(Date.now() + 60 * 60 * 1000);
@@ -562,6 +602,7 @@ module.exports = {
   logout,
   logoutAll,
   getCurrentUser,
+  listMyMemberships,
   acknowledgePrivacyNotice,
   forgotPassword,
   validateResetToken,

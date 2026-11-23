@@ -159,6 +159,7 @@ async function updateUserRole(req, res) {
     }
 
     const { pool } = require('../config/database');
+    const Membership = require('../models/Membership');
     const [result] = await pool.execute('UPDATE users SET role = ? WHERE user_id = ?', [
       role,
       userId,
@@ -166,6 +167,12 @@ async function updateUserRole(req, res) {
     if (!result.affectedRows) {
       return res.status(404).json({ error: 'User not found' });
     }
+
+    const [rows] = await pool.execute(
+      'SELECT user_id, shelter_id, role FROM users WHERE user_id = ? LIMIT 1',
+      [userId]
+    );
+    await Membership.syncFromUser(rows[0]);
 
     await recordAudit(req, {
       action: 'user.role_update',

@@ -145,6 +145,33 @@ async function loadMyLegs() {
       });
       actions.appendChild(document.createTextNode(' '));
       actions.appendChild(completeBtn);
+    } else {
+      const claimBtn = document.createElement('button');
+      claimBtn.type = 'button';
+      claimBtn.textContent = 'Claim mileage';
+      claimBtn.addEventListener('click', async () => {
+        const claimRes = await apiRequest('/mileage', {
+          method: 'POST',
+          body: { transport_leg_id: leg.id },
+        });
+        const body = await claimRes.json().catch(() => ({}));
+        if (!claimRes.ok) {
+          setMessage('error', body.error || 'Could not claim mileage');
+          return;
+        }
+        setMessage(
+          'success',
+          `Mileage claim submitted (${body.miles} miles). Staff will review it.`
+        );
+      });
+      actions.appendChild(document.createTextNode(' '));
+      actions.appendChild(claimBtn);
+      const link = document.createElement('a');
+      link.href = '/pages/volunteer/mileage.html';
+      link.textContent = 'View claims';
+      link.className = 'secondary';
+      actions.appendChild(document.createTextNode(' '));
+      actions.appendChild(link);
     }
     myLegsList.appendChild(article);
   });

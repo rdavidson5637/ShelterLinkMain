@@ -15,9 +15,9 @@
     <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
     <link rel="stylesheet" href="/public/css/custom.css" />
   </head>
-  <body>
+  <body class="staff-app">
     <a class="skip-link" href="#main">Skip to main content</a>
-        <header class="site-header">
+    <header class="site-header">
       <nav class="site-nav container" aria-label="Account">
         <a class="site-brand" href="/pages/admin/dashboard.html">
           <span class="brand-mark" aria-hidden="true"></span>
@@ -33,85 +33,95 @@
       <aside id="admin-nav" class="sidebar-nav"></aside>
 
       <div class="dashboard-main">
-        <section>
-          <h1>Admin Dashboard</h1>
+        <section class="page-lede">
+          <h1>Admin dashboard</h1>
+          <p>Today's cover, pending applications, and the numbers you need before the morning briefing.</p>
         </section>
 
-        <section>
-          <div class="stats-grid" id="statsGrid"></div>
-        </section>
-
-        <section>
-          <div class="grid" style="grid-template-columns: 1fr 1fr;">
-            <article>
-              <header>
-                <h3>Recent Applications</h3>
-              </header>
-              <div class="table-wrapper">
-                <table>
-            <caption>Recent applications</caption>
-                  <thead>
-                    <tr>
-                      <th scope="col">Volunteer</th>
-                      <th scope="col">Opportunity</th>
-                      <th scope="col">Date</th>
-                      <th scope="col">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody id="recentApplicationsTable">
-                    <tr><td colspan="4">Loading...</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </article>
-            <article>
-              <header>
-                <h3>Recent Hour Submissions</h3>
-              </header>
-              <div class="table-wrapper">
-                <table>
-            <caption>Recent hour submissions</caption>
-                  <thead>
-                    <tr>
-                      <th scope="col">Volunteer</th>
-                      <th scope="col">Opportunity</th>
-                      <th scope="col">Date</th>
-                      <th scope="col">Hours</th>
-                    </tr>
-                  </thead>
-                  <tbody id="recentHoursTable">
-                    <tr><td colspan="4">Loading...</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </article>
+        <section class="metric-strip" id="statsGrid" aria-label="Shelter totals">
+          <div class="metric-item">
+            <span class="metric-label">Total volunteers</span>
+            <span class="metric-value" id="totalVolunteers">-</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Approved volunteers</span>
+            <span class="metric-value" id="approvedVolunteers">-</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Pending applications</span>
+            <span class="metric-value" id="pendingApplications">-</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Active opportunities</span>
+            <span class="metric-value" id="activeOpportunities">-</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Hours this month</span>
+            <span class="metric-value" id="hoursThisMonth">-</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Hours all time</span>
+            <span class="metric-value" id="totalHoursAllTime">-</span>
           </div>
         </section>
 
-        <section data-admin-only>
-          <article>
-            <header>
-              <h3>Export Reports</h3>
-            </header>
-            <div class="grid" style="grid-template-columns: 1fr 1fr;">
-              <div>
-                <button id="exportVolunteersButton">Export All Volunteers</button>
-              </div>
-              <div>
-                <button id="exportHoursButton" class="secondary">Export All Hours</button>
-              </div>
+        <section class="staff-stack">
+          <div class="staff-panel">
+            <h2>Recent applications</h2>
+            <div class="table-wrapper staff-dense">
+              <table>
+                <caption>Recent applications</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Volunteer</th>
+                    <th scope="col">Opportunity</th>
+                    <th scope="col">Date</th>
+                    <th scope="col">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="recentApplicationsTable">
+                  <tr><td colspan="4">Loading...</td></tr>
+                </tbody>
+              </table>
             </div>
-            <div class="grid" style="grid-template-columns: 1fr 1fr; margin-top: 0.75rem;">
-              <label for="hoursExportStartDate">
-                Start Date
-                <input type="date" id="hoursExportStartDate" name="hoursExportStartDate" />
-              </label>
-              <label for="hoursExportEndDate">
-                End Date
-                <input type="date" id="hoursExportEndDate" name="hoursExportEndDate" />
-              </label>
+          </div>
+          <div class="staff-panel">
+            <h2>Recent hour submissions</h2>
+            <div class="table-wrapper staff-dense">
+              <table>
+                <caption>Recent hour submissions</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Volunteer</th>
+                    <th scope="col">Opportunity</th>
+                    <th scope="col">Date</th>
+                    <th scope="col">Hours</th>
+                  </tr>
+                </thead>
+                <tbody id="recentHoursTable">
+                  <tr><td colspan="4">Loading...</td></tr>
+                </tbody>
+              </table>
             </div>
-          </article>
+          </div>
+        </section>
+
+        <section data-admin-only class="staff-panel">
+          <h2>Export reports</h2>
+          <div class="export-actions">
+            <button id="exportVolunteersButton" type="button">Export all volunteers</button>
+            <button id="exportHoursButton" type="button" class="secondary">Export all hours</button>
+          </div>
+          <div class="date-range-row">
+            <label for="hoursExportStartDate">
+              Start date
+              <input type="date" id="hoursExportStartDate" name="hoursExportStartDate" />
+            </label>
+            <label for="hoursExportEndDate">
+              End date
+              <input type="date" id="hoursExportEndDate" name="hoursExportEndDate" />
+            </label>
+          </div>
         </section>
 
         <section aria-labelledby="expiringChecksHeading">
@@ -120,22 +130,117 @@
         </section>
 
         <section>
-          <header>
-            <h2>Quick Actions</h2>
-          </header>
-          <div id="quickActions" style="display: flex; gap: 1rem; flex-wrap: wrap;">
-            <a href="/pages/admin/day-sheet.html" role="button" class="contrast">Today's day sheet</a>
-            <a href="/pages/admin/week-sheet.html" role="button" class="contrast">This week sheet</a>
-            <a href="/pages/admin/staff-guide.html" role="button" class="contrast">Morning staff guide</a>
-            <a href="/pages/admin/opportunities.html" role="button" class="contrast">Manage Opportunities</a>
-            <a href="/pages/admin/create-opportunity.html" role="button" class="contrast">Create Opportunity</a>
-            <a href="/pages/admin/review-applications.html" role="button" class="contrast">Review Applications</a>
-            <a href="/pages/admin/approve-hours.html" role="button" class="contrast">Approve Hours</a>
-            <a href="/pages/admin/volunteers.html" role="button" class="contrast">Manage Volunteers</a>
-            <a data-admin-only href="/pages/admin/reports.html" role="button" class="contrast">Open Reports</a>
-            <a data-admin-only href="/pages/admin/audit-log.html" role="button" class="contrast">Audit Log</a>
-            <a data-admin-only href="/pages/admin/privacy.html" role="button" class="contrast">Privacy / GDPR</a>
-          </div>
+          <h2>What to do next</h2>
+          <ul class="action-list" id="quickActions">
+            <li>
+              <a href="/pages/admin/day-sheet.html">
+                <span>
+                  <strong>Today's day sheet</strong>
+                  Who is on, and which animals need cover.
+                </span>
+                <span class="choice-arrow" aria-hidden="true">→</span>
+              </a>
+            </li>
+            <li>
+              <a href="/pages/admin/week-sheet.html">
+                <span>
+                  <strong>This week sheet</strong>
+                  Scan the week ahead for gaps.
+                </span>
+                <span class="choice-arrow" aria-hidden="true">→</span>
+              </a>
+            </li>
+            <li>
+              <a href="/pages/admin/staff-guide.html">
+                <span>
+                  <strong>Morning staff guide</strong>
+                  Checklist for opening the sanctuary.
+                </span>
+                <span class="choice-arrow" aria-hidden="true">→</span>
+              </a>
+            </li>
+            <li>
+              <a href="/pages/admin/opportunities.html">
+                <span>
+                  <strong>Manage shifts</strong>
+                  Edit, close, or review openings.
+                </span>
+                <span class="choice-arrow" aria-hidden="true">→</span>
+              </a>
+            </li>
+            <li>
+              <a href="/pages/admin/create-opportunity.html">
+                <span>
+                  <strong>Create opportunity</strong>
+                  Publish a new shift.
+                </span>
+                <span class="choice-arrow" aria-hidden="true">→</span>
+              </a>
+            </li>
+            <li>
+              <a href="/pages/admin/review-applications.html">
+                <span>
+                  <strong>Review applications</strong>
+                  Approve or reject pending bookings.
+                </span>
+                <span class="choice-arrow" aria-hidden="true">→</span>
+              </a>
+            </li>
+            <li>
+              <a href="/pages/admin/approve-hours.html">
+                <span>
+                  <strong>Approve hours</strong>
+                  Clear logged time waiting on staff.
+                </span>
+                <span class="choice-arrow" aria-hidden="true">→</span>
+              </a>
+            </li>
+            <li>
+              <a href="/pages/admin/approve-mileage.html">
+                <span>
+                  <strong>Approve mileage</strong>
+                  Travel claims waiting on a decision.
+                </span>
+                <span class="choice-arrow" aria-hidden="true">→</span>
+              </a>
+            </li>
+            <li>
+              <a href="/pages/admin/volunteers.html">
+                <span>
+                  <strong>Volunteer directory</strong>
+                  Profiles, hours, and approvals.
+                </span>
+                <span class="choice-arrow" aria-hidden="true">→</span>
+              </a>
+            </li>
+            <li data-admin-only>
+              <a href="/pages/admin/reports.html">
+                <span>
+                  <strong>Reports</strong>
+                  CSV exports and impact totals.
+                </span>
+                <span class="choice-arrow" aria-hidden="true">→</span>
+              </a>
+            </li>
+            <li data-admin-only>
+              <a href="/pages/admin/audit-log.html">
+                <span>
+                  <strong>Audit log</strong>
+                  Who changed what, and when.
+                </span>
+                <span class="choice-arrow" aria-hidden="true">→</span>
+              </a>
+            </li>
+            <li data-admin-only>
+              <a href="/pages/admin/privacy.html">
+                <span>
+                  <strong>Privacy and GDPR</strong>
+                  Export or erase volunteer data.
+                </span>
+                <span class="choice-arrow" aria-hidden="true">→</span>
+              </a>
+            </li>
+          </ul>
         </section>
       </div>
     </main>
@@ -147,8 +252,7 @@
     <script type="module" src="/js/utils/errorHandler.js"></script>
     <script type="module" src="/js/utils/sessionManager.js"></script>
     <script type="module" src="/js/admin/dashboard.js"></script>
-      <script type="module" src="/js/utils/footerYear.js"></script>
-      <script type="module" src="/js/components/adminNav.js"></script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+    <script type="module" src="/js/components/adminNav.js"></script>
   </body>
 </html>
-

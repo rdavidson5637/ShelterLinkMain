@@ -19,10 +19,11 @@ Who can see which fields:
 - The volunteer sees their own reference number, type, status, and dates. They
   do not see admin notes.
 
-Volunteer file uploads go into `user_documents.content` as bytes. The upload
-route rejects a file whose name or label looks like an AccessNI, DBS, or
-disclosure certificate. Those files should not be uploaded. An admin records
-the status and reference number on the background check instead.
+Volunteer file uploads go into `user_documents` as Postgres bytes by default,
+or into object storage (`storage_key`) when `OBJECT_STORAGE_*` is configured.
+The upload route rejects a file whose name or label looks like an AccessNI,
+DBS, or disclosure certificate. Those files should not be uploaded. An admin
+records the status and reference number on the background check instead.
 
 Uploaded files for another volunteer are visible to admin accounts only. Staff
 can still see check status so they can roster a shift. The volunteer can

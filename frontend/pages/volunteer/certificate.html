@@ -43,9 +43,14 @@
         color: var(--text-secondary);
         margin: 0.25rem 0 1.5rem;
       }
-      .certificate-sheet h1 {
+      .certificate-sheet .certificate-title {
+        font-family: var(--font-display);
         font-size: var(--text-xl);
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        line-height: var(--leading-heading);
         margin: 0 0 0.5rem;
+        color: var(--text);
       }
       .certificate-sheet .volunteer-name {
         font-size: var(--text-2xl);
@@ -132,7 +137,7 @@
       <article id="certificateSheet" class="certificate-sheet" hidden>
         <p class="brand">ShelterLink</p>
         <p class="subtitle" data-shelter-name></p>
-        <h1>Certificate of Volunteer Service</h1>
+        <p class="certificate-title">Certificate of Volunteer Service</p>
         <p>This certifies that</p>
         <p class="volunteer-name" id="certName">—</p>
         <p>has completed approved volunteer service with <span data-shelter-name></span>.</p>

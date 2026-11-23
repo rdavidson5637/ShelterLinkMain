@@ -1,35 +1,8 @@
 'use strict';
 
-const { pool } = require('../config/database');
-const { currentShelterId, runWithShelter } = require('../utils/shelterContext');
+const ShelterBrand = require('../models/ShelterBrand');
+const { runWithShelter } = require('../utils/shelterContext');
 const { publicShelterId } = require('../middleware/shelter');
-
-const LOGO_TYPES = new Set(['image/jpeg', 'image/png']);
-
-// Always name the shelter row. Row level security is a second guard, not the
-// only one: the app role bypasses it unless the tenant role switch runs.
-async function readBrand() {
-  const id = currentShelterId();
-  if (!id) return null;
-  const [rows] = await pool.execute(
-    `SELECT name, slug, logo_mime,
-            (logo IS NOT NULL AND octet_length(logo) > 0) AS has_logo
-       FROM shelters
-      WHERE id = ?`,
-    [id]
-  );
-  return rows[0] || null;
-}
-
-async function readLogo() {
-  const id = currentShelterId();
-  if (!id) return null;
-  const [rows] = await pool.execute(
-    'SELECT logo, logo_mime FROM shelters WHERE id = ?',
-    [id]
-  );
-  return rows[0] || null;
-}
 
 // ?shelter=<slug> names the shelter; otherwise the session, then Assisi.
 async function inBrandContext(req, fn) {
@@ -40,13 +13,15 @@ async function inBrandContext(req, fn) {
 
 async function getBrand(req, res) {
   try {
-    const row = await inBrandContext(req, readBrand);
-    if (!row || !row.name) return res.status(404).json({ error: 'Not found' });
+    const brand = await inBrandContext(req, () => ShelterBrand.getPublicBrand());
+    if (!brand || !brand.name) return res.status(404).json({ error: 'Not found' });
     return res.status(200).json({
-      name: row.name,
+      name: brand.name,
       // Lets a page tell whether the slug it asked for was found or fell back.
-      slug: row.slug || null,
-      hasLogo: Boolean(row.has_logo),
+      slug: brand.slug || null,
+      hasLogo: Boolean(brand.hasLogo),
+      primaryColour: brand.primaryColour || null,
+      colourTokens: brand.colourTokens || null,
     });
   } catch (error) {
     console.error('[Brand] getBrand error:', error.message);
@@ -57,15 +32,14 @@ async function getBrand(req, res) {
 
 async function getBrandLogo(req, res) {
   try {
-    const row = await inBrandContext(req, readLogo);
-    const mime = String(row && row.logo_mime || '').toLowerCase();
-    if (!row || !row.logo || !LOGO_TYPES.has(mime)) {
+    const logo = await inBrandContext(req, () => ShelterBrand.readLogoBytes());
+    if (!logo || !logo.buffer) {
       return res.status(404).json({ error: 'Not found' });
     }
-    res.setHeader('Content-Type', mime);
+    res.setHeader('Content-Type', logo.mime);
     res.setHeader('Cache-Control', 'private, no-store');
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    return res.status(200).send(row.logo);
+    return res.status(200).send(logo.buffer);
   } catch (error) {
     console.error('[Brand] getBrandLogo error:', error.message);
     if (error.status === 404) return res.status(404).json({ error: 'Not found' });

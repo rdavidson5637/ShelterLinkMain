@@ -14,10 +14,6 @@
     <title>Check-in poster - ShelterLink</title>
     <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
     <link rel="stylesheet" href="/public/css/custom.css" />
-  </head>
-  <body>
-    <a class="skip-link" href="#main">Skip to main content</a>
-        <header class="site-header">
     <style>
       .poster {
         max-width: 34rem;
@@ -25,6 +21,13 @@
         text-align: center;
       }
       .poster h2 { margin-bottom: 0.25rem; }
+      .poster .poster-title {
+        font-family: var(--font-display);
+        font-size: var(--text-lg);
+        font-weight: 600;
+        margin: 0.25rem 0;
+        color: var(--text);
+      }
       .poster-meta { color: var(--text-secondary); margin: 0; }
       .poster-qr {
         display: block;
@@ -62,7 +65,8 @@
           padding: 0;
         }
         .poster { max-width: none; }
-        .poster h1 { font-size: 2rem; }
+        .poster h2 { font-size: 2rem; }
+        .poster .poster-title { font-size: 1.35rem; font-weight: 600; margin: 0.25rem 0; }
         .poster-qr { max-width: 12cm; }
       }
     </style>
@@ -84,6 +88,7 @@
       <aside id="admin-nav" class="sidebar-nav"></aside>
       <div class="dashboard-main">
         <div class="poster-toolbar">
+          <h1 class="visually-hidden">Check-in poster</h1>
           <p>Put this up where volunteers arrive. They scan it with their phone camera, sign in if asked, and tap Check in. The kiosk keeps working alongside it.</p>
           <button type="button" id="printButton" disabled>Print poster</button>
           <a href="/pages/admin/opportunities.html">Back to opportunities</a>
@@ -92,8 +97,8 @@
         <div id="message" role="status" aria-live="polite"></div>
 
         <article class="poster" id="poster" hidden>
-          <h1>Check in for your shift</h1>
-          <h2 id="posterTitle"></h2>
+          <h2>Check in for your shift</h2>
+          <p class="poster-title" id="posterTitle"></p>
           <p class="poster-meta" id="posterWhen"></p>
           <p class="poster-meta" id="posterWhere"></p>
           <img class="poster-qr" id="posterQr" alt="QR code that opens ShelterLink check-in for this shift" width="290" height="290" />

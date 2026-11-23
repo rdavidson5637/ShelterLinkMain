@@ -2,19 +2,9 @@ import { API_URL, apiRequest } from '../config.js';
 import { requireAuth, checkAuth, logout, isStaffOrAdminRole, applyRoleVisibility} from '../auth.js';
 import { formatDateOnly } from '../utils/dateFormat.js';
 import { createStatusBadge } from '../components/statusBadge.js';
-import { renderStatCards } from '../components/statCard.js';
 import { mountInstallPrompt } from '../components/installPrompt.js';
 
 const logoutButton = document.getElementById('logoutButton');
-const statsGrid = document.getElementById('statsGrid');
-renderStatCards(statsGrid, [
-  { label: 'Total Volunteers', valueId: 'totalVolunteers', value: '-' },
-  { label: 'Approved Volunteers', valueId: 'approvedVolunteers', value: '-' },
-  { label: 'Pending Applications', valueId: 'pendingApplications', value: '-' },
-  { label: 'Active Opportunities', valueId: 'activeOpportunities', value: '-' },
-  { label: 'Hours This Month', valueId: 'hoursThisMonth', value: '-' },
-  { label: 'Total Hours All Time', valueId: 'totalHoursAllTime', value: '-' },
-]);
 const totalVolunteersEl = document.getElementById('totalVolunteers');
 const approvedVolunteersEl = document.getElementById('approvedVolunteers');
 const pendingApplicationsEl = document.getElementById('pendingApplications');
@@ -23,7 +13,6 @@ const hoursThisMonthEl = document.getElementById('hoursThisMonth');
 const totalHoursAllTimeEl = document.getElementById('totalHoursAllTime');
 const recentApplicationsTable = document.getElementById('recentApplicationsTable');
 const recentHoursTable = document.getElementById('recentHoursTable');
-const quickActionsContainer = document.getElementById('quickActions');
 const exportVolunteersButton = document.getElementById('exportVolunteersButton');
 const exportHoursButton = document.getElementById('exportHoursButton');
 const hoursExportStartDate = document.getElementById('hoursExportStartDate');
@@ -226,19 +215,6 @@ async function enforceAdmin() {
   return user;
 }
 
-function attachQuickActionHandlers() {
-  if (!quickActionsContainer) return;
-  const links = quickActionsContainer.querySelectorAll('a[role="button"]');
-  links.forEach((link) => {
-    link.addEventListener('click', (event) => {
-      event.preventDefault();
-      if (link.href) {
-        window.location.href = link.href;
-      }
-    });
-  });
-}
-
 function attachExportHandlers() {
   if (exportVolunteersButton) {
     exportVolunteersButton.addEventListener('click', (event) => {
@@ -274,8 +250,6 @@ async function init() {
     });
   }
 
-  // Attach handlers
-  attachQuickActionHandlers();
   attachExportHandlers();
 
   // Load all data initially
