@@ -15,6 +15,7 @@ const {
 } = require('../utils/shelterContext');
 const { publicShelterId } = require('../middleware/shelter');
 const { createIcalToken, hashIcalToken } = require('../utils/icalToken');
+const { markClosedShifts } = require('./closureController');
 
 // One entry per resolved shelter id, so slug A and slug B never share a
 // payload. Keys only come from ids that exist, so this is bounded by the
@@ -135,7 +136,9 @@ function toPublicOpportunity(opp) {
     location: opp.location,
     spots_remaining: spotsRemaining,
     is_urgent: Boolean(Number(opp.is_urgent)),
-    accepting_applications: isAcceptingApplications({ ...opp, spots_remaining: spotsRemaining }),
+    closed_reason: opp.closed_reason || null,
+    accepting_applications:
+      !opp.closed_reason && isAcceptingApplications({ ...opp, spots_remaining: spotsRemaining }),
   };
 }
 
@@ -170,7 +173,7 @@ async function loadUpcomingPublicOpportunities() {
     if (aUrgent !== bUrgent) return bUrgent - aUrgent;
     return new Date(a.start_date) - new Date(b.start_date);
   });
-  return future;
+  return markClosedShifts(future);
 }
 
 async function listPublicOpportunities(req, res) {

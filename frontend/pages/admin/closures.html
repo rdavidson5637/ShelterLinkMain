@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Closure dates - ShelterLink</title>
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+        <header class="site-header">
+      <nav class="site-nav container" aria-label="Account">
+        <a class="site-brand" href="/pages/admin/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" aria-label="Toggle navigation">Menu</button>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main id="main" class="container dashboard-layout">
+      <aside id="admin-nav" class="sidebar-nav"></aside>
+      <div class="dashboard-main">
+      <section>
+        <h1>Closure dates</h1>
+        <p>Days the shelter is shut to volunteers. Shifts cannot be created on these dates, and the public board and Find shifts show them as closed.</p>
+      </section>
+
+      <div id="message" role="status" aria-live="polite"></div>
+
+      <section id="addClosureSection" hidden>
+        <h2>Add a closure</h2>
+        <form id="closureForm" novalidate>
+          <div class="grid">
+            <label for="starts_on">
+              First closed day
+              <input type="date" id="starts_on" name="starts_on" required />
+            </label>
+            <label for="ends_on">
+              Last closed day
+              <input type="date" id="ends_on" name="ends_on" />
+              <small>Leave blank for a single day.</small>
+            </label>
+          </div>
+          <label for="reason">
+            Reason
+            <input type="text" id="reason" name="reason" required maxlength="120" autocomplete="off" placeholder="Christmas" />
+            <small>Shown to volunteers and on the public board.</small>
+          </label>
+          <button type="submit" id="saveClosureButton">Save closure</button>
+        </form>
+      </section>
+
+      <section id="affectedSection" class="table-wrapper" hidden aria-labelledby="affectedHeading">
+        <h2 id="affectedHeading">Booked shifts inside this closure</h2>
+        <p id="affectedIntro">Nothing has been cancelled and no one has been emailed. Close a shift here if it should not go ahead, then let the volunteers know.</p>
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Shift</th>
+              <th scope="col">When</th>
+              <th scope="col">Confirmed</th>
+              <th scope="col">Pending</th>
+              <th scope="col">Waitlist</th>
+              <th scope="col">Action</th>
+            </tr>
+          </thead>
+          <tbody id="affectedBody"></tbody>
+        </table>
+      </section>
+
+      <section class="table-wrapper">
+        <table>
+          <caption>Upcoming closures</caption>
+          <thead>
+            <tr>
+              <th scope="col">Dates</th>
+              <th scope="col">Days</th>
+              <th scope="col">Reason</th>
+              <th scope="col">Action</th>
+            </tr>
+          </thead>
+          <tbody id="closuresBody">
+            <tr><td colspan="4">Loading…</td></tr>
+          </tbody>
+        </table>
+      </section>
+      </div>
+    </main>
+
+    <footer class="container" data-site-footer></footer>
+<script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/admin/closures.js"></script>
+      <script type="module" src="/js/utils/footerYear.js"></script>
+      <script type="module" src="/js/components/adminNav.js"></script>
+  </body>
+</html>

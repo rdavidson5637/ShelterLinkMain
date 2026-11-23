@@ -112,6 +112,7 @@ async function run() {
     await applySql(pgPool, loadSql('055_hash_ical_tokens.pg.sql'));
     await applySql(pgPool, loadSql('056_training_module_validity.pg.sql'));
     await applySql(pgPool, loadSql('057_tenant_hot_path_indexes.pg.sql'));
+    await applySql(pgPool, loadSql('058_shelter_closures.pg.sql'));
     console.log('  ✓ Shelter tenancy applied.');
 
     console.log('→ Applying shelter application indexes...');

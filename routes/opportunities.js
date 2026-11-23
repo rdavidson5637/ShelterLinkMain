@@ -16,6 +16,8 @@ const {
   deleteNote,
 } = require('../controllers/shiftNoteController');
 
+const { listUpcomingClosures } = require('../controllers/closureController');
+
 const { validateBody, validateQuery, positiveParam } = require('../middleware/validate');
 const { bodies, queries } = require('../validation/bodies');
 
@@ -25,6 +27,7 @@ router.param('noteId', positiveParam('noteId'));
 
 router.post('/', isAuthenticated, requireStaff, auditMutations, validateBody(bodies.opportunity), createOpportunity);
 router.get('/', isAuthenticated, validateQuery(queries.opportunities), getAllOpportunities);
+router.get('/closures', isAuthenticated, listUpcomingClosures);
 router.get('/:id/notes', isAuthenticated, listNotes);
 router.post('/:id/notes', isAuthenticated, requireStaff, auditMutations, validateBody(bodies.shiftNote), createNote);
 router.delete('/:id/notes/:noteId', isAuthenticated, requireRole('admin'), auditMutations, deleteNote);

@@ -8,8 +8,23 @@ import {
   isAcceptingSignups,
 } from './publicBoard.js';
 import { publicOpportunitiesEmptyCopy } from './opportunitiesEmpty.js';
+import { renderClosedDaysList } from '../utils/closures.js';
 
 const listEl = document.getElementById('opportunitiesList');
+const closedEl = document.getElementById('closedDays');
+
+async function loadClosedDays() {
+  if (!closedEl) return;
+  try {
+    const res = await fetch(withShelterQuery('/api/public/closures'), { credentials: 'omit' });
+    if (!res.ok) return;
+    const section = renderClosedDaysList(await res.json());
+    if (section) closedEl.replaceChildren(section);
+  } catch (error) {
+    // The shift list still works without the closed-days list.
+    console.error('[Public] load closures error:', error);
+  }
+}
 
 function setListBusy(busy) {
   if (!listEl) return;
@@ -67,7 +82,7 @@ async function load() {
     listEl.classList.add('shift-list');
     rows.forEach((opp) => {
       const article = document.createElement('article');
-      article.className = 'shift-row';
+      article.className = opp.closed_reason ? 'shift-row is-closed-day' : 'shift-row';
       const spots =
         opp.spots_remaining == null
           ? 'Open spaces'
@@ -75,7 +90,13 @@ async function load() {
 
       const h2 = document.createElement('h2');
       h2.textContent = opp.title || 'Volunteer shift';
-      if (opp.is_urgent) {
+      if (opp.closed_reason) {
+        const closedLabel = document.createElement('span');
+        closedLabel.className = 'shift-closed-label';
+        closedLabel.textContent = 'Closed';
+        h2.appendChild(document.createTextNode(' '));
+        h2.appendChild(closedLabel);
+      } else if (opp.is_urgent) {
         const badge = document.createElement('span');
         badge.className = 'badge-urgent';
         badge.textContent = 'Urgent cover needed';
@@ -127,4 +148,7 @@ async function load() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', load);
+document.addEventListener('DOMContentLoaded', () => {
+  loadClosedDays();
+  load();
+});

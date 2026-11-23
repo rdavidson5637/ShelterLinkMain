@@ -24,6 +24,7 @@ export const ADMIN_MANAGE = [
   { id: 'custom-fields', label: 'Custom fields', href: '/pages/admin/custom-fields.html', adminOnly: true },
   { id: 'waivers', label: 'Waivers', href: '/pages/admin/waivers.html', adminOnly: true },
   { id: 'branding', label: 'Branding', href: '/pages/admin/branding.html', adminOnly: true },
+  { id: 'closures', label: 'Closure dates', href: '/pages/admin/closures.html' },
   { id: 'email-previews', label: 'Email previews', href: '/pages/admin/email-previews.html', adminOnly: true },
   { id: 'groups', label: 'Groups', href: '/pages/admin/group-bookings.html' },
   { id: 'messages', label: 'Messages', href: '/pages/admin/threads.html' },

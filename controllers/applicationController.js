@@ -26,6 +26,7 @@ const {
 const waitlistOffers = require('../utils/waitlistOffers');
 const { isStaffOrAdmin } = require('../middleware/auth');
 const { isTestOrE2EOpportunity } = require('../utils/testOpportunityGuard');
+const { markClosedShifts } = require('./closureController');
 
 function ensureAuthenticated(req, res) {
   if (!req.session || !req.session.userId) {
@@ -142,6 +143,15 @@ async function applyForOpportunity(req, res) {
     }
     if (process.env.NODE_ENV === 'production' && isTestOrE2EOpportunity(opportunity)) {
       return res.status(404).json({ error: 'Opportunity not found' });
+    }
+
+    // SL-LATER-30: no new bookings on a day the shelter is closed.
+    const [closedCheck] = await markClosedShifts([opportunity]);
+    if (closedCheck && closedCheck.closed_reason) {
+      return res.status(409).json({
+        error: `The shelter is closed that day (${closedCheck.closed_reason}). This shift is not taking bookings.`,
+        closed_reason: closedCheck.closed_reason,
+      });
     }
 
     const missingQuals = await Qualification.findMissingForUser(userId, opportunityId);

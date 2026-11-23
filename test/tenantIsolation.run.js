@@ -276,6 +276,8 @@ async function seed(admin) {
       VALUES (1, 2, 'https://push.example.test/MarkerA', 'key', 'auth', 1);
     INSERT INTO opportunity_templates (id, name, payload_json, created_by, shelter_id)
       VALUES (1, 'MarkerA template', '{}', 1, 1);
+    INSERT INTO shelter_closures (id, starts_on, ends_on, reason, created_by, shelter_id)
+      VALUES (1, '2099-12-24', '2099-12-26', 'MarkerA closure', 1, 1);
   `);
 
   const sequences = [
@@ -315,6 +317,7 @@ async function seed(admin) {
     ['background_checks', 'id'],
     ['push_subscriptions', 'id'],
     ['opportunity_templates', 'id'],
+    ['shelter_closures', 'id'],
   ];
   for (const [table, column] of sequences) {
     if (!/^[a-z_]+$/.test(table) || !/^[a-z_]+$/.test(column)) {
@@ -616,6 +619,11 @@ function cases(feedbackToken) {
     deny('GET', `/api/my-shifts.ics?token=${ICAL_A}`),
     deny('GET', '/api/opportunity-templates/1'),
     deny('DELETE', '/api/opportunity-templates/1'),
+    // SL-LATER-30: closures are listed per shelter; foreign ids are 404.
+    own('GET', '/api/admin/closures?include_past=true'),
+    own('GET', '/api/opportunities/closures'),
+    deny('GET', '/api/admin/closures/1/affected'),
+    deny('DELETE', '/api/admin/closures/1'),
     { method: 'GET', urlPath: '/api/animals?shelter_id=1', expect: 'rejected' },
     { method: 'GET', urlPath: '/api/animals/care-gaps?shelter_id=1', expect: 'rejected' },
     { method: 'POST', urlPath: '/api/animals', json: { name: 'Dog', shelter_id: 1 }, expect: 'rejected' },

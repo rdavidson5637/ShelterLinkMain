@@ -36,6 +36,7 @@ const TENANT_TABLES = [
   'push_subscriptions',
   'qualifications',
   'shelter_booking_policy',
+  'shelter_closures',
   'shelter_settings',
   'shelters',
   'shift_feedback',
