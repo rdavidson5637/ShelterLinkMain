@@ -37,6 +37,13 @@ const {
   updateBookingSettings,
   updateVolunteerTrusted,
 } = require('../controllers/bookingPolicyController');
+const {
+  upload: brandLogoUpload,
+  handleMulterError: handleBrandLogoMulterError,
+  getBrandSettings,
+  updateBrandSettings,
+  uploadBrandLogo,
+} = require('../controllers/shelterBrandController');
 const { getDaySheet } = require('../controllers/daySheetController');
 const {
   getImpactReport,
@@ -108,5 +115,21 @@ router.post('/invites/:inviteId/revoke', isAuthenticated, adminOnly, validateBod
 router.get('/settings/booking', isAuthenticated, staffOrAdmin, getBookingSettings);
 router.put('/settings/booking', isAuthenticated, adminOnly, validateBody(bodies.bookingSettings), updateBookingSettings);
 router.put('/volunteers/:userId/trusted', isAuthenticated, adminOnly, validateBody(bodies.trustedVolunteer), updateVolunteerTrusted);
+
+// SL-LATER-10: per-shelter accent colour and logo.
+router.get('/settings/brand', isAuthenticated, staffOrAdmin, getBrandSettings);
+router.put('/settings/brand', isAuthenticated, adminOnly, validateBody(bodies.brandSettings), updateBrandSettings);
+router.post(
+  '/settings/brand/logo',
+  isAuthenticated,
+  adminOnly,
+  (req, res, next) => {
+    brandLogoUpload.single('logo')(req, res, (err) => {
+      if (handleBrandLogoMulterError(err, res)) return;
+      return next();
+    });
+  },
+  uploadBrandLogo
+);
 
 module.exports = router;

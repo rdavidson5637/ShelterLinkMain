@@ -40,6 +40,9 @@ function inferFromRequest(req) {
   else if (resource === 'admin' && segments[1] === 'settings' && segments[2] === 'booking') {
     action = 'booking_policy.update';
   }
+  else if (resource === 'admin' && segments[1] === 'settings' && segments[2] === 'brand') {
+    action = segments[3] === 'logo' ? 'shelter.brand.logo' : 'shelter.brand.update';
+  }
   else if (segments.includes('qualifications') && resource === 'admin') {
     action = method === 'POST' ? 'volunteer.qualification.award' : 'volunteer.qualification.revoke';
   }

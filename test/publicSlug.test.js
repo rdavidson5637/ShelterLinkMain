@@ -22,8 +22,14 @@ const { bodies } = require('../validation/bodies');
 const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
 const SLUGS = { assisi: 1, second: 2 };
 const SHELTERS = {
-  1: { id: 1, slug: 'assisi', name: 'Assisi Animal Sanctuary', logo: PNG, logo_mime: 'image/png' },
-  2: { id: 2, slug: 'second', name: 'Second Shelter', logo: PNG, logo_mime: 'image/jpeg' },
+  1: {
+    id: 1, slug: 'assisi', name: 'Assisi Animal Sanctuary',
+    logo: PNG, logo_mime: 'image/png', logo_storage_key: null, primary_colour: null,
+  },
+  2: {
+    id: 2, slug: 'second', name: 'Second Shelter',
+    logo: PNG, logo_mime: 'image/jpeg', logo_storage_key: null, primary_colour: null,
+  },
 };
 const OPPS = [
   {
@@ -165,7 +171,11 @@ test('public ICS for slug B only lists shelter B shifts', async () => {
 test('brand and logo for slug B name shelter B by id', async () => {
   const brand = makeRes();
   await getBrand({ query: { shelter: 'second' } }, brand);
-  assert.deepEqual(brand.body, { name: 'Second Shelter', slug: 'second', hasLogo: true });
+  assert.equal(brand.body.name, 'Second Shelter');
+  assert.equal(brand.body.slug, 'second');
+  assert.equal(brand.body.hasLogo, true);
+  assert.equal(brand.body.primaryColour, null);
+  assert.equal(brand.body.colourTokens, null);
 
   const logo = makeRes();
   await getBrandLogo({ query: { shelter: 'second' } }, logo);

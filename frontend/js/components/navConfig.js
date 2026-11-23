@@ -22,6 +22,7 @@ export const ADMIN_MANAGE = [
   { id: 'training', label: 'Training modules', href: '/pages/admin/training.html', adminOnly: true },
   { id: 'custom-fields', label: 'Custom fields', href: '/pages/admin/custom-fields.html', adminOnly: true },
   { id: 'waivers', label: 'Waivers', href: '/pages/admin/waivers.html', adminOnly: true },
+  { id: 'branding', label: 'Branding', href: '/pages/admin/branding.html', adminOnly: true },
   { id: 'groups', label: 'Groups', href: '/pages/admin/group-bookings.html' },
   { id: 'messages', label: 'Messages', href: '/pages/admin/threads.html' },
 ];

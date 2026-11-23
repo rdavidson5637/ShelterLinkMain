@@ -62,7 +62,7 @@ Rules:
 - No purple or blue gradients, no gradient text, no glow blobs, no frosted glass.
 - Headings stay ink; do not colour every title with brand teal.
 - Status must never rely on colour alone (label + tint, as today).
-- **Per-shelter colour** is later (tenancy already notes colours are not columns yet). When that lands, map shelter brand onto the same token roles; until then every shelter ships the platform teal/amber set. Do not guess Assisi’s print or website palette.
+- **Per-shelter colour** (`SL-LATER-10`): admins set `primary_colour` in branding settings. Public/volunteer pages map it onto the same token roles (`--green` and tints) when WCAG AA contrast against white passes; otherwise the platform teal/amber set stays. Do not guess Assisi’s print or website palette.
 
 Dark mode may keep following system preference with the existing token remap; do not invent a second art direction for dark.
 
@@ -156,7 +156,7 @@ Do not ship any of these in SL-NEXT-03 or follow-on polish:
 
 - Implementing CSS or HTML (that is `SL-NEXT-03`).
 - Approving shelters, contacting Assisi, or inventing brand assets.
-- Per-shelter colour columns / migrations (record as follow-up when a second shelter needs them).
+- Per-shelter colour UI is `SL-LATER-10` (uses `primary_colour` from 036 plus logo storage key in 049).
 - SMS, paid imagery, or new third-party font CDNs that break offline/PWA assumptions without a decision in the implementing PR.
 
 ## Handoff to SL-NEXT-03

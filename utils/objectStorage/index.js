@@ -111,12 +111,16 @@ function resetObjectStorageCache() {
 
 /**
  * Opaque object key. Never use the original file name as the key.
- * @param {'documents'|'animal-photos'} kind
+ * @param {'documents'|'animal-photos'|'shelter-logos'} kind
  * @param {string|number} ownerId
  * @param {string} [ext] including the leading dot, or empty
  */
 function buildObjectKey(kind, ownerId, ext = '') {
-  const safeKind = kind === 'animal-photos' ? 'animal-photos' : 'documents';
+  const safeKind = kind === 'animal-photos'
+    ? 'animal-photos'
+    : kind === 'shelter-logos'
+      ? 'shelter-logos'
+      : 'documents';
   const id = String(ownerId || '0').replace(/[^\w-]/g, '').slice(0, 32) || '0';
   const safeExt = /^\.\w{1,8}$/.test(ext) ? ext.toLowerCase() : '';
   const nonce = crypto.randomBytes(16).toString('hex');
