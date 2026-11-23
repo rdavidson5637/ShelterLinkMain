@@ -4,6 +4,7 @@ import { renderTagChips, getSelectedTagIds } from '../components/tagChips.js';
 import { showFormErrors, clearFormErrors } from '../utils/formErrors.js';
 import { mountPushToggle } from '../components/pushToggle.js';
 import { showConfirm } from '../components/confirmDialog.js';
+import { mountSignedInDevices, mountChangePassword } from '../components/signedInDevices.js';
 
 const form = document.getElementById('profileForm');
 const messageEl = document.getElementById('message');
@@ -561,6 +562,8 @@ async function init() {
     });
   });
   await mountPushToggle(document.getElementById('pushToggle'));
+  mountChangePassword(document.getElementById('changePassword'));
+  mountSignedInDevices(document.getElementById('signedInDevices')).catch(() => {});
 
   await loadNotificationPrefs();
   if (existingProfile) {

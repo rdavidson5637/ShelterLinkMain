@@ -17,6 +17,7 @@ const {
 const { validateBody, boundedParam } = require('../middleware/validate');
 const { bodies } = require('../validation/bodies');
 const inviteController = require('../controllers/inviteController');
+const sessionsController = require('../controllers/sessionsController');
 
 const router = express.Router();
 router.param('token', boundedParam('token', 128));
@@ -61,6 +62,23 @@ router.post(
 router.post('/logout', validateBody(bodies.empty), authController.logout);
 router.post('/logout-all', isAuthenticated, validateBody(bodies.empty), authController.logoutAll);
 router.get('/me', isAuthenticated, authController.getCurrentUser);
+
+// Signed-in devices (SL-LATER-33). Own sessions only; ids are opaque handles.
+router.get('/sessions', isAuthenticated, sessionsController.listSessions);
+router.post(
+  '/sessions/revoke-others',
+  isAuthenticated,
+  validateBody(bodies.empty),
+  sessionsController.revokeOtherSessions
+);
+router.delete('/sessions/:id', isAuthenticated, sessionsController.revokeSession);
+router.post(
+  '/change-password',
+  isAuthenticated,
+  loginLimiter,
+  validateBody(bodies.changePassword),
+  sessionsController.changePassword
+);
 router.get('/memberships', isAuthenticated, authController.listMyMemberships);
 router.post(
   '/privacy-notice',

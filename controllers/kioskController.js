@@ -8,6 +8,7 @@ const {
   regenerateSession,
   applySessionLifetime,
 } = require('../utils/sessionCookie');
+const { recordSignInDevice } = require('../utils/deviceSummary');
 const Application = require('../models/Application');
 const VolunteerHours = require('../models/VolunteerHours');
 const { hasRole } = require('../middleware/auth');
@@ -87,6 +88,8 @@ async function unlockKiosk(req, res) {
       shelterId: user.shelter_id,
       kioskMode: true,
     });
+    req.session.loginAt = Date.now();
+    recordSignInDevice(req);
     // Kiosk sessions never get remember-me.
     applySessionLifetime(req, { role: user.role, kioskMode: true });
 

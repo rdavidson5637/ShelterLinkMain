@@ -32,6 +32,7 @@ const {
 const { PRIVACY_NOTICE_VERSION } = require('../config/privacyNotice');
 const { isPlatformOwnerUser } = require('../middleware/platformOwner');
 const twoFactor = require('./twoFactorController');
+const { recordSignInDevice } = require('../utils/deviceSummary');
 
 function privacyNoticeAccepted(value) {
   return value === true || value === 'on' || value === 'true';
@@ -177,6 +178,7 @@ async function completeSignIn(req, res, user, { rememberMe, pushEndpoint, passwo
   });
 
   req.session.loginAt = Date.now();
+  recordSignInDevice(req);
   // Volunteers may opt in to 30 days on their own device. Staff and admin stay at 1 hour.
   applySessionLifetime(req, { role: user.role, rememberMe: parseRememberMe(rememberMe) });
 

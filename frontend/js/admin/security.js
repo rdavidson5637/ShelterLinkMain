@@ -1,5 +1,6 @@
 import { apiRequest } from '../config.js';
 import { requireAuth, logout, isStaffOrAdminRole } from '../auth.js';
+import { mountSignedInDevices, mountChangePassword } from '../components/signedInDevices.js';
 
 const $ = (id) => document.getElementById(id);
 const messageEl = $('message');
@@ -139,7 +140,8 @@ async function init() {
     $('recoverySection').hidden = true;
     loadStatus().catch(() => {});
   });
-  await loadStatus();
+  mountChangePassword($('changePassword'));
+  await Promise.all([loadStatus(), mountSignedInDevices($('signedInDevices'))]);
 }
 
 init().catch(() => setMessage('Could not load this page. Please refresh.', 'error'));
