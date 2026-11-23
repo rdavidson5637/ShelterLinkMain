@@ -664,6 +664,19 @@ const volunteerBuddy = z
     message: 'Choose a buddy from the volunteer list.',
   });
 
+const volunteerStaffNote = z
+  .object({
+    body: str(4000).optional(),
+    note: str(4000).optional(),
+  })
+  .strict()
+  .refine((body) => {
+    const text = String(body.body ?? body.note ?? '').trim();
+    return text.length > 0;
+  }, {
+    message: 'Write a note before saving.',
+  });
+
 const shelterResourceLink = z
   .object({
     title: optStr(200),
@@ -878,6 +891,12 @@ const queries = {
       archived: qstr(10),
     })
     .strict(),
+  shelterWishlist: z
+    .object({
+      all: qstr(10),
+      archived: qstr(10),
+    })
+    .strict(),
 };
 
 const weekCopy = z
@@ -970,6 +989,7 @@ const bodies = {
   inductionItem,
   inductionProgress,
   volunteerBuddy,
+  volunteerStaffNote,
   expiryReminder: z
     .object({
       kind: z.enum(['background_check', 'document', 'qualification']),
@@ -1070,6 +1090,25 @@ const bodies = {
         .regex(/^\d{4}-\d{2}-\d{2}$/)
         .optional()
         .nullable(),
+    })
+    .strict(),
+  // SL-DAY-18: public supplies wishlist items (name, quantity, priority, note).
+  shelterWishlistCreate: z
+    .object({
+      name: optStr(160),
+      quantity: z.union([z.number().int().min(1).max(9999), z.string().regex(/^[1-9]\d{0,3}$/)]),
+      priority: z.enum(['high', 'medium', 'low']).optional(),
+      note: optStr(500),
+    })
+    .strict(),
+  shelterWishlistUpdate: z
+    .object({
+      name: optStr(160),
+      quantity: z
+        .union([z.number().int().min(1).max(9999), z.string().regex(/^[1-9]\d{0,3}$/)])
+        .optional(),
+      priority: z.enum(['high', 'medium', 'low']).optional(),
+      note: optStr(500),
     })
     .strict(),
   reorderFields,

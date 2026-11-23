@@ -68,6 +68,11 @@ function inferFromRequest(req) {
     if (method === 'PUT') action = 'volunteer.buddy.assign';
     else if (method === 'DELETE') action = 'volunteer.buddy.clear';
   }
+  else if (resource === 'admin' && segments[1] === 'volunteers' && segments.includes('staff-notes')) {
+    if (method === 'POST') action = 'volunteer.staff_note.create';
+    else if (method === 'PUT' || method === 'PATCH') action = 'volunteer.staff_note.update';
+    else if (method === 'DELETE') action = 'volunteer.staff_note.delete';
+  }
   else if (resource === 'admin' && segments[1] === 'expiry-dashboard' && segments.includes('remind')) {
     action = 'expiry.reminder.email';
   }
@@ -90,6 +95,11 @@ function inferFromRequest(req) {
     else if (segments.includes('archive') && method === 'POST') action = 'announcement.archive';
     else if (method === 'POST') action = 'announcement.create';
     else if (method === 'PUT' || method === 'PATCH') action = 'announcement.update';
+  }
+  else if (resource === 'wishlist') {
+    if (segments.includes('archive') && method === 'POST') action = 'wishlist.archive';
+    else if (method === 'POST') action = 'wishlist.create';
+    else if (method === 'PUT' || method === 'PATCH') action = 'wishlist.update';
   }
 
   const entityType =

@@ -24,6 +24,7 @@ export const ADMIN_MANAGE = [
   { id: 'expiry', label: 'Expiring soon', href: '/pages/admin/expiry-dashboard.html' },
   { id: 'resources', label: 'Resources', href: '/pages/admin/resources.html' },
   { id: 'announcements', label: 'Announcements', href: '/pages/admin/announcements.html' },
+  { id: 'wishlist', label: 'Supplies wishlist', href: '/pages/admin/wishlist.html' },
   { id: 'qualifications', label: 'Qualifications', href: '/pages/admin/qualifications.html', adminOnly: true },
   { id: 'training', label: 'Training modules', href: '/pages/admin/training.html', adminOnly: true },
   { id: 'custom-fields', label: 'Custom fields', href: '/pages/admin/custom-fields.html', adminOnly: true },

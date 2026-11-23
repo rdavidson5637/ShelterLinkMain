@@ -601,6 +601,10 @@ function cases(feedbackToken) {
     deny('GET', '/api/admin/volunteers/2/reliability'),
     deny('GET', '/api/admin/volunteers/2/milestones'),
     deny('POST', '/api/admin/volunteers/2/milestones/anniversary_1y/email', {}),
+    deny('GET', '/api/admin/volunteers/2/staff-notes'),
+    deny('POST', '/api/admin/volunteers/2/staff-notes', { body: 'cross shelter' }),
+    deny('PUT', '/api/admin/volunteers/2/staff-notes/1', { body: 'cross shelter' }),
+    deny('DELETE', '/api/admin/volunteers/2/staff-notes/1'),
     deny('POST', '/api/admin/expiry-dashboard/remind', {
       kind: 'document',
       id: 1,
