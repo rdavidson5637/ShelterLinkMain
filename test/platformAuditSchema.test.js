@@ -62,3 +62,28 @@ test('fresh setup applies 038 after 037', () => {
   const b = setupDb.indexOf("'038_platform_audit.pg.sql'");
   assert.ok(a > 0 && b > a);
 });
+
+const reactivate = fs.readFileSync(path.join(DB, '039_platform_audit_reactivate.pg.sql'), 'utf8');
+
+test('039 adds shelter.reactivated to the platform_audit actions, in a transaction', () => {
+  const code = reactivate.split('\n').filter((line) => !line.trim().startsWith('--')).join('\n');
+  const m = /action IN \(([^)]*)\)/.exec(code);
+  assert.deepEqual(m[1].replace(/'/g, '').split(',').sort(), [
+    'application.approved',
+    'application.rejected',
+    'invite.created',
+    'shelter.reactivated',
+    'shelter.suspended',
+  ]);
+  assert.match(reactivate, /^BEGIN;$/m);
+  assert.match(reactivate, /^COMMIT;$/m);
+  assert.match(reactivate, /DROP CONSTRAINT IF EXISTS platform_audit_action_chk/);
+  assert.doesNotMatch(reactivate, /GRANT /);
+});
+
+test('fresh setup applies 039 after 038', () => {
+  const at038 = setupDb.indexOf("loadSql('038_platform_audit.pg.sql')");
+  const at039 = setupDb.indexOf("loadSql('039_platform_audit_reactivate.pg.sql')");
+  assert.ok(at038 > 0 && at039 > at038);
+});
+
