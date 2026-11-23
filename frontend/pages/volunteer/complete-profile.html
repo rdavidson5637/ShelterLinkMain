@@ -106,6 +106,37 @@
               </label>
             </div>
 
+            <div class="form-section form-full-width" id="usualAvailabilitySection">
+              <fieldset>
+                <legend>Usual days you can help</legend>
+                <p><small>Tick the days and parts of day you are usually free. Staff use this when a shift needs cover. Optional.</small></p>
+                <table class="usual-availability-table" id="usualAvailabilityTable">
+                  <caption class="visually-hidden">Usual days and parts of day</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Day</th>
+                      <th scope="col">Morning</th>
+                      <th scope="col">Afternoon</th>
+                      <th scope="col">Evening</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr data-weekday="mon"><th scope="row">Monday</th><td><label><input type="checkbox" data-part="morning" /> <span class="visually-hidden">Monday morning</span></label></td><td><label><input type="checkbox" data-part="afternoon" /> <span class="visually-hidden">Monday afternoon</span></label></td><td><label><input type="checkbox" data-part="evening" /> <span class="visually-hidden">Monday evening</span></label></td></tr>
+                    <tr data-weekday="tue"><th scope="row">Tuesday</th><td><label><input type="checkbox" data-part="morning" /> <span class="visually-hidden">Tuesday morning</span></label></td><td><label><input type="checkbox" data-part="afternoon" /> <span class="visually-hidden">Tuesday afternoon</span></label></td><td><label><input type="checkbox" data-part="evening" /> <span class="visually-hidden">Tuesday evening</span></label></td></tr>
+                    <tr data-weekday="wed"><th scope="row">Wednesday</th><td><label><input type="checkbox" data-part="morning" /> <span class="visually-hidden">Wednesday morning</span></label></td><td><label><input type="checkbox" data-part="afternoon" /> <span class="visually-hidden">Wednesday afternoon</span></label></td><td><label><input type="checkbox" data-part="evening" /> <span class="visually-hidden">Wednesday evening</span></label></td></tr>
+                    <tr data-weekday="thu"><th scope="row">Thursday</th><td><label><input type="checkbox" data-part="morning" /> <span class="visually-hidden">Thursday morning</span></label></td><td><label><input type="checkbox" data-part="afternoon" /> <span class="visually-hidden">Thursday afternoon</span></label></td><td><label><input type="checkbox" data-part="evening" /> <span class="visually-hidden">Thursday evening</span></label></td></tr>
+                    <tr data-weekday="fri"><th scope="row">Friday</th><td><label><input type="checkbox" data-part="morning" /> <span class="visually-hidden">Friday morning</span></label></td><td><label><input type="checkbox" data-part="afternoon" /> <span class="visually-hidden">Friday afternoon</span></label></td><td><label><input type="checkbox" data-part="evening" /> <span class="visually-hidden">Friday evening</span></label></td></tr>
+                    <tr data-weekday="sat"><th scope="row">Saturday</th><td><label><input type="checkbox" data-part="morning" /> <span class="visually-hidden">Saturday morning</span></label></td><td><label><input type="checkbox" data-part="afternoon" /> <span class="visually-hidden">Saturday afternoon</span></label></td><td><label><input type="checkbox" data-part="evening" /> <span class="visually-hidden">Saturday evening</span></label></td></tr>
+                    <tr data-weekday="sun"><th scope="row">Sunday</th><td><label><input type="checkbox" data-part="morning" /> <span class="visually-hidden">Sunday morning</span></label></td><td><label><input type="checkbox" data-part="afternoon" /> <span class="visually-hidden">Sunday afternoon</span></label></td><td><label><input type="checkbox" data-part="evening" /> <span class="visually-hidden">Sunday evening</span></label></td></tr>
+                  </tbody>
+                </table>
+                <p style="margin-top:0.5rem;">
+                  <button type="button" id="saveUsualAvailabilityButton" class="secondary">Save usual days</button>
+                </p>
+                <p id="usualAvailabilityStatus" class="form-hint" aria-live="polite"></p>
+              </fieldset>
+            </div>
+
             <div class="form-section form-full-width" id="awayModeSection">
               <label for="away_until">
                 Away until

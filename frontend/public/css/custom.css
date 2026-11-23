@@ -3292,3 +3292,81 @@ body.staff-app .dashboard-main > section {
     border-bottom-width: 1px;
   }
 }
+
+/* SL-DAY-14: usual days matrix + week-sheet match list (ruled, not cards) */
+.usual-availability-table {
+  width: 100%;
+  max-width: 36rem;
+  border-collapse: collapse;
+  margin: 0.5rem 0 0;
+}
+
+.usual-availability-table th,
+.usual-availability-table td {
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.usual-availability-table thead th {
+  font-weight: 600;
+  background: var(--surface);
+  font-size: var(--text-sm);
+}
+
+.usual-availability-table tbody th {
+  font-weight: 500;
+}
+
+.usual-availability-table input[type='checkbox'] {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.usual-availability-panel {
+  margin: 1rem 0 0;
+  padding: 0.85rem 0 0;
+  border-top: 1px solid var(--border);
+}
+
+.usual-availability-heading {
+  margin: 0 0 0.25rem;
+  font-size: var(--text-md);
+  line-height: 1.2;
+}
+
+.usual-availability-lede,
+.usual-availability-loading,
+.usual-availability-empty {
+  margin: 0 0 0.65rem;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  max-width: var(--measure);
+}
+
+.usual-availability-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.usual-availability-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.usual-availability-row:last-child {
+  border-bottom: 0;
+}
+
+.usual-availability-email {
+  display: block;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}

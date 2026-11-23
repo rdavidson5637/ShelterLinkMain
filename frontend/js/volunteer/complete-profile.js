@@ -15,10 +15,13 @@ const interestTagsEl = document.getElementById('interestTags');
 const saveInterestsButton = document.getElementById('saveInterestsButton');
 const saveFosterButton = document.getElementById('saveFosterButton');
 const saveAwayButton = document.getElementById('saveAwayButton');
+const saveUsualAvailabilityButton = document.getElementById('saveUsualAvailabilityButton');
 const saveMarketingButton = document.getElementById('saveMarketingButton');
 const saveEmergencyContactButton = document.getElementById('saveEmergencyContactButton');
 const awayUntilInput = document.getElementById('away_until');
 const marketingConsentInput = document.getElementById('marketing_consent');
+const usualAvailabilityTable = document.getElementById('usualAvailabilityTable');
+const usualAvailabilityStatus = document.getElementById('usualAvailabilityStatus');
 
 const FOSTER_BOOL_FIELDS = [
   'has_garden',
@@ -229,9 +232,10 @@ function setFormViewOnly(isViewOnly) {
     if (el.type === 'hidden') return;
     const inFoster = el.closest('#fosterHomeSection');
     const inAway = el.closest('#awayModeSection');
+    const inUsual = el.closest('#usualAvailabilitySection');
     const inMarketing = el.closest('#marketingConsentSection');
     const inEmergency = el.closest('#emergencyContactSection');
-    if (inFoster || inAway || inMarketing || inEmergency) {
+    if (inFoster || inAway || inUsual || inMarketing || inEmergency) {
       el.readOnly = false;
       el.disabled = false;
       return;
@@ -479,6 +483,72 @@ async function saveNotificationPrefs() {
   }
 }
 
+function collectUsualAvailabilitySlots() {
+  if (!usualAvailabilityTable) return [];
+  const slots = [];
+  usualAvailabilityTable.querySelectorAll('tbody tr[data-weekday]').forEach((row) => {
+    const weekday = row.getAttribute('data-weekday');
+    row.querySelectorAll('input[type="checkbox"][data-part]').forEach((input) => {
+      if (input.checked) {
+        slots.push({ weekday, part_of_day: input.getAttribute('data-part') });
+      }
+    });
+  });
+  return slots;
+}
+
+function fillUsualAvailability(slots = []) {
+  if (!usualAvailabilityTable) return;
+  const selected = new Set(
+    (slots || []).map((s) => `${s.weekday}:${s.part_of_day}`)
+  );
+  usualAvailabilityTable.querySelectorAll('tbody tr[data-weekday]').forEach((row) => {
+    const weekday = row.getAttribute('data-weekday');
+    row.querySelectorAll('input[type="checkbox"][data-part]').forEach((input) => {
+      const key = `${weekday}:${input.getAttribute('data-part')}`;
+      input.checked = selected.has(key);
+    });
+  });
+}
+
+async function loadUsualAvailability() {
+  try {
+    const res = await apiRequest('/volunteer/usual-availability', { method: 'GET' });
+    if (!res.ok) return;
+    const body = await res.json();
+    fillUsualAvailability(body.slots || []);
+  } catch (error) {
+    console.error('[Profile] loadUsualAvailability error:', error);
+  }
+}
+
+async function saveUsualAvailability() {
+  setMessage();
+  if (usualAvailabilityStatus) usualAvailabilityStatus.textContent = '';
+  try {
+    const res = await apiRequest('/volunteer/usual-availability', {
+      method: 'PUT',
+      body: { slots: collectUsualAvailabilitySlots() },
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setMessage('error', body.error || 'Failed to save usual days');
+      return;
+    }
+    fillUsualAvailability(body.slots || []);
+    const count = (body.slots || []).length;
+    const note =
+      count === 0
+        ? 'Usual days cleared.'
+        : `Saved ${count} usual day${count === 1 ? '' : 's'}.`;
+    setMessage('success', note);
+    if (usualAvailabilityStatus) usualAvailabilityStatus.textContent = note;
+  } catch (error) {
+    console.error('[Profile] saveUsualAvailability error:', error);
+    setMessage('error', 'Network error while saving usual days');
+  }
+}
+
 async function checkExistingProfile() {
   try {
     const res = await apiRequest('/volunteer/profile', { method: 'GET' });
@@ -625,6 +695,7 @@ async function init() {
   setDateBounds();
   const existingProfile = await checkExistingProfile();
   await loadBuddy();
+  await loadUsualAvailability();
 
   if (!existingProfile) {
     await loadCustomFields();
@@ -642,6 +713,11 @@ async function init() {
   saveFosterButton?.addEventListener('click', (event) => {
     event.preventDefault();
     saveFosterHome();
+  });
+
+  saveUsualAvailabilityButton?.addEventListener('click', (event) => {
+    event.preventDefault();
+    saveUsualAvailability();
   });
 
   saveAwayButton?.addEventListener('click', (event) => {

@@ -62,6 +62,7 @@ const TENANT_TABLES = [
   'volunteer_qualifications',
   'volunteer_references',
   'volunteer_tags',
+  'volunteer_usual_availability',
   'waitlist_offers',
   'waiver_acceptances',
   'waivers',
