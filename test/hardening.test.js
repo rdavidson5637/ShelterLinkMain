@@ -104,6 +104,15 @@ test('stripAdminFields hides check-in codes and internal shift notes', () => {
         { body: 'Internal', notify: 0 },
         { body: 'Bring wellies', notify: 1 },
       ],
+      animals: [
+        {
+          id: 1,
+          name: 'Rex',
+          species: 'dog',
+          handling_notes: 'No other dogs',
+          notes: 'Medication staff only',
+        },
+      ],
     },
     false
   );
@@ -113,6 +122,9 @@ test('stripAdminFields hides check-in codes and internal shift notes', () => {
     stripped.shift_notes.map((n) => n.body),
     ['Bring wellies']
   );
+  assert.equal(stripped.animals[0].handling_notes, 'No other dogs');
+  assert.equal(stripped.animals[0].notes, undefined);
+  assert.equal(JSON.stringify(stripped).includes('Medication'), false);
 });
 
 function makeRes() {
