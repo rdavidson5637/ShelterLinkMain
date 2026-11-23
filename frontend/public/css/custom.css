@@ -3021,3 +3021,59 @@ body.staff-app .dashboard-main > section {
   color: var(--text);
   background: transparent;
 }
+/* SL-LATER-30: closed days. Ruled rows, label plus tint, never colour alone. */
+.closed-days {
+  margin: 0 0 var(--section-gap, 2rem);
+}
+
+.closed-days h2 {
+  margin: 0 0 0.5rem;
+  font-size: var(--text-lg);
+}
+
+.closed-days-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--border);
+}
+
+.closed-days-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 1rem;
+  margin: 0;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+  list-style: none;
+}
+
+.closed-days-status,
+.shift-closed-label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text);
+  text-transform: none;
+}
+
+.closed-days-status::before,
+.shift-closed-label::before {
+  content: '';
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-right: 0.4rem;
+  background: var(--accent);
+  vertical-align: middle;
+}
+
+.closed-days-reason {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.shift-row.is-closed-day h2,
+.opportunity-card.is-closed-day h3 {
+  color: var(--text-secondary);
+}

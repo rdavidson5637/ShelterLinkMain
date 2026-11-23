@@ -332,6 +332,15 @@ const bookingSettings = z
   .object({ booking_mode: z.enum(['approval', 'instant']) })
   .strict();
 const trustedVolunteer = z.object({ trusted: z.boolean() }).strict();
+// SL-LATER-30: closed day or range. Dates and reason are checked again in
+// utils/closureDates.js so the error names the field in plain words.
+const shelterClosure = z
+  .object({
+    starts_on: z.string().max(10),
+    ends_on: z.string().max(10).optional().nullable(),
+    reason: z.string().max(200),
+  })
+  .strict();
 
 const documentMeta = z
   .object({
@@ -698,6 +707,7 @@ const kioskUnlock = z
   .strict();
 
 const queries = {
+  closures: z.object({ include_past: z.enum(['true', 'false']).optional() }).strict(),
   day: z.object({ date: qdate }).strict(),
   week: z.object({ week_start: qdate }).strict(),
   weekCopy: z.object({ source_week: qdate, target_week: qdate }).strict(),
@@ -815,6 +825,7 @@ const bodies = {
   role,
   bookingSettings,
   trustedVolunteer,
+  shelterClosure,
   documentMeta,
   animal,
   animalActivity,

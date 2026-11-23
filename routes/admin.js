@@ -68,6 +68,12 @@ const {
 const { getWeekSheet, getWeekSheetIcs } = require('../controllers/weekSheetController');
 const { getThisWeek } = require('../controllers/thisWeekController');
 const { getCopyPreview, postCopyWeek } = require('../controllers/weekCopyController');
+const {
+  listClosures,
+  createClosure,
+  getAffectedShifts,
+  deleteClosure,
+} = require('../controllers/closureController');
 const { getVolunteerHoursStatement } = require('../controllers/hoursStatementController');
 
 const { validateBody, validateQuery, positiveParam } = require('../middleware/validate');
@@ -80,6 +86,7 @@ const { listEmailPreviews } = require('../controllers/emailPreviewController');
 const router = express.Router();
 router.param('userId', positiveParam('userId'));
 router.param('inviteId', positiveParam('inviteId'));
+router.param('closureId', positiveParam('closureId'));
 
 router.use(auditMutations);
 
@@ -175,6 +182,13 @@ router.post('/invites/:inviteId/revoke', isAuthenticated, adminOnly, validateBod
 router.get('/settings/booking', isAuthenticated, staffOrAdmin, getBookingSettings);
 router.put('/settings/booking', isAuthenticated, adminOnly, validateBody(bodies.bookingSettings), updateBookingSettings);
 router.put('/volunteers/:userId/trusted', isAuthenticated, adminOnly, validateBody(bodies.trustedVolunteer), updateVolunteerTrusted);
+
+// SL-LATER-30: closure dates. Adding one lists booked shifts inside it;
+// nothing is cancelled or emailed automatically.
+router.get('/closures', isAuthenticated, staffOrAdmin, validateQuery(queries.closures), listClosures);
+router.post('/closures', isAuthenticated, adminOnly, validateBody(bodies.shelterClosure), createClosure);
+router.get('/closures/:closureId/affected', isAuthenticated, staffOrAdmin, getAffectedShifts);
+router.delete('/closures/:closureId', isAuthenticated, adminOnly, deleteClosure);
 
 // SL-LATER-10: per-shelter accent colour and logo.
 router.get('/settings/brand', isAuthenticated, staffOrAdmin, getBrandSettings);

@@ -16,12 +16,14 @@ export function filterPublicBoard(rows) {
 
 export function isAcceptingSignups(opp) {
   if (!opp || isHiddenFromPublicBoard(opp)) return false;
+  if (opp.closed_reason) return false;
   if (opp.accepting_applications === false) return false;
   if (opp.spots_remaining === 0) return false;
   return true;
 }
 
 export function closedShiftLabel(opp) {
+  if (opp?.closed_reason) return `Closed: ${opp.closed_reason}`;
   const status = String(opp?.status || '').toLowerCase();
   if (status === 'cancelled') return 'This shift was cancelled';
   if (status === 'closed') return 'This shift is closed';

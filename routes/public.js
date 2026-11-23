@@ -17,6 +17,7 @@ const {
 const { verifyCertificate } = require('../controllers/certificateController');
 const { getPublicConfig, getDemoInfo } = require('../controllers/publicConfigController');
 const { getBrand, getBrandLogo } = require('../controllers/brandController');
+const { listPublicClosures } = require('../controllers/closureController');
 
 const { validateBody, boundedParam } = require('../middleware/validate');
 const { bodies } = require('../validation/bodies');
@@ -32,6 +33,7 @@ router.get('/brand/logo', apiLimiter, getBrandLogo);
 router.get('/demo-info', apiLimiter, getDemoInfo);
 router.get('/opportunities', apiLimiter, listPublicOpportunities);
 router.get('/opportunities.ics', apiLimiter, publicOpportunitiesIcs);
+router.get('/closures', apiLimiter, listPublicClosures);
 router.post(
   '/shelter-applications',
   shelterApplyEmailLimiter,

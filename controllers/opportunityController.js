@@ -9,6 +9,8 @@ const { notifyOnOpportunityCreate } = require('../jobs/opportunityMatchDigest');
 const { isStaffOrAdmin } = require('../middleware/auth');
 const { notifyUrgentCover } = require('../utils/notify');
 const Vetting = require('../models/Vetting');
+const { firstClosedDay, markClosedShifts } = require('./closureController');
+const { formatDay } = require('../utils/closureDates');
 
 const REQUIRED_FIELDS = ['title', 'description', 'location', 'start_date', 'end_date'];
 const VALID_RECURRENCE_RULES = new Set(['none', 'daily', 'weekly']);
@@ -109,6 +111,35 @@ function toDateOnly(value) {
   return String(value).slice(0, 10);
 }
 
+function addDays(day, days) {
+  const d = new Date(`${day}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+/** Start days for every shift a create request would make (SL-LATER-30). */
+function plannedStartDays(startDate, rule, until) {
+  const first = toDateOnly(startDate);
+  if (!first) return [];
+  if (rule === 'none') return [first];
+  const offsets = Opportunity.buildOccurrenceOffsets(rule, startDate, until);
+  return [first, ...offsets.map((offset) => addDays(first, offset))];
+}
+
+/** 409 body when a requested shift lands on a closed day, else null. */
+async function closedDayRefusal(startDays, { repeating = false } = {}) {
+  const hit = await firstClosedDay(startDays);
+  if (!hit) return null;
+  const error = repeating
+    ? `This repeating shift would land on ${formatDay(hit.day)}, when the shelter is closed (${hit.closure.reason}). Change the dates or end the series before the closure.`
+    : hit.message;
+  return {
+    error,
+    closed_date: hit.day,
+    closure: { starts_on: hit.closure.starts_on, ends_on: hit.closure.ends_on, reason: hit.closure.reason },
+  };
+}
+
 async function createOpportunity(req, res) {
   try {
     if (!isAdmin(req)) {
@@ -143,6 +174,14 @@ async function createOpportunity(req, res) {
           error: 'recurrence_until must be after the start date',
         });
       }
+    }
+
+    const refusal = await closedDayRefusal(
+      plannedStartDays(start_date, recurrence_rule, recurrence_until),
+      { repeating: recurrence_rule !== 'none' }
+    );
+    if (refusal) {
+      return res.status(409).json(refusal);
     }
 
     const created_by = req.session.userId;
@@ -249,7 +288,7 @@ async function getAllOpportunities(req, res) {
     if (!admin) {
       opportunities = excludeTestOpportunities(opportunities);
     }
-    let enriched = await withExtras(opportunities);
+    let enriched = await markClosedShifts(await withExtras(opportunities));
 
     const tagFilter = req.query?.tag || req.query?.tag_id || req.query?.tagId;
     if (tagFilter) {
@@ -316,6 +355,17 @@ async function updateOpportunity(req, res) {
     const existing = await Opportunity.findById(id);
     if (!existing) {
       return res.status(404).json({ error: 'Opportunity not found' });
+    }
+
+    // Moving a shift onto a closed day is refused like creating one there.
+    if (
+      req.body.start_date
+      && toDateOnly(req.body.start_date) !== toDateOnly(existing.start_date)
+    ) {
+      const refusal = await closedDayRefusal([req.body.start_date]);
+      if (refusal) {
+        return res.status(409).json(refusal);
+      }
     }
 
     const previousMax = Number(existing.max_volunteers);

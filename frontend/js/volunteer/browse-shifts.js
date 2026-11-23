@@ -3,6 +3,7 @@ import { requireAuth, logout } from '../auth.js';
 import { showOpportunityModal, hideOpportunityModal } from '../components/opportunityModal.js';
 import { formatShiftWhen, upcomingFirst } from '../utils/dateFormat.js';
 import { groupShiftsByPeriod } from '../utils/groupShifts.js';
+import { renderClosedDaysList } from '../utils/closures.js';
 
 const shiftsContainer = document.getElementById('shifts-container');
 const coverShiftsSection = document.getElementById('coverShiftsSection');
@@ -18,6 +19,7 @@ const tagSelect = document.getElementById('filter_tag');
 const clearFiltersWrap = document.getElementById('clearFiltersWrap');
 const clearFiltersButton = document.getElementById('clearFiltersButton');
 const logoutButton = document.getElementById('logoutButton');
+const closedDaysEl = document.getElementById('closedDays');
 
 let allOpportunities = [];
 let coverSwaps = [];
@@ -250,10 +252,19 @@ function renderOpportunityCard(opportunity) {
   if (missingQuals.length) {
     article.classList.add('opportunity-card--unqualified');
   }
+  if (opportunity.closed_reason) {
+    article.classList.add('is-closed-day');
+  }
 
   const title = document.createElement('h3');
   title.textContent = opportunity.title || 'Volunteer Opportunity';
-  if (Number(opportunity.is_urgent)) {
+  if (opportunity.closed_reason) {
+    const closedLabel = document.createElement('span');
+    closedLabel.className = 'shift-closed-label';
+    closedLabel.textContent = 'Closed';
+    title.appendChild(document.createTextNode(' '));
+    title.appendChild(closedLabel);
+  } else if (Number(opportunity.is_urgent)) {
     const badge = document.createElement('span');
     badge.className = 'status-badge';
     badge.style.cssText = 'margin-left:0.5rem;background:#fde8e8;color:#7a1f1f;';
@@ -318,6 +329,13 @@ function renderOpportunityCard(opportunity) {
   } else {
     article.appendChild(title);
     article.appendChild(meta);
+  }
+
+  if (opportunity.closed_reason) {
+    const closedNote = document.createElement('p');
+    closedNote.className = 'unqualified-reason';
+    closedNote.textContent = `The shelter is closed this day (${opportunity.closed_reason}). Not taking bookings.`;
+    article.appendChild(closedNote);
   }
 
   const description = document.createElement('p');
@@ -446,6 +464,18 @@ async function fetchAllOpportunities() {
   } catch (error) {
     console.error('[Volunteer] fetchOpportunities error:', error);
     return [];
+  }
+}
+
+async function loadClosedDays() {
+  if (!closedDaysEl) return;
+  try {
+    const res = await apiRequest('/opportunities/closures', { method: 'GET' });
+    if (!res.ok) return;
+    const section = renderClosedDaysList(await res.json().catch(() => []));
+    if (section) closedDaysEl.replaceChildren(section);
+  } catch (error) {
+    console.error('[Volunteer] fetchClosures error:', error);
   }
 }
 
@@ -610,6 +640,7 @@ async function init() {
   if (shiftsContainer) shiftsContainer.innerHTML = '<p>Loading shifts...</p>';
 
   attachEventListeners();
+  loadClosedDays();
   const urlFilters = getFiltersFromUrl();
   setFormFromFilters(urlFilters);
 
