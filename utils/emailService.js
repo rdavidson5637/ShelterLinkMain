@@ -773,6 +773,37 @@ async function sendPasswordReset(to, details = {}) {
   return sendEmail(to, parts.subject, parts.html, parts.text);
 }
 
+/**
+ * Short staff-triggered thank-you for anniversary or 50 attended shifts (SL-DAY-06).
+ * No scores, no public display wording.
+ */
+function buildMilestoneThankYou(details = {}, brand) {
+  const name = escapeHtml(details.firstName || 'there');
+  const shelter = brand.name ? ` at ${brand.name}` : '';
+  const kind = String(details.kind || '');
+  let reason;
+  if (kind === 'shifts_50') {
+    reason = 'reaching 50 attended shifts';
+  } else {
+    reason = 'completing one year of volunteering';
+  }
+  return withText(
+    `Thank you - ShelterLink`,
+    `
+    <p>Hi ${name},</p>
+    <p>Thank you for ${reason}${shelter}. Your time with the animals and the team makes a real difference.</p>
+    <p>We are glad you are part of ShelterLink.</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
+    `
+  );
+}
+
+async function sendMilestoneThankYou(volunteerEmail, details = {}) {
+  const brand = await brandBits();
+  const parts = buildMilestoneThankYou(details, brand);
+  return sendEmail(volunteerEmail, parts.subject, parts.html, parts.text);
+}
+
 module.exports = {
   currentShelterName,
   brandBits,
@@ -819,4 +850,6 @@ module.exports = {
   sendVolunteerSetPasswordInvite,
   buildPasswordReset,
   sendPasswordReset,
+  buildMilestoneThankYou,
+  sendMilestoneThankYou,
 };

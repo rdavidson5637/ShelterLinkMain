@@ -58,6 +58,9 @@ function inferFromRequest(req) {
   else if (resource === 'admin' && segments[1] === 'volunteers' && segments.includes('merge')) {
     action = segments.includes('preview') ? 'volunteer.merge.preview' : 'volunteer.merge';
   }
+  else if (segments.includes('milestones') && resource === 'admin' && method === 'POST') {
+    action = 'volunteer.milestone.email';
+  }
 
   const entityType =
     resource === 'admin' && segments[1] === 'volunteers'

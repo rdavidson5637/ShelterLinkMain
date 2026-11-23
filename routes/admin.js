@@ -86,6 +86,12 @@ const {
   getVolunteerInduction,
   setVolunteerInductionItem,
 } = require('../controllers/inductionChecklistController');
+const {
+  listPendingMilestones,
+  getVolunteerMilestones,
+  previewMilestoneEmail,
+  sendMilestoneEmail,
+} = require('../controllers/milestoneController');
 
 const { validateBody, validateQuery, positiveParam } = require('../middleware/validate');
 const { listStaffInvites, createStaffInvite, revokeStaffInvite } = require('../controllers/staffInviteController');
@@ -112,6 +118,7 @@ router.get('/week-sheet.ics', isAuthenticated, staffOrAdmin, validateQuery(queri
 router.get('/week-sheet/copy-preview', isAuthenticated, staffOrAdmin, validateQuery(queries.weekCopy), getCopyPreview);
 router.post('/week-sheet/copy', isAuthenticated, staffOrAdmin, validateBody(bodies.weekCopy), postCopyWeek);
 router.get('/this-week', isAuthenticated, staffOrAdmin, getThisWeek);
+router.get('/milestones', isAuthenticated, staffOrAdmin, listPendingMilestones);
 router.get('/stats', isAuthenticated, staffOrAdmin, validateQuery(queries.year), getAdminStats);
 router.get('/reports/impact', isAuthenticated, staffOrAdmin, validateQuery(queries.impactReport), getImpactReport);
 router.get('/reports/impact.csv', isAuthenticated, staffOrAdmin, validateQuery(queries.impactReport), getImpactReportCsv);
@@ -155,6 +162,20 @@ router.post(
 );
 router.get('/volunteers/:userId', isAuthenticated, staffOrAdmin, getVolunteerProfile);
 router.get('/volunteers/:userId/reliability', isAuthenticated, staffOrAdmin, getVolunteerReliability);
+router.get('/volunteers/:userId/milestones', isAuthenticated, staffOrAdmin, getVolunteerMilestones);
+router.get(
+  '/volunteers/:userId/milestones/:kind/preview',
+  isAuthenticated,
+  staffOrAdmin,
+  previewMilestoneEmail
+);
+router.post(
+  '/volunteers/:userId/milestones/:kind/email',
+  isAuthenticated,
+  staffOrAdmin,
+  messageLimiter,
+  sendMilestoneEmail
+);
 router.get(
   '/volunteers/:userId/hours-statement',
   isAuthenticated,

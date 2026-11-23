@@ -21,6 +21,7 @@ const {
   buildVolunteerSetPasswordInvite,
   buildWeeklyDigest,
   buildPasswordReset,
+  buildMilestoneThankYou,
 } = require('../utils/emailService');
 const { catalogIds, renderEmailPreviews, sampleData } = require('../utils/emailPreview');
 const { listEmailPreviews } = require('../controllers/emailPreviewController');
@@ -77,6 +78,10 @@ const BUILDERS = [
   {
     id: 'reset',
     build: (brand, samples) => buildPasswordReset(samples.reset, brand),
+  },
+  {
+    id: 'milestone',
+    build: (brand, samples) => buildMilestoneThankYou(samples.milestone, brand),
   },
 ];
 
@@ -170,7 +175,7 @@ test('listEmailPreviews controller returns catalog without sending', async () =>
   assert.equal(res.statusCode, 200);
   assert.equal(res.body.sends_mail, false);
   assert.equal(res.body.shelter.id, 7);
-  assert.equal(res.body.previews.length, 7);
+  assert.equal(res.body.previews.length, catalogIds().length);
   for (const preview of res.body.previews) {
     assert.ok(preview.html);
     assert.ok(preview.text);

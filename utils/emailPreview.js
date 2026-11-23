@@ -16,6 +16,7 @@ const {
   buildVolunteerSetPasswordInvite,
   buildWeeklyDigest,
   buildPasswordReset,
+  buildMilestoneThankYou,
 } = require('./emailService');
 
 const APP_BASE = () => String(process.env.APP_URL || 'https://shelterlink.online').replace(/\/$/, '');
@@ -64,6 +65,11 @@ function sampleData(shelterNamePlain) {
       firstName: 'Alex',
       link: `${base}/reset-password.html?token=sample-reset-token`,
       shelterName: shelterNamePlain,
+    },
+    milestone: {
+      firstName: 'Alex',
+      kind: 'anniversary_1y',
+      label: 'One year volunteering',
     },
   };
 }
@@ -123,6 +129,14 @@ const CATALOG = [
     description: 'Forgot-password link. Expires in one hour.',
     build(brand, samples) {
       return buildPasswordReset(samples.reset, brand);
+    },
+  },
+  {
+    id: 'milestone',
+    label: 'Milestone thank-you',
+    description: 'Staff-sent thank-you for one year or 50 attended shifts.',
+    build(brand, samples) {
+      return buildMilestoneThankYou(samples.milestone, brand);
     },
   },
 ];

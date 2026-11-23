@@ -526,6 +526,37 @@ async function viewProfile(userId) {
       reliabilityHtml = '<p>Unable to load attendance.</p>';
     }
 
+    let milestonesHtml = '<p>No anniversary or 50-shift milestone yet.</p>';
+    try {
+      const mileRes = await apiRequest(`/admin/volunteers/${userId}/milestones`, { method: 'GET' });
+      if (mileRes.ok) {
+        const mile = await mileRes.json();
+        const items = Array.isArray(mile.items) ? mile.items : [];
+        if (items.length) {
+          milestonesHtml = `<ul class="milestone-notice-list">${items
+            .map((item) => {
+              const kind = escapeHtml(item.kind || '');
+              const label = escapeHtml(item.label || item.kind || 'Milestone');
+              if (item.emailed) {
+                const when = item.emailed_at
+                  ? ` · thanked ${escapeHtml(String(item.emailed_at).slice(0, 10))}`
+                  : ' · thank-you already sent';
+                return `<li>${label}${when}</li>`;
+              }
+              return `<li>
+                  ${label}
+                  <button type="button" class="button-small milestone-send-btn" data-milestone-kind="${kind}">
+                    Send thank-you email
+                  </button>
+                </li>`;
+            })
+            .join('')}</ul>`;
+        }
+      }
+    } catch {
+      milestonesHtml = '<p>Unable to load milestones.</p>';
+    }
+
     let qualsHtml = '<p>No qualifications awarded.</p>';
     try {
       const qualsRes = await apiRequest(`/admin/volunteers/${userId}/qualifications`, { method: 'GET' });
@@ -759,6 +790,12 @@ async function viewProfile(userId) {
           <strong>Attendance, last 12 months</strong>
           ${reliabilityHtml}
         </div>
+        <div class="milestone-notice">
+          <strong>Milestones</strong>
+          <p class="milestone-notice-lede">Staff-only. Email thank-yous for one year or 50 attended shifts. Not shown to volunteers publicly.</p>
+          ${milestonesHtml}
+          <p id="milestoneSendStatus" class="form-status" hidden></p>
+        </div>
         <div>
           <strong>Hours statement:</strong>
           <a
@@ -892,6 +929,40 @@ async function viewProfile(userId) {
           setMessage('Network error updating induction item.', 'error');
         }
         box.disabled = false;
+      });
+    });
+
+    profileContent.querySelectorAll('.milestone-send-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const kind = btn.getAttribute('data-milestone-kind');
+        if (!kind) return;
+        const statusEl = document.getElementById('milestoneSendStatus');
+        btn.disabled = true;
+        if (statusEl) {
+          statusEl.hidden = false;
+          statusEl.textContent = 'Sending thank-you email…';
+        }
+        try {
+          const sendRes = await apiRequest(
+            `/admin/volunteers/${userId}/milestones/${encodeURIComponent(kind)}/email`,
+            { method: 'POST', body: {} }
+          );
+          const body = await sendRes.json().catch(() => ({}));
+          if (!sendRes.ok) {
+            const err = body.error || 'Could not send thank-you email.';
+            if (statusEl) statusEl.textContent = err;
+            setMessage(err, 'error');
+            btn.disabled = false;
+            return;
+          }
+          setMessage('Thank-you email sent.', 'success');
+          await viewProfile(userId);
+        } catch {
+          const err = 'Network error sending thank-you email.';
+          if (statusEl) statusEl.textContent = err;
+          setMessage(err, 'error');
+          btn.disabled = false;
+        }
       });
     });
 
