@@ -163,6 +163,7 @@ test('getModule includes correct_index for admin', async () => {
 test('recordAttempt awards linked qualification when pass mark is met', async () => {
   mock.resetCalls();
   let awarded = false;
+  let awardInsertParams = null;
   mock.setHandler(async (sql, params) => {
     if (/FROM training_modules m/i.test(sql) && /WHERE m\.id/i.test(sql)) {
       return [[
@@ -174,6 +175,7 @@ test('recordAttempt awards linked qualification when pass mark is met', async ()
           pass_mark_percent: 80,
           awards_qualification_id: 3,
           awards_qualification_name: 'Dog walking level 1',
+          validity_months: 6,
           active: 1,
           created_at: '2026-11-23',
           updated_at: '2026-11-23',
@@ -223,13 +225,14 @@ test('recordAttempt awards linked qualification when pass mark is met', async ()
           id: 3,
           name: 'Dog walking level 1',
           description: null,
-          validity_months: 12,
+          validity_months: 24,
           created_at: '2026-01-01',
         },
       ]];
     }
     if (/INSERT INTO volunteer_qualifications/i.test(sql)) {
       awarded = true;
+      awardInsertParams = params;
       return [{ insertId: 9, affectedRows: 1 }];
     }
     if (/FROM volunteer_qualifications vq/i.test(sql)) {
@@ -239,12 +242,12 @@ test('recordAttempt awards linked qualification when pass mark is met', async ()
           user_id: 2,
           qualification_id: 3,
           awarded_at: '2026-11-23',
-          expires_at: '2027-11-23',
+          expires_at: '2027-05-23',
           awarded_by: null,
           last_expiry_notified_at: null,
           name: 'Dog walking level 1',
           description: null,
-          validity_months: 12,
+          validity_months: 24,
         },
       ]];
     }
@@ -264,8 +267,67 @@ test('recordAttempt awards linked qualification when pass mark is met', async ()
   assert.strictEqual(result.passed, true);
   assert.strictEqual(result.score_percent, 100);
   assert.ok(awarded);
+  // Module validity (6 months) wins over the qualification's 24 months.
+  assert.strictEqual(awardInsertParams[3], '2027-05-23');
   assert.strictEqual(result.qualification_awarded.qualification_id, 3);
   assert.strictEqual(result.qualification_awarded.name, 'Dog walking level 1');
+  assert.strictEqual(result.qualification_awarded.expires_at, '2027-05-23');
+});
+
+test('hasValidPass is false when the awarded qualification has expired', async () => {
+  mock.resetCalls();
+  mock.setHandler(async (sql) => {
+    if (/FROM training_modules m/i.test(sql) && /WHERE m\.id/i.test(sql)) {
+      return [[
+        {
+          id: 10,
+          name: 'Dog walking level 1',
+          description: null,
+          content: '',
+          pass_mark_percent: 80,
+          awards_qualification_id: 3,
+          awards_qualification_name: 'Dog walking level 1',
+          validity_months: 12,
+          active: 1,
+          created_at: '2025-01-01',
+          updated_at: '2025-01-01',
+          question_count: 1,
+        },
+      ]];
+    }
+    if (/FROM training_attempts a/i.test(sql)) {
+      return [[
+        {
+          id: 1,
+          module_id: 10,
+          user_id: 2,
+          score_percent: 100,
+          passed: 1,
+          answers: '[]',
+          attempted_at: '2025-01-01',
+          module_name: 'Dog walking level 1',
+          pass_mark_percent: 80,
+        },
+      ]];
+    }
+    if (/FROM volunteer_qualifications vq/i.test(sql)) {
+      return [[
+        {
+          id: 9,
+          user_id: 2,
+          qualification_id: 3,
+          awarded_at: '2025-01-01',
+          expires_at: '2026-01-01',
+          awarded_by: null,
+          name: 'Dog walking level 1',
+        },
+      ]];
+    }
+    return [[]];
+  });
+
+  const ok = await TrainingModule.hasValidPass(2, 10, new Date('2026-11-23'));
+  assert.strictEqual(ok, false);
 });
 
 test('recordAttempt does not award when below pass mark', async () => {

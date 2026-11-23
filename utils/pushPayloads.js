@@ -91,6 +91,21 @@ function buildWaitlistOfferPayload(source = {}) {
   };
 }
 
+function buildTrainingRefresherPayload(source = {}) {
+  const name =
+    truncate(source.qualification_name || source.qualificationName || 'your training', 80) ||
+    'your training';
+  const expiresAt = truncate(source.expiresAt || source.expires_at || 'soon', 40);
+  const warnDays = Number(source.warnDays) || 14;
+  return {
+    title: `Training expires in ${warnDays} days`,
+    body: truncate(`${name} expires on ${expiresAt}. Retake it to keep booking.`, 140),
+    url: '/pages/volunteer/training.html',
+    type: 'training_refresher',
+    tag: `training-refresher-${source.volunteer_qualification_id || source.id || ''}`,
+  };
+}
+
 function buildFosterPayload(source = {}) {
   const species = truncate(source.species || source.animal_species || 'An animal', 40) || 'An animal';
   const date = formatShelterDate(source.needed_from || source.neededFrom || source.date || '');
@@ -112,4 +127,5 @@ module.exports = {
   buildThreadPayload,
   buildFosterPayload,
   buildWaitlistOfferPayload,
+  buildTrainingRefresherPayload,
 };

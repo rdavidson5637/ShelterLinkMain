@@ -554,6 +554,9 @@ const trainingModule = z
       .optional(),
     awards_qualification_id: z.union([idValue, z.literal(''), z.null()]).optional(),
     awardsQualificationId: z.union([idValue, z.literal(''), z.null()]).optional(),
+    validity_months: z
+      .union([z.number().int().min(0).max(240), z.null(), z.literal('')])
+      .optional(),
     active: optFlag,
     questions: z.array(trainingQuestion).max(50).optional(),
   })

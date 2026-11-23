@@ -276,6 +276,25 @@ async function sendQualificationExpiryNotice(volunteerEmail, details = {}) {
   );
 }
 
+async function sendTrainingRefresherNotice(volunteerEmail, details = {}) {
+  const brand = await brandBits();
+  const name = details.name || 'there';
+  const qualificationName = details.qualificationName || 'your training';
+  const expiresAt = details.expiresAt || 'soon';
+  const warnDays = Number(details.warnDays) || 14;
+
+  return sendEmail(
+    volunteerEmail,
+    'Training refresher due - ShelterLink',
+    `
+    <p>Hi ${name},</p>
+    <p>Your training for <strong>${qualificationName}</strong> expires on <strong>${expiresAt}</strong> (in ${warnDays} days).</p>
+    <p>Retake the module before then so you can keep applying for shifts that require it.</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
+    `
+  );
+}
+
 async function sendSwapOpened(volunteerEmail, opportunityTitle) {
   const brand = await brandBits();
   const safeTitle = opportunityTitle || 'your shift';
@@ -667,6 +686,7 @@ module.exports = {
   sendShiftReminder,
   sendOpportunityMatchDigest,
   sendQualificationExpiryNotice,
+  sendTrainingRefresherNotice,
   sendSwapOpened,
   sendSwapWaitlistOffer,
   sendSwapClaimedToOriginal,

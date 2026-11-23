@@ -1296,11 +1296,14 @@ CREATE TABLE training_modules (
   content                   TEXT NOT NULL DEFAULT '',
   pass_mark_percent         SMALLINT NOT NULL DEFAULT 80,
   awards_qualification_id   INTEGER,
+  validity_months           INTEGER DEFAULT NULL,
   active                    SMALLINT NOT NULL DEFAULT 1,
   created_at                TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT training_modules_pass_mark_chk
     CHECK (pass_mark_percent >= 1 AND pass_mark_percent <= 100),
+  CONSTRAINT training_modules_validity_months_chk
+    CHECK (validity_months IS NULL OR (validity_months >= 1 AND validity_months <= 240)),
   CONSTRAINT training_modules_active_chk CHECK (active IN (0, 1)),
   CONSTRAINT training_modules_shelter_id_fkey
     FOREIGN KEY (shelter_id) REFERENCES shelters (id) ON DELETE RESTRICT,
