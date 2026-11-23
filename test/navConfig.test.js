@@ -23,6 +23,7 @@ test('filterNavForRole hides admin-only destinations from staff', async () => {
     'induction',
     'expiry',
     'resources',
+    'announcements',
     'closures',
     'groups',
     'messages',

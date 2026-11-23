@@ -37,6 +37,7 @@ const TENANT_TABLES = [
   'opportunity_templates',
   'push_subscriptions',
   'qualifications',
+  'shelter_announcements',
   'shelter_booking_policy',
   'shelter_closures',
   'shelter_settings',

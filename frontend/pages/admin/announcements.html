@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Announcements - ShelterLink</title>
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Account">
+        <a class="site-brand" href="/pages/admin/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" aria-label="Toggle navigation">Menu</button>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main id="main" class="container dashboard-layout">
+      <aside id="admin-nav" class="sidebar-nav"></aside>
+      <div class="dashboard-main">
+        <section>
+          <h1>Shelter announcements</h1>
+          <p>
+            Post short dated notices for volunteers at this shelter. They appear on volunteer home
+            until they expire or you archive them. Email is optional and only goes to approved
+            volunteers when you click send.
+          </p>
+          <div id="message" role="status" aria-live="polite"></div>
+        </section>
+
+        <section class="announcement-compose">
+          <h2>Post a notice</h2>
+          <form id="announcementForm" class="announcement-form">
+            <label for="announcement_title">
+              Title
+              <input
+                type="text"
+                id="announcement_title"
+                name="title"
+                required
+                maxlength="160"
+                placeholder="Yard closed Saturday morning"
+              />
+            </label>
+            <label for="announcement_body">
+              Notice
+              <textarea
+                id="announcement_body"
+                name="body"
+                required
+                maxlength="2000"
+                rows="4"
+                placeholder="What volunteers need to know"
+              ></textarea>
+            </label>
+            <div class="announcement-date-row">
+              <label for="announcement_posted_on">
+                Posted on
+                <input type="date" id="announcement_posted_on" name="posted_on" />
+              </label>
+              <label for="announcement_expires_on">
+                Expires on (optional)
+                <input type="date" id="announcement_expires_on" name="expires_on" />
+              </label>
+            </div>
+            <button type="submit">Post notice</button>
+          </form>
+        </section>
+
+        <section>
+          <div class="announcement-list-header">
+            <h2>Notices</h2>
+            <label class="announcement-archived-toggle" for="showArchived">
+              <input type="checkbox" id="showArchived" name="show_archived" />
+              Show archived
+            </label>
+          </div>
+          <div id="announcementList" class="announcement-staff-list">
+            <p>Loading...</p>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2026 ShelterLink</small>
+    </footer>
+
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/admin/announcements.js"></script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+    <script type="module" src="/js/components/adminNav.js"></script>
+  </body>
+</html>
