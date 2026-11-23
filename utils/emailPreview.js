@@ -16,6 +16,7 @@ const {
   buildVolunteerSetPasswordInvite,
   buildWeeklyDigest,
   buildPasswordReset,
+  buildNoShowFollowUp,
 } = require('./emailService');
 
 const APP_BASE = () => String(process.env.APP_URL || 'https://shelterlink.online').replace(/\/$/, '');
@@ -64,6 +65,12 @@ function sampleData(shelterNamePlain) {
       firstName: 'Alex',
       link: `${base}/reset-password.html?token=sample-reset-token`,
       shelterName: shelterNamePlain,
+    },
+    noShow: {
+      volunteerName: 'Alex',
+      opportunityTitle: 'Morning kennel walk',
+      shiftDate: '2026-11-15T09:00:00.000Z',
+      message: 'Hope you are well. Let us know if you would like another shift.',
     },
   };
 }
@@ -123,6 +130,14 @@ const CATALOG = [
     description: 'Forgot-password link. Expires in one hour.',
     build(brand, samples) {
       return buildPasswordReset(samples.reset, brand);
+    },
+  },
+  {
+    id: 'noshow_followup',
+    label: 'No-show follow-up',
+    description: 'Staff-triggered email after a missed shift. Never auto-sent.',
+    build(brand, samples) {
+      return buildNoShowFollowUp(samples.noShow, brand);
     },
   },
 ];

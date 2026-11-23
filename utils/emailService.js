@@ -773,6 +773,47 @@ async function sendPasswordReset(to, details = {}) {
   return sendEmail(to, parts.subject, parts.html, parts.text);
 }
 
+function formatShiftDateForEmail(value) {
+  if (!value) return 'the scheduled date';
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleDateString('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
+/**
+ * Staff-triggered no-show follow-up. Plain check-in only; no scores or labels.
+ */
+function buildNoShowFollowUp(details = {}, brand) {
+  const name = escapeHtml(details.volunteerName || 'there');
+  const title = escapeHtml(details.opportunityTitle || 'your shift');
+  const date = escapeHtml(formatShiftDateForEmail(details.shiftDate));
+  const extra = details.message ? String(details.message).trim() : '';
+  const extraHtml = extra
+    ? `<p>${escapeHtml(extra).replace(/\n/g, '<br/>')}</p>`
+    : '';
+  return withText(
+    'Following up on a missed shift - ShelterLink',
+    `
+    <p>Hello ${name},</p>
+    <p>We noticed you were not able to make <strong>${title}</strong> on <strong>${date}</strong>.</p>
+    <p>If something came up, reply to this email so we can update our records and help with a future shift.</p>
+    ${extraHtml}
+    <p>Thank you,<br/>${brand.signoff}</p>
+    `
+  );
+}
+
+async function sendNoShowFollowUp(volunteerEmail, details = {}) {
+  const brand = await brandBits();
+  const parts = buildNoShowFollowUp(details, brand);
+  return sendEmail(volunteerEmail, parts.subject, parts.html, parts.text);
+}
+
 module.exports = {
   currentShelterName,
   brandBits,
@@ -819,4 +860,6 @@ module.exports = {
   sendVolunteerSetPasswordInvite,
   buildPasswordReset,
   sendPasswordReset,
+  buildNoShowFollowUp,
+  sendNoShowFollowUp,
 };
