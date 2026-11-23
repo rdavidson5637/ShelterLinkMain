@@ -1,13 +1,19 @@
 'use strict';
 
 /**
- * Public discoverability helpers (SL-LATER-24).
+ * Public discoverability helpers (SL-LATER-24, SL-DAY-23).
  * Titles, meta, Open Graph, JSON-LD, sitemap, and robots for approved
  * (active) shelter pages only.
+ *
+ * JSON-LD uses real shelter and open-shift rows only: NGO (Organization)
+ * for the charity, plus VolunteerAction nodes for each upcoming open shift
+ * on the open-shifts page. No invented towns, phones, or addresses.
  */
 
 const DEFAULT_ORIGIN = 'https://shelterlink.online';
 const DEFAULT_OG_IMAGE_PATH = '/public/icons/apple-touch-icon.png';
+/** Cap opportunity nodes so a busy board cannot balloon the HTML head. */
+const MAX_OPPORTUNITY_JSON_LD = 40;
 
 const PAGE_COPY = {
   home: {
@@ -79,14 +85,56 @@ function pageMeta({ pageKey, shelterName, slug, origin = publicOrigin() }) {
   return { title, description, canonical, image, path, name, slug: safeSlug || null };
 }
 
-function organizationJsonLd({ name, url, logo }) {
+/**
+ * Wall-clock DB timestamps stay as local ISO-like strings (no invented Z).
+ * Matches the public ICS approach: never shift by server timezone.
+ */
+function toSchemaDateTime(value) {
+  const str = String(value == null ? '' : value).trim();
+  if (!str) return null;
+  const m = str.match(
+    /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?/
+  );
+  if (!m) return null;
+  const [, y, mo, d, hh, mi, ss] = m;
+  if (hh == null) return `${y}-${mo}-${d}`;
+  return `${y}-${mo}-${d}T${hh}:${mi}:${ss || '00'}`;
+}
+
+function organizationJsonLd({
+  name,
+  url,
+  logo,
+  email,
+  charityNumber,
+  charityRegisterName,
+}) {
   const org = {
-    '@type': 'Organization',
+    // ShelterLink hosts animal charities: NGO is the precise type; keep
+    // Organization in the list so consumers that only know the parent still match.
+    '@type': ['Organization', 'NGO'],
     name: String(name || '').trim(),
     url: String(url || '').trim(),
   };
   if (logo) org.logo = String(logo);
+  const mail = email != null ? String(email).trim() : '';
+  if (mail) org.email = mail;
+  const number = charityNumber != null ? String(charityNumber).trim() : '';
+  if (number) org.identifier = number;
+  const registerName =
+    charityRegisterName != null ? String(charityRegisterName).trim() : '';
+  if (registerName && registerName !== org.name) org.alternateName = registerName;
   return org;
+}
+
+function orgRefFrom(org) {
+  const ref = {
+    '@type': ['Organization', 'NGO'],
+    name: org.name,
+    url: org.url,
+  };
+  if (org.identifier) ref.identifier = org.identifier;
+  return ref;
 }
 
 function volunteerActionJsonLd({ name, url, organization }) {
@@ -98,23 +146,74 @@ function volunteerActionJsonLd({ name, url, organization }) {
   };
 }
 
-function shelterJsonLdGraph(meta) {
+/**
+ * One volunteering opportunity from a real open-shift row. Only fields that
+ * exist on the opportunity (and the shelter NGO) are set.
+ */
+function volunteerOpportunityJsonLd({ opportunity, url, organization }) {
+  const title = String((opportunity && opportunity.title) || '').trim();
+  if (!title) return null;
+  const node = {
+    '@type': 'VolunteerAction',
+    name: title,
+    url: String(url || '').trim(),
+    agent: organization,
+  };
+  const description =
+    opportunity.description != null ? String(opportunity.description).trim() : '';
+  if (description) node.description = description;
+  const location =
+    opportunity.location != null ? String(opportunity.location).trim() : '';
+  if (location) {
+    node.location = { '@type': 'Place', name: location };
+  }
+  const start = toSchemaDateTime(opportunity.start_date);
+  if (start) node.startTime = start;
+  const end = toSchemaDateTime(opportunity.end_date);
+  if (end) node.endTime = end;
+  const id = opportunity.id || opportunity.opportunity_id;
+  if (id != null && Number.isFinite(Number(id))) {
+    node.identifier = String(Number(id));
+  }
+  return node;
+}
+
+function shelterJsonLdGraph(meta, opportunities = []) {
   const org = organizationJsonLd({
     name: meta.name,
     url: meta.canonical,
     logo: meta.image,
+    email: meta.email,
+    charityNumber: meta.charityNumber,
+    charityRegisterName: meta.charityRegisterName,
   });
+  const origin = publicOriginFromMeta(meta);
   const actionUrl = meta.slug
-    ? absoluteUrl(`/s/${meta.slug}/opportunities`, publicOriginFromMeta(meta))
+    ? absoluteUrl(`/s/${meta.slug}/opportunities`, origin)
     : meta.canonical;
-  const action = volunteerActionJsonLd({
-    name: meta.name,
-    url: actionUrl,
-    organization: { '@type': 'Organization', name: meta.name, url: org.url },
-  });
+  const orgRef = orgRefFrom(org);
+  const graph = [
+    org,
+    volunteerActionJsonLd({
+      name: meta.name,
+      url: actionUrl,
+      organization: orgRef,
+    }),
+  ];
+
+  const rows = Array.isArray(opportunities) ? opportunities : [];
+  for (const opp of rows.slice(0, MAX_OPPORTUNITY_JSON_LD)) {
+    const node = volunteerOpportunityJsonLd({
+      opportunity: opp,
+      url: actionUrl,
+      organization: orgRef,
+    });
+    if (node) graph.push(node);
+  }
+
   return {
     '@context': 'https://schema.org',
-    '@graph': [org, action],
+    '@graph': graph,
   };
 }
 
@@ -163,10 +262,13 @@ function buildSeoHeadTags(meta, jsonLd) {
  * Replace title/description and insert canonical, Open Graph, and JSON-LD
  * before </head>. Existing managed tags are removed first so re-injection
  * does not duplicate them.
+ *
+ * `opportunities` is an optional list of real open-shift rows (title,
+ * description, location, start_date, end_date). Only used for JSON-LD.
  */
-function injectSeoIntoHtml(html, meta) {
+function injectSeoIntoHtml(html, meta, opportunities = []) {
   const source = String(html || '');
-  const jsonLd = shelterJsonLdGraph(meta);
+  const jsonLd = shelterJsonLdGraph(meta, opportunities);
   const block = buildSeoHeadTags(meta, jsonLd);
 
   let out = source
@@ -255,13 +357,16 @@ module.exports = {
   PAGE_COPY,
   DEFAULT_ORIGIN,
   DEFAULT_OG_IMAGE_PATH,
+  MAX_OPPORTUNITY_JSON_LD,
   escapeHtml,
   escapeXml,
   publicOrigin,
   absoluteUrl,
   pageMeta,
+  toSchemaDateTime,
   organizationJsonLd,
   volunteerActionJsonLd,
+  volunteerOpportunityJsonLd,
   shelterJsonLdGraph,
   buildSeoHeadTags,
   injectSeoIntoHtml,

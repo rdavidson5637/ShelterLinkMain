@@ -12,6 +12,11 @@ const {
   runWithShelter,
   runWithoutShelter,
 } = require('../utils/shelterContext');
+const Opportunity = require('../models/Opportunity');
+const {
+  filterPublicBoardOpportunities,
+} = require('../utils/publicOpportunityFilter');
+const { excludeTestOpportunities } = require('../utils/testOpportunityGuard');
 const { pageMeta, injectSeoIntoHtml, publicOrigin } = require('../utils/seo');
 
 let assisiId = null;
@@ -218,14 +223,75 @@ function readHtmlTemplate(file) {
 }
 
 /**
+ * Charity / contact fields for JSON-LD. Only columns that exist on shelters;
+ * never invents a town, phone, or postal address.
+ */
+async function loadShelterSeoFields(shelterId) {
+  const id = Number(shelterId);
+  if (!Number.isInteger(id) || id <= 0) return null;
+  const [rows] = await runWithoutShelter(() =>
+    pool.execute(
+      `SELECT charity_number, charity_register_name, privacy_contact_email
+         FROM shelters
+        WHERE id = ?
+        LIMIT 1`,
+      [id]
+    )
+  );
+  const row = rows[0];
+  if (!row) return null;
+  return {
+    charityNumber: row.charity_number == null ? null : String(row.charity_number),
+    charityRegisterName:
+      row.charity_register_name == null ? null : String(row.charity_register_name),
+    email:
+      row.privacy_contact_email == null
+        ? null
+        : String(row.privacy_contact_email).trim() || null,
+  };
+}
+
+function publicBoardStartFloor() {
+  return new Date(Date.now() - 12 * 60 * 60 * 1000);
+}
+
+function toSqlTimestamp(date) {
+  return date.toISOString().slice(0, 19).replace('T', ' ');
+}
+
+/**
+ * Upcoming open shifts for JSON-LD on the open-shifts page. Same public
+ * window and title filter as the board API; closures are not re-checked here
+ * (avoids a middleware ↔ closureController cycle). Only real opportunity rows.
+ */
+async function loadSeoOpportunities(shelterId) {
+  const id = Number(shelterId);
+  if (!Number.isInteger(id) || id <= 0) return [];
+  const floor = publicBoardStartFloor();
+  const sqlFloor = new Date(floor.getTime() - 24 * 60 * 60 * 1000);
+  const raw = await runWithShelter(id, () =>
+    Opportunity.findAll({
+      status: 'open',
+      start_date_from: toSqlTimestamp(sqlFloor),
+    })
+  );
+  const visible = filterPublicBoardOpportunities(excludeTestOpportunities(raw));
+  return visible.filter((opp) => {
+    const start = new Date(opp.start_date);
+    return !Number.isNaN(start.getTime()) && start.getTime() >= floor.getTime();
+  });
+}
+
+/**
  * Page handler for /join/<slug> and /s/<slug>/...: sends the file only when
  * the slug names an active shelter. An unknown or suspended shelter falls
  * through to the normal 404 page, so a visitor never gets a form or board
  * that would quietly show or sign up to a different shelter.
  *
  * When pageKey is set (home, opportunities, group-booking), injects title,
- * meta description, Open Graph tags, and Organization/VolunteerAction
- * JSON-LD for that approved shelter before sending HTML.
+ * meta description, Open Graph tags, and Organization/NGO + VolunteerAction
+ * JSON-LD for that approved shelter before sending HTML. The open-shifts
+ * page also embeds VolunteerAction nodes for each upcoming open shift.
  */
 function activeShelterPage(file, pageKey = null) {
   return async function sendActiveShelterPage(req, res, next) {
@@ -235,13 +301,23 @@ function activeShelterPage(file, pageKey = null) {
       if (!pageKey) {
         return res.sendFile(file);
       }
-      const meta = pageMeta({
-        pageKey,
-        shelterName: shelter.name || 'your local shelter',
-        slug: shelter.slug || cleanSlug(req.params.slug),
-        origin: publicOrigin(),
-      });
-      const html = injectSeoIntoHtml(readHtmlTemplate(file), meta);
+      const seoFields = (await loadShelterSeoFields(shelter.id)) || {};
+      const meta = {
+        ...pageMeta({
+          pageKey,
+          shelterName: shelter.name || 'your local shelter',
+          slug: shelter.slug || cleanSlug(req.params.slug),
+          origin: publicOrigin(),
+        }),
+        email: seoFields.email || null,
+        charityNumber: seoFields.charityNumber || null,
+        charityRegisterName: seoFields.charityRegisterName || null,
+      };
+      // Opportunity nodes only on the open-shifts page (and home as a light
+      // preview would invent nothing, but the board is the source of truth).
+      const opportunities =
+        pageKey === 'opportunities' ? await loadSeoOpportunities(shelter.id) : [];
+      const html = injectSeoIntoHtml(readHtmlTemplate(file), meta, opportunities);
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
       res.setHeader('Cache-Control', 'public, max-age=60');
       return res.status(200).send(html);
