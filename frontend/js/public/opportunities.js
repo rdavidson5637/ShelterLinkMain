@@ -1,4 +1,5 @@
 import { formatShiftWhen } from '../utils/dateFormat.js';
+import { loadBrand } from '../brand.js';
 import { currentShelterSlug, shelterLinkFor, withShelterQuery } from '../shelterSlug.js';
 import { renderEmptyState, renderErrorState } from '../utils/listState.js';
 import {
@@ -6,6 +7,7 @@ import {
   filterPublicBoard,
   isAcceptingSignups,
 } from './publicBoard.js';
+import { publicOpportunitiesEmptyCopy } from './opportunitiesEmpty.js';
 
 const listEl = document.getElementById('opportunitiesList');
 
@@ -14,11 +16,12 @@ function setListBusy(busy) {
   listEl.setAttribute('aria-busy', busy ? 'true' : 'false');
 }
 
-function showEmpty() {
+function showEmpty(shelterName) {
+  const copy = publicOpportunitiesEmptyCopy(shelterName);
   listEl.replaceChildren(
     renderEmptyState({
-      title: 'No open shifts right now',
-      body: 'Nothing is listed at the moment. Check back soon, or create an account so you are ready when a shift opens.',
+      title: copy.title,
+      body: copy.body,
       actionHref: shelterLinkFor('/register.html', currentShelterSlug()),
       actionLabel: 'Create an account',
     })
@@ -46,14 +49,17 @@ async function load() {
   listEl.appendChild(loading);
 
   try {
-    const res = await fetch(withShelterQuery('/api/public/opportunities'), { credentials: 'omit' });
+    const [res, brand] = await Promise.all([
+      fetch(withShelterQuery('/api/public/opportunities'), { credentials: 'omit' }),
+      loadBrand(),
+    ]);
     if (!res.ok) {
       showError('The shift list could not be loaded. Try again in a moment.');
       return;
     }
     const rows = filterPublicBoard(await res.json());
     if (!Array.isArray(rows) || !rows.length) {
-      showEmpty();
+      showEmpty(brand && brand.name);
       return;
     }
     listEl.replaceChildren();
