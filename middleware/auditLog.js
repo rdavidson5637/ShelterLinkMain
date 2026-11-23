@@ -83,6 +83,9 @@ function inferFromRequest(req) {
     if (segments.includes('claim') || segments.includes('claim-by-token')) action = 'swap.claim';
     else if (method === 'DELETE') action = 'swap.cancel';
   }
+  else if (resource === 'volunteer-shift-notes' && method === 'POST') {
+    action = 'volunteer.shift_note.save';
+  }
   else if (
     resource === 'opportunities' &&
     segments.includes('usual-availability') &&

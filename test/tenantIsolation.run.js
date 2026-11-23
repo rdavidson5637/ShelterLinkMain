@@ -162,11 +162,16 @@ async function applySchema(admin) {
   const tenancy = fs.readFileSync(path.join(ROOT, 'database', '033_add_shelters.pg.sql'), 'utf8');
   const selfServe = fs.readFileSync(path.join(ROOT, 'database', '036_self_serve_shelters.pg.sql'), 'utf8');
   const appRoles = fs.readFileSync(path.join(ROOT, 'database', '062_app_roles_no_bypass.pg.sql'), 'utf8');
+  const volunteerShiftNotes = fs.readFileSync(
+    path.join(ROOT, 'database', '068_volunteer_shift_notes.pg.sql'),
+    'utf8'
+  );
   await admin.query(schema);
   const { applySql } = require('../scripts/applySql');
   await applySql(admin, tenancy);
   await applySql(admin, selfServe);
   await applySql(admin, appRoles);
+  await applySql(admin, volunteerShiftNotes);
 }
 
 async function seed(admin) {
@@ -281,6 +286,9 @@ async function seed(admin) {
       VALUES (1, '2099-06-01 10:00:00', 1);
     INSERT INTO shift_notes (id, opportunity_id, author_id, body, shelter_id)
       VALUES (1, 1, 1, 'MarkerA', 1);
+    INSERT INTO volunteer_shift_notes (
+      id, application_id, user_id, opportunity_id, body, shelter_id
+    ) VALUES (1, 1, 2, 1, 'MarkerA', 1);
     INSERT INTO certificates (id, user_id, code, shelter_id)
       VALUES (1, 2, 'MARKERACODE1', 1);
     INSERT INTO volunteer_references (
@@ -330,6 +338,7 @@ async function seed(admin) {
     ['message_threads', 'id'],
     ['messages', 'id'],
     ['shift_notes', 'id'],
+    ['volunteer_shift_notes', 'id'],
     ['certificates', 'id'],
     ['volunteer_references', 'id'],
     ['background_checks', 'id'],
@@ -555,6 +564,7 @@ function cases(feedbackToken) {
     own('GET', '/api/tags'),
     own('GET', '/api/feedback/admin'),
     own('GET', '/api/feedback/my-past-shifts'),
+    own('GET', '/api/volunteer-shift-notes/mine'),
     own('GET', '/api/group-bookings'),
     own('GET', '/api/animals'),
     own('GET', '/api/animals/me/helped'),
@@ -620,6 +630,8 @@ function cases(feedbackToken) {
     deny('GET', '/api/admin/volunteers/2/custom-fields'),
     deny('GET', '/api/admin/volunteers/2/waivers'),
     deny('GET', '/api/admin/volunteers/2/documents'),
+    deny('GET', '/api/admin/volunteers/2/shift-notes'),
+    deny('GET', '/api/admin/opportunities/1/volunteer-notes'),
     deny('GET', '/api/admin/gdpr/volunteers/2/export'),
     deny('POST', '/api/admin/gdpr/volunteers/2/erase', { confirmation: 'DELETE' }),
     // SL-DAY-09: staff cannot pull another shelter's volunteer via admin GDPR export

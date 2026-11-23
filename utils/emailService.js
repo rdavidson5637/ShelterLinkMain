@@ -979,6 +979,33 @@ async function sendNoShowFollowUp(volunteerEmail, details = {}) {
   return sendEmail(volunteerEmail, parts.subject, parts.html, parts.text);
 }
 
+/**
+ * Optional staff alert when a volunteer leaves an after-shift note and ticks
+ * notify (SL-DAY-11). Email only; never sent when the note is empty.
+ */
+function buildVolunteerShiftNoteAlert(details = {}, brand) {
+  const volunteerName = escapeHtml(details.volunteerName || 'A volunteer');
+  const title = escapeHtml(details.title || 'a shift');
+  const date = escapeHtml(details.date || 'recently');
+  const body = escapeHtml(details.body || '');
+  return withText(
+    `Volunteer left an after-shift note - ShelterLink`,
+    `
+    <p>Hello,</p>
+    <p><strong>${volunteerName}</strong> left a short note after <strong>${title}</strong> (${date}).</p>
+    <p>${body}</p>
+    <p>You can read volunteer notes on the shift page and the volunteer profile.</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
+    `
+  );
+}
+
+async function sendVolunteerShiftNoteAlert(staffEmail, details = {}) {
+  const brand = await brandBits();
+  const parts = buildVolunteerShiftNoteAlert(details, brand);
+  return sendEmail(staffEmail, parts.subject, parts.html, parts.text);
+}
+
 module.exports = {
   currentShelterName,
   brandBits,
@@ -1037,4 +1064,6 @@ module.exports = {
   sendShelterAnnouncement,
   buildNoShowFollowUp,
   sendNoShowFollowUp,
+  buildVolunteerShiftNoteAlert,
+  sendVolunteerShiftNoteAlert,
 };
