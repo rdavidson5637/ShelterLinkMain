@@ -234,7 +234,9 @@ async function anonymiseUser(userId, { reason = 'gdpr_erasure' } = {}) {
          has_children_under_16 = NULL,
          can_medicate = NULL,
          max_foster_size = NULL,
-         foster_notes = NULL
+         foster_notes = NULL,
+         marketing_consent = 0,
+         marketing_consent_at = NULL
        WHERE user_id = ?`,
       [id]
     );
