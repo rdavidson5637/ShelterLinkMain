@@ -196,6 +196,7 @@ const { isPlatformOwnerPage } = require('./middleware/platformOwner');
 const {
   myShiftsIcs,
   getMyIcalToken,
+  resetMyIcalToken,
   applicationIcs,
 } = require('./controllers/publicController');
 
@@ -230,6 +231,7 @@ app.use('/api/opportunity-templates', templateRoutes);
 app.use('/api/platform', platformRoutes);
 app.get('/api/my-shifts.ics', myShiftsIcs);
 app.get('/api/me/ical-feed', isAuthenticated, getMyIcalToken);
+app.post('/api/me/ical-feed/reset', isAuthenticated, resetMyIcalToken);
 app.get(
   '/api/applications/:id/ics',
   (req, res, next) => positiveParam('id')(req, res, next, req.params.id),

@@ -167,6 +167,8 @@ async function seed(admin) {
   const passwordHash = bcrypt.hashSync('Password1', 4);
   const resetHash = crypto.createHash('sha256').update(RESET_TOKEN).digest('hex');
   const referenceHash = crypto.createHash('sha256').update(REFERENCE_TOKEN).digest('hex');
+  const icalHashA = crypto.createHash('sha256').update(ICAL_A).digest('hex');
+  const icalHashAdmin = crypto.createHash('sha256').update('a'.repeat(64)).digest('hex');
 
   await admin.query(
     `INSERT INTO shelters (id, name, slug) VALUES (2, 'Second Shelter', 'second')`
@@ -179,7 +181,7 @@ async function seed(admin) {
      (2, 'Ann', 'MarkerA', 'Ann MarkerA', 'a.volunteer@example.test', $1, 'volunteer', 1, $4, $2, '2099-12-01'),
      (3, 'Bea', 'Other', 'Bea Other', 'b.admin@example.test', $1, 'admin', 2, NULL, NULL, NULL),
      (4, 'Ben', 'Other', 'Ben Other', 'b.volunteer@example.test', $1, 'volunteer', 2, NULL, NULL, NULL)`,
-    [passwordHash, resetHash, 'a'.repeat(64), ICAL_A]
+    [passwordHash, resetHash, icalHashAdmin, icalHashA]
   );
   await admin.query(`
     INSERT INTO volunteer_profiles (user_id, address, approved, shelter_id) VALUES

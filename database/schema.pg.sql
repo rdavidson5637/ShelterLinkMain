@@ -135,6 +135,7 @@ CREATE TABLE users (
   anonymised_at       TIMESTAMP     DEFAULT NULL,
   reset_token         VARCHAR(64)   DEFAULT NULL,
   reset_token_expires TIMESTAMP     DEFAULT NULL,
+  -- sha256 hex of the personal calendar feed secret (never the raw token)
   ical_token          VARCHAR(64)   DEFAULT NULL,
   consent_given_at    TIMESTAMP     DEFAULT NULL,
   privacy_notice_version VARCHAR(32) DEFAULT NULL,
