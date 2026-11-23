@@ -452,6 +452,49 @@ const qualification = z
   })
   .strict();
 
+const trainingQuestion = z
+  .object({
+    prompt: optStr(5000),
+    choices: z.array(z.string().max(500)).min(2).max(12).optional(),
+    correct_index: z.union([z.number().int().min(0).max(11), z.string().max(10)]).optional(),
+    correctIndex: z.union([z.number().int().min(0).max(11), z.string().max(10)]).optional(),
+    sort_order: z.union([z.number().int(), z.string().max(10)]).optional(),
+  })
+  .strict();
+
+const trainingModule = z
+  .object({
+    name: optStr(200),
+    description: optStr(5000),
+    content: optStr(50000),
+    pass_mark_percent: z
+      .union([z.number().int().min(1).max(100), z.string().max(10), z.null(), z.literal('')])
+      .optional(),
+    awards_qualification_id: z.union([idValue, z.literal(''), z.null()]).optional(),
+    awardsQualificationId: z.union([idValue, z.literal(''), z.null()]).optional(),
+    active: optFlag,
+    questions: z.array(trainingQuestion).max(50).optional(),
+  })
+  .strict();
+
+const trainingAttempt = z
+  .object({
+    answers: z
+      .array(
+        z
+          .object({
+            question_id: z.union([idValue, z.string().max(20)]).optional(),
+            questionId: z.union([idValue, z.string().max(20)]).optional(),
+            selected_index: z.union([z.number().int().min(0).max(11), z.string().max(10)]).optional(),
+            selectedIndex: z.union([z.number().int().min(0).max(11), z.string().max(10)]).optional(),
+          })
+          .strict()
+      )
+      .min(1)
+      .max(50),
+  })
+  .strict();
+
 const customField = z
   .object({
     label: optStr(200),
@@ -659,6 +702,8 @@ const bodies = {
   waiver,
   waiverAccept,
   qualification,
+  trainingModule,
+  trainingAttempt,
   customField,
   reorderFields,
   template,
