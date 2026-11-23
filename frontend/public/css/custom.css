@@ -522,6 +522,54 @@ header.site-header {
   font-variant-numeric: tabular-nums;
 }
 
+/* Sortable column headers (volunteers table). Plain text with a direction mark. */
+th[data-sort-key] .sort-button {
+  all: unset;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  white-space: nowrap;
+}
+
+th[data-sort-key] .sort-button:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+th[data-sort-key] .sort-button::after {
+  content: '';
+  display: inline-block;
+  width: 0.9em;
+  margin-left: 0.2em;
+  color: var(--text-muted);
+}
+
+th[aria-sort='ascending'] .sort-button::after {
+  content: '\2191';
+}
+
+th[aria-sort='descending'] .sort-button::after {
+  content: '\2193';
+}
+
+th.column-group {
+  text-align: center;
+  border-bottom: 1px solid var(--border-strong);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.reliability-table {
+  width: auto;
+  margin: 0.25rem 0 0;
+}
+
+.reliability-table th,
+.reliability-table td {
+  padding: 0.3rem 1.25rem 0.3rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
 .row-actions {
   display: flex;
   align-items: center;

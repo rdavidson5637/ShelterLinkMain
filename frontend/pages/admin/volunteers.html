@@ -81,20 +81,25 @@
         </div>
         <div class="table-wrapper staff-dense directory-table">
           <table>
-            <caption>Registered volunteers</caption>
-            <thead>
+            <caption>Registered volunteers. Attendance counts cover shifts in the last 12 months and are visible to staff only.</caption>
+            <thead id="volunteersTableHead">
               <tr>
-                <th scope="col"><span class="visually-hidden">Select for invite</span></th>
-                <th scope="col">Volunteer</th>
-                <th scope="col">Phone</th>
-                <th scope="col">Status</th>
-                <th scope="col">Total hours</th>
-                <th scope="col">No-shows</th>
-                <th scope="col">Actions</th>
+                <th scope="col" rowspan="2"><span class="visually-hidden">Select for invite</span></th>
+                <th scope="col" rowspan="2" data-sort-key="name" aria-sort="ascending"><button type="button" class="sort-button">Volunteer</button></th>
+                <th scope="col" rowspan="2">Phone</th>
+                <th scope="col" rowspan="2">Status</th>
+                <th scope="colgroup" colspan="4" class="column-group">Last 12 months</th>
+                <th scope="col" rowspan="2">Actions</th>
+              </tr>
+              <tr>
+                <th scope="col" class="numeric-cell" data-sort-key="attended_12m" aria-sort="none"><button type="button" class="sort-button">Attended</button></th>
+                <th scope="col" class="numeric-cell" data-sort-key="no_shows_12m" aria-sort="none"><button type="button" class="sort-button">No-shows</button></th>
+                <th scope="col" class="numeric-cell" data-sort-key="late_cancellations_12m" aria-sort="none"><button type="button" class="sort-button">Late cancellations</button></th>
+                <th scope="col" class="numeric-cell" data-sort-key="hours_12m" aria-sort="none"><button type="button" class="sort-button">Hours</button></th>
               </tr>
             </thead>
             <tbody id="volunteersTableBody">
-              <tr><td colspan="7">Loading volunteers...</td></tr>
+              <tr><td colspan="9">Loading volunteers...</td></tr>
             </tbody>
           </table>
         </div>
