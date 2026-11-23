@@ -99,7 +99,9 @@ function renderBadges(badges = {}) {
     if (!earned.length) {
       badgesListEl.innerHTML = '<p>No badges earned yet — your first shift unlocks First Step.</p>';
     } else {
-      badgesListEl.innerHTML = earned.map((b) => `<span style="display:inline-block;margin:0.25rem 0.35rem 0.25rem 0;padding:0.35rem 0.6rem;background:#e8f5e9;border-radius:4px;">${escapeHtml(b.emoji || '')} ${escapeHtml(b.label)}</span>`).join('');
+      badgesListEl.innerHTML = earned
+        .map((b) => `<span class="badge-chip">${escapeHtml(b.label)}</span>`)
+        .join('');
     }
   }
   if (nextBadgeProgressEl) {

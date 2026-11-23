@@ -38,7 +38,7 @@ function renderCertificate(cert) {
   const badges = cert.badges || [];
   if (badges.length) {
     badgesEl.innerHTML = `<p><strong>Badges earned:</strong> ${badges
-      .map((b) => escapeHtml(`${b.emoji || ''} ${b.label}`.trim()))
+      .map((b) => escapeHtml(String(b.label || '').trim()))
       .join(', ')}</p>`;
   } else {
     badgesEl.innerHTML = '';

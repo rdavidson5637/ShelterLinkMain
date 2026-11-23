@@ -92,7 +92,11 @@ app.use(express.static(path.join(__dirname, 'frontend'), {
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
       return;
     }
-    if (rel.includes('/public/icons/') || rel.includes('/public/images/')) {
+    if (
+      rel.includes('/public/icons/') ||
+      rel.includes('/public/images/') ||
+      rel.includes('/public/fonts/')
+    ) {
       res.setHeader('Cache-Control', 'public, max-age=604800');
       return;
     }

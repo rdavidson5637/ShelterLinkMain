@@ -1,16 +1,63 @@
 /* ============================================================================
-   ShelterLink design system
+   ShelterLink design system (docs/DESIGN-BRIEF.md)
    ----------------------------------------------------------------------------
-   Rules this file follows (keep them when editing):
-   - One brand colour: teal. Used for interactive and active elements.
-   - One accent: amber, with dark text. Marks and pending status only.
-   - Headings and body text stay ink, never coloured.
-   - Flat surfaces. No gradients, no blur, no transform animations.
-   - Spacing on an 8px grid. Radius: 8px cards, 6px controls, 999px pills.
-   - Transitions limited to color/background/border, 120ms.
-   - Dark mode follows the system. --green is the brand colour; the name
-     stayed so existing rules keep working.
+   - One brand colour: teal. Interactive and active elements only.
+   - One accent: amber, with dark text. Pending / attention marks only.
+   - Headings and body stay ink, never coloured with brand teal.
+   - Flat surfaces. Bordered panels / ruled rows. No gradients, blur, glow.
+   - Spacing on an 8px grid. Radius: 8px panels, 6px controls.
+   - Motion: colour / background / border only, ~120ms. Respect reduced-motion.
+   - Type: Fraunces (display) + Source Sans 3 (body). Never Inter/Roboto/Arial
+     as the display face. Dark mode remaps tokens; art direction stays the same.
    ============================================================================ */
+
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/public/fonts/fraunces-latin-400-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/public/fonts/fraunces-latin-600-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/public/fonts/fraunces-latin-700-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Source Sans 3';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/public/fonts/source-sans-3-latin-400-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Source Sans 3';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/public/fonts/source-sans-3-latin-600-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Source Sans 3';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/public/fonts/source-sans-3-latin-700-normal.woff2') format('woff2');
+}
 
 :root {
   color-scheme: light;
@@ -29,12 +76,12 @@
   --on-danger: #ffffff;
 
   /* Surfaces */
-  --page-bg: #f8faf9;
+  --page-bg: #f3f6f4;
   --surface: #ffffff;
-  --border: #dde5e2;
-  --border-strong: #c5d4cf;
-  --row-stripe: #f1f6f5;
-  --code-bg: #eef3f2;
+  --border: #d5dfdb;
+  --border-strong: #b9c9c3;
+  --row-stripe: #eef3f1;
+  --code-bg: #e8efed;
   --text: #1f2937;
   --text-secondary: #5b6670;
   --text-muted: #5b6670;
@@ -50,13 +97,13 @@
   --unread: #c62828;
   --on-unread: #ffffff;
 
-  /* Shape and motion */
+  /* Shape and motion — bordered panel language, no soft marketing shadows */
   --radius-card: 8px;
   --radius-control: 6px;
-  --shadow-card: 0 1px 2px rgba(20, 30, 22, 0.04);
+  --shadow-card: none;
   --transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
   --content-max-width: 1160px;
-  --section-gap: 2rem;
+  --section-gap: 3rem;
   --shelter-logo: url('/public/images/shelterlink-logo.png');
 
   /* Six-step type scale. Prefer these over one-off rem sizes. */
@@ -64,14 +111,15 @@
   --text-sm: 0.875rem;
   --text-md: 1rem;
   --text-lg: 1.125rem;
-  --text-xl: 1.375rem;
-  --text-2xl: 1.75rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2.25rem;
   --leading-body: 1.6;
-  --leading-heading: 1.15;
+  --leading-heading: 1.12;
   --measure: 40rem;
 
-  --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter,
-    "Helvetica Neue", Arial, sans-serif;
+  --font-display: 'Fraunces', 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --font-body: 'Source Sans 3', 'Segoe UI', sans-serif;
+  --font-stack: var(--font-body);
 }
 
 /* Pico's dark sheet uses :root:not([data-theme]). Match that selector so these
@@ -205,10 +253,43 @@ body {
   background: var(--page-bg);
   min-height: 100vh;
   color: var(--text);
-  font-family: var(--font-stack);
+  font-family: var(--font-body);
   font-size: var(--text-md);
   line-height: var(--leading-body);
   -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+.site-brand strong,
+.hero-brand {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: var(--leading-heading);
+  color: var(--text);
+}
+
+h1 {
+  font-size: clamp(var(--text-xl), 4.5vw, var(--text-2xl));
+}
+
+h2 {
+  font-size: var(--text-xl);
+}
+
+h3 {
+  font-size: var(--text-lg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
 }
 
 /* Belt and braces: pin the surfaces that Pico paints from its own variables,
@@ -285,10 +366,11 @@ header.site-header {
 }
 
 .site-brand strong {
-  font-size: var(--text-lg);
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
   color: var(--text);
-  font-weight: 650;
-  letter-spacing: -0.01em;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 .nav-toggle {
@@ -343,10 +425,7 @@ header.site-header {
   transition: var(--transition);
 }
 
-/* The per-page navs still carry emoji glyphs as nav icons. They render at
-   different sizes on every OS, add nothing scannable at this size, and are the
-   main reason the bar overflows. Hidden here in one place; when the shared nav
-   component lands they should be replaced with inline SVG. */
+/* Decorative nav emoji removed from markup; keep the rule as a belt-and-braces. */
 .site-nav .nav-icon {
   display: none;
 }
@@ -568,19 +647,35 @@ section {
 
 .hero {
   display: grid;
-  place-items: center;
-  text-align: center;
-  padding: 3rem 1.5rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-card);
-  margin: 0.5rem 0 var(--section-gap);
+  gap: 1.5rem;
+  align-items: end;
+  text-align: left;
+  padding: 2.5rem 0 2rem;
+  margin: 0 0 var(--section-gap);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.hero-copy {
+  min-width: 0;
+}
+
+.hero-brand {
+  display: block;
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
+  font-weight: 600;
+  line-height: 1.02;
+  margin: 0 0 0.75rem;
+  max-width: 12ch;
 }
 
 .hero h1 {
   color: var(--text);
-  font-size: clamp(var(--text-2xl), 4vw, 2.25rem);
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-size: clamp(var(--text-xl), 3.5vw, 2rem);
+  font-weight: 600;
   letter-spacing: -0.02em;
   line-height: var(--leading-heading);
   margin: 0 0 0.75rem;
@@ -592,7 +687,43 @@ section {
   line-height: var(--leading-body);
   color: var(--text-secondary);
   max-width: var(--measure);
-  margin: 0 auto 1.5rem;
+  margin: 0 0 1.5rem;
+}
+
+.hero-media {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  min-height: 14rem;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  aspect-ratio: 4 / 3;
+}
+
+.hero-media-placeholder {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  max-width: 18rem;
+  margin: 0;
+  line-height: var(--leading-body);
+}
+
+.hero-media-placeholder strong {
+  display: block;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+@media (min-width: 768px) {
+  .hero {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: 2.5rem;
+    padding: 3.5rem 0 2.5rem;
+  }
 }
 
 .hero a[role='button'] {
@@ -612,9 +743,9 @@ section {
 
 .hero-actions {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.75rem 1.25rem;
 }
 
 .text-link {
@@ -642,32 +773,27 @@ section {
 
 .how-it-works {
   margin: 0 0 var(--section-gap);
-  padding: var(--section-gap) 0 0;
+  padding: 0;
 }
 
 .how-it-works h2 {
-  text-align: center;
+  text-align: left;
   margin: 0 0 0.35rem;
+  font-family: var(--font-display);
 }
 
 .how-it-works > p {
-  text-align: center;
+  text-align: left;
   max-width: var(--measure);
-  margin: 0 auto 1.25rem;
+  margin: 0 0 1.25rem;
   color: var(--text-secondary);
   font-size: var(--text-md);
   line-height: var(--leading-body);
 }
 
-.how-it-works > p {
-  text-align: center;
-  color: var(--text-secondary);
-  margin-bottom: 1.25rem;
-}
-
 .how-it-works ol {
-  max-width: 40rem;
-  margin: 0 auto;
+  max-width: var(--measure);
+  margin: 0;
   padding: 0;
   list-style: none;
   counter-reset: how;
@@ -687,7 +813,8 @@ section {
 
 .how-it-works li::before {
   content: counter(how);
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-weight: 600;
   color: var(--text);
   font-size: var(--text-lg);
   line-height: 1.2;
@@ -701,8 +828,8 @@ section {
 .choice-list {
   list-style: none;
   padding: 0;
-  margin: 0 auto;
-  max-width: 40rem;
+  margin: 0;
+  max-width: var(--measure);
   border-top: 1px solid var(--border);
 }
 
@@ -738,7 +865,7 @@ article {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card);
+  box-shadow: none;
   padding: 1.25rem;
   margin-bottom: 1rem;
 }
@@ -1314,28 +1441,30 @@ small,
 }
 
 .stat-card {
-  min-height: 120px;
-  display: grid;
-  place-content: center;
-  text-align: center;
-  padding: 1.25rem 1rem;
+  min-height: 0;
+  display: block;
+  text-align: left;
+  padding: 1rem 1.1rem;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card);
+  box-shadow: none;
 }
 
-.stat-card h3 {
+.stat-card h3,
+.stat-card > strong:first-child {
   width: 100%;
-  font-size: var(--text-xs);
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--text-md);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-muted);
-  line-height: 1.2;
-  margin: 0 0 0.4rem;
-  white-space: nowrap;
-  text-align: center;
+  text-transform: none;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  line-height: var(--leading-heading);
+  margin: 0 0 0.5rem;
+  white-space: normal;
+  text-align: left;
 }
 
 .status-banner {
@@ -1364,12 +1493,14 @@ small,
 .next-shift-panel {
   background: var(--surface);
   border: 1px solid var(--border);
+  border-left: 4px solid var(--green);
   border-radius: var(--radius-card);
   padding: 1.25rem 1.25rem 1rem;
   margin-bottom: var(--section-gap);
 }
 
 .next-shift-panel h2 {
+  font-family: var(--font-display);
   margin-top: 0;
   margin-bottom: 0.5rem;
 }
@@ -1580,15 +1711,25 @@ small,
   }
 
   .hero {
-    padding: 2rem 1rem;
+    padding: 1.75rem 0 1.5rem;
+  }
+
+  .hero-brand {
+    font-size: clamp(2.25rem, 12vw, 3rem);
+    max-width: none;
   }
 
   .hero h1 {
-    font-size: var(--text-2xl);
+    font-size: var(--text-xl);
   }
 
   .hero p {
     font-size: var(--text-md);
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   article {
@@ -1608,6 +1749,15 @@ small,
 /* --------------------------------------------------------------------------
    Qualifications gating on browse-shifts
    -------------------------------------------------------------------------- */
+.opportunity-card {
+  border-radius: var(--radius-card);
+  box-shadow: none;
+}
+
+.opportunity-card h3 {
+  font-family: var(--font-display);
+}
+
 .opportunity-card--unqualified {
   opacity: 0.6;
 }
@@ -1962,4 +2112,187 @@ small,
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+/* --------------------------------------------------------------------------
+   Redesign: public shift list, page ledes, volunteer panels (SL-NEXT-03)
+   -------------------------------------------------------------------------- */
+.page-lede {
+  margin: 0 0 var(--section-gap);
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.page-lede h1 {
+  margin: 0 0 0.5rem;
+}
+
+.page-lede > p {
+  color: var(--text-secondary);
+  margin: 0 0 0.75rem;
+}
+
+.page-lede-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  font-size: var(--text-sm);
+}
+
+.page-lede-meta a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.shift-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-top: 1px solid var(--border);
+}
+
+.shift-row,
+article.shift-row {
+  display: grid;
+  gap: 0.65rem 1.25rem;
+  padding: 1.1rem 0;
+  margin: 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.shift-row h2,
+.shift-row h3 {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+
+.shift-row .shift-meta {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.shift-row .shift-spots {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.shift-row .shift-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 0.85rem;
+  align-items: center;
+}
+
+.shift-row .shift-actions a[role='button'],
+.shift-row .shift-actions .secondary,
+.shift-row .shift-actions button {
+  margin: 0;
+  width: auto;
+}
+
+.badge-chip {
+  display: inline-block;
+  margin: 0.25rem 0.35rem 0.25rem 0;
+  padding: 0.35rem 0.6rem;
+  background: var(--green-tint);
+  border: 1px solid var(--green-tint-border);
+  border-radius: var(--radius-control);
+  color: var(--text);
+  font-size: var(--text-sm);
+}
+
+.panel-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.panel-stack > .stat-card,
+.panel-stack > article {
+  margin-bottom: 0;
+}
+
+.action-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-top: 1px solid var(--border);
+  max-width: var(--measure);
+}
+
+.action-list a,
+.action-list button.action-list-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+  align-items: center;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.9rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  text-decoration: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.action-list a:hover,
+.action-list button.action-list-item:hover {
+  color: var(--green);
+}
+
+.action-list strong {
+  display: block;
+  color: inherit;
+}
+
+.site-footer {
+  border-top: 1px solid var(--border);
+  padding: 1.5rem 0 2rem;
+  margin-top: 1rem;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.site-footer .container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.auth-shell {
+  max-width: 28rem;
+  margin: 1.5rem auto 2rem;
+}
+
+.auth-shell .auth-card {
+  max-width: none;
+  margin: 0;
+}
+
+.auth-shell form {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+body.public-home main.container,
+body.public-shifts main.container {
+  padding-top: 0.25rem;
 }

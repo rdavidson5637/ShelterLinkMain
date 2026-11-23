@@ -2,6 +2,7 @@
 
 // SL-NOW-07: the homepage is served for every shelter, and shelters have no
 // town on record, so the public pages must not hard-code a place name.
+// SL-NEXT-03: hero copy still must stay place-agnostic after the redesign.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -25,6 +26,8 @@ test('homepage hero does not name a town', () => {
   assert.ok(hero, 'hero section present');
   assert.doesNotMatch(hero[1], /\bin Belfast\b/i);
   assert.match(hero[1], /Browse open shifts, apply to help/);
+  assert.match(hero[1], /Become a volunteer/);
+  assert.match(hero[1], /Shelter photo to come/);
 });
 
 test('no public page hard-codes Belfast', () => {
