@@ -58,7 +58,7 @@ function userRow(role = 'volunteer', userId = 7) {
   };
 }
 
-test('rememberMe sets volunteer 30 days, staff 8 hours, otherwise 1 hour, and loginAt', async () => {
+test('rememberMe sets volunteer 30 days, staff and admin stay 1 hour, and loginAt', async () => {
   mock.setHandler(async (sql) => {
     if (/FROM users/.test(sql)) return [[userRow('volunteer')]];
     return [{ affectedRows: 1 }];
@@ -76,7 +76,7 @@ test('rememberMe sets volunteer 30 days, staff 8 hours, otherwise 1 hour, and lo
   req = makeReq({ email: 'alex@example.com', password: 'Password1', rememberMe: true });
   res = makeRes();
   await auth.login(req, res);
-  assert.equal(req.session.cookie.maxAge, 8 * 60 * 60 * 1000);
+  assert.equal(req.session.cookie.maxAge, 3600000);
 
   mock.setHandler(async (sql) => {
     if (/FROM users/.test(sql)) return [[userRow('admin')]];
@@ -85,7 +85,7 @@ test('rememberMe sets volunteer 30 days, staff 8 hours, otherwise 1 hour, and lo
   req = makeReq({ email: 'alex@example.com', password: 'Password1', rememberMe: true });
   res = makeRes();
   await auth.login(req, res);
-  assert.equal(req.session.cookie.maxAge, 8 * 60 * 60 * 1000);
+  assert.equal(req.session.cookie.maxAge, 3600000);
 
   req = makeReq({ email: 'alex@example.com', password: 'Password1', rememberMe: false });
   res = makeRes();

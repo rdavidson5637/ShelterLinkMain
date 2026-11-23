@@ -15,7 +15,11 @@ const { apiLimiter } = require('./middleware/rateLimiter');
 const { errorHandler } = require('./middleware/errorHandler');
 const { validateEnv, logStartupWarnings } = require('./utils/validateEnv');
 const { corsOriginDelegate } = require('./utils/corsOrigins');
-const { sessionCookieOptions } = require('./utils/sessionCookie');
+const {
+  sessionCookieOptions,
+  DEFAULT_SESSION_MS,
+  enforceSessionLifetime,
+} = require('./utils/sessionCookie');
 const { securityHeaders, permissionsPolicy } = require('./utils/securityHeaders');
 const { buildServiceWorker, getSwVersion } = require('./utils/serviceWorker');
 
@@ -127,9 +131,11 @@ app.use(session({
   store: sessionStore,
   cookie: {
     ...sessionCookieOptions(),
-    maxAge: 3600000, // 1 hour of inactivity
+    maxAge: DEFAULT_SESSION_MS, // 1 hour of inactivity
   },
 }));
+// Only opted-in volunteer sessions may outlive the 1-hour default.
+app.use(enforceSessionLifetime);
 
 // Sanitize incoming request input before route controllers.
 app.use(sanitizeInput);
