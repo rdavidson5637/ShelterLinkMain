@@ -17,6 +17,7 @@ const LIMITS = {
   loginAccount: positiveInt('RATE_LIMIT_LOGIN_ACCOUNT', 5),
   api: positiveInt('RATE_LIMIT_API', 300),
   register: positiveInt('RATE_LIMIT_REGISTER', 8),
+  registerEmail: positiveInt('RATE_LIMIT_REGISTER_EMAIL', 3),
   forgotPassword: positiveInt('RATE_LIMIT_FORGOT', 5),
   forgotAccount: positiveInt('RATE_LIMIT_FORGOT_ACCOUNT', 5),
   resetPassword: positiveInt('RATE_LIMIT_RESET', 8),
@@ -24,11 +25,22 @@ const LIMITS = {
   inviteCheck: positiveInt('RATE_LIMIT_INVITE_CHECK', 30),
   inviteAccept: positiveInt('RATE_LIMIT_INVITE', 8),
   shelterApply: positiveInt('RATE_LIMIT_SHELTER_APPLY', 5),
+  shelterApplyEmail: positiveInt('RATE_LIMIT_SHELTER_APPLY_EMAIL', 3),
   message: positiveInt('RATE_LIMIT_MESSAGE', 10),
   groupBooking: positiveInt('RATE_LIMIT_GROUP_BOOKING', 8),
   groupBookingEmail: positiveInt('RATE_LIMIT_GROUP_BOOKING_EMAIL', 3),
   pushTest: positiveInt('RATE_LIMIT_PUSH_TEST', 3),
   twoFactorAccount: positiveInt('RATE_LIMIT_2FA_ACCOUNT', 10),
+};
+
+// Friendly JSON bodies so public forms can show the text, not a bare status.
+const MSG = {
+  register: { error: 'Too many registration attempts from this connection. Please try again in 15 minutes.' },
+  registerEmail: { error: 'Too many registration attempts for this email. Please try again in 15 minutes.' },
+  shelterApply: { error: 'Too many applications from this connection. Please try again later.' },
+  shelterApplyEmail: { error: 'Too many applications for this email. Please try again later.' },
+  groupBooking: { error: 'Too many group booking requests. Please try again later.' },
+  groupBookingEmail: { error: 'Too many group booking requests for this email. Try again tomorrow.' },
 };
 
 // Shared Postgres counters in production so replicas enforce one budget.
@@ -104,10 +116,27 @@ const apiLimiter = rateLimit({
 const registerLimiter = rateLimit({
   windowMs: WINDOW_MS,
   max: LIMITS.register,
-  message: 'Too many registration attempts. Please try again later.',
+  message: MSG.register,
   standardHeaders: true,
   legacyHeaders: false,
   store: storeFor('rl:register:'),
+});
+
+// Same email from any IP. Stops a bot rotating addresses through one inbox.
+const registerEmailLimiter = rateLimit({
+  windowMs: WINDOW_MS,
+  max: LIMITS.registerEmail,
+  message: MSG.registerEmail,
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: storeFor('rl:register-email:'),
+  keyGenerator(req) {
+    const email = String((req.body && req.body.email) || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[\r\n]/g, '');
+    return email ? `reg:${email}` : ipKeyGenerator(req.ip);
+  },
 });
 
 const forgotPasswordLimiter = rateLimit({
@@ -178,9 +207,26 @@ const inviteAcceptLimiter = rateLimit({
 const shelterApplyLimiter = rateLimit({
   windowMs: WINDOW_MS,
   max: LIMITS.shelterApply,
-  message: 'Too many applications from this connection. Please try again later.',
+  message: MSG.shelterApply,
   standardHeaders: true,
   legacyHeaders: false,
+  store: storeFor('rl:shelter-apply:'),
+});
+
+const shelterApplyEmailLimiter = rateLimit({
+  windowMs: WINDOW_MS,
+  max: LIMITS.shelterApplyEmail,
+  message: MSG.shelterApplyEmail,
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: storeFor('rl:shelter-apply-email:'),
+  keyGenerator(req) {
+    const email = String((req.body && req.body.contact_email) || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[\r\n]/g, '');
+    return email ? `apply:${email}` : ipKeyGenerator(req.ip);
+  },
 });
 
 const messageLimiter = rateLimit({
@@ -195,7 +241,7 @@ const messageLimiter = rateLimit({
 const groupBookingLimiter = rateLimit({
   windowMs: WINDOW_MS,
   max: LIMITS.groupBooking,
-  message: 'Too many group booking requests. Please try again later.',
+  message: MSG.groupBooking,
   standardHeaders: true,
   legacyHeaders: false,
   store: storeFor('rl:group:'),
@@ -204,7 +250,7 @@ const groupBookingLimiter = rateLimit({
 const groupBookingEmailLimiter = rateLimit({
   windowMs: 24 * 60 * 60 * 1000,
   max: LIMITS.groupBookingEmail,
-  message: 'Too many group booking requests for this email. Try again tomorrow.',
+  message: MSG.groupBookingEmail,
   standardHeaders: true,
   legacyHeaders: false,
   store: storeFor('rl:group-email:'),
@@ -240,6 +286,7 @@ module.exports = {
   twoFactorAccountLimiter,
   apiLimiter,
   registerLimiter,
+  registerEmailLimiter,
   forgotPasswordLimiter,
   forgotAccountLimiter,
   resetPasswordLimiter,
@@ -247,6 +294,7 @@ module.exports = {
   inviteCheckLimiter,
   inviteAcceptLimiter,
   shelterApplyLimiter,
+  shelterApplyEmailLimiter,
   groupBookingLimiter,
   groupBookingEmailLimiter,
   messageLimiter,

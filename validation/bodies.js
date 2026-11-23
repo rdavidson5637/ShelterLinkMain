@@ -57,6 +57,8 @@ const register = z
     privacy_notice: z.union([z.boolean(), z.literal('on'), z.literal('true')]).optional(),
     // A public slug, resolved on the server. Never a shelter id.
     shelter_slug: optStr(100),
+    // Honeypot. Hidden from people; bots that fill it get a normal success.
+    website: optStr(200),
   })
   .strict();
 

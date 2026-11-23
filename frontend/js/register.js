@@ -153,6 +153,7 @@ async function handleRegister(event) {
     phone: payload.phone,
     password: payload.password,
     privacy_notice: true,
+    website: document.getElementById('website')?.value || '',
   };
   if (shelterSlug) data.shelter_slug = shelterSlug;
 
@@ -172,8 +173,15 @@ async function handleRegister(event) {
       markShelterMissing();
     } else {
       const errorData = await res.json().catch(() => ({}));
+      const fallback =
+        res.status === 429
+          ? 'Too many registration attempts. Please try again in 15 minutes.'
+          : 'Registration failed. Please try again.';
       showFormErrors(form, [
-        { field: 'email', message: errorData.error || 'Registration failed. Please try again.' },
+        {
+          field: res.status === 429 ? undefined : 'email',
+          message: errorData.error || fallback,
+        },
       ]);
     }
   } catch (error) {

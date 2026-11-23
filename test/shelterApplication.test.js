@@ -6,6 +6,7 @@ const express = require('express');
 
 process.env.NODE_ENV = 'test';
 process.env.RATE_LIMIT_SHELTER_APPLY = '1000';
+process.env.RATE_LIMIT_SHELTER_APPLY_EMAIL = '1000';
 delete process.env.CCEW_API_KEY;
 
 const mock = require('./helpers/mockDb');

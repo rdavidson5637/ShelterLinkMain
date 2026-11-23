@@ -77,6 +77,16 @@ test('register without the privacy confirmation is rejected', async () => {
   assert.ok(!mock.calls.some((call) => /INSERT INTO users/i.test(call.sql)));
 });
 
+test('register honeypot answers like a success and stores nothing', async () => {
+  mock.resetCalls();
+  mock.setHandler(async () => [[]]);
+  const res = makeRes();
+  await auth.register({ body: { ...payload, website: 'http://spam.example' } }, res);
+  assert.strictEqual(res.statusCode, 201);
+  assert.strictEqual(res.body.message, 'Registration successful');
+  assert.equal(mock.calls.length, 0);
+});
+
 test('acknowledging the notice stores the current version', async () => {
   mock.resetCalls();
   mock.setHandler(async () => [{ affectedRows: 1 }]);
