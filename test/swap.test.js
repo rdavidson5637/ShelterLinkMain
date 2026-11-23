@@ -29,7 +29,23 @@ require.cache[emailPath] = {
   },
 };
 
+const auditPath = require.resolve('../models/AuditLog');
+const auditCalls = [];
+require.cache[auditPath] = {
+  id: auditPath,
+  filename: auditPath,
+  loaded: true,
+  exports: {
+    create: async (row) => {
+      auditCalls.push(row);
+      return auditCalls.length;
+    },
+    findAll: async () => ({ rows: [], total: 0, limit: 50, offset: 0 }),
+  },
+};
+
 // Clear controller caches so they pick up stubbed email + mock DB.
+delete require.cache[require.resolve('../middleware/auditLog')];
 delete require.cache[require.resolve('../controllers/applicationController')];
 delete require.cache[require.resolve('../controllers/swapController')];
 delete require.cache[require.resolve('../models/Application')];
@@ -38,12 +54,24 @@ delete require.cache[require.resolve('../models/SwapRequest')];
 delete require.cache[require.resolve('../models/Qualification')];
 delete require.cache[require.resolve('../models/Waiver')];
 delete require.cache[require.resolve('../models/VolunteerProfile')];
+delete require.cache[require.resolve('../models/BookingPolicy')];
 
 const { isWithinCancellationCutoff } = require('../utils/cancellationRules');
 const appCtrl = require('../controllers/applicationController');
 const swapCtrl = require('../controllers/swapController');
 const SwapRequest = require('../models/SwapRequest');
 const Qualification = require('../models/Qualification');
+const BookingPolicy = require('../models/BookingPolicy');
+
+let bookingMode = 'approval';
+let trustedIds = new Set();
+BookingPolicy.getMode = async () => bookingMode;
+BookingPolicy.isTrusted = async (userId) => trustedIds.has(Number(userId));
+
+function resetBookingPolicy(mode = 'approval', trusted = []) {
+  bookingMode = mode;
+  trustedIds = new Set(trusted.map(Number));
+}
 
 function makeRes() {
   const res = { statusCode: 200, body: undefined };
@@ -159,6 +187,7 @@ test('admin can cancel accepted application inside cutoff', async () => {
 
 test('opening a swap offers waitlist first before public', async () => {
   emailCalls.length = 0;
+  auditCalls.length = 0;
   mock.resetCalls();
   let inserted = null;
   mock.setHandler(async (sql, params) => {
@@ -220,102 +249,10 @@ test('opening a swap offers waitlist first before public', async () => {
   assert.ok(inserted[4], 'claim token set');
   assert.strictEqual(inserted[5], null, 'not public yet');
   assert.ok(emailCalls.some((c) => c[0] === 'swapWaitlist' && c[1] === 'wait@x.com'));
+  assert.ok(auditCalls.some((a) => a.action === 'swap.request'), 'swap.request audited');
 });
 
-test('claim transfers accepted slot atomically', async () => {
-  emailCalls.length = 0;
-  mock.resetCalls();
-  const state = {
-    swapStatus: 'open',
-    originalStatus: 'accepted',
-    claimerAppId: null,
-  };
-
-  mock.setHandler(async (sql, params) => {
-    if (/FOR UPDATE/i.test(sql) && /FROM swap_requests s/i.test(sql)) {
-      return [[{
-        id: 50,
-        application_id: 5,
-        status: state.swapStatus,
-        public_at: '2026-01-01 00:00:00',
-        claim_token: null,
-        waitlist_offered_to_user_id: null,
-        waitlist_offer_expires_at: null,
-        original_user_id: 2,
-        opportunity_id: 1,
-        application_status: state.originalStatus,
-        opportunity_title: 'Dog Walk',
-      }]];
-    }
-    if (/FROM applications/i.test(sql) && /user_id = \? AND opportunity_id = \?/i.test(sql)) {
-      return [[]];
-    }
-    if (/UPDATE applications\s+SET status = 'cancelled'/i.test(sql)) {
-      state.originalStatus = 'cancelled';
-      return [{ affectedRows: 1 }];
-    }
-    if (/INSERT INTO applications/i.test(sql)) {
-      state.claimerAppId = 99;
-      return [{ insertId: 99 }];
-    }
-    if (/UPDATE swap_requests\s+SET status = 'claimed'/i.test(sql)) {
-      state.swapStatus = 'claimed';
-      return [{ affectedRows: 1 }];
-    }
-    if (/FROM applications a/i.test(sql) && /LEFT JOIN users/i.test(sql)) {
-      const id = Number(params[0]);
-      if (id === 99) {
-        return [[{
-          application_id: 99,
-          user_id: 7,
-          opportunity_id: 1,
-          status: 'accepted',
-          email: 'claimer@x.com',
-          first_name: 'C',
-          last_name: 'Laimer',
-        }]];
-      }
-      return [[{
-        application_id: 5,
-        user_id: 2,
-        opportunity_id: 1,
-        status: 'cancelled',
-        email: 'orig@x.com',
-        first_name: 'O',
-        last_name: 'Rig',
-      }]];
-    }
-    if (/FROM swap_requests s/i.test(sql) && /s\.id = \?/i.test(sql)) {
-      return [[{
-        id: 50,
-        application_id: 5,
-        status: 'claimed',
-        claimed_by_application_id: 99,
-        original_user_id: 2,
-        opportunity_id: 1,
-        opportunity_title: 'Dog Walk',
-        application_status: 'cancelled',
-      }]];
-    }
-    if (/UPDATE opportunities/i.test(sql) && /activity_notes/i.test(sql)) {
-      return [{ affectedRows: 1 }];
-    }
-    if (/FROM opportunities/i.test(sql)) {
-      return [[{ opportunity_id: 1, title: 'Dog Walk', activity_notes: 'note' }]];
-    }
-    return [[]];
-  });
-
-  // Stub eligibility helpers used by claimSwap
-  const originalMissing = Qualification.findMissingForUser;
-  const VolunteerProfile = require('../models/VolunteerProfile');
-  const Waiver = require('../models/Waiver');
-  const originalProfile = VolunteerProfile.findByUserId;
-  const originalWaivers = Waiver.findPendingForUser;
-  Qualification.findMissingForUser = async () => [];
-  VolunteerProfile.findByUserId = async () => ({ user_id: 7, approved: 1 });
-  Waiver.findPendingForUser = async () => [];
-
+function installClaimMocks(state, { claimerStatus = 'accepted' } = {}) {
   mock.setHandler(async (sql, params) => {
     if (/FROM swap_requests s/i.test(sql) && /s\.id = \?/i.test(sql) && !/FOR UPDATE/i.test(sql)) {
       return [[{
@@ -327,6 +264,7 @@ test('claim transfers accepted slot atomically', async () => {
         opportunity_id: 1,
         opportunity_title: 'Dog Walk',
         application_status: state.originalStatus,
+        claimed_by_application_id: state.claimerAppId,
       }]];
     }
     if (/UPDATE swap_requests\s+SET public_at/i.test(sql)) return [{ affectedRows: 0 }];
@@ -354,7 +292,12 @@ test('claim transfers accepted slot atomically', async () => {
     }
     if (/INSERT INTO applications/i.test(sql)) {
       state.claimerAppId = 99;
+      state.insertedStatus = params[2];
       return [{ insertId: 99 }];
+    }
+    if (/UPDATE applications\s+SET status = \?/i.test(sql)) {
+      state.insertedStatus = params[0];
+      return [{ affectedRows: 1 }];
     }
     if (/UPDATE swap_requests\s+SET status = 'claimed'/i.test(sql)) {
       state.swapStatus = 'claimed';
@@ -367,7 +310,7 @@ test('claim transfers accepted slot atomically', async () => {
           application_id: 99,
           user_id: 7,
           opportunity_id: 1,
-          status: 'accepted',
+          status: claimerStatus,
           email: 'claimer@x.com',
           first_name: 'C',
           last_name: 'Laimer',
@@ -384,6 +327,7 @@ test('claim transfers accepted slot atomically', async () => {
       }]];
     }
     if (/UPDATE opportunities/i.test(sql) && /activity_notes/i.test(sql)) {
+      state.activityNote = params[0];
       return [{ affectedRows: 1 }];
     }
     if (/FROM opportunities/i.test(sql)) {
@@ -391,6 +335,31 @@ test('claim transfers accepted slot atomically', async () => {
     }
     return [[]];
   });
+}
+
+test('claim transfers accepted slot atomically for trusted instant booking', async () => {
+  emailCalls.length = 0;
+  auditCalls.length = 0;
+  resetBookingPolicy('instant', [7]);
+  mock.resetCalls();
+  const state = {
+    swapStatus: 'open',
+    originalStatus: 'accepted',
+    claimerAppId: null,
+    insertedStatus: null,
+    activityNote: null,
+  };
+
+  const originalMissing = Qualification.findMissingForUser;
+  const VolunteerProfile = require('../models/VolunteerProfile');
+  const Waiver = require('../models/Waiver');
+  const originalProfile = VolunteerProfile.findByUserId;
+  const originalWaivers = Waiver.findPendingForUser;
+  Qualification.findMissingForUser = async () => [];
+  VolunteerProfile.findByUserId = async () => ({ user_id: 7, approved: 1 });
+  Waiver.findPendingForUser = async () => [];
+
+  installClaimMocks(state, { claimerStatus: 'accepted' });
 
   try {
     const res = makeRes();
@@ -402,13 +371,107 @@ test('claim transfers accepted slot atomically', async () => {
     assert.strictEqual(state.originalStatus, 'cancelled');
     assert.strictEqual(state.swapStatus, 'claimed');
     assert.strictEqual(state.claimerAppId, 99);
+    assert.strictEqual(state.insertedStatus, 'accepted');
+    assert.strictEqual(res.body.confirmed, true);
+    assert.strictEqual(res.body.status, 'accepted');
     assert.ok(emailCalls.some((c) => c[0] === 'swapOrig'));
-    assert.ok(emailCalls.some((c) => c[0] === 'swapClaimer'));
-    assert.ok(mock.calls.some((c) => /BEGIN/i.test(c.sql) === false && /activity_notes/i.test(c.sql)));
+    assert.ok(emailCalls.some((c) => c[0] === 'swapClaimer' && c[3]?.confirmed !== false));
+    assert.ok(auditCalls.some((a) => a.action === 'swap.claim' && a.detail?.confirmed === true));
+    assert.match(String(state.activityNote || ''), /accepted/i);
   } finally {
     Qualification.findMissingForUser = originalMissing;
     VolunteerProfile.findByUserId = originalProfile;
     Waiver.findPendingForUser = originalWaivers;
+    resetBookingPolicy('approval', []);
+  }
+});
+
+test('claim leaves cover pending when shelter requires staff approval', async () => {
+  emailCalls.length = 0;
+  auditCalls.length = 0;
+  resetBookingPolicy('approval', [7]);
+  mock.resetCalls();
+  const state = {
+    swapStatus: 'open',
+    originalStatus: 'accepted',
+    claimerAppId: null,
+    insertedStatus: null,
+    activityNote: null,
+  };
+
+  const originalMissing = Qualification.findMissingForUser;
+  const VolunteerProfile = require('../models/VolunteerProfile');
+  const Waiver = require('../models/Waiver');
+  const originalProfile = VolunteerProfile.findByUserId;
+  const originalWaivers = Waiver.findPendingForUser;
+  Qualification.findMissingForUser = async () => [];
+  VolunteerProfile.findByUserId = async () => ({ user_id: 7, approved: 1 });
+  Waiver.findPendingForUser = async () => [];
+
+  installClaimMocks(state, { claimerStatus: 'pending' });
+
+  try {
+    const res = makeRes();
+    await swapCtrl.claimSwap(
+      makeReq({ session: { userId: 7, role: 'volunteer' }, params: { id: 50 } }),
+      res
+    );
+    assert.strictEqual(res.statusCode, 200);
+    assert.strictEqual(state.originalStatus, 'cancelled');
+    assert.strictEqual(state.swapStatus, 'claimed');
+    assert.strictEqual(state.insertedStatus, 'pending');
+    assert.strictEqual(res.body.confirmed, false);
+    assert.strictEqual(res.body.status, 'pending');
+    assert.match(res.body.message, /staff will review/i);
+    assert.ok(emailCalls.some((c) => c[0] === 'swapClaimer' && c[3]?.confirmed === false));
+    assert.ok(auditCalls.some((a) => a.action === 'swap.claim' && a.detail?.confirmed === false));
+    assert.match(String(state.activityNote || ''), /pending staff approval/i);
+  } finally {
+    Qualification.findMissingForUser = originalMissing;
+    VolunteerProfile.findByUserId = originalProfile;
+    Waiver.findPendingForUser = originalWaivers;
+    resetBookingPolicy('approval', []);
+  }
+});
+
+test('instant mode still requires trust for swap claim acceptance', async () => {
+  emailCalls.length = 0;
+  auditCalls.length = 0;
+  resetBookingPolicy('instant', []);
+  mock.resetCalls();
+  const state = {
+    swapStatus: 'open',
+    originalStatus: 'accepted',
+    claimerAppId: null,
+    insertedStatus: null,
+    activityNote: null,
+  };
+
+  const originalMissing = Qualification.findMissingForUser;
+  const VolunteerProfile = require('../models/VolunteerProfile');
+  const Waiver = require('../models/Waiver');
+  const originalProfile = VolunteerProfile.findByUserId;
+  const originalWaivers = Waiver.findPendingForUser;
+  Qualification.findMissingForUser = async () => [];
+  VolunteerProfile.findByUserId = async () => ({ user_id: 7, approved: 1 });
+  Waiver.findPendingForUser = async () => [];
+
+  installClaimMocks(state, { claimerStatus: 'pending' });
+
+  try {
+    const res = makeRes();
+    await swapCtrl.claimSwap(
+      makeReq({ session: { userId: 7, role: 'volunteer' }, params: { id: 50 } }),
+      res
+    );
+    assert.strictEqual(res.statusCode, 200);
+    assert.strictEqual(state.insertedStatus, 'pending');
+    assert.strictEqual(res.body.confirmed, false);
+  } finally {
+    Qualification.findMissingForUser = originalMissing;
+    VolunteerProfile.findByUserId = originalProfile;
+    Waiver.findPendingForUser = originalWaivers;
+    resetBookingPolicy('approval', []);
   }
 });
 

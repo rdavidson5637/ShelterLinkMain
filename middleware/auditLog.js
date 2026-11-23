@@ -68,6 +68,13 @@ function inferFromRequest(req) {
   else if (resource === 'admin' && segments[1] === 'expiry-dashboard' && segments.includes('remind')) {
     action = 'expiry.reminder.email';
   }
+  else if (resource === 'applications' && segments.includes('swap')) {
+    action = method === 'DELETE' ? 'swap.cancel' : 'swap.request';
+  }
+  else if (resource === 'applications' && segments.includes('swaps')) {
+    if (segments.includes('claim') || segments.includes('claim-by-token')) action = 'swap.claim';
+    else if (method === 'DELETE') action = 'swap.cancel';
+  }
 
   const entityType =
     resource === 'admin' && segments[1] === 'volunteers'

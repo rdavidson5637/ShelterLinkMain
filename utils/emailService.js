@@ -376,23 +376,36 @@ async function sendSwapClaimedToOriginal(volunteerEmail, opportunityTitle) {
     'Your Shift Was Covered - ShelterLink',
     `
     <p>Hello,</p>
-    <p>Good news — another volunteer has covered <strong>${safeTitle}</strong>.</p>
+    <p>Good news - another volunteer has covered <strong>${safeTitle}</strong>.</p>
     <p>Your application for that shift is now cancelled.</p>
     <p>Thank you,<br/>${brand.signoff}</p>
     `
   );
 }
 
-async function sendSwapClaimedToClaimer(volunteerEmail, opportunityTitle) {
+async function sendSwapClaimedToClaimer(volunteerEmail, opportunityTitle, options = {}) {
   const brand = await brandBits();
   const safeTitle = opportunityTitle || 'the shift';
-  return sendEmail(
-    volunteerEmail,
-    'Shift Cover Confirmed - ShelterLink',
-    `
+  const confirmed = options.confirmed !== false;
+  if (confirmed) {
+    return sendEmail(
+      volunteerEmail,
+      'Shift Cover Confirmed - ShelterLink',
+      `
     <p>Hello,</p>
     <p>You have successfully claimed <strong>${safeTitle}</strong>.</p>
-    <p>Your application is accepted — see you at the shelter!</p>
+    <p>Your application is accepted - see you at the shelter!</p>
+    <p>Thank you,<br/>${brand.signoff}</p>
+    `
+    );
+  }
+  return sendEmail(
+    volunteerEmail,
+    'Shift Cover Pending Review - ShelterLink',
+    `
+    <p>Hello,</p>
+    <p>You offered to cover <strong>${safeTitle}</strong>.</p>
+    <p>Your cover request is pending staff review. We will email you when it is confirmed.</p>
     <p>Thank you,<br/>${brand.signoff}</p>
     `
   );
