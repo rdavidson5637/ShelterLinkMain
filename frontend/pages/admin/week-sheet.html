@@ -63,6 +63,53 @@
         object-fit: cover;
         border-radius: 4px;
       }
+      .week-copy {
+        margin: 0 0 2rem;
+        padding: 1rem 0 0;
+        border-top: 1px solid var(--border, #ccc);
+      }
+      .week-copy h2 {
+        margin: 0 0 0.25rem;
+      }
+      .week-copy > p {
+        margin: 0 0 1rem;
+        color: var(--text-secondary, #555);
+        max-width: var(--measure, 70ch);
+      }
+      .week-copy-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: end;
+      }
+      .week-copy-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .week-copy-table th,
+      .week-copy-table td {
+        padding: 0.45rem 0.6rem 0.45rem 0;
+        border-bottom: 1px solid var(--border, #ddd);
+        vertical-align: top;
+        text-align: left;
+      }
+      .week-copy-table tr.is-skip td {
+        color: var(--text-secondary, #555);
+      }
+      .week-copy-table .reason {
+        display: block;
+        font-size: var(--text-sm, 0.875rem);
+      }
+      .week-copy-summary {
+        margin: 1rem 0 0.75rem;
+        font-weight: 600;
+      }
+      .week-copy-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 1rem;
+      }
       @media print {
         .site-header,
         .sidebar-nav,
@@ -123,6 +170,24 @@
           <button type="button" id="loadButton">Load</button>
           <button type="button" id="printButton" class="secondary">Print</button>
           <a id="icsDownload" href="#" role="button" class="secondary">Download .ics</a>
+        </section>
+
+        <section class="week-copy no-print" id="weekCopySection" aria-labelledby="weekCopyHeading">
+          <h2 id="weekCopyHeading">Copy a week</h2>
+          <p>Copies each shift's title, times, capacity, animals and required qualifications into another week. Bookings, waitlists and check-in codes are not copied. A shift with the same title already starting at the same time in the target week is skipped.</p>
+          <form id="weekCopyForm" class="week-copy-form" novalidate>
+            <label for="copySourceWeek">
+              Copy from week starting
+              <input type="date" id="copySourceWeek" name="source_week" required />
+            </label>
+            <label for="copyTargetWeek">
+              Into week starting
+              <input type="date" id="copyTargetWeek" name="target_week" required />
+            </label>
+            <button type="submit" id="copyPreviewButton">Preview</button>
+          </form>
+          <div id="weekCopyMessage" role="status" aria-live="polite"></div>
+          <div id="weekCopyPreview"></div>
         </section>
 
         <section id="weekSheetContent" aria-live="polite">

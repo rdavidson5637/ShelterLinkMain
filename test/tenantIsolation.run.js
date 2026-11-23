@@ -440,6 +440,7 @@ function cases(feedbackToken) {
     own('GET', '/api/admin/week-sheet'),
     own('GET', '/api/admin/week-sheet.ics'),
     own('GET', '/api/admin/this-week'),
+    own('GET', '/api/admin/week-sheet/copy-preview?source_week=2099-06-01&target_week=2099-06-08'),
     own('GET', '/api/admin/stats'),
     own('GET', '/api/admin/stats/leaderboard'),
     own('GET', '/api/admin/volunteers'),

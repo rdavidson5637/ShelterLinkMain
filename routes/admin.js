@@ -67,6 +67,7 @@ const {
 } = require('../controllers/newsletterAudienceController');
 const { getWeekSheet, getWeekSheetIcs } = require('../controllers/weekSheetController');
 const { getThisWeek } = require('../controllers/thisWeekController');
+const { getCopyPreview, postCopyWeek } = require('../controllers/weekCopyController');
 const { getVolunteerHoursStatement } = require('../controllers/hoursStatementController');
 
 const { validateBody, validateQuery, positiveParam } = require('../middleware/validate');
@@ -85,6 +86,8 @@ const staffOrAdmin = requireStaff;
 router.get('/day-sheet', isAuthenticated, staffOrAdmin, validateQuery(queries.day), getDaySheet);
 router.get('/week-sheet', isAuthenticated, staffOrAdmin, validateQuery(queries.week), getWeekSheet);
 router.get('/week-sheet.ics', isAuthenticated, staffOrAdmin, validateQuery(queries.week), getWeekSheetIcs);
+router.get('/week-sheet/copy-preview', isAuthenticated, staffOrAdmin, validateQuery(queries.weekCopy), getCopyPreview);
+router.post('/week-sheet/copy', isAuthenticated, staffOrAdmin, validateBody(bodies.weekCopy), postCopyWeek);
 router.get('/this-week', isAuthenticated, staffOrAdmin, getThisWeek);
 router.get('/stats', isAuthenticated, staffOrAdmin, validateQuery(queries.year), getAdminStats);
 router.get('/reports/impact', isAuthenticated, staffOrAdmin, validateQuery(queries.impactReport), getImpactReport);
