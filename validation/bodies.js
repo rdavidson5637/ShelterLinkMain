@@ -664,6 +664,19 @@ const volunteerBuddy = z
     message: 'Choose a buddy from the volunteer list.',
   });
 
+const volunteerStaffNote = z
+  .object({
+    body: str(4000).optional(),
+    note: str(4000).optional(),
+  })
+  .strict()
+  .refine((body) => {
+    const text = String(body.body ?? body.note ?? '').trim();
+    return text.length > 0;
+  }, {
+    message: 'Write a note before saving.',
+  });
+
 const shelterResourceLink = z
   .object({
     title: optStr(200),
@@ -947,6 +960,7 @@ const bodies = {
   inductionItem,
   inductionProgress,
   volunteerBuddy,
+  volunteerStaffNote,
   expiryReminder: z
     .object({
       kind: z.enum(['background_check', 'document', 'qualification']),
