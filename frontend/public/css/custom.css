@@ -2262,6 +2262,58 @@ article.shift-row {
   color: inherit;
 }
 
+.setup-checklist {
+  margin: 0 0 var(--section-gap);
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.setup-checklist-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  max-width: var(--measure);
+}
+
+.setup-checklist-header h2 {
+  margin: 0 0 0.25rem;
+}
+
+.setup-checklist-header p {
+  margin: 0;
+  color: var(--text-secondary);
+  max-width: var(--measure);
+}
+
+.setup-checklist-detail {
+  display: block;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.setup-checklist-done {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+.setup-checklist-done strong {
+  color: var(--text);
+}
+
+.action-list .setup-checklist-done {
+  width: 100%;
+}
+
 .site-footer {
   border-top: 1px solid var(--border);
   padding: 1.5rem 0 2rem;

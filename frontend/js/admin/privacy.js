@@ -8,6 +8,10 @@ const exportBtn = document.getElementById('exportBtn');
 const eraseBtn = document.getElementById('eraseBtn');
 const retentionBtn = document.getElementById('retentionBtn');
 const retentionResult = document.getElementById('retentionResult');
+const privacyContactForm = document.getElementById('privacyContactForm');
+const privacyContactInput = document.getElementById('privacy_contact_email');
+const privacyContactSave = document.getElementById('privacyContactSave');
+const privacyContactStatus = document.getElementById('privacyContactStatus');
 
 function setMessage(text, tone = 'neutral') {
   if (!messageEl) return;
@@ -20,6 +24,27 @@ function setMessage(text, tone = 'neutral') {
   if (cls) note.className = cls;
   note.textContent = text;
   messageEl.replaceChildren(note);
+}
+
+function setPrivacyStatus(text, isError = false) {
+  if (!privacyContactStatus) return;
+  privacyContactStatus.textContent = text || '';
+  privacyContactStatus.classList.toggle('error', Boolean(isError));
+}
+
+async function loadPrivacyContact() {
+  if (!privacyContactInput) return;
+  try {
+    const res = await apiRequest('/admin/settings/privacy-contact', { method: 'GET' });
+    if (!res.ok) {
+      setPrivacyStatus('Could not load the privacy contact email.', true);
+      return;
+    }
+    const body = await res.json();
+    privacyContactInput.value = body.privacy_contact_email || '';
+  } catch {
+    setPrivacyStatus('Could not load the privacy contact email.', true);
+  }
 }
 
 function readUserId() {
@@ -97,6 +122,35 @@ async function init() {
       setMessage('Network error', 'error');
     }
   });
+
+  privacyContactForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (privacyContactSave) privacyContactSave.disabled = true;
+    setPrivacyStatus('');
+    try {
+      const res = await apiRequest('/admin/settings/privacy-contact', {
+        method: 'PUT',
+        body: { privacy_contact_email: privacyContactInput?.value?.trim() || null },
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setPrivacyStatus(body.error || 'Could not save the privacy contact email.', true);
+        return;
+      }
+      privacyContactInput.value = body.privacy_contact_email || '';
+      setPrivacyStatus(
+        body.privacy_contact_email
+          ? 'Privacy contact email saved.'
+          : 'Privacy contact email cleared.'
+      );
+    } catch {
+      setPrivacyStatus('Could not save the privacy contact email.', true);
+    } finally {
+      if (privacyContactSave) privacyContactSave.disabled = false;
+    }
+  });
+
+  await loadPrivacyContact();
 }
 
 document.addEventListener('DOMContentLoaded', init);

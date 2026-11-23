@@ -10,6 +10,10 @@ const schema = fs.readFileSync(path.join(DB, 'schema.pg.sql'), 'utf8');
 const tenancy = fs.readFileSync(path.join(DB, '033_add_shelters.pg.sql'), 'utf8');
 const selfServe = fs.readFileSync(path.join(DB, '036_self_serve_shelters.pg.sql'), 'utf8');
 const logoStorage = fs.readFileSync(path.join(DB, '049_shelter_logo_storage.pg.sql'), 'utf8');
+const setupChecklist = fs.readFileSync(
+  path.join(DB, '052_setup_checklist_dismiss.pg.sql'),
+  'utf8'
+);
 
 function columnsAndConstraints(sql) {
   const body = /CREATE TABLE (?:IF NOT EXISTS )?shelters \(([\s\S]*?)\n\);/.exec(sql);
@@ -24,10 +28,10 @@ function columnsAndConstraints(sql) {
   return lines.map((l) => l.replace(/\s+/g, ' ')).sort();
 }
 
-test('schema.pg.sql defines shelters the same way as 033 plus 036 plus 049', () => {
+test('schema.pg.sql defines shelters the same way as 033 plus 036 plus 049 plus 052', () => {
   assert.deepEqual(
     columnsAndConstraints(schema),
-    columnsAndConstraints(`${tenancy}\n${selfServe}\n${logoStorage}`)
+    columnsAndConstraints(`${tenancy}\n${selfServe}\n${logoStorage}\n${setupChecklist}`)
   );
 });
 

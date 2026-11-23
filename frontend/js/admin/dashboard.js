@@ -1,5 +1,5 @@
 import { API_URL, apiRequest } from '../config.js';
-import { requireAuth, checkAuth, logout, isStaffOrAdminRole, applyRoleVisibility} from '../auth.js';
+import { requireAuth, checkAuth, logout, isStaffOrAdminRole, isAdminRole, applyRoleVisibility} from '../auth.js';
 import { formatDateOnly } from '../utils/dateFormat.js';
 import { createStatusBadge } from '../components/statusBadge.js';
 import { mountInstallPrompt } from '../components/installPrompt.js';
@@ -215,6 +215,106 @@ async function enforceAdmin() {
   return user;
 }
 
+function renderSetupChecklist(checklist) {
+  const section = document.getElementById('setupChecklistSection');
+  const summary = document.getElementById('setupChecklistSummary');
+  const list = document.getElementById('setupChecklistList');
+  const dismissBtn = document.getElementById('setupChecklistDismiss');
+  if (!section || !summary || !list) return;
+
+  if (!checklist || !checklist.visible) {
+    section.hidden = true;
+    list.replaceChildren();
+    return;
+  }
+
+  section.hidden = false;
+  summary.textContent = checklist.complete
+    ? 'Every setup step is done. You can dismiss this list.'
+    : `${checklist.doneCount} of ${checklist.total} setup steps done.`;
+
+  if (dismissBtn) {
+    dismissBtn.hidden = !checklist.complete;
+    dismissBtn.disabled = false;
+  }
+
+  list.replaceChildren();
+  (checklist.items || []).forEach((item) => {
+    const li = document.createElement('li');
+    if (item.done) {
+      const row = document.createElement('div');
+      row.className = 'setup-checklist-done';
+      const title = document.createElement('strong');
+      title.textContent = item.title;
+      const detail = document.createElement('span');
+      detail.textContent = ' Done';
+      row.appendChild(title);
+      row.appendChild(detail);
+      li.appendChild(row);
+    } else {
+      const link = document.createElement('a');
+      link.href = item.href;
+      const copy = document.createElement('span');
+      const title = document.createElement('strong');
+      title.textContent = item.title;
+      const detail = document.createElement('span');
+      detail.className = 'setup-checklist-detail';
+      detail.textContent = item.detail;
+      copy.appendChild(title);
+      copy.appendChild(detail);
+      const arrow = document.createElement('span');
+      arrow.className = 'choice-arrow';
+      arrow.setAttribute('aria-hidden', 'true');
+      arrow.textContent = '→';
+      link.appendChild(copy);
+      link.appendChild(arrow);
+      li.appendChild(link);
+    }
+    list.appendChild(li);
+  });
+}
+
+async function loadSetupChecklist() {
+  const section = document.getElementById('setupChecklistSection');
+  try {
+    const res = await apiRequest('/admin/setup-checklist', { method: 'GET' });
+    if (res.status === 403) {
+      if (section) section.hidden = true;
+      return;
+    }
+    if (!res.ok) {
+      if (section) {
+        section.hidden = false;
+        const summary = document.getElementById('setupChecklistSummary');
+        if (summary) summary.textContent = 'Could not load setup progress.';
+      }
+      return;
+    }
+    renderSetupChecklist(await res.json());
+  } catch (error) {
+    console.error('[Dashboard] loadSetupChecklist error:', error);
+  }
+}
+
+async function dismissSetupChecklist() {
+  const dismissBtn = document.getElementById('setupChecklistDismiss');
+  if (dismissBtn) dismissBtn.disabled = true;
+  try {
+    const res = await apiRequest('/admin/setup-checklist/dismiss', { method: 'POST', body: {} });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const summary = document.getElementById('setupChecklistSummary');
+      if (summary) summary.textContent = body.error || 'Could not dismiss the checklist.';
+      if (dismissBtn) dismissBtn.disabled = false;
+      return;
+    }
+    renderSetupChecklist(body);
+  } catch (error) {
+    console.error('[Dashboard] dismissSetupChecklist error:', error);
+    if (dismissBtn) dismissBtn.disabled = false;
+  }
+}
+
 function attachExportHandlers() {
   if (exportVolunteersButton) {
     exportVolunteersButton.addEventListener('click', (event) => {
@@ -241,7 +341,7 @@ function attachExportHandlers() {
 async function init() {
   mountInstallPrompt(document.getElementById('installPrompt'));
   await requireAuth();
-  await enforceAdmin();
+  const user = await enforceAdmin();
 
   if (logoutButton) {
     logoutButton.addEventListener('click', (event) => {
@@ -252,13 +352,23 @@ async function init() {
 
   attachExportHandlers();
 
+  const dismissBtn = document.getElementById('setupChecklistDismiss');
+  dismissBtn?.addEventListener('click', (event) => {
+    event.preventDefault();
+    dismissSetupChecklist();
+  });
+
   // Load all data initially
-  await Promise.all([
+  const loads = [
     loadStats(),
     loadRecentApplications(),
     loadRecentHours(),
     loadExpiringChecks(),
-  ]);
+  ];
+  if (user && isAdminRole(user)) {
+    loads.push(loadSetupChecklist());
+  }
+  await Promise.all(loads);
 
   // Optionally auto-refresh stats every 60 seconds
   setInterval(loadStats, 60000);

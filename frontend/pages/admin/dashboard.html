@@ -38,6 +38,25 @@
           <p>Today's cover, pending applications, and the numbers you need before the morning briefing.</p>
         </section>
 
+        <section
+          data-admin-only
+          id="setupChecklistSection"
+          class="setup-checklist"
+          aria-labelledby="setupChecklistHeading"
+          hidden
+        >
+          <header class="setup-checklist-header">
+            <div>
+              <h2 id="setupChecklistHeading">Shelter setup</h2>
+              <p id="setupChecklistSummary">Loading setup progress…</p>
+            </div>
+            <button type="button" id="setupChecklistDismiss" class="secondary" hidden>
+              Dismiss checklist
+            </button>
+          </header>
+          <ul class="action-list" id="setupChecklistList"></ul>
+        </section>
+
         <section class="metric-strip" id="statsGrid" aria-label="Shelter totals">
           <div class="metric-item">
             <span class="metric-label">Total volunteers</span>
