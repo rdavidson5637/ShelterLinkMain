@@ -385,6 +385,19 @@ const completeLeg = z
   .strict();
 const expense = z.object({ expense_claimed: optFlag }).strict();
 
+const mileageClaim = z
+  .object({
+    travel_date: optStr(40),
+    travelDate: optStr(40),
+    miles: z.union([z.number().finite().positive().max(2000), z.string().max(20)]).optional().nullable(),
+    purpose: optStr(500),
+    transport_leg_id: optId,
+    transportLegId: optId,
+    opportunity_id: optId,
+    opportunityId: optId,
+  })
+  .strict();
+
 const incident = z
   .object({
     animal_id: z.union([idValue, z.null(), z.literal('')]).optional(),
@@ -726,6 +739,7 @@ const bodies = {
   transportStatus,
   completeLeg,
   expense,
+  mileageClaim,
   incident,
   thread,
   threadMessage,
