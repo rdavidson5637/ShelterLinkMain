@@ -102,6 +102,13 @@ async function buildVolunteerExport(userId) {
     [id]
   );
 
+  const [guardianConsents] = await pool.execute(
+    `SELECT id, guardian_name, guardian_relationship, guardian_phone, guardian_email,
+            consented_at, withdrawn_at
+     FROM guardian_consents WHERE user_id = ? ORDER BY id`,
+    [id]
+  );
+
   const hoursTotal = hours
     .filter((h) => Number(h.approved) === 1)
     .reduce((sum, h) => sum + Number(h.hours || 0), 0);
@@ -123,6 +130,7 @@ async function buildVolunteerExport(userId) {
     foster_offers: fosterOffers,
     references,
     background_checks: checks,
+    guardian_consents: guardianConsents,
   };
 }
 
@@ -209,6 +217,8 @@ async function anonymiseUser(userId, { reason = 'gdpr_erasure' } = {}) {
     await conn.execute('DELETE FROM volunteer_tags WHERE user_id = ?', [id]);
     await conn.execute('DELETE FROM push_subscriptions WHERE user_id = ?', [id]);
     await conn.execute('DELETE FROM volunteer_references WHERE user_id = ?', [id]);
+    // Guardian details are a third party's personal data.
+    await conn.execute('DELETE FROM guardian_consents WHERE user_id = ?', [id]);
     await conn.execute(
       `UPDATE messages SET body = '[removed]' WHERE user_id = ?`,
       [id]
