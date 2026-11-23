@@ -163,6 +163,11 @@ async function buildVolunteerExport(userId) {
     `SELECT id, opportunity_id, body, created_at FROM shift_notes WHERE author_id = ? ORDER BY id`,
     [id]
   );
+  const [volunteerShiftNotes] = await pool.execute(
+    `SELECT id, application_id, opportunity_id, body, created_at
+       FROM volunteer_shift_notes WHERE user_id = ? ORDER BY id`,
+    [id]
+  );
   const [fosterOffers] = await pool.execute(
     `SELECT id, request_id, note, status, created_at FROM foster_offers WHERE user_id = ? ORDER BY id`,
     [id]
@@ -226,6 +231,7 @@ async function buildVolunteerExport(userId) {
     tags,
     messages,
     shift_notes: shiftNotes,
+    volunteer_shift_notes: volunteerShiftNotes,
     foster_offers: fosterOffers,
     references,
     background_checks: checks,
@@ -348,6 +354,10 @@ async function anonymiseUser(userId, { reason = 'gdpr_erasure' } = {}) {
     );
     await conn.execute(
       `UPDATE shift_notes SET body = '[removed]' WHERE author_id = ?`,
+      [id]
+    );
+    await conn.execute(
+      `UPDATE volunteer_shift_notes SET body = '[removed]' WHERE user_id = ?`,
       [id]
     );
     await conn.execute(

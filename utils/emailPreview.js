@@ -18,6 +18,7 @@ const {
   buildPasswordReset,
   buildMilestoneThankYou,
   buildBuddyAssigned,
+  buildVolunteerShiftNoteAlert,
 } = require('./emailService');
 
 const APP_BASE = () => String(process.env.APP_URL || 'https://shelterlink.online').replace(/\/$/, '');
@@ -75,6 +76,12 @@ function sampleData(shelterNamePlain) {
     buddy: {
       buddyFirstName: 'Sam',
       volunteerName: 'Alex',
+    },
+    volunteerShiftNote: {
+      volunteerName: 'Alex',
+      title: 'Morning kennel walk',
+      date: 'Saturday 28 November',
+      body: 'The yard gate latch sticks unless you lift it slightly.',
     },
   };
 }
@@ -150,6 +157,14 @@ const CATALOG = [
     description: 'Optional staff-sent notice when a volunteer is asked to buddy someone new.',
     build(brand, samples) {
       return buildBuddyAssigned(samples.buddy, brand);
+    },
+  },
+  {
+    id: 'volunteer_shift_note',
+    label: 'After-shift note',
+    description: 'Optional alert when a volunteer leaves a short after-shift note and asks to notify staff.',
+    build(brand, samples) {
+      return buildVolunteerShiftNoteAlert(samples.volunteerShiftNote, brand);
     },
   },
 ];

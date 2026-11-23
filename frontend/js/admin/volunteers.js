@@ -685,6 +685,33 @@ async function viewProfile(userId) {
       buddyHtml = '<p>Unable to load buddy pairing.</p>';
     }
 
+    let afterShiftNotesHtml = '<p>Unable to load after-shift notes.</p>';
+    try {
+      const notesRes = await apiRequest(`/admin/volunteers/${userId}/shift-notes`, {
+        method: 'GET',
+      });
+      if (notesRes.ok) {
+        const notes = await notesRes.json();
+        if (!Array.isArray(notes) || !notes.length) {
+          afterShiftNotesHtml = '<p><small>No after-shift notes yet.</small></p>';
+        } else {
+          afterShiftNotesHtml = `<ul class="ruled-list">${notes
+            .map((n) => {
+              const when = n.created_at ? String(n.created_at).slice(0, 10) : '';
+              const title = n.opportunity_title || 'Shift';
+              return `<li>
+                <strong>${escapeHtml(title)}</strong>
+                ${when ? ` · ${escapeHtml(when)}` : ''}
+                <p style="margin:0.25rem 0 0;">${escapeHtml(n.body || '')}</p>
+              </li>`;
+            })
+            .join('')}</ul>`;
+        }
+      }
+    } catch {
+      afterShiftNotesHtml = '<p>Unable to load after-shift notes.</p>';
+    }
+
     // Under-18 rules (SL-NOW-02): only shown when this volunteer is under 18
     // or under the shelter minimum.
     let guardianHtml = '';
@@ -898,6 +925,11 @@ async function viewProfile(userId) {
           <strong>Buddy</strong>
           <p><small>Pair a new volunteer with an experienced buddy. Both see it on their home page.</small></p>
           ${buddyHtml}
+        </div>
+        <div class="detail-block">
+          <strong>After-shift notes</strong>
+          <p><small>Short notes the volunteer left after check-in or after a shift ended. Not ratings.</small></p>
+          ${afterShiftNotesHtml}
         </div>
         ${
           guardianHtml
