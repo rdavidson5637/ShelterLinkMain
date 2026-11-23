@@ -41,6 +41,7 @@ const TENANT_TABLES = [
   'shelter_booking_policy',
   'shelter_closures',
   'shelter_settings',
+  'shelter_wishlist_items',
   'shelters',
   'shift_feedback',
   'shift_notes',

@@ -3493,3 +3493,138 @@ body.staff-app .dashboard-main > section {
   margin: 0;
   color: var(--text-secondary);
 }
+
+/* SL-DAY-18: public supplies wishlist (ruled list, no card grid) */
+.public-wishlist {
+  margin: var(--section-gap) 0 0;
+  padding-top: var(--section-gap);
+  border-top: 1px solid var(--border);
+}
+
+.public-wishlist h2 {
+  margin: 0 0 0.5rem;
+  font-size: var(--text-lg);
+  line-height: 1.15;
+}
+
+.public-wishlist > p {
+  margin: 0 0 0.75rem;
+  max-width: var(--measure);
+  line-height: 1.55;
+}
+
+.wishlist-updated {
+  margin: 0 0 0.75rem;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.wishlist-home-list,
+.wishlist-ruled-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.wishlist-home-list > li,
+.wishlist-ruled-list > li {
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.wishlist-home-list > li:last-child,
+.wishlist-ruled-list > li:last-child {
+  border-bottom: 0;
+}
+
+.wishlist-home-list strong,
+.wishlist-ruled-main strong {
+  display: block;
+  margin: 0 0 0.25rem;
+  font-size: var(--text-md);
+  line-height: 1.2;
+  color: var(--text);
+}
+
+.wishlist-meta,
+.wishlist-note {
+  margin: 0 0 0.35rem;
+  max-width: var(--measure);
+  line-height: 1.55;
+}
+
+.wishlist-meta {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.wishlist-compose {
+  margin: 0 0 var(--section-gap);
+  max-width: 40rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.wishlist-compose h2,
+.wishlist-list-header h2 {
+  margin: 0 0 0.65rem;
+  font-size: var(--text-lg);
+  line-height: 1.15;
+}
+
+.wishlist-field-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+}
+
+.wishlist-field-row label {
+  flex: 1 1 12rem;
+}
+
+.wishlist-list-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.wishlist-archived-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.wishlist-ruled-list > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem 1.25rem;
+}
+
+.wishlist-ruled-main {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.wishlist-ruled-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.wishlist-ruled-actions button {
+  margin: 0;
+}
+
+.wishlist-empty {
+  margin: 0;
+  color: var(--text-secondary);
+}
