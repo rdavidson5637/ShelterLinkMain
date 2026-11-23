@@ -64,13 +64,13 @@ async function loadAnimals() {
   const qs = params.toString() ? `?${params}` : '';
   const res = await apiRequest(`/animals${qs}`);
   if (!res.ok) {
-    tableBody.innerHTML = '<tr><td colspan="6">Unable to load animals.</td></tr>';
+    tableBody.innerHTML = '<tr><td colspan="7">Unable to load animals.</td></tr>';
     return;
   }
   const animals = await res.json();
   tableBody.innerHTML = '';
   if (!animals.length) {
-    tableBody.innerHTML = `<tr><td colspan="6">
+    tableBody.innerHTML = `<tr><td colspan="7">
       <div class="empty-state">
         <p>No animals yet.</p>
         <a href="#animalForm" role="button" class="outline">Add an animal</a>
@@ -90,13 +90,15 @@ async function loadAnimals() {
       <td></td>
       <td></td>
       <td></td>
+      <td></td>
     `;
     const cells = tr.querySelectorAll('td');
     cells[0].textContent = animal.name;
     cells[1].textContent = animal.species;
     cells[2].textContent = animal.status;
     cells[3].textContent = animal.kennel_ref || '—';
-    cells[4].textContent = handling;
+    cells[4].textContent = formatLastWalked(animal.last_walked_at);
+    cells[5].textContent = handling;
     const editBtn = document.createElement('button');
     editBtn.type = 'button';
     editBtn.className = 'secondary';
@@ -107,11 +109,32 @@ async function loadAnimals() {
     viewBtn.className = 'secondary';
     viewBtn.textContent = 'Activity';
     viewBtn.addEventListener('click', () => loadActivity(animal));
-    cells[5].appendChild(editBtn);
-    cells[5].appendChild(document.createTextNode(' '));
-    cells[5].appendChild(viewBtn);
+    cells[6].appendChild(editBtn);
+    cells[6].appendChild(document.createTextNode(' '));
+    cells[6].appendChild(viewBtn);
     tableBody.appendChild(tr);
   });
+  return animals;
+}
+
+function formatLastWalked(value) {
+  if (!value) return 'Never';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return 'Never';
+  return d.toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+/** Deep link from care gaps: ?animal=<id> opens that animal's activity. */
+async function openLinkedAnimal(animals) {
+  const id = Number(new URLSearchParams(window.location.search).get('animal'));
+  if (!Number.isInteger(id) || id <= 0) return;
+  const animal = (animals || []).find((a) => Number(a.id) === id);
+  if (!animal) {
+    setMessage('error', 'That animal was not found.');
+    return;
+  }
+  await loadActivity(animal);
+  activitySection.scrollIntoView({ block: 'start' });
 }
 
 function startEdit(animal) {
@@ -306,5 +329,6 @@ if (logoutButton) logoutButton.addEventListener('click', () => logout());
   }
   applyRoleVisibility(user);
   await loadQualifications();
-  await loadAnimals();
+  const animals = await loadAnimals();
+  await openLinkedAnimal(animals);
 })().catch((err) => setMessage('error', err.message || 'Failed to load.'));

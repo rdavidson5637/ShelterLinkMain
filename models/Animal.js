@@ -129,8 +129,15 @@ async function findAll({ species = null, status = null } = {}) {
     where.push('a.status = ?');
     params.push(status);
   }
+  // last_walked_at reads idx_aa_animal_logged; RLS scopes animal_activity
+  // to the current shelter alongside animals.
   const sql = `
-    SELECT a.*, q.name AS requires_qualification_name
+    SELECT a.*, q.name AS requires_qualification_name,
+      (
+        SELECT MAX(aa.logged_at)
+        FROM animal_activity aa
+        WHERE aa.animal_id = a.id AND aa.activity_type = 'walk'
+      ) AS last_walked_at
     FROM animals a
     LEFT JOIN qualifications q ON q.id = a.requires_qualification_id
     ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
@@ -138,6 +145,94 @@ async function findAll({ species = null, status = null } = {}) {
   `;
   const [rows] = await pool.execute(sql, params);
   return rows.map(mapRow);
+}
+
+/** Statuses that mean the animal is not on site, so no care gap applies. */
+const OFF_SITE_STATUSES = ['adopted', 'foster'];
+const CARE_GAP_DEFAULT_DAYS = 2;
+const CARE_GAP_MAX_DAYS = 60;
+
+function normalizeFlagDays(raw) {
+  if (raw == null || raw === '') return CARE_GAP_DEFAULT_DAYS;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 1) return CARE_GAP_DEFAULT_DAYS;
+  return Math.min(n, CARE_GAP_MAX_DAYS);
+}
+
+function toTime(value) {
+  if (value == null) return null;
+  const d = value instanceof Date ? value : new Date(String(value).replace(' ', 'T'));
+  const t = d.getTime();
+  return Number.isFinite(t) ? t : null;
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Animals on site (not adopted, not in foster) with their last walk, last
+ * socialise and last activity of any kind, longest gap first. An animal with
+ * no logged activity counts its gap from arrival (or when it was added).
+ * Tenant scoping comes from RLS on animals and animal_activity.
+ */
+async function findCareGaps({ flagDays, now = new Date() } = {}) {
+  const days = normalizeFlagDays(flagDays);
+  const offSite = OFF_SITE_STATUSES.map(() => '?').join(', ');
+  const [rows] = await pool.execute(
+    `
+      SELECT
+        a.id, a.name, a.species, a.status, a.kennel_ref, a.arrival_date, a.created_at,
+        act.last_walk_at, act.last_socialise_at, act.last_activity_at, act.last_activity_type
+      FROM animals a
+      LEFT JOIN LATERAL (
+        SELECT
+          MAX(aa.logged_at) FILTER (WHERE aa.activity_type = 'walk') AS last_walk_at,
+          MAX(aa.logged_at) FILTER (WHERE aa.activity_type = 'socialise') AS last_socialise_at,
+          MAX(aa.logged_at) AS last_activity_at,
+          (ARRAY_AGG(aa.activity_type ORDER BY aa.logged_at DESC))[1] AS last_activity_type
+        FROM animal_activity aa
+        WHERE aa.animal_id = a.id
+      ) act ON TRUE
+      WHERE a.status NOT IN (${offSite})
+    `,
+    OFF_SITE_STATUSES
+  );
+
+  const nowMs = toTime(now) ?? Date.now();
+  const animals = rows.map((row) => {
+    const lastMs = toTime(row.last_activity_at);
+    const sinceMs = lastMs ?? toTime(row.arrival_date) ?? toTime(row.created_at);
+    const gapDays = sinceMs == null ? null : Math.max(0, Math.floor((nowMs - sinceMs) / DAY_MS));
+    return {
+      id: Number(row.id),
+      name: row.name,
+      species: row.species,
+      status: row.status,
+      kennel_ref: row.kennel_ref || null,
+      last_walk_at: row.last_walk_at || null,
+      last_socialise_at: row.last_socialise_at || null,
+      last_activity_at: row.last_activity_at || null,
+      last_activity_type: row.last_activity_type || null,
+      never_logged: lastMs == null,
+      gap_days: gapDays,
+      flagged: gapDays == null || gapDays >= days,
+    };
+  });
+
+  // Longest gap first; unknown gaps (no dates at all) lead, then name.
+  animals.sort((x, y) => {
+    const gx = x.gap_days == null ? Infinity : x.gap_days;
+    const gy = y.gap_days == null ? Infinity : y.gap_days;
+    if (gx !== gy) return gy - gx;
+    if (x.never_logged !== y.never_logged) return x.never_logged ? -1 : 1;
+    return String(x.name).localeCompare(String(y.name));
+  });
+
+  return {
+    flag_days: days,
+    total: animals.length,
+    flagged_count: animals.filter((a) => a.flagged).length,
+    animals,
+  };
 }
 
 async function update(id, data = {}) {
@@ -566,6 +661,11 @@ module.exports = {
   create,
   findById,
   findAll,
+  findCareGaps,
+  normalizeFlagDays,
+  CARE_GAP_DEFAULT_DAYS,
+  CARE_GAP_MAX_DAYS,
+  OFF_SITE_STATUSES,
   update,
   setPhoto,
   getPhoto,

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Import volunteers - ShelterLink</title>
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body class="staff-app">
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Account">
+        <a class="site-brand" href="/pages/admin/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" aria-label="Toggle navigation">Menu</button>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main id="main" class="container dashboard-layout">
+      <aside id="admin-nav" class="sidebar-nav"></aside>
+      <div class="dashboard-main">
+      <section class="page-lede">
+        <h1>Import volunteers from a spreadsheet</h1>
+        <p>Upload a CSV of your current volunteers. You will see every row checked before anything is saved. Nobody is emailed by the import; send set-password invites from the <a href="/pages/admin/volunteers.html">volunteer directory</a> when you are ready.</p>
+      </section>
+
+      <section aria-labelledby="columns-heading">
+        <h2 id="columns-heading">Columns</h2>
+        <div class="table-wrapper staff-dense import-columns">
+          <table>
+            <caption>The first row of the file names the columns. Other columns are ignored.</caption>
+            <thead>
+              <tr>
+                <th scope="col">Column</th>
+                <th scope="col">Needed</th>
+                <th scope="col">Example</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>name, or first name and last name</td><td>Yes</td><td>Sam Patel</td></tr>
+              <tr><td>email</td><td>Yes</td><td>sam@example.org</td></tr>
+              <tr><td>phone</td><td>No</td><td>07700 900123</td></tr>
+              <tr><td>date of birth</td><td>No</td><td>30/04/2001 or 2001-04-30</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="muted" id="importLimits">Up to 500 volunteers and 256 KB per file. Save from Excel or Google Sheets as CSV (UTF-8).</p>
+      </section>
+
+      <section aria-labelledby="upload-heading">
+        <h2 id="upload-heading">Check a file</h2>
+        <form id="importForm" class="import-upload">
+          <label for="importFile">
+            CSV file
+            <input type="file" id="importFile" name="file" accept=".csv,text/csv" required />
+          </label>
+          <button type="submit" id="previewButton">Check file</button>
+        </form>
+        <div id="message" role="status" aria-live="polite"></div>
+      </section>
+
+      <section id="previewSection" aria-labelledby="preview-heading" hidden>
+        <h2 id="preview-heading">What will happen</h2>
+        <ul class="import-summary" id="importSummary"></ul>
+        <div class="table-wrapper staff-dense import-preview">
+          <table>
+            <caption id="previewCaption">Rows in the file</caption>
+            <thead>
+              <tr>
+                <th scope="col" class="numeric-cell">Row</th>
+                <th scope="col">Volunteer</th>
+                <th scope="col">Phone</th>
+                <th scope="col">Date of birth</th>
+                <th scope="col">Result</th>
+              </tr>
+            </thead>
+            <tbody id="previewBody"></tbody>
+          </table>
+        </div>
+        <div class="import-confirm">
+          <button type="button" id="confirmButton">Import</button>
+          <button type="button" id="cancelButton" class="secondary">Choose another file</button>
+        </div>
+      </section>
+      </div>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2026 ShelterLink</small>
+    </footer>
+
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/admin/volunteer-import.js"></script>
+      <script type="module" src="/js/utils/footerYear.js"></script>
+      <script type="module" src="/js/components/adminNav.js"></script>
+  </body>
+</html>

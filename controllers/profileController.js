@@ -7,6 +7,7 @@ const { pool } = require('../config/database');
 const { sendVolunteerApprovalNotification } = require('../utils/emailService');
 const { isStaffOrAdmin, isAdminUser } = require('../middleware/auth');
 const { recordAudit } = require('../middleware/auditLog');
+const { INVITE_STATUS_SQL } = require('../utils/importedAccount');
 
 const REQUIRED_FIELDS = ['availability'];
 
@@ -220,6 +221,7 @@ async function getAllVolunteers(req, res) {
         vp.volunteer_type,
         vp.required_hours,
         vp.away_until,
+        ${INVITE_STATUS_SQL} AS invite_status,
         COALESCE(SUM(CASE WHEN vh.approved = 1 THEN vh.hours ELSE 0 END), 0) AS total_hours,
         (
           SELECT COUNT(*)
@@ -231,7 +233,7 @@ async function getAllVolunteers(req, res) {
       LEFT JOIN volunteer_profiles vp ON vp.user_id = u.user_id
       LEFT JOIN volunteer_hours vh ON vh.user_id = u.user_id
       WHERE u.role = 'volunteer'
-      GROUP BY u.user_id, u.first_name, u.last_name, u.email, u.phone, vp.approved, vp.foster_approved, vp.skills, vp.availability, vp.volunteer_type, vp.required_hours, vp.away_until
+      GROUP BY u.user_id, u.first_name, u.last_name, u.email, u.phone, u.password, u.reset_token_expires, vp.approved, vp.foster_approved, vp.skills, vp.availability, vp.volunteer_type, vp.required_hours, vp.away_until
       ORDER BY u.first_name, u.last_name
     `;
 

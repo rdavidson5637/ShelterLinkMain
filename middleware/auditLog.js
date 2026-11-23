@@ -93,6 +93,8 @@ function auditMutations(req, res, next) {
     if (!isStaffOrAdmin(req)) return;
     const status = res.statusCode || 200;
     if (status < 200 || status >= 400) return;
+    // The controller already wrote a more specific row for this request.
+    if (res.locals && res.locals.auditWritten) return;
 
     const inferred = inferFromRequest(req);
     const detail = {

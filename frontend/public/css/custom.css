@@ -2881,3 +2881,58 @@ body.staff-app .dashboard-main > section {
     border-top: 0;
   }
 }
+
+/* Volunteer CSV import and set-password invites (SL-LATER-32).
+   Ruled rows on the page background, same as the directory table. */
+.import-upload {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-top: 1px solid var(--border, #d6dbd8);
+  border-bottom: 1px solid var(--border, #d6dbd8);
+}
+.import-upload label { flex: 1 1 18rem; margin: 0; }
+.import-upload button { margin: 0; }
+.import-summary {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+}
+.import-summary li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border, #d6dbd8);
+}
+.import-outcome { font-weight: 600; }
+.import-row-error .import-outcome { color: var(--danger, #b42318); }
+.import-row-duplicate .import-outcome { color: var(--text-secondary, #55605a); }
+.import-errors {
+  margin: 0.25rem 0 0;
+  padding-left: 1.1rem;
+  font-size: var(--text-sm, 0.875rem);
+}
+.import-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+.invite-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--border, #d6dbd8);
+  border-bottom: 1px solid var(--border, #d6dbd8);
+  margin-bottom: 1rem;
+}
+.invite-bar p { margin: 0; }
+.invite-bar button { margin: 0; }
+.invite-status {
+  font-size: var(--text-xs, 0.75rem);
+  margin-top: 0.25rem;
+  color: var(--text-secondary, #55605a);
+}

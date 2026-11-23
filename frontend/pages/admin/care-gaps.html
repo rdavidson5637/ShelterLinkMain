@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Care gaps - ShelterLink</title>
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body class="staff-app">
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Account">
+        <a class="site-brand" href="/pages/admin/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" aria-label="Toggle navigation">Menu</button>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main id="main" class="container dashboard-layout">
+      <aside id="admin-nav" class="sidebar-nav"></aside>
+      <div class="dashboard-main">
+        <section class="page-lede">
+          <h1>Care gaps</h1>
+          <p>Animals on site, longest without a logged walk, socialise or other activity first. Adopted and fostered animals are left out.</p>
+          <div id="message" role="status" aria-live="polite"></div>
+        </section>
+
+        <form id="careGapForm" class="filter-bar" method="get" aria-label="Flag threshold">
+          <label for="days">
+            Flag after (days)
+            <input type="number" id="days" name="days" min="1" max="60" step="1" value="2" inputmode="numeric" />
+          </label>
+          <button type="submit" class="secondary">Update</button>
+        </form>
+
+        <section>
+          <h2 id="careGapSummary">Animals on site</h2>
+          <div class="table-wrapper staff-dense">
+            <table>
+              <caption>Last logged care per animal</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Animal</th>
+                  <th scope="col">Kennel</th>
+                  <th scope="col">Last walk</th>
+                  <th scope="col">Last socialise</th>
+                  <th scope="col">Last activity</th>
+                  <th scope="col">Gap</th>
+                  <th scope="col">Shift</th>
+                </tr>
+              </thead>
+              <tbody id="careGapBody">
+                <tr><td colspan="7">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2026 ShelterLink</small>
+    </footer>
+
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/admin/care-gaps.js"></script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+    <script type="module" src="/js/components/adminNav.js"></script>
+  </body>
+</html>

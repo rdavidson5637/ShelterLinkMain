@@ -262,6 +262,16 @@ async function loadAnimals() {
   }
 }
 
+/** Care gaps links here with ?animal_id=<id> to post a shift for that animal. */
+function preselectAnimalFromQuery() {
+  if (!animalSelect) return;
+  const id = new URLSearchParams(window.location.search).get('animal_id');
+  if (!id || !/^\d+$/.test(id)) return;
+  Array.from(animalSelect.options).forEach((o) => {
+    if (o.value === id) o.selected = true;
+  });
+}
+
 function applyTemplatePayload(payload = {}) {
   if (!form) return;
   if (payload.title != null) form.elements.namedItem('title').value = payload.title || '';
@@ -317,6 +327,7 @@ async function init() {
   setDateConstraints();
   await loadQualifications();
   await loadAnimals();
+  preselectAnimalFromQuery();
   await loadTags();
   await loadTemplates();
 

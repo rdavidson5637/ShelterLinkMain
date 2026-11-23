@@ -120,6 +120,11 @@ const staffInvite = z
   })
   .strict();
 
+// Set-password emails for imported volunteers (SL-LATER-32).
+const volunteerInvites = z
+  .object({ user_ids: z.array(idValue).min(1).max(100) })
+  .strict();
+
 // A charity asking to join. Never a shelter id; the row is global.
 const shelterApplication = z
   .object({
@@ -707,6 +712,7 @@ const queries = {
     .strict(),
   applications: z.object({ status: qstr(40), limit: qstr(10) }).strict(),
   animals: z.object({ species: qstr(40), status: qstr(40) }).strict(),
+  careGaps: z.object({ days: z.string().regex(/^\d{1,2}$/).optional() }).strict(),
   incidents: z
     .object({
       animal_id: qstr(20),
@@ -785,6 +791,7 @@ const bodies = {
   acceptInvite,
   shelterApplication,
   staffInvite,
+  volunteerInvites,
   groupBooking,
   opportunity,
   shiftNote,

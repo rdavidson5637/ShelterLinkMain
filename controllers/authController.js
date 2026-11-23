@@ -33,6 +33,7 @@ const { PRIVACY_NOTICE_VERSION } = require('../config/privacyNotice');
 const { isPlatformOwnerUser } = require('../middleware/platformOwner');
 const twoFactor = require('./twoFactorController');
 const { recordSignInDevice } = require('../utils/deviceSummary');
+const { isBcryptHash } = require('../utils/importedAccount');
 
 function privacyNoticeAccepted(value) {
   return value === true || value === 'on' || value === 'true';
@@ -237,7 +238,12 @@ async function login(req, res) {
     }
     const user = rows[0];
 
-    const match = await bcrypt.compare(String(password), String(user.password));
+    // An imported volunteer with no password yet (SL-LATER-32) holds a
+    // marker, not a hash. Compare against the dummy hash so the response
+    // takes as long as a real wrong password, and never match.
+    const hasHash = isBcryptHash(user.password);
+    const compared = await bcrypt.compare(String(password), hasHash ? String(user.password) : DUMMY_PASSWORD_HASH);
+    const match = hasHash && compared;
     if (!match) {
       console.warn('[Auth] failed login', req.ip || '');
       return res.status(401).json({ error: 'Invalid credentials' });
