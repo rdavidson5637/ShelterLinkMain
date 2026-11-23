@@ -2,7 +2,7 @@ const bcrypt = require('bcrypt');
 const { hashPassword, passwordPolicyError, SALT_ROUNDS, DUMMY_PASSWORD_HASH } = require('../utils/password');
 const { pool } = require('../config/database');
 const User = require('../models/User');
-const { sendEmail } = require('../utils/emailService');
+const { sendPasswordReset } = require('../utils/emailService');
 const {
   clearSessionCookie,
   regenerateSession,
@@ -488,28 +488,12 @@ async function forgotPassword(req, res) {
         console.error('[Auth] forgotPassword shelter lookup error:', lookupError.message);
       }
     }
-    const safeShelter = shelterName
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-
     try {
-      await sendEmail(
-        user.email,
-        'Reset Your ShelterLink Password',
-        `
-          <p>Hi ${user.first_name || 'there'},</p>
-          <p>We received a request to reset your ShelterLink password${safeShelter ? ` for ${safeShelter}` : ''}.</p>
-          <p>
-            <a href="${resetLink}" style="display:inline-block;padding:0.6rem 1.4rem;background:#0f766e;color:#ffffff;border-radius:6px;text-decoration:none;font-weight:600;">
-              Reset My Password
-            </a>
-          </p>
-          <p>Or copy this link into your browser:<br/><small>${resetLink}</small></p>
-          <p>This link expires in <strong>1 hour</strong>. If you didn't request a reset, you can safely ignore this email.</p>
-          <p>Thanks,<br/>The ShelterLink Team</p>
-        `
-      );
+      await sendPasswordReset(user.email, {
+        firstName: user.first_name,
+        link: resetLink,
+        shelterName,
+      });
     } catch (emailError) {
       console.error('[Auth] forgotPassword email error:', emailError.message);
       await pool.execute(

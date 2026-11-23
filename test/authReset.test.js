@@ -20,6 +20,10 @@ require.cache[emailPath] = {
       if (sendShouldFail) throw new Error('SMTP down');
       sent.push(args);
     },
+    sendPasswordReset: async (...args) => {
+      if (sendShouldFail) throw new Error('SMTP down');
+      sent.push(args);
+    },
   },
 };
 
@@ -76,8 +80,10 @@ test('forgot-password stores a hash and never the raw token', async () => {
   const stored = update.params[0];
   assert.strictEqual(stored.length, 64);
   assert.ok(sent.length === 1);
-  const html = sent[0][2];
-  const raw = /token=([a-f0-9]+)/.exec(html)[1];
+  const details = sent[0][1];
+  const link = details && details.link;
+  assert.ok(link, 'reset email must include a link');
+  const raw = /token=([a-f0-9]+)/.exec(link)[1];
   assert.strictEqual(stored, hashResetToken(raw));
   assert.notStrictEqual(stored, raw);
 });
