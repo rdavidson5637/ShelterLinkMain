@@ -149,11 +149,16 @@ test('isStaffOrAdmin is false for volunteer role', () => {
 });
 
 test('requireStaff middleware rejects volunteers', async () => {
-  const req = { session: { userId: 9, role: 'volunteer' }, user: { role: 'volunteer' } };
+  const req = { session: { userId: 9, role: 'volunteer' } };
   const res = mockRes();
   let nextCalled = false;
-  // attachUser will try DB — stub via mock so findById may fail; role from session still used
-  mock.setHandler(async () => [[]]);
+  // Live user row required; session role alone must not authorize.
+  mock.setHandler(async () => [[{
+    user_id: 9,
+    email: 'vol@example.com',
+    role: 'volunteer',
+    shelter_id: 1,
+  }]]);
   await requireStaff(req, res, () => {
     nextCalled = true;
   });
