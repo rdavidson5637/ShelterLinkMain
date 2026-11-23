@@ -46,5 +46,6 @@ test('robots.txt allows the public pages and blocks the API', () => {
   assert.match(text, /Disallow: \/api\//);
   assert.match(text, /Disallow: \/pages\/admin\//);
   assert.match(text, /Disallow: \/reset-password.html/);
+  assert.match(text, /Sitemap: https:\/\/shelterlink\.online\/sitemap\.xml/);
   assert.doesNotMatch(text, /Disallow: \/register.html/);
 });

@@ -54,6 +54,34 @@ function applyColourTokens(tokens) {
   root.setProperty('--pico-primary-hover-border', 'var(--green-hover)');
 }
 
+function setMetaBySelector(selector, attr, value) {
+  if (typeof document === 'undefined' || value == null) return;
+  document.querySelectorAll(selector).forEach((el) => {
+    el.setAttribute(attr, value);
+  });
+}
+
+function applyPublicSeo(brand) {
+  if (typeof document === 'undefined' || !brand || !brand.name) return;
+  document.querySelectorAll('[data-shelter-description]').forEach((el) => {
+    const pattern = el.getAttribute('data-shelter-description') || '';
+    const text = pattern.replaceAll('{name}', brand.name);
+    el.setAttribute('content', text);
+  });
+  const titleEl = document.querySelector('title[data-shelter-title]');
+  const title = titleEl ? titleEl.textContent : document.title;
+  const descriptionEl = document.querySelector('meta[name="description"]');
+  const description = descriptionEl ? descriptionEl.getAttribute('content') : '';
+  if (title) {
+    setMetaBySelector('meta[property="og:title"]', 'content', title);
+    setMetaBySelector('meta[name="twitter:title"]', 'content', title);
+  }
+  if (description) {
+    setMetaBySelector('meta[property="og:description"]', 'content', description);
+    setMetaBySelector('meta[name="twitter:description"]', 'content', description);
+  }
+}
+
 export function applyShelterBrand(brand) {
   if (typeof document === 'undefined' || !brand || !brand.name) return;
   document.querySelectorAll('[data-shelter-name]').forEach((el) => {
@@ -63,6 +91,7 @@ export function applyShelterBrand(brand) {
     const pattern = el.getAttribute('data-shelter-title') || '';
     el.textContent = pattern.replaceAll('{name}', brand.name);
   });
+  applyPublicSeo(brand);
 
   applyColourTokens(brand.colourTokens || null);
 

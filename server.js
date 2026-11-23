@@ -73,6 +73,12 @@ app.get('/sw.js', (req, res) => {
   res.send(swBody);
 });
 
+// Public discoverability (SL-LATER-24). Registered before express.static so
+// these win over frontend/robots.txt and any static sitemap file.
+const { getSitemap, getRobots } = require('./controllers/seoController');
+app.get('/sitemap.xml', apiLimiter, getSitemap);
+app.get('/robots.txt', apiLimiter, getRobots);
+
 // The platform owner page is only served through the gated /platform/shelters
 // route below. Its file sits under frontend/, so stop express.static serving
 // it directly.
@@ -274,12 +280,18 @@ app.get('/join/:slug', apiLimiter, activeShelterPage(REGISTER_PAGE));
 // /join: an unknown or suspended slug gets the 404 page, never a board or
 // form that would quietly fall back to Assisi.
 const SHELTER_PAGES = {
-  '': path.join(__dirname, 'frontend', 'index.html'),
-  '/opportunities': path.join(__dirname, 'frontend', 'pages', 'opportunities.html'),
-  '/group-booking': path.join(__dirname, 'frontend', 'pages', 'group-booking.html'),
+  '': { file: path.join(__dirname, 'frontend', 'index.html'), pageKey: 'home' },
+  '/opportunities': {
+    file: path.join(__dirname, 'frontend', 'pages', 'opportunities.html'),
+    pageKey: 'opportunities',
+  },
+  '/group-booking': {
+    file: path.join(__dirname, 'frontend', 'pages', 'group-booking.html'),
+    pageKey: 'group-booking',
+  },
 };
-for (const [suffix, file] of Object.entries(SHELTER_PAGES)) {
-  app.get(`/s/:slug${suffix}`, apiLimiter, activeShelterPage(file));
+for (const [suffix, { file, pageKey }] of Object.entries(SHELTER_PAGES)) {
+  app.get(`/s/:slug${suffix}`, apiLimiter, activeShelterPage(file, pageKey));
 }
 
 // One-time invite link from an invite email: /invite#<token>. The token is

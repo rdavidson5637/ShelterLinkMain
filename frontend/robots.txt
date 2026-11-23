@@ -12,3 +12,5 @@ Disallow: /forgot-password.html
 Disallow: /reset-password.html
 Disallow: /pages/feedback.html
 Disallow: /pages/public/
+
+Sitemap: https://shelterlink.online/sitemap.xml

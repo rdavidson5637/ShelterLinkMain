@@ -1,5 +1,7 @@
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
 const { pool } = require('../config/database');
 const { findById } = require('../models/User');
 const { isPlatformOwnerUser } = require('./platformOwner');
@@ -10,8 +12,10 @@ const {
   runWithShelter,
   runWithoutShelter,
 } = require('../utils/shelterContext');
+const { pageMeta, injectSeoIntoHtml, publicOrigin } = require('../utils/seo');
 
 let assisiId = null;
+const htmlTemplateCache = new Map();
 
 function requestCarriesShelterId(req) {
   const stacks = [req.body, req.query, req.params];
@@ -66,9 +70,9 @@ function cleanSlug(slug) {
 }
 
 /**
- * { id, status } for a public slug, or null when no shelter has it. A
- * suspended shelter is returned with its status so callers can tell
- * "suspended" from "unknown".
+ * { id, status, name, slug } for a public slug, or null when no shelter
+ * has it. A suspended shelter is returned with its status so callers can
+ * tell "suspended" from "unknown".
  *
  * Only hits are cached. A miss is not, so a shelter added later is found
  * without a restart, and unknown slugs from URLs cannot grow the cache.
@@ -77,10 +81,17 @@ async function shelterFromSlug(slug) {
   const key = cleanSlug(slug);
   if (!key) return null;
   const cached = slugCache.get(key);
-  if (fresh(cached)) return { id: cached.id, status: cached.status };
+  if (fresh(cached)) {
+    return {
+      id: cached.id,
+      status: cached.status,
+      name: cached.name || null,
+      slug: key,
+    };
+  }
 
   const [rows] = await runWithoutShelter(() => pool.execute(
-    'SELECT id, status FROM shelters WHERE slug = ? LIMIT 1',
+    'SELECT id, status, name FROM shelters WHERE slug = ? LIMIT 1',
     [key]
   ));
   const row = rows[0];
@@ -90,9 +101,10 @@ async function shelterFromSlug(slug) {
     return null;
   }
   const status = row.status == null ? 'active' : String(row.status);
-  slugCache.set(key, { id, status, at: Date.now() });
+  const name = row.name == null ? null : String(row.name);
+  slugCache.set(key, { id, status, name, at: Date.now() });
   statusCache.set(id, { status, at: Date.now() });
-  return { id, status };
+  return { id, status, name, slug: key };
 }
 
 /**
@@ -197,22 +209,50 @@ async function forEachShelter(fn, { includeSuspended = false } = {}) {
   return results;
 }
 
+function readHtmlTemplate(file) {
+  const key = path.resolve(file);
+  if (htmlTemplateCache.has(key)) return htmlTemplateCache.get(key);
+  const html = fs.readFileSync(key, 'utf8');
+  htmlTemplateCache.set(key, html);
+  return html;
+}
+
 /**
  * Page handler for /join/<slug> and /s/<slug>/...: sends the file only when
  * the slug names an active shelter. An unknown or suspended shelter falls
  * through to the normal 404 page, so a visitor never gets a form or board
  * that would quietly show or sign up to a different shelter.
+ *
+ * When pageKey is set (home, opportunities, group-booking), injects title,
+ * meta description, Open Graph tags, and Organization/VolunteerAction
+ * JSON-LD for that approved shelter before sending HTML.
  */
-function activeShelterPage(file) {
+function activeShelterPage(file, pageKey = null) {
   return async function sendActiveShelterPage(req, res, next) {
     try {
-      const id = await shelterIdFromSlug(req.params.slug);
-      if (!id) return next();
-      return res.sendFile(file);
+      const shelter = await shelterFromSlug(req.params.slug);
+      if (!shelter || !isActiveStatus(shelter.status)) return next();
+      if (!pageKey) {
+        return res.sendFile(file);
+      }
+      const meta = pageMeta({
+        pageKey,
+        shelterName: shelter.name || 'your local shelter',
+        slug: shelter.slug || cleanSlug(req.params.slug),
+        origin: publicOrigin(),
+      });
+      const html = injectSeoIntoHtml(readHtmlTemplate(file), meta);
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.setHeader('Cache-Control', 'public, max-age=60');
+      return res.status(200).send(html);
     } catch (error) {
       return next(error);
     }
   };
+}
+
+function _clearHtmlTemplateCacheForTests() {
+  htmlTemplateCache.clear();
 }
 
 // Paths (under the /api mount) a platform owner may still use while their
@@ -284,6 +324,7 @@ module.exports = {
   requestedShelterSlug,
   publicShelterId,
   _resetSlugCacheForTests,
+  _clearHtmlTemplateCacheForTests,
   forEachShelter,
   bindShelter,
   requestCarriesShelterId,
