@@ -113,6 +113,11 @@ const staffInvite = z
   })
   .strict();
 
+// Set-password emails for imported volunteers (SL-LATER-32).
+const volunteerInvites = z
+  .object({ user_ids: z.array(idValue).min(1).max(100) })
+  .strict();
+
 // A charity asking to join. Never a shelter id; the row is global.
 const shelterApplication = z
   .object({
@@ -768,6 +773,7 @@ const bodies = {
   acceptInvite,
   shelterApplication,
   staffInvite,
+  volunteerInvites,
   groupBooking,
   opportunity,
   shiftNote,

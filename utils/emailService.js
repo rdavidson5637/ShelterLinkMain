@@ -669,6 +669,34 @@ async function sendShelterInvite(to, { shelterName, link, role = 'admin', expire
   );
 }
 
+/**
+ * Set-password email for a volunteer a shelter imported from a spreadsheet
+ * (SL-LATER-32). Sent only when staff choose to, never by the import. The
+ * link is the normal reset-password page with a longer-lived token.
+ */
+async function sendVolunteerSetPasswordInvite(to, { firstName, link, expiresInDays = 7 } = {}) {
+  if (!link) throw new Error('Invite link is required');
+  const brand = await brandBits();
+  const safeLink = escapeHtml(link).replace(/"/g, '&quot;');
+  const where = brand.name ? ` at <strong>${brand.name}</strong>` : '';
+  return sendEmail(
+    to,
+    brand.name ? `Set your ShelterLink password for ${headerValue(await currentShelterName())}` : 'Set your ShelterLink password',
+    `
+    <p>Hi ${escapeHtml(firstName) || 'there'},</p>
+    <p>You are on the volunteer list${where}, which now uses ShelterLink for shifts and hours. Choose a password to sign in.</p>
+    <p>
+      <a href="${safeLink}" style="display:inline-block;padding:0.6rem 1.4rem;background:#0f766e;color:#ffffff;border-radius:6px;text-decoration:none;font-weight:600;">
+        Set my password
+      </a>
+    </p>
+    <p>Or copy this link into your browser:<br/><small>${safeLink}</small></p>
+    <p>This link expires in <strong>${Number(expiresInDays) || 7} days</strong>. If you do not volunteer here, you can ignore this email.</p>
+    <p>Thanks,<br/>${brand.signoff}</p>
+    `
+  );
+}
+
 module.exports = {
   currentShelterName,
   brandBits,
@@ -702,4 +730,5 @@ module.exports = {
   sendThreadDigest,
   sendShiftNoteUpdate,
   sendShelterInvite,
+  sendVolunteerSetPasswordInvite,
 };

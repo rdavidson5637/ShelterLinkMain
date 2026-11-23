@@ -72,6 +72,8 @@ const { getVolunteerHoursStatement } = require('../controllers/hoursStatementCon
 const { validateBody, validateQuery, positiveParam } = require('../middleware/validate');
 const { listStaffInvites, createStaffInvite, revokeStaffInvite } = require('../controllers/staffInviteController');
 const { bodies, queries } = require('../validation/bodies');
+const { previewImport, runImport, sendInvites } = require('../controllers/volunteerImportController');
+const { MAX_BYTES: IMPORT_MAX_BYTES } = require('../utils/volunteerCsv');
 
 const router = express.Router();
 router.param('userId', positiveParam('userId'));
@@ -96,6 +98,22 @@ router.post('/reports/newsletter-sync', isAuthenticated, staffOrAdmin, postNewsl
 router.get('/stats/leaderboard', isAuthenticated, staffOrAdmin, validateQuery(queries.year), getLeaderboard);
 router.get('/stats/monthly-hours', isAuthenticated, staffOrAdmin, validateQuery(queries.year), getMonthlyHoursChart);
 router.get('/volunteers', isAuthenticated, staffOrAdmin, getAllVolunteers);
+
+// SL-LATER-32: CSV import. The file is sent as text/csv, read only here, with
+// its own size limit (the JSON parser stays at its default).
+const csvText = express.text({ type: ['text/csv', 'text/plain'], limit: IMPORT_MAX_BYTES + 1024 });
+function readCsvBody(req, res, next) {
+  csvText(req, res, (error) => {
+    if (error && error.type === 'entity.too.large') {
+      return res.status(413).json({ error: `The file is larger than ${IMPORT_MAX_BYTES / 1024} KB. Split it into smaller files.` });
+    }
+    if (error) return res.status(400).json({ error: 'The file could not be read. Export it from your spreadsheet as CSV (UTF-8).' });
+    return next();
+  });
+}
+router.post('/volunteers/import/preview', isAuthenticated, adminOnly, readCsvBody, previewImport);
+router.post('/volunteers/import', isAuthenticated, adminOnly, readCsvBody, runImport);
+router.post('/volunteers/invites', isAuthenticated, staffOrAdmin, messageLimiter, validateBody(bodies.volunteerInvites), sendInvites);
 router.get('/volunteers/:userId', isAuthenticated, staffOrAdmin, getVolunteerProfile);
 router.get(
   '/volunteers/:userId/hours-statement',

@@ -1082,6 +1082,59 @@ async function main() {
       slugChecks.push('invite accept', 'invite race', 'invite dual-email race');
     }
 
+    // SL-LATER-32: volunteer CSV import. Shelter B uploads a file that names
+    // shelter A's volunteer. B learns only "has a login", never A's name or
+    // shelter; the import links that login to B by membership and leaves the
+    // shelter A user row alone. New rows land on B with no usable password.
+    {
+      const csv = 'name,email,phone\nNew Person,new.b@example.test,07700 900123\nAnn Copy,a.volunteer@example.test,\n';
+      const importPreview = await request(port, 'POST', '/api/admin/volunteers/import/preview', {
+        raw: Buffer.from(csv), type: 'text/csv', cookie,
+      });
+      if (importPreview.status !== 200 || importPreview.text.includes(MARKER)) {
+        failures.push(`import preview -> ${importPreview.status} ${importPreview.text.slice(0, 180)}`);
+      } else {
+        const outcomes = JSON.parse(importPreview.text).rows.map((r) => r.outcome).join(',');
+        if (outcomes !== 'new,link') failures.push(`import preview outcomes ${outcomes}`);
+      }
+      const importRun = await request(port, 'POST', '/api/admin/volunteers/import', {
+        raw: Buffer.from(csv), type: 'text/csv', cookie,
+      });
+      if (importRun.status !== 201 || importRun.text.includes(MARKER)) {
+        failures.push(`import run -> ${importRun.status} ${importRun.text.slice(0, 180)}`);
+      }
+      const imported = await admin.query(
+        `SELECT shelter_id, role, password FROM users WHERE email = 'new.b@example.test'`
+      );
+      if (imported.rows.length !== 1 || imported.rows[0].shelter_id !== 2 || imported.rows[0].role !== 'volunteer'
+        || imported.rows[0].password !== '!imported:no-password') {
+        failures.push(`imported row ${JSON.stringify(imported.rows)}`);
+      }
+      const linked = await admin.query(
+        `SELECT shelter_id, role FROM memberships WHERE user_id = 2 AND shelter_id = 2`
+      );
+      if (JSON.stringify(linked.rows) !== JSON.stringify([{ shelter_id: 2, role: 'volunteer' }])) {
+        failures.push(`import link memberships ${JSON.stringify(linked.rows)}`);
+      }
+      const importAudit = await admin.query(
+        `SELECT shelter_id FROM audit_log WHERE action = 'volunteer.import'`
+      );
+      if (importAudit.rows.length !== 1 || importAudit.rows[0].shelter_id !== 2) {
+        failures.push(`import audit ${JSON.stringify(importAudit.rows)}`);
+      }
+      const importedLogin = await request(port, 'POST', '/api/auth/login', {
+        json: { email: 'new.b@example.test', password: '!imported:no-password' },
+      });
+      if (importedLogin.status !== 401) failures.push(`imported login with marker -> ${importedLogin.status}`);
+      const crossInvite = await request(port, 'POST', '/api/admin/volunteers/invites', {
+        json: { user_ids: [2] }, cookie,
+      });
+      if (crossInvite.status === 200 && !/"sent":0/.test(crossInvite.text)) {
+        failures.push(`invite to shelter A volunteer -> ${crossInvite.text.slice(0, 180)}`);
+      }
+      slugChecks.push('volunteer import preview', 'volunteer import run', 'volunteer import invite');
+    }
+
     const afterCounts = await countsForShelter(admin);
     const afterRow = await snapshot(admin);
     if (JSON.stringify(beforeCounts) !== JSON.stringify(afterCounts)) {
