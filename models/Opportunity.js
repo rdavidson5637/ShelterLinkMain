@@ -239,26 +239,70 @@ async function createWithRecurrence(opportunityData = {}) {
   });
 
   const offsets = buildOccurrenceOffsets(rule, opportunityData.start_date, until);
-  const children = [];
+  if (!offsets.length) {
+    return { parent, children: [], total: 1 };
+  }
 
+  const cutoff = Number(opportunityData.cancellation_cutoff_hours);
+  const safeCutoff = Number.isFinite(cutoff) && cutoff >= 0 ? Math.floor(cutoff) : 24;
+  const bgType =
+    opportunityData.required_background_check_type == null
+    || opportunityData.required_background_check_type === ''
+      ? null
+      : opportunityData.required_background_check_type;
+  const status = opportunityData.status || 'open';
+
+  const valueRows = [];
+  const params = [];
   for (const offset of offsets) {
-    const child = await create({
-      title: opportunityData.title,
-      description: opportunityData.description,
-      requirements: opportunityData.requirements,
-      location: opportunityData.location,
-      start_date: shiftDateValue(opportunityData.start_date, offset),
-      end_date: shiftDateValue(opportunityData.end_date, offset),
-      max_volunteers: opportunityData.max_volunteers,
-      status: opportunityData.status || 'open',
-      created_by: opportunityData.created_by,
-      recurrence_rule: 'none',
-      recurrence_until: null,
-      parent_opportunity_id: parent.opportunity_id,
-      cancellation_cutoff_hours: opportunityData.cancellation_cutoff_hours,
-      required_background_check_type: opportunityData.required_background_check_type,
-    });
-    children.push(child);
+    valueRows.push('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    params.push(
+      opportunityData.title || null,
+      opportunityData.description || null,
+      opportunityData.requirements || null,
+      opportunityData.location || null,
+      shiftDateValue(opportunityData.start_date, offset),
+      shiftDateValue(opportunityData.end_date, offset),
+      opportunityData.max_volunteers || null,
+      status,
+      opportunityData.created_by,
+      'none',
+      null,
+      parent.opportunity_id,
+      generateCheckInCode(),
+      safeCutoff,
+      bgType
+    );
+  }
+
+  const insertSql = `
+    INSERT INTO ${TABLE}
+      (title, description, requirements, location, start_date, end_date, max_volunteers, status, created_by,
+       recurrence_rule, recurrence_until, parent_opportunity_id, check_in_code, cancellation_cutoff_hours,
+       required_background_check_type)
+    VALUES
+      ${valueRows.join(',\n      ')}
+    RETURNING opportunity_id
+  `;
+  const [inserted] = await pool.execute(insertSql, params);
+  const childIds = (Array.isArray(inserted) ? inserted : [])
+    .map((row) => row && row.opportunity_id)
+    .filter(Boolean);
+
+  let children = [];
+  if (childIds.length) {
+    const placeholders = childIds.map(() => '?').join(', ');
+    const [rows] = await pool.execute(
+      `
+        SELECT
+          ${SELECT_COLUMNS}
+        FROM ${TABLE}
+        WHERE opportunity_id IN (${placeholders})
+        ORDER BY start_date ASC, opportunity_id ASC
+      `,
+      childIds
+    );
+    children = rows.map(mapRow);
   }
 
   return { parent, children, total: 1 + children.length };
@@ -266,13 +310,18 @@ async function createWithRecurrence(opportunityData = {}) {
 
 async function findAll(filters = {}) {
   try {
-    const { status } = filters;
+    const { status, start_date_from: startDateFrom } = filters;
     const whereClauses = [];
     const params = [];
 
     if (status) {
       whereClauses.push('status = ?');
       params.push(status);
+    }
+
+    if (startDateFrom) {
+      whereClauses.push('start_date >= ?');
+      params.push(startDateFrom);
     }
 
     const sql = `

@@ -87,10 +87,12 @@ async function findByUserId(userId) {
 async function setVolunteerTags(userId, tagIds = []) {
   await pool.execute(`DELETE FROM volunteer_tags WHERE user_id = ?`, [userId]);
   const ids = normalizeTagIds(tagIds) || [];
-  for (const tagId of ids) {
+  if (ids.length) {
+    const placeholders = ids.map(() => '(?, ?)').join(', ');
+    const params = ids.flatMap((tagId) => [userId, tagId]);
     await pool.execute(
-      `INSERT INTO volunteer_tags (user_id, tag_id) VALUES (?, ?)`,
-      [userId, tagId]
+      `INSERT INTO volunteer_tags (user_id, tag_id) VALUES ${placeholders}`,
+      params
     );
   }
   return findByUserId(userId);
@@ -114,13 +116,48 @@ async function setOpportunityTags(opportunityId, tagIds = []) {
     [opportunityId]
   );
   const ids = normalizeTagIds(tagIds) || [];
-  for (const tagId of ids) {
+  if (ids.length) {
+    const placeholders = ids.map(() => '(?, ?)').join(', ');
+    const params = ids.flatMap((tagId) => [opportunityId, tagId]);
     await pool.execute(
-      `INSERT INTO opportunity_tags (opportunity_id, tag_id) VALUES (?, ?)`,
-      [opportunityId, tagId]
+      `INSERT INTO opportunity_tags (opportunity_id, tag_id) VALUES ${placeholders}`,
+      params
     );
   }
   return findForOpportunity(opportunityId);
+}
+
+/**
+ * Same tags on many opportunities (series create) in two queries.
+ */
+async function setOpportunityTagsForMany(opportunityIds = [], tagIds = []) {
+  const oppIds = [...new Set(
+    (Array.isArray(opportunityIds) ? opportunityIds : [opportunityIds])
+      .map((id) => Number(id))
+      .filter((id) => Number.isFinite(id) && id > 0)
+  )];
+  if (!oppIds.length) return;
+
+  const ids = normalizeTagIds(tagIds) || [];
+  const oppPlaceholders = oppIds.map(() => '?').join(', ');
+  await pool.execute(
+    `DELETE FROM opportunity_tags WHERE opportunity_id IN (${oppPlaceholders})`,
+    oppIds
+  );
+  if (!ids.length) return;
+
+  const rowPlaceholders = [];
+  const params = [];
+  for (const opportunityId of oppIds) {
+    for (const tagId of ids) {
+      rowPlaceholders.push('(?, ?)');
+      params.push(opportunityId, tagId);
+    }
+  }
+  await pool.execute(
+    `INSERT INTO opportunity_tags (opportunity_id, tag_id) VALUES ${rowPlaceholders.join(', ')}`,
+    params
+  );
 }
 
 async function attachTags(opportunities = []) {
@@ -275,22 +312,19 @@ async function queueMatchNotifications(opportunityIds = []) {
   )];
   if (!ids.length) return 0;
 
-  let inserted = 0;
-  for (const opportunityId of ids) {
-    const sql = `
-      INSERT INTO opportunity_match_queue (opportunity_id, user_id)
-      SELECT DISTINCT ot.opportunity_id, vt.user_id
-      FROM opportunity_tags ot
-      INNER JOIN volunteer_tags vt ON vt.tag_id = ot.tag_id
-      INNER JOIN volunteer_profiles vp ON vp.user_id = vt.user_id AND vp.approved = 1
-      INNER JOIN users u ON u.user_id = vt.user_id AND u.role = 'volunteer'
-      WHERE ot.opportunity_id = ?
-      ON CONFLICT (opportunity_id, user_id) DO NOTHING
-    `;
-    const [result] = await pool.execute(sql, [opportunityId]);
-    inserted += Number(result.affectedRows) || 0;
-  }
-  return inserted;
+  const placeholders = ids.map(() => '?').join(', ');
+  const sql = `
+    INSERT INTO opportunity_match_queue (opportunity_id, user_id)
+    SELECT DISTINCT ot.opportunity_id, vt.user_id
+    FROM opportunity_tags ot
+    INNER JOIN volunteer_tags vt ON vt.tag_id = ot.tag_id
+    INNER JOIN volunteer_profiles vp ON vp.user_id = vt.user_id AND vp.approved = 1
+    INNER JOIN users u ON u.user_id = vt.user_id AND u.role = 'volunteer'
+    WHERE ot.opportunity_id IN (${placeholders})
+    ON CONFLICT (opportunity_id, user_id) DO NOTHING
+  `;
+  const [result] = await pool.execute(sql, ids);
+  return Number(result.affectedRows) || 0;
 }
 
 /**
@@ -398,6 +432,7 @@ module.exports = {
   setVolunteerTags,
   findForOpportunity,
   setOpportunityTags,
+  setOpportunityTagsForMany,
   attachTags,
   findRecommendedForUser,
   queueMatchNotifications,

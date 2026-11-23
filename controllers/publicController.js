@@ -139,12 +139,30 @@ function toPublicOpportunity(opp) {
   };
 }
 
+function publicBoardStartFloor() {
+  // Match the previous JS filter: keep shifts from the last 12 hours onward.
+  return new Date(Date.now() - 12 * 60 * 60 * 1000);
+}
+
+function toSqlTimestamp(date) {
+  return date.toISOString().slice(0, 19).replace('T', ' ');
+}
+
 async function loadUpcomingPublicOpportunities() {
-  const raw = excludeTestOpportunities(await Opportunity.findAll({ status: 'open' }));
+  const floor = publicBoardStartFloor();
+  // SQL bound is a day looser so timezone/date-only parsing cannot drop a
+  // row the previous JS-only filter would have kept; exact window stays below.
+  const sqlFloor = new Date(floor.getTime() - 24 * 60 * 60 * 1000);
+  const raw = excludeTestOpportunities(
+    await Opportunity.findAll({
+      status: 'open',
+      start_date_from: toSqlTimestamp(sqlFloor),
+    })
+  );
   const all = filterPublicBoardOpportunities(raw);
   const future = all.filter((opp) => {
     const start = new Date(opp.start_date);
-    return !Number.isNaN(start.getTime()) && start.getTime() >= Date.now() - 12 * 60 * 60 * 1000;
+    return !Number.isNaN(start.getTime()) && start.getTime() >= floor.getTime();
   });
   future.sort((a, b) => {
     const aUrgent = Number(a.is_urgent) ? 1 : 0;
