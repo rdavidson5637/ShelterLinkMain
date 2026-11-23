@@ -7,6 +7,8 @@ const Qualification = require('../models/Qualification');
 const Waiver = require('../models/Waiver');
 const SwapRequest = require('../models/SwapRequest');
 const Vetting = require('../models/Vetting');
+const GuardianConsent = require('../models/GuardianConsent');
+const { ageMessage } = require('../utils/ageRules');
 const {
   sendSwapOpened,
   sendSwapWaitlistOffer,
@@ -205,6 +207,16 @@ async function assertClaimerEligible(userId, opportunityId) {
   }
 
   const opportunity = await Opportunity.findById(opportunityId);
+
+  const ageAssessment = await GuardianConsent.assessForBooking(userId, profile, opportunity);
+  if (!ageAssessment.ok) {
+    return {
+      error: ageMessage(ageAssessment, 'claim'),
+      status: 403,
+      age_rule: ageAssessment.code,
+    };
+  }
+
   if (opportunity) {
     const checkAssessment = await Vetting.assessRequiredCheck(userId, opportunity);
     if (!checkAssessment.ok) {
@@ -286,6 +298,7 @@ async function claimSwap(req, res) {
         pending_waivers: eligibility.pending_waivers,
         required_background_check_type: eligibility.required_background_check_type,
         check_expires_before_shift: eligibility.check_expires_before_shift,
+        age_rule: eligibility.age_rule,
       });
     }
 
@@ -329,6 +342,7 @@ async function claimSwapByToken(req, res) {
         pending_waivers: eligibility.pending_waivers,
         required_background_check_type: eligibility.required_background_check_type,
         check_expires_before_shift: eligibility.check_expires_before_shift,
+        age_rule: eligibility.age_rule,
       });
     }
 

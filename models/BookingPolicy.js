@@ -2,7 +2,7 @@
 
 /**
  * Per-shelter booking mode and the staff-granted trusted flag (SL-NOW-03).
- * See database/042_booking_policy.pg.sql and utils/bookingPolicy.js.
+ * See database/044_booking_policy.pg.sql and utils/bookingPolicy.js.
  */
 
 const { pool } = require('../config/database');

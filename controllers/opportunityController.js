@@ -7,9 +7,7 @@ const Animal = require('../models/Animal');
 const AdminMessage = require('../models/AdminMessage');
 const { notifyOnOpportunityCreate } = require('../jobs/opportunityMatchDigest');
 const { isStaffOrAdmin } = require('../middleware/auth');
-const { sendUrgentCover } = require('../utils/emailService');
-const pushService = require('../utils/pushService');
-const { buildUrgentPayload } = require('../utils/pushPayloads');
+const { notifyUrgentCover } = require('../utils/notify');
 const Vetting = require('../models/Vetting');
 
 const REQUIRED_FIELDS = ['title', 'description', 'location', 'start_date', 'end_date'];
@@ -472,38 +470,14 @@ async function flagOpportunityUrgent(req, res) {
     const whenLabel = String(opportunity.start_date || '').slice(0, 10);
     const subject = `Cover needed: ${opportunity.title || 'shift'}${whenLabel ? ` ${whenLabel}` : ''}`;
 
-    let sent = 0;
-    let failed = 0;
-    for (const recipient of recipients) {
-      try {
-        await sendUrgentCover(recipient.email, {
-          firstName: recipient.first_name,
-          opportunityTitle: opportunity.title,
-          whenLabel,
-          location: opportunity.location,
-        });
-        sent += 1;
-      } catch (emailError) {
-        failed += 1;
-        console.error('[Opportunity] urgent email failed:', emailError.message);
-      }
-    }
-
-    let pushResult = { sent: 0, skipped: 0, failed: 0, configured: false };
-    try {
-      pushResult = await pushService.sendToUsers(
-        recipients.map((r) => r.user_id),
-        buildUrgentPayload({
-          title: subject,
-          whenLabel,
-          location: opportunity.location,
-          opportunityId: Number(id),
-        }),
-        { category: 'urgent' }
-      );
-    } catch (pushError) {
-      console.error('[Opportunity] urgent push failed:', pushError.message);
-    }
+    const delivery = await notifyUrgentCover({
+      recipients,
+      opportunity: { id: Number(id), title: opportunity.title, location: opportunity.location },
+      subject,
+      whenLabel,
+    });
+    const { sent, failed } = delivery.email;
+    const pushResult = delivery.push;
 
     const flagged = await Opportunity.flagUrgent(id);
     await AdminMessage.createMessageLog({

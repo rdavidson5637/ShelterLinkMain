@@ -177,6 +177,13 @@ function shapeExecuteResult(sql, pgResult) {
     return [payload];
   }
   if (kind === 'update' || kind === 'delete') {
+    // UPDATE/DELETE ... RETURNING hands back the rows, with affectedRows on
+    // the array, so callers that read either shape keep working.
+    if (hasReturning(sql)) {
+      const payload = rows.slice();
+      payload.affectedRows = rowCount;
+      return [payload];
+    }
     return [{ affectedRows: rowCount }];
   }
   return [rows];

@@ -11,6 +11,8 @@ const Animal = require('../models/Animal');
 const Vetting = require('../models/Vetting');
 const BookingPolicy = require('../models/BookingPolicy');
 const bookingPolicy = require('../utils/bookingPolicy');
+const GuardianConsent = require('../models/GuardianConsent');
+const { ageMessage } = require('../utils/ageRules');
 const { isWithinCancellationCutoff } = require('../utils/cancellationRules');
 const {
   sendEmail,
@@ -231,6 +233,14 @@ async function applyForOpportunity(req, res) {
       });
     }
 
+    const ageAssessment = await GuardianConsent.assessForBooking(userId, profile, opportunity);
+    if (!ageAssessment.ok) {
+      return res.status(403).json({
+        error: ageMessage(ageAssessment, 'apply'),
+        age_rule: ageAssessment.code,
+      });
+    }
+
     const checkAssessment = await Vetting.assessRequiredCheck(userId, opportunity);
     if (!checkAssessment.ok) {
       return res.status(403).json({
@@ -411,6 +421,19 @@ async function updateApplicationStatus(req, res) {
         if (currentApprovedCount >= maxVolunteers) {
           return res.status(400).json({ error: 'This opportunity is at full capacity' });
         }
+      }
+
+      const volunteerProfile = await VolunteerProfile.findByUserId(existingApplication.user_id);
+      const ageAssessment = await GuardianConsent.assessForBooking(
+        existingApplication.user_id,
+        volunteerProfile,
+        opportunity
+      );
+      if (!ageAssessment.ok) {
+        return res.status(400).json({
+          error: ageMessage(ageAssessment, 'accept'),
+          age_rule: ageAssessment.code,
+        });
       }
 
       const checkAssessment = await Vetting.assessRequiredCheck(

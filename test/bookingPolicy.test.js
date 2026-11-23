@@ -499,7 +499,7 @@ test('audit log names the policy and trust actions', () => {
 
 const DB = path.join(__dirname, '..', 'database');
 const schema = fs.readFileSync(path.join(DB, 'schema.pg.sql'), 'utf8');
-const migration = fs.readFileSync(path.join(DB, '042_booking_policy.pg.sql'), 'utf8');
+const migration = fs.readFileSync(path.join(DB, '044_booking_policy.pg.sql'), 'utf8');
 const setupDb = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'setup-db.js'), 'utf8');
 
 function tableBody(sql, table) {
@@ -525,7 +525,7 @@ test('042 booking tables are tenant tables with row level security', () => {
   }
   assert.match(migration, /CHECK \(booking_mode IN \('approval', 'instant'\)\)/);
   assert.match(migration, /booking_mode\s+VARCHAR\(20\) NOT NULL DEFAULT 'approval'/);
-  assert.match(setupDb, /loadSql\('042_booking_policy\.pg\.sql'\)/);
+  assert.match(setupDb, /loadSql\('044_booking_policy\.pg\.sql'\)/);
 });
 
 test('042 does not touch shelter_settings from SL-NOW-02 or any existing table', () => {

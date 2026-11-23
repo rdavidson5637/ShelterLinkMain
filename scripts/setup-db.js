@@ -96,7 +96,9 @@ async function run() {
     await applySql(pgPool, loadSql('036_self_serve_shelters.pg.sql'));
     await applySql(pgPool, loadSql('037_charity_register_cache.pg.sql'));
     await applySql(pgPool, loadSql('038_platform_audit.pg.sql'));
-    await applySql(pgPool, loadSql('042_booking_policy.pg.sql'));
+    await applySql(pgPool, loadSql('041_under_18_guardian_consent.pg.sql'));
+    await applySql(pgPool, loadSql('043_training_modules.pg.sql'));
+    await applySql(pgPool, loadSql('044_booking_policy.pg.sql'));
     console.log('  ✓ Shelter tenancy applied.');
 
     if (withSeed) {

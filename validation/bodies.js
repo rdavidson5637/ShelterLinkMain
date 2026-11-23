@@ -74,6 +74,25 @@ const reset = z
   })
   .strict();
 
+// Check an invite link. Only the token; it comes from the page's #fragment.
+const inviteCheck = z
+  .object({
+    token: optStr(200),
+  })
+  .strict();
+
+// Accept an invite. No email, role, or shelter: those come from the invite.
+const acceptInvite = z
+  .object({
+    token: optStr(200),
+    first_name: optStr(80),
+    last_name: optStr(80),
+    phone: optStr(40),
+    password: optStr(200),
+    privacy_notice: z.union([z.boolean(), z.literal('on'), z.literal('true')]).optional(),
+  })
+  .strict();
+
 const groupBooking = z
   .object({
     opportunity_id: optId,
@@ -178,6 +197,21 @@ const profile = z
   .strict();
 
 const approval = z.object({ approved: optFlag }).strict();
+const guardianConsent = z
+  .object({
+    guardian_name: optStr(200),
+    guardian_relationship: optStr(100),
+    guardian_phone: optStr(40),
+    guardian_email: optStr(254),
+    // The parent or guardian ticks this themselves.
+    confirm: z.union([z.literal(true), z.literal('on'), z.literal('true')]).optional(),
+  })
+  .strict();
+const ageSettings = z
+  .object({
+    min_volunteer_age: z.union([z.number().int().min(1).max(99), z.null(), z.literal('')]).optional(),
+  })
+  .strict();
 const fosterApproval = z.object({ foster_approved: optFlag }).strict();
 const serviceSettings = z
   .object({
@@ -423,6 +457,49 @@ const qualification = z
   })
   .strict();
 
+const trainingQuestion = z
+  .object({
+    prompt: optStr(5000),
+    choices: z.array(z.string().max(500)).min(2).max(12).optional(),
+    correct_index: z.union([z.number().int().min(0).max(11), z.string().max(10)]).optional(),
+    correctIndex: z.union([z.number().int().min(0).max(11), z.string().max(10)]).optional(),
+    sort_order: z.union([z.number().int(), z.string().max(10)]).optional(),
+  })
+  .strict();
+
+const trainingModule = z
+  .object({
+    name: optStr(200),
+    description: optStr(5000),
+    content: optStr(50000),
+    pass_mark_percent: z
+      .union([z.number().int().min(1).max(100), z.string().max(10), z.null(), z.literal('')])
+      .optional(),
+    awards_qualification_id: z.union([idValue, z.literal(''), z.null()]).optional(),
+    awardsQualificationId: z.union([idValue, z.literal(''), z.null()]).optional(),
+    active: optFlag,
+    questions: z.array(trainingQuestion).max(50).optional(),
+  })
+  .strict();
+
+const trainingAttempt = z
+  .object({
+    answers: z
+      .array(
+        z
+          .object({
+            question_id: z.union([idValue, z.string().max(20)]).optional(),
+            questionId: z.union([idValue, z.string().max(20)]).optional(),
+            selected_index: z.union([z.number().int().min(0).max(11), z.string().max(10)]).optional(),
+            selectedIndex: z.union([z.number().int().min(0).max(11), z.string().max(10)]).optional(),
+          })
+          .strict()
+      )
+      .min(1)
+      .max(50),
+  })
+  .strict();
+
 const customField = z
   .object({
     label: optStr(200),
@@ -566,6 +643,7 @@ const queries = {
   year: z.object({ year: qstr(4) }).strict(),
   exportRange: z.object({ startDate: qdate, endDate: qdate, userId: qstr(20) }).strict(),
   exportOwn: z.object({ startDate: qdate, endDate: qdate }).strict(),
+  impactReport: z.object({ startDate: qdate, endDate: qdate }).strict(),
   transportMileage: z.object({ run_id: qstr(20) }).strict(),
   active: z.object({ active: qstr(10) }).strict(),
   tags: z.object({ limit: qstr(10) }).strict(),
@@ -588,6 +666,8 @@ const bodies = {
   login,
   forgot,
   reset,
+  inviteCheck,
+  acceptInvite,
   groupBooking,
   opportunity,
   shiftNote,
@@ -600,6 +680,8 @@ const bodies = {
   approval,
   fosterApproval,
   serviceSettings,
+  guardianConsent,
+  ageSettings,
   awardQualification,
   bulkMessage,
   erase,
@@ -627,6 +709,8 @@ const bodies = {
   waiver,
   waiverAccept,
   qualification,
+  trainingModule,
+  trainingAttempt,
   customField,
   reorderFields,
   template,
