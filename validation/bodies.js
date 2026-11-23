@@ -639,6 +639,30 @@ const inductionProgress = z
   })
   .strict();
 
+const shelterResourceLink = z
+  .object({
+    title: optStr(200),
+    url: optStr(2000),
+    sort_order: z.union([z.number().int(), z.string().max(10)]).optional().nullable(),
+  })
+  .strict();
+
+const shelterResourceFileMeta = z
+  .object({
+    title: optStr(200),
+    sort_order: z.union([z.number().int(), z.string().max(10)]).optional().nullable(),
+  })
+  .strict();
+
+const shelterResourceUpdate = z
+  .object({
+    title: optStr(200),
+    url: optStr(2000),
+    sort_order: z.union([z.number().int(), z.string().max(10)]).optional().nullable(),
+    active: optFlag,
+  })
+  .strict();
+
 const reorderFields = z
   .object({
     ordered_ids: idList.optional(),
@@ -805,6 +829,12 @@ const queries = {
       activeOnly: qstr(10),
     })
     .strict(),
+  shelterResources: z
+    .object({
+      active: qstr(10),
+      all: qstr(10),
+    })
+    .strict(),
 };
 
 const weekCopy = z
@@ -885,6 +915,9 @@ const bodies = {
   customField,
   inductionItem,
   inductionProgress,
+  shelterResourceLink,
+  shelterResourceFileMeta,
+  shelterResourceUpdate,
   reorderFields,
   template,
   templateFromForm,

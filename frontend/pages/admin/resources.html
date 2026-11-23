@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Resources - ShelterLink</title>
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Account">
+        <a class="site-brand" href="/pages/admin/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" aria-label="Toggle navigation">Menu</button>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main id="main" class="container dashboard-layout">
+      <aside id="admin-nav" class="sidebar-nav"></aside>
+      <div class="dashboard-main">
+        <section>
+          <h1>Resource library</h1>
+          <p>
+            Add named links or upload handbook and policy files for volunteers at this shelter.
+            Volunteers see active items on their Resources page. Nothing here is public.
+          </p>
+          <div id="message" role="status" aria-live="polite"></div>
+        </section>
+
+        <section>
+          <article style="max-width: 720px;">
+            <h2>Add a link</h2>
+            <form id="linkForm">
+              <label for="link_title">
+                Title
+                <input type="text" id="link_title" name="title" required maxlength="200" placeholder="Volunteer handbook" />
+              </label>
+              <label for="link_url">
+                URL
+                <input type="url" id="link_url" name="url" required maxlength="2000" placeholder="https://example.org/handbook" />
+              </label>
+              <label for="link_sort_order">
+                Order
+                <input type="number" id="link_sort_order" name="sort_order" step="1" placeholder="Leave blank to append" />
+              </label>
+              <button type="submit">Add link</button>
+            </form>
+          </article>
+        </section>
+
+        <section>
+          <article style="max-width: 720px;">
+            <h2>Upload a file</h2>
+            <form id="fileForm">
+              <label for="file_title">
+                Title
+                <input type="text" id="file_title" name="title" required maxlength="200" placeholder="Safeguarding policy" />
+              </label>
+              <label for="file_input">
+                File (PDF, JPG, or PNG, max 5MB)
+                <input type="file" id="file_input" name="file" required accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" />
+              </label>
+              <label for="file_sort_order">
+                Order
+                <input type="number" id="file_sort_order" name="sort_order" step="1" placeholder="Leave blank to append" />
+              </label>
+              <button type="submit">Upload file</button>
+            </form>
+          </article>
+        </section>
+
+        <section>
+          <h2>Shelter resources</h2>
+          <div class="table-wrapper">
+            <table>
+              <caption>Resource library items</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Order</th>
+                  <th scope="col">Title</th>
+                  <th scope="col">Type</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="resourcesTableBody">
+                <tr><td colspan="5">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="container">
+      <small>&copy; 2026 ShelterLink</small>
+    </footer>
+
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/admin/resources.js"></script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+    <script type="module" src="/js/components/adminNav.js"></script>
+  </body>
+</html>

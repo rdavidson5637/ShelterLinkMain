@@ -20,6 +20,7 @@ export const ADMIN_PRIMARY = [
 export const ADMIN_MANAGE = [
   { id: 'onboarding', label: 'Onboarding', href: '/pages/admin/onboarding.html' },
   { id: 'induction', label: 'Induction checklist', href: '/pages/admin/induction.html' },
+  { id: 'resources', label: 'Resources', href: '/pages/admin/resources.html' },
   { id: 'qualifications', label: 'Qualifications', href: '/pages/admin/qualifications.html', adminOnly: true },
   { id: 'training', label: 'Training modules', href: '/pages/admin/training.html', adminOnly: true },
   { id: 'custom-fields', label: 'Custom fields', href: '/pages/admin/custom-fields.html', adminOnly: true },
@@ -57,6 +58,7 @@ export const VOLUNTEER_MORE = [
   { id: 'hours', label: 'Hours', href: '/pages/volunteer/my-hours.html' },
   { id: 'mileage', label: 'Mileage', href: '/pages/volunteer/mileage.html' },
   { id: 'training', label: 'Training', href: '/pages/volunteer/training.html' },
+  { id: 'resources', label: 'Resources', href: '/pages/volunteer/resources.html' },
   { id: 'foster', label: 'Foster', href: '/pages/volunteer/foster.html' },
   { id: 'transport', label: 'Transport', href: '/pages/volunteer/transport.html' },
   { id: 'profile', label: 'Profile', href: '/pages/volunteer/complete-profile.html' },

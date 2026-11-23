@@ -51,6 +51,7 @@ endpoints that require it.
 ## Code map
 
 - `utils/objectStorage/` — config, key builder, S3 client
-- `models/UserDocument.js` / `models/Animal.js` — put/get/delete
+- `models/UserDocument.js` / `models/Animal.js` / `models/ShelterResource.js` — put/get/delete
 - `models/Gdpr.js` — deletes object blobs before erasing document rows
 - `database/045_object_storage_keys.pg.sql` — `storage_key` columns
+- `database/062_shelter_resources.pg.sql` — shelter handbook/policy library files
