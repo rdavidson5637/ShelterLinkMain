@@ -352,6 +352,22 @@ async function getCurrentUser(req, res) {
   }
 }
 
+/** Sanctuary memberships for the signed-in person (one login, many shelters). */
+async function listMyMemberships(req, res) {
+  try {
+    if (!req.session || !req.session.userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const Membership = require('../models/Membership');
+    const memberships = await Membership.listForUser(req.session.userId);
+    return res.status(200).json({ memberships });
+  } catch (error) {
+    console.error('[Auth] listMyMemberships error:', error.message);
+    if (error.status === 400) return res.status(400).json({ error: error.message });
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
 // ─── Password Reset ────────────────────────────────────────────────────────────
 
 const GENERIC_RESET_MESSAGE = 'If that email is registered, a reset link has been sent.';
@@ -540,6 +556,7 @@ module.exports = {
   logout,
   logoutAll,
   getCurrentUser,
+  listMyMemberships,
   acknowledgePrivacyNotice,
   forgotPassword,
   validateResetToken,

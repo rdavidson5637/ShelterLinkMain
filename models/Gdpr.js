@@ -124,6 +124,15 @@ async function buildVolunteerExport(userId) {
      FROM mileage_claims WHERE user_id = ? ORDER BY id`,
     [id]
   );
+  const [memberships] = await pool.execute(
+    `SELECT m.id, m.shelter_id, m.role, m.created_at, m.updated_at,
+            s.name AS shelter_name, s.slug AS shelter_slug
+     FROM memberships m
+     LEFT JOIN shelters s ON s.id = m.shelter_id
+     WHERE m.user_id = ?
+     ORDER BY m.id`,
+    [id]
+  );
 
   const hoursTotal = hours
     .filter((h) => Number(h.approved) === 1)
@@ -149,6 +158,7 @@ async function buildVolunteerExport(userId) {
     guardian_consents: guardianConsents,
     training_attempts: trainingAttempts,
     mileage_claims: mileageClaims,
+    memberships,
   };
 }
 

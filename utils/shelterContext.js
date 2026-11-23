@@ -25,6 +25,7 @@ const TENANT_TABLES = [
   'message_digest_log',
   'message_threads',
   'messages',
+  'memberships',
   'mileage_claims',
   'opportunities',
   'opportunity_animals',
