@@ -6,6 +6,7 @@ export const ADMIN_PRIMARY = [
   { id: 'dashboard', label: 'Dashboard', href: '/pages/admin/dashboard.html' },
   { id: 'shifts', label: 'Shifts', href: '/pages/admin/opportunities.html' },
   { id: 'day-sheet', label: 'Day sheet', href: '/pages/admin/day-sheet.html' },
+  { id: 'sign-in-sheet', label: 'Sign-in sheet', href: '/pages/admin/sign-in-sheet.html' },
   { id: 'week-sheet', label: 'Week sheet', href: '/pages/admin/week-sheet.html' },
   { id: 'animals', label: 'Animals', href: '/pages/admin/animals.html' },
   { id: 'care-gaps', label: 'Care gaps', href: '/pages/admin/care-gaps.html' },
