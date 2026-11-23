@@ -19,6 +19,7 @@ const {
   buildMilestoneThankYou,
   buildBuddyAssigned,
   buildExpiryReminder,
+  buildVolunteerShiftNoteAlert,
 } = require('./emailService');
 
 const APP_BASE = () => String(process.env.APP_URL || 'https://shelterlink.online').replace(/\/$/, '');
@@ -83,6 +84,12 @@ function sampleData(shelterNamePlain) {
       kind: 'background_check',
       expiresOn: '2026-12-15',
       message: '',
+    },
+    volunteerShiftNote: {
+      volunteerName: 'Alex',
+      title: 'Morning kennel walk',
+      date: 'Saturday 28 November',
+      body: 'The yard gate latch sticks unless you lift it slightly.',
     },
   };
 }
@@ -166,6 +173,14 @@ const CATALOG = [
     description: 'Optional staff-sent reminder when a check, document, or qualification expires soon.',
     build(brand, samples) {
       return buildExpiryReminder(samples.expiryReminder, brand);
+    },
+  },
+  {
+    id: 'volunteer_shift_note',
+    label: 'After-shift note',
+    description: 'Optional alert when a volunteer leaves a short after-shift note and asks to notify staff.',
+    build(brand, samples) {
+      return buildVolunteerShiftNoteAlert(samples.volunteerShiftNote, brand);
     },
   },
 ];

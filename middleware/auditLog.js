@@ -68,6 +68,9 @@ function inferFromRequest(req) {
   else if (resource === 'admin' && segments[1] === 'expiry-dashboard' && segments.includes('remind')) {
     action = 'expiry.reminder.email';
   }
+  else if (resource === 'volunteer-shift-notes' && method === 'POST') {
+    action = 'volunteer.shift_note.save';
+  }
 
   const entityType =
     resource === 'admin' && segments[1] === 'volunteers'

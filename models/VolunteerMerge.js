@@ -243,6 +243,22 @@ async function executeMerge(keepUserId, duplicateUserId) {
       [keepId, dupId]
     );
 
+    // After-shift notes follow the volunteer; application_id unique may collide
+    // when both had a note on the same booking (bookings already deduped above).
+    await conn.execute(
+      `DELETE FROM volunteer_shift_notes d
+       WHERE d.user_id = ?
+         AND EXISTS (
+           SELECT 1 FROM volunteer_shift_notes k
+           WHERE k.user_id = ? AND k.application_id = d.application_id
+         )`,
+      [dupId, keepId]
+    );
+    await conn.execute(
+      `UPDATE volunteer_shift_notes SET user_id = ? WHERE user_id = ?`,
+      [keepId, dupId]
+    );
+
     if (before.qualifications.conflicts > 0) {
       await conn.execute(
         `DELETE FROM volunteer_qualifications d

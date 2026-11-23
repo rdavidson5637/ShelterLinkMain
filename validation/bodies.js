@@ -664,6 +664,18 @@ const volunteerBuddy = z
     message: 'Choose a buddy from the volunteer list.',
   });
 
+const volunteerShiftNote = z
+  .object({
+    application_id: optId,
+    applicationId: optId,
+    body: z.string().trim().min(1).max(500),
+    notify: optFlag,
+  })
+  .strict()
+  .refine((body) => body.application_id != null || body.applicationId != null, {
+    message: 'application_id is required',
+  });
+
 const shelterResourceLink = z
   .object({
     title: optStr(200),
@@ -955,6 +967,7 @@ const bodies = {
       send_email: optFlag,
     })
     .strict(),
+  volunteerShiftNote,
   shelterResourceLink,
   shelterResourceFileMeta,
   shelterResourceUpdate,
