@@ -1,6 +1,7 @@
 const nodemailer = require('nodemailer');
 const { currentShelterName } = require('./shelterBrand');
 const { isEmailConfigured } = require('./emailConfig');
+const { threadUrl } = require('./pushPayloads');
 
 function escapeHtml(value) {
   return String(value || '')
@@ -547,24 +548,28 @@ async function sendWeeklyDigest(volunteerEmail, details = {}) {
   );
 }
 
-async function sendThreadDigest(volunteerEmail, details = {}) {
+async function sendThreadDigest(toEmail, details = {}) {
   const brand = await brandBits();
   const name = details.name || 'there';
   const unreadCount = Number(details.unreadCount) || 1;
+  const role = details.role || 'volunteer';
+  const path = threadUrl(details.threadId || details.thread_id || null, role);
   const base = process.env.APP_URL || '';
   const link =
     details.link ||
-    (base
-      ? `${base.replace(/\/$/, '')}/pages/volunteer/messages.html`
-      : '/pages/volunteer/messages.html');
+    (base ? `${base.replace(/\/$/, '')}${path}` : path);
+  const muteHint =
+    role === 'admin' || role === 'staff'
+      ? 'You can mute a thread from Messages if you prefer not to get these reminders.'
+      : 'You can mute a thread from the messages page if you prefer not to get these reminders.';
   return sendEmail(
-    volunteerEmail,
+    toEmail,
     'Unread messages in ShelterLink',
     `
     <p>Hi ${name},</p>
     <p>You have <strong>${unreadCount}</strong> unread message${unreadCount === 1 ? '' : 's'} in ShelterLink.</p>
     <p><a href="${link}">Open your messages</a></p>
-    <p>You can mute a thread from the messages page if you prefer not to get these reminders.</p>
+    <p>${muteHint}</p>
     <p>Thank you,<br/>${brand.signoff}</p>
     `
   );
