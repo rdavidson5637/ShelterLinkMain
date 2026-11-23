@@ -4,6 +4,7 @@ const { hashPassword } = require('../utils/password');
 const { pool } = require('../config/database');
 const { destroyUserSessions } = require('../utils/sessionCookie');
 const { periods } = require('../config/retention');
+const UserDocument = require('./UserDocument');
 
 function retentionYears() {
   return periods().inactiveVolunteerYears;
@@ -229,6 +230,8 @@ async function anonymiseUser(userId, { reason = 'gdpr_erasure' } = {}) {
     );
 
     // Remove free-text custom field answers and document binaries metadata path.
+    // Drop object-storage blobs before the rows so keys are not orphaned.
+    await UserDocument.deleteStoredObjectsForUser(id);
     await conn.execute('DELETE FROM custom_field_values WHERE user_id = ?', [id]);
     await conn.execute('DELETE FROM user_documents WHERE user_id = ?', [id]);
     await conn.execute('DELETE FROM volunteer_tags WHERE user_id = ?', [id]);

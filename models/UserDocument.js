@@ -1,6 +1,12 @@
 'use strict';
 
+const path = require('path');
 const { pool } = require('../config/database');
+const {
+  getObjectStorage,
+  buildObjectKey,
+  isObjectStorageConfigured,
+} = require('../utils/objectStorage');
 
 const ALLOWED_MIME_TYPES = new Set([
   'application/pdf',
@@ -14,11 +20,20 @@ function isAllowedMime(mime) {
   return ALLOWED_MIME_TYPES.has(String(mime || '').toLowerCase());
 }
 
+function extensionFor(originalName, mimeType) {
+  const ext = path.extname(String(originalName || '')).toLowerCase();
+  if (['.pdf', '.jpg', '.jpeg', '.png'].includes(ext)) return ext === '.jpeg' ? '.jpg' : ext;
+  if (mimeType === 'application/pdf') return '.pdf';
+  if (mimeType === 'image/png') return '.png';
+  if (mimeType === 'image/jpeg') return '.jpg';
+  return '';
+}
+
 /**
- * Store an uploaded document. `content` is the file bytes (Buffer) — files live
- * in Postgres, not on disk, so they survive redeploys on ephemeral hosts and
- * are captured by `npm run backup`. `filename` stays as an opaque id purely for
- * backwards compatibility with existing rows and the NOT NULL column.
+ * Store an uploaded document. When object storage is configured, bytes go to
+ * the bucket and the row keeps storage_key only. Otherwise bytes stay in
+ * Postgres (`content`) as before — hosts with an ephemeral filesystem still
+ * survive redeploys, and `npm run backup` still captures them.
  */
 async function create({
   userId,
@@ -33,26 +48,50 @@ async function create({
   if (!Buffer.isBuffer(content) || content.length === 0) {
     throw new Error('Document content is required');
   }
+
+  let storageKey = null;
+  let dbContent = content;
+  const storage = getObjectStorage();
+
+  if (storage.isConfigured()) {
+    storageKey = buildObjectKey('documents', userId, extensionFor(originalName, mimeType));
+    await storage.put(storageKey, content, mimeType);
+    dbContent = null;
+  }
+
   const sql = `
     INSERT INTO user_documents
-      (user_id, filename, original_name, mime_type, size, label, expires_at, content)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      (user_id, filename, original_name, mime_type, size, label, expires_at, content, storage_key)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     RETURNING id
   `;
-  const [result] = await pool.execute(sql, [
-    userId,
-    filename,
-    originalName,
-    mimeType,
-    size,
-    label || null,
-    expiresAt || null,
-    content,
-  ]);
-  return findById(result.insertId);
+  try {
+    const [result] = await pool.execute(sql, [
+      userId,
+      filename,
+      originalName,
+      mimeType,
+      size,
+      label || null,
+      expiresAt || null,
+      dbContent,
+      storageKey,
+    ]);
+    return findById(result.insertId);
+  } catch (error) {
+    if (storageKey) {
+      try {
+        await storage.remove(storageKey);
+      } catch (_) {
+        /* best-effort cleanup */
+      }
+    }
+    throw error;
+  }
 }
 
 async function findById(id) {
+  // storage_key is internal — never return it on list/detail JSON responses.
   const [rows] = await pool.execute(
     `SELECT id, user_id, filename, original_name, mime_type, size,
             uploaded_at, expires_at, label
@@ -76,18 +115,28 @@ async function findByUserId(userId) {
 
 /**
  * Fetch the raw bytes for download. Kept separate from findById so listing
- * documents never pulls file content into memory.
+ * documents never pulls file content into memory. Prefers object storage when
+ * storage_key is set; falls back to bytea for older rows.
  */
 async function getContent(id) {
   const [rows] = await pool.execute(
-    `SELECT content, mime_type, original_name, filename
+    `SELECT content, storage_key, mime_type, original_name, filename
      FROM user_documents WHERE id = ? LIMIT 1`,
     [id]
   );
   const row = rows[0];
-  if (!row || !row.content) return null;
+  if (!row) return null;
+
+  let buffer = null;
+  if (row.storage_key) {
+    buffer = await getObjectStorage().get(row.storage_key);
+  } else if (row.content) {
+    buffer = Buffer.isBuffer(row.content) ? row.content : Buffer.from(row.content);
+  }
+  if (!buffer) return null;
+
   return {
-    buffer: Buffer.isBuffer(row.content) ? row.content : Buffer.from(row.content),
+    buffer,
     mimeType: row.mime_type,
     originalName: row.original_name || row.filename,
   };
@@ -120,20 +169,62 @@ async function updateMeta(id, { label, expires_at } = {}) {
 }
 
 async function remove(id) {
-  const doc = await findById(id);
+  const [rows] = await pool.execute(
+    `SELECT id, user_id, filename, original_name, mime_type, size,
+            uploaded_at, expires_at, label, storage_key
+     FROM user_documents WHERE id = ? LIMIT 1`,
+    [id]
+  );
+  const doc = rows[0];
   if (!doc) return null;
+
+  if (doc.storage_key) {
+    try {
+      await getObjectStorage().remove(doc.storage_key);
+    } catch (error) {
+      console.error('[UserDocument] object storage delete failed:', error.message);
+    }
+  }
+
   await pool.execute(`DELETE FROM user_documents WHERE id = ?`, [id]);
   return doc;
+}
+
+/**
+ * Delete object-storage blobs for a user's documents before the rows are
+ * removed (GDPR erase). Safe when object storage is off or keys are null.
+ */
+async function deleteStoredObjectsForUser(userId) {
+  const [rows] = await pool.execute(
+    `SELECT storage_key FROM user_documents
+     WHERE user_id = ? AND storage_key IS NOT NULL`,
+    [userId]
+  );
+  if (!rows.length) return 0;
+  const storage = getObjectStorage();
+  let removed = 0;
+  for (const row of rows) {
+    if (!row.storage_key) continue;
+    try {
+      await storage.remove(row.storage_key);
+      removed += 1;
+    } catch (error) {
+      console.error('[UserDocument] object storage erase failed:', error.message);
+    }
+  }
+  return removed;
 }
 
 module.exports = {
   ALLOWED_MIME_TYPES,
   MAX_FILE_SIZE,
   isAllowedMime,
+  isObjectStorageConfigured,
   create,
   findById,
   findByUserId,
   getContent,
   updateMeta,
   remove,
+  deleteStoredObjectsForUser,
 };

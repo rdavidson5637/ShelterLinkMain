@@ -1,6 +1,10 @@
 'use strict';
 
 const { pool } = require('../config/database');
+const {
+  getObjectStorage,
+  buildObjectKey,
+} = require('../utils/objectStorage');
 
 const SPECIES = new Set(['dog', 'cat', 'small_animal', 'other']);
 const STATUSES = new Set([
@@ -187,8 +191,10 @@ async function update(id, data = {}) {
 }
 
 /**
- * Upsert an animal's photo bytes. Stored in `animal_photos` (not on `animals`)
- * so listing animals never loads image data. `content` is a Buffer.
+ * Upsert an animal's photo. Stored in `animal_photos` (not on `animals`) so
+ * listing animals never loads image data. When object storage is configured,
+ * bytes go to the bucket and the row keeps storage_key; otherwise content
+ * stays in Postgres bytea.
  */
 async function setPhoto(animalId, { content, mimeType }) {
   if (!Buffer.isBuffer(content) || content.length === 0) {
@@ -196,27 +202,75 @@ async function setPhoto(animalId, { content, mimeType }) {
     err.status = 400;
     throw err;
   }
-  await pool.execute(
-    `INSERT INTO animal_photos (animal_id, content, mime_type, updated_at)
-     VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-     ON CONFLICT (animal_id)
-     DO UPDATE SET content = EXCLUDED.content,
-                   mime_type = EXCLUDED.mime_type,
-                   updated_at = CURRENT_TIMESTAMP`,
-    [animalId, content, mimeType || 'image/jpeg']
+  const mime = mimeType || 'image/jpeg';
+  const storage = getObjectStorage();
+
+  const [existingRows] = await pool.execute(
+    `SELECT storage_key FROM animal_photos WHERE animal_id = ? LIMIT 1`,
+    [animalId]
   );
+  const previousKey = existingRows[0] && existingRows[0].storage_key;
+
+  let storageKey = null;
+  let dbContent = content;
+
+  if (storage.isConfigured()) {
+    const ext = mime === 'image/png' ? '.png' : '.jpg';
+    storageKey = buildObjectKey('animal-photos', animalId, ext);
+    await storage.put(storageKey, content, mime);
+    dbContent = null;
+  }
+
+  try {
+    await pool.execute(
+      `INSERT INTO animal_photos (animal_id, content, mime_type, storage_key, updated_at)
+       VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+       ON CONFLICT (animal_id)
+       DO UPDATE SET content = EXCLUDED.content,
+                     mime_type = EXCLUDED.mime_type,
+                     storage_key = EXCLUDED.storage_key,
+                     updated_at = CURRENT_TIMESTAMP`,
+      [animalId, dbContent, mime, storageKey]
+    );
+  } catch (error) {
+    if (storageKey) {
+      try {
+        await storage.remove(storageKey);
+      } catch (_) {
+        /* best-effort cleanup */
+      }
+    }
+    throw error;
+  }
+
+  if (previousKey && previousKey !== storageKey) {
+    try {
+      await storage.remove(previousKey);
+    } catch (error) {
+      console.error('[Animal] previous photo object delete failed:', error.message);
+    }
+  }
 }
 
 /** Fetch an animal's photo bytes for serving, or null when there is none. */
 async function getPhoto(animalId) {
   const [rows] = await pool.execute(
-    `SELECT content, mime_type FROM animal_photos WHERE animal_id = ? LIMIT 1`,
+    `SELECT content, storage_key, mime_type FROM animal_photos WHERE animal_id = ? LIMIT 1`,
     [animalId]
   );
   const row = rows[0];
-  if (!row || !row.content) return null;
+  if (!row) return null;
+
+  let buffer = null;
+  if (row.storage_key) {
+    buffer = await getObjectStorage().get(row.storage_key);
+  } else if (row.content) {
+    buffer = Buffer.isBuffer(row.content) ? row.content : Buffer.from(row.content);
+  }
+  if (!buffer) return null;
+
   return {
-    buffer: Buffer.isBuffer(row.content) ? row.content : Buffer.from(row.content),
+    buffer,
     mimeType: row.mime_type || 'image/jpeg',
   };
 }

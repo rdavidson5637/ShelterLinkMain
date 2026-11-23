@@ -1,6 +1,7 @@
 'use strict';
 
 const { isEmailConfigured } = require('./emailConfig');
+const { readConfig } = require('./objectStorage');
 
 const WEAK_PATTERN = /change_me|replace_me|shelterlink-admin|\bdemo\b|changeme/i;
 
@@ -67,6 +68,12 @@ function collectProductionWarnings() {
   }
   if (isBlank(process.env.SHELTER_TIMEZONE)) {
     warnings.push('SHELTER_TIMEZONE is not set: scheduled jobs use Europe/London');
+  }
+  const objectStorage = readConfig(process.env);
+  if (objectStorage.mode === 'db' && objectStorage.reason === 'incomplete_config') {
+    warnings.push(
+      'OBJECT_STORAGE_* is partially set: uploads stay in Postgres bytea until endpoint, bucket, access key, and secret are all present'
+    );
   }
   return warnings;
 }
