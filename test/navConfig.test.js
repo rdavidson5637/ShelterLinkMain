@@ -19,7 +19,7 @@ test('filterNavForRole hides admin-only destinations from staff', async () => {
   const manage = filterNavForRole(ADMIN_MANAGE, 'staff').map((i) => i.id);
   const insight = filterNavForRole(ADMIN_INSIGHT, 'staff').map((i) => i.id);
   assert.deepEqual(manage, ['onboarding', 'groups', 'messages']);
-  assert.deepEqual(insight, ['impact-report', 'feedback', 'staff-guide']);
+  assert.deepEqual(insight, ['impact-report', 'feedback', 'staff-guide', 'security']);
   assert.ok(!manage.includes('qualifications'));
   assert.ok(!manage.includes('training'));
   assert.ok(!manage.includes('custom-fields'));

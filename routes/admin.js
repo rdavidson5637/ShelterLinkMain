@@ -50,6 +50,11 @@ const {
   getImpactReportCsv,
   getImpactReportPdf,
 } = require('../controllers/impactReportController');
+const {
+  getNewsletterAudienceCsv,
+  getNewsletterSyncStatus,
+  postNewsletterSync,
+} = require('../controllers/newsletterAudienceController');
 const { getWeekSheet, getWeekSheetIcs } = require('../controllers/weekSheetController');
 
 const { validateBody, validateQuery, positiveParam } = require('../middleware/validate');
@@ -72,6 +77,9 @@ router.get('/stats', isAuthenticated, staffOrAdmin, validateQuery(queries.year),
 router.get('/reports/impact', isAuthenticated, staffOrAdmin, validateQuery(queries.impactReport), getImpactReport);
 router.get('/reports/impact.csv', isAuthenticated, staffOrAdmin, validateQuery(queries.impactReport), getImpactReportCsv);
 router.get('/reports/impact.pdf', isAuthenticated, staffOrAdmin, validateQuery(queries.impactReport), getImpactReportPdf);
+router.get('/reports/newsletter-audience.csv', isAuthenticated, staffOrAdmin, getNewsletterAudienceCsv);
+router.get('/reports/newsletter-sync', isAuthenticated, staffOrAdmin, getNewsletterSyncStatus);
+router.post('/reports/newsletter-sync', isAuthenticated, staffOrAdmin, postNewsletterSync);
 router.get('/stats/leaderboard', isAuthenticated, staffOrAdmin, validateQuery(queries.year), getLeaderboard);
 router.get('/stats/monthly-hours', isAuthenticated, staffOrAdmin, validateQuery(queries.year), getMonthlyHoursChart);
 router.get('/volunteers', isAuthenticated, staffOrAdmin, getAllVolunteers);

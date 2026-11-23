@@ -4,6 +4,7 @@ import { requireAuth, checkAuth, logout, isAdminRole} from '../auth.js';
 const logoutButton = document.getElementById('logoutButton');
 const exportAllVolunteersButton = document.getElementById('exportAllVolunteersButton');
 const exportCommunityServiceButton = document.getElementById('exportCommunityServiceButton');
+const exportNewsletterAudienceButton = document.getElementById('exportNewsletterAudienceButton');
 const hoursExportForm = document.getElementById('hoursExportForm');
 const reportUserId = document.getElementById('reportUserId');
 const reportStartDate = document.getElementById('reportStartDate');
@@ -33,6 +34,10 @@ function handleVolunteerExport() {
 
 function handleCommunityServiceExport() {
   triggerDownload(`${API_URL}/export/community-service`);
+}
+
+function handleNewsletterAudienceExport() {
+  triggerDownload(`${API_URL}/admin/reports/newsletter-audience.csv`);
 }
 
 function handleHoursExport(event) {
@@ -133,6 +138,13 @@ async function init() {
     exportCommunityServiceButton.addEventListener('click', (event) => {
       event.preventDefault();
       handleCommunityServiceExport();
+    });
+  }
+
+  if (exportNewsletterAudienceButton) {
+    exportNewsletterAudienceButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      handleNewsletterAudienceExport();
     });
   }
 

@@ -14,7 +14,9 @@ const interestTagsEl = document.getElementById('interestTags');
 const saveInterestsButton = document.getElementById('saveInterestsButton');
 const saveFosterButton = document.getElementById('saveFosterButton');
 const saveAwayButton = document.getElementById('saveAwayButton');
+const saveMarketingButton = document.getElementById('saveMarketingButton');
 const awayUntilInput = document.getElementById('away_until');
+const marketingConsentInput = document.getElementById('marketing_consent');
 
 const FOSTER_BOOL_FIELDS = [
   'has_garden',
@@ -182,6 +184,7 @@ function formDataToPayload(formElement) {
     emergency_contact: data.get('emergency_contact'),
     skills: data.get('skills'),
     availability: data.get('availability'),
+    marketing_consent: marketingConsentInput?.checked ? 1 : 0,
     custom_fields: collectCustomFieldValues(),
     tag_ids: getSelectedTagIds(interestTagsEl),
     ...collectFosterFields(formElement),
@@ -215,7 +218,8 @@ function setFormViewOnly(isViewOnly) {
     if (el.type === 'hidden') return;
     const inFoster = el.closest('#fosterHomeSection');
     const inAway = el.closest('#awayModeSection');
-    if (inFoster || inAway) {
+    const inMarketing = el.closest('#marketingConsentSection');
+    if (inFoster || inAway || inMarketing) {
       el.readOnly = false;
       el.disabled = false;
       return;
@@ -327,6 +331,30 @@ async function saveAwayMode() {
   }
 }
 
+async function saveMarketingConsent() {
+  setMessage();
+  try {
+    const response = await apiRequest('/volunteer/profile', {
+      method: 'PUT',
+      body: { marketing_consent: marketingConsentInput?.checked ? 1 : 0 },
+    });
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => ({}));
+      setMessage('error', errorBody?.error || 'Failed to save newsletter preference');
+      return;
+    }
+    setMessage(
+      'success',
+      marketingConsentInput?.checked
+        ? 'You are opted in to the shelter newsletter.'
+        : 'Newsletter preference cleared. You will not receive marketing emails.'
+    );
+  } catch (error) {
+    console.error('[Profile] saveMarketingConsent error:', error);
+    setMessage('error', 'Network error while saving newsletter preference');
+  }
+}
+
 function collectNotificationPrefs() {
   return {
     prefer_urgent: document.getElementById('prefer_urgent')?.checked ? 1 : 0,
@@ -424,6 +452,7 @@ async function checkExistingProfile() {
       if (saveInterestsButton) saveInterestsButton.hidden = false;
       if (saveFosterButton) saveFosterButton.hidden = false;
       if (saveAwayButton) saveAwayButton.hidden = false;
+      if (saveMarketingButton) saveMarketingButton.hidden = false;
       return profile;
     }
 
@@ -433,6 +462,7 @@ async function checkExistingProfile() {
     if (saveInterestsButton) saveInterestsButton.hidden = false;
     if (saveFosterButton) saveFosterButton.hidden = false;
     if (saveAwayButton) saveAwayButton.hidden = false;
+    if (saveMarketingButton) saveMarketingButton.hidden = false;
     return profile;
   } catch (error) {
     console.error('[Profile] checkExistingProfile error:', error);
@@ -509,6 +539,11 @@ async function init() {
   saveAwayButton?.addEventListener('click', (event) => {
     event.preventDefault();
     saveAwayMode();
+  });
+
+  saveMarketingButton?.addEventListener('click', (event) => {
+    event.preventDefault();
+    saveMarketingConsent();
   });
 
   document.getElementById('savePrefsButton')?.addEventListener('click', (event) => {

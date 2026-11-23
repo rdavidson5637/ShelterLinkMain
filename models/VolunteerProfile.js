@@ -42,7 +42,23 @@ const ALLOWED_PROFILE_FIELDS = new Set([
   'prefer_fosters',
   'quiet_hours_start',
   'quiet_hours_end',
+  'marketing_consent',
 ]);
+
+/**
+ * Marketing consent is explicit opt-in. When the volunteer ticks it we store
+ * the date; when they clear it we clear the date. Clients cannot set the date
+ * directly.
+ */
+function applyMarketingConsent(sanitized = {}) {
+  if (!Object.prototype.hasOwnProperty.call(sanitized, 'marketing_consent')) {
+    return sanitized;
+  }
+  const on = Number(sanitized.marketing_consent) === 1;
+  sanitized.marketing_consent = on ? 1 : 0;
+  sanitized.marketing_consent_at = on ? new Date() : null;
+  return sanitized;
+}
 
 /**
  * True when profile.away_until is set and is on or after the given date (YYYY-MM-DD).
@@ -113,6 +129,12 @@ function sanitizeProfileData(profileData = {}) {
       return;
     }
 
+    if (key === 'marketing_consent') {
+      const n = Number(value);
+      sanitized[key] = n === 1 ? 1 : 0;
+      return;
+    }
+
     if (key === 'away_until') {
       if (value == null || value === '') {
         sanitized[key] = null;
@@ -131,7 +153,8 @@ function sanitizeProfileData(profileData = {}) {
 }
 
 function buildUpdateClause(data = {}) {
-  const entries = Object.entries(sanitizeProfileData(data)).filter(
+  const sanitized = applyMarketingConsent(sanitizeProfileData(data));
+  const entries = Object.entries(sanitized).filter(
     ([, value]) => typeof value !== 'undefined'
   );
 
@@ -151,7 +174,7 @@ function buildUpdateClause(data = {}) {
 async function create(userId, profileData = {}) {
   if (!userId) throw new Error('userId is required');
 
-  const sanitized = sanitizeProfileData(profileData);
+  const sanitized = applyMarketingConsent(sanitizeProfileData(profileData));
   const dynamicKeys = Object.keys(sanitized);
 
   const columns = ['user_id', ...dynamicKeys];

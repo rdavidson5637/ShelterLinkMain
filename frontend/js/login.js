@@ -75,22 +75,11 @@ async function handleLogin(event) {
 
     if (res.ok) {
       const user = await res.json();
-      await clearUserCache();
-      if (user.pushReset === true) {
-        try {
-          const sub = await (await getRegistration())?.pushManager?.getSubscription();
-          await sub?.unsubscribe();
-        } catch (_) {
-          /* ignore */
-        }
+      if (user.twoFactorRequired === true) {
+        showTwoFactorStep();
+        return;
       }
-      try {
-        sessionStorage.removeItem('privacy_notice_dismissed');
-      } catch (_) {
-        /* ignore */
-      }
-      showMessage('Login successful. Redirecting...', 'success');
-      setTimeout(() => redirectToDashboard(user.role), 1000);
+      await finishSignIn(user);
     } else {
       const errorData = await res.json().catch(() => ({}));
       showFormErrors(form, [
@@ -102,6 +91,92 @@ async function handleLogin(event) {
   } finally {
     if (submitButton) submitButton.removeAttribute('disabled');
   }
+}
+
+const twoFactorForm = document.getElementById('twoFactorForm');
+
+function showTwoFactorStep() {
+  if (!form || !twoFactorForm) return;
+  const password = document.getElementById('password');
+  if (password) password.value = '';
+  form.hidden = true;
+  twoFactorForm.hidden = false;
+  showMessage('');
+  document.getElementById('twoFactorCode')?.focus();
+}
+
+function backToPasswordStep(text = '') {
+  if (!form || !twoFactorForm) return;
+  twoFactorForm.reset();
+  clearFormErrors(twoFactorForm);
+  twoFactorForm.hidden = true;
+  form.hidden = false;
+  showMessage(text);
+  document.getElementById('password')?.focus();
+}
+
+async function handleTwoFactor(event) {
+  event.preventDefault();
+  if (!twoFactorForm) return;
+  clearFormErrors(twoFactorForm);
+  const input = document.getElementById('twoFactorCode');
+  const code = String(input?.value || '').trim();
+  if (!code) {
+    showFormErrors(twoFactorForm, [{ field: 'code', message: 'Enter the code from your app.' }]);
+    return;
+  }
+  const button = twoFactorForm.querySelector('[type="submit"]');
+  if (button) button.setAttribute('disabled', 'true');
+  try {
+    const res = await apiRequest('/auth/2fa/verify', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      await finishSignIn(data);
+      return;
+    }
+    if (data.restart === true) {
+      backToPasswordStep(data.error);
+      return;
+    }
+    if (input) input.value = '';
+    showFormErrors(twoFactorForm, [
+      { field: 'code', message: data.error || 'That code did not work. Try again.' },
+    ]);
+  } catch (error) {
+    showFormErrors(twoFactorForm, [{ message: 'Network error. Please try again later.' }]);
+  } finally {
+    if (button) button.removeAttribute('disabled');
+  }
+}
+
+async function finishSignIn(user) {
+  await clearUserCache();
+  if (user.pushReset === true) {
+    try {
+      const sub = await (await getRegistration())?.pushManager?.getSubscription();
+      await sub?.unsubscribe();
+    } catch (_) {
+      /* ignore */
+    }
+  }
+  try {
+    sessionStorage.removeItem('privacy_notice_dismissed');
+  } catch (_) {
+    /* ignore */
+  }
+  if (Number.isInteger(user.recoveryCodesLeft)) {
+    showMessage(
+      `Signed in with a recovery code. You have ${user.recoveryCodesLeft} left. Redirecting...`,
+      'success'
+    );
+    setTimeout(() => redirectToDashboard(user.role), 3000);
+    return;
+  }
+  showMessage('Login successful. Redirecting...', 'success');
+  setTimeout(() => redirectToDashboard(user.role), 1000);
 }
 
 async function loadDemoHints() {
@@ -159,6 +234,10 @@ document.addEventListener('DOMContentLoaded', () => {
   redirectIfAuthenticated();
   if (form) {
     form.addEventListener('submit', handleLogin);
+  }
+  if (twoFactorForm) {
+    twoFactorForm.addEventListener('submit', handleTwoFactor);
+    document.getElementById('twoFactorCancel')?.addEventListener('click', () => backToPasswordStep());
   }
   loadDemoHints().catch(() => {});
 });

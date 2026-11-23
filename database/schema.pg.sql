@@ -136,6 +136,10 @@ CREATE TABLE users (
   ical_token          VARCHAR(64)   DEFAULT NULL,
   consent_given_at    TIMESTAMP     DEFAULT NULL,
   privacy_notice_version VARCHAR(32) DEFAULT NULL,
+  totp_secret         TEXT          DEFAULT NULL,
+  totp_enabled_at     TIMESTAMP     DEFAULT NULL,
+  totp_last_counter   BIGINT        DEFAULT NULL,
+  totp_recovery_codes TEXT          DEFAULT NULL,
   CONSTRAINT uq_users_email UNIQUE (email),
   CONSTRAINT uq_users_ical_token UNIQUE (ical_token)
 );
@@ -226,6 +230,8 @@ CREATE TABLE volunteer_profiles (
   prefer_reminders  SMALLINT      NOT NULL DEFAULT 1,
   prefer_threads    SMALLINT      NOT NULL DEFAULT 0,
   prefer_fosters    SMALLINT      NOT NULL DEFAULT 0,
+  marketing_consent SMALLINT      NOT NULL DEFAULT 0,
+  marketing_consent_at TIMESTAMP  DEFAULT NULL,
   quiet_hours_start TIME          DEFAULT NULL,
   quiet_hours_end   TIME          DEFAULT NULL,
   created_at        TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,

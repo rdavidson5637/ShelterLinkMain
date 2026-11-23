@@ -98,11 +98,13 @@ async function run() {
     await applySql(pgPool, loadSql('038_platform_audit.pg.sql'));
     await applySql(pgPool, loadSql('039_platform_audit_reactivate.pg.sql'));
     await applySql(pgPool, loadSql('041_under_18_guardian_consent.pg.sql'));
+    await applySql(pgPool, loadSql('042_staff_totp.pg.sql'));
     await applySql(pgPool, loadSql('043_training_modules.pg.sql'));
     await applySql(pgPool, loadSql('044_booking_policy.pg.sql'));
     await applySql(pgPool, loadSql('046_rate_limit_job_dedupe.pg.sql'));
     await applySql(pgPool, loadSql('048_memberships.pg.sql'));
     await applySql(pgPool, loadSql('049_shelter_logo_storage.pg.sql'));
+    await applySql(pgPool, loadSql('050_newsletter_marketing_consent.pg.sql'));
     await applySql(pgPool, loadSql('051_quiet_hours.pg.sql'));
     console.log('  ✓ Shelter tenancy applied.');
 

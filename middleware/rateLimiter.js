@@ -28,6 +28,7 @@ const LIMITS = {
   groupBooking: positiveInt('RATE_LIMIT_GROUP_BOOKING', 8),
   groupBookingEmail: positiveInt('RATE_LIMIT_GROUP_BOOKING_EMAIL', 3),
   pushTest: positiveInt('RATE_LIMIT_PUSH_TEST', 3),
+  twoFactorAccount: positiveInt('RATE_LIMIT_2FA_ACCOUNT', 10),
 };
 
 // Shared Postgres counters in production so replicas enforce one budget.
@@ -69,6 +70,24 @@ const loginAccountLimiter = rateLimit({
     const ip = ipKeyGenerator(req.ip);
     if (email) return `acct:${email}|${ip}`;
     return ip;
+  },
+});
+
+// Wrong two-factor codes for one account, from any IP. Keyed on the user
+// waiting at the code step (or signed in, for turning 2FA off), so starting a
+// fresh password step does not reset the count.
+const twoFactorAccountLimiter = rateLimit({
+  windowMs: WINDOW_MS,
+  max: LIMITS.twoFactorAccount,
+  message: { error: 'Too many wrong codes. Please try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  keyGenerator(req) {
+    const pending = req.session && req.session.pendingTwoFactor;
+    const userId = (pending && pending.userId) || (req.session && req.session.userId);
+    if (userId) return `2fa:${userId}`;
+    return ipKeyGenerator(req.ip || 'anon');
   },
 });
 
@@ -218,6 +237,7 @@ module.exports = {
   useSharedStore,
   loginLimiter,
   loginAccountLimiter,
+  twoFactorAccountLimiter,
   apiLimiter,
   registerLimiter,
   forgotPasswordLimiter,
