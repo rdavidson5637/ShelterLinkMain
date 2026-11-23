@@ -238,6 +238,16 @@ const ageSettings = z
     min_volunteer_age: z.union([z.number().int().min(1).max(99), z.null(), z.literal('')]).optional(),
   })
   .strict();
+const brandSettings = z
+  .object({
+    // Hex accent mapped onto --green tokens, or null/'' to clear (default palette).
+    primary_colour: z.union([
+      z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+      z.null(),
+      z.literal(''),
+    ]),
+  })
+  .strict();
 const fosterApproval = z.object({ foster_approved: optFlag }).strict();
 const serviceSettings = z
   .object({
@@ -723,6 +733,7 @@ const bodies = {
   serviceSettings,
   guardianConsent,
   ageSettings,
+  brandSettings,
   awardQualification,
   bulkMessage,
   erase,

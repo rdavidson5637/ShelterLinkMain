@@ -94,6 +94,7 @@ CREATE TABLE shelters (
   created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   logo        BYTEA,
   logo_mime   VARCHAR(100),
+  logo_storage_key TEXT DEFAULT NULL,
   charity_regulator TEXT CONSTRAINT shelters_charity_regulator_chk CHECK (charity_regulator IN ('ccew','oscr','ccni','cri')),
   charity_number VARCHAR(32),
   charity_register_name VARCHAR(255),
@@ -109,6 +110,10 @@ CREATE TABLE shelters (
 CREATE UNIQUE INDEX shelters_charity_key
   ON shelters (charity_regulator, charity_number)
   WHERE charity_regulator IS NOT NULL AND charity_number IS NOT NULL;
+
+CREATE UNIQUE INDEX uq_shelters_logo_storage_key
+  ON shelters (logo_storage_key)
+  WHERE logo_storage_key IS NOT NULL;
 
 -- ----------------------------------------------------------------------------
 -- users

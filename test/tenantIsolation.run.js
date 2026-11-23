@@ -760,6 +760,55 @@ async function main() {
       if (![403, 404].includes(northAnimal.status) || leaks(northAnimal.text)) {
         failures.push(`north animal -> ${northAnimal.status} ${northAnimal.text.slice(0, 180)}`);
       }
+
+      // SL-LATER-10: brand colour/logo settings stay on the logged-in shelter.
+      const brandPut = await request(port, 'PUT', '/api/admin/settings/brand', {
+        json: { primary_colour: '#115e59', shelter_id: 1 },
+        cookie: northCookie,
+      });
+      if (brandPut.status !== 400) {
+        failures.push(`north brand put with shelter_id -> ${brandPut.status} ${brandPut.text.slice(0, 180)}`);
+      }
+      const brandSave = await request(port, 'PUT', '/api/admin/settings/brand', {
+        json: { primary_colour: '#115e59' },
+        cookie: northCookie,
+      });
+      if (brandSave.status !== 200 || !brandSave.text.includes('#115e59')) {
+        failures.push(`north brand save -> ${brandSave.status} ${brandSave.text.slice(0, 180)}`);
+      }
+      const northBrandColour = await request(port, 'GET', '/api/public/brand', { cookie: northCookie });
+      const assisiBrandColour = await request(port, 'GET', '/api/public/brand');
+      if (
+        northBrandColour.status !== 200
+        || !northBrandColour.text.includes('#115e59')
+        || !northBrandColour.text.includes('North Shelter')
+      ) {
+        failures.push(`north brand colour -> ${northBrandColour.status} ${northBrandColour.text.slice(0, 180)}`);
+      }
+      if (
+        assisiBrandColour.status !== 200
+        || assisiBrandColour.text.includes('#115e59')
+        || !assisiBrandColour.text.includes('Assisi Animal Sanctuary')
+      ) {
+        failures.push(`assisi brand after north colour -> ${assisiBrandColour.status} ${assisiBrandColour.text.slice(0, 180)}`);
+      }
+      const logoPng = Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+        'base64'
+      );
+      const logoBody = Buffer.concat([
+        Buffer.from('------ShelterLinkBrand\r\nContent-Disposition: form-data; name="logo"; filename="north.png"\r\nContent-Type: image/png\r\n\r\n'),
+        logoPng,
+        Buffer.from('\r\n------ShelterLinkBrand--\r\n'),
+      ]);
+      const logoUpload = await request(port, 'POST', '/api/admin/settings/brand/logo', {
+        cookie: northCookie,
+        raw: logoBody,
+        type: 'multipart/form-data; boundary=----ShelterLinkBrand',
+      });
+      if (logoUpload.status !== 200 || !logoUpload.text.includes('"hasLogo":true')) {
+        failures.push(`north logo upload -> ${logoUpload.status} ${logoUpload.text.slice(0, 180)}`);
+      }
     }
 
     // Slug B (anonymous): public brand, opportunities, ICS, group booking and

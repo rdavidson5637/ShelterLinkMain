@@ -9,13 +9,29 @@ const mock = require('./helpers/mockDb');
 const { runWithShelter } = require('../utils/shelterContext');
 const { getBrand, getBrandLogo } = require('../controllers/brandController');
 
-const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
+const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 // Two shelters. A query that does not name the id gets the first row, which
 // is what LIMIT 1 without WHERE used to do.
 const ROWS = [
-  { id: 1, slug: 'assisi', name: 'Assisi Animal Sanctuary', logo: PNG, logo_mime: 'image/png' },
-  { id: 2, slug: 'second', name: 'Second Shelter', logo: PNG, logo_mime: 'image/jpeg' },
+  {
+    id: 1,
+    slug: 'assisi',
+    name: 'Assisi Animal Sanctuary',
+    logo: PNG,
+    logo_mime: 'image/png',
+    logo_storage_key: null,
+    primary_colour: null,
+  },
+  {
+    id: 2,
+    slug: 'second',
+    name: 'Second Shelter',
+    logo: PNG,
+    logo_mime: 'image/jpeg',
+    logo_storage_key: null,
+    primary_colour: '#0f766e',
+  },
 ];
 
 function handler(sql, params) {
@@ -24,7 +40,10 @@ function handler(sql, params) {
     const match = /WHERE\s+id\s*=\s*\?/.test(sql)
       ? ROWS.filter((r) => r.id === Number(params[0]))
       : ROWS;
-    return [match.map((r) => ({ ...r, has_logo: Boolean(r.logo) }))];
+    return [match.map((r) => ({
+      ...r,
+      has_logo: Boolean(r.logo || r.logo_storage_key),
+    }))];
   }
   return [[]];
 }
@@ -63,7 +82,11 @@ test('getBrand returns the bound shelter, not the first row', async () => {
   const res = makeRes();
   await runWithShelter(2, () => getBrand({}, res));
   assert.equal(res.statusCode, 200);
-  assert.deepEqual(res.body, { name: 'Second Shelter', slug: 'second', hasLogo: true });
+  assert.equal(res.body.name, 'Second Shelter');
+  assert.equal(res.body.slug, 'second');
+  assert.equal(res.body.hasLogo, true);
+  assert.equal(res.body.primaryColour, '#0f766e');
+  assert.equal(res.body.colourTokens.green, '#0f766e');
 });
 
 test('getBrand with no session falls back to Assisi by id', async () => {
@@ -71,6 +94,8 @@ test('getBrand with no session falls back to Assisi by id', async () => {
   await getBrand({}, res);
   assert.equal(res.statusCode, 200);
   assert.equal(res.body.name, 'Assisi Animal Sanctuary');
+  assert.equal(res.body.primaryColour, null);
+  assert.equal(res.body.colourTokens, null);
   assert.deepEqual(brandQueries().map((c) => c.params), [[1]]);
 });
 

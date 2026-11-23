@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <link rel="manifest" href="/public/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/public/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ShelterLink" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Branding - ShelterLink</title>
+    <link rel="stylesheet" href="/public/css/vendor/pico-2.1.1.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" />
+    <link rel="stylesheet" href="/public/css/custom.css" />
+  </head>
+  <body class="staff-app">
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header">
+      <nav class="site-nav container" aria-label="Account">
+        <a class="site-brand" href="/pages/admin/dashboard.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>ShelterLink</strong>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" aria-label="Toggle navigation">Menu</button>
+        <button id="logoutButton" class="secondary">Logout</button>
+      </nav>
+    </header>
+
+    <main id="main" class="container dashboard-layout">
+      <aside id="admin-nav" class="sidebar-nav"></aside>
+      <div class="dashboard-main">
+        <section class="page-lede">
+          <h1>Branding</h1>
+          <p>Set this sanctuary’s accent colour and logo. Public and volunteer pages pick them up through the redesign tokens.</p>
+        </section>
+
+        <section class="staff-panel" aria-labelledby="colour-title">
+          <h2 id="colour-title">Accent colour</h2>
+          <p>
+            Used for primary buttons and links. It must meet WCAG AA contrast on white
+            (4.5:1). Leave empty to keep the default teal (<code id="defaultColourLabel">#0f766e</code>).
+          </p>
+          <form id="colourForm" novalidate>
+            <label for="primary_colour">
+              Accent colour
+              <input
+                type="color"
+                id="primary_colour_picker"
+                name="primary_colour_picker"
+                value="#0f766e"
+                aria-describedby="colourHelp"
+              />
+            </label>
+            <label for="primary_colour">
+              Hex value
+              <input
+                type="text"
+                id="primary_colour"
+                name="primary_colour"
+                maxlength="7"
+                pattern="#[0-9A-Fa-f]{6}"
+                placeholder="#0f766e"
+                autocomplete="off"
+                spellcheck="false"
+              />
+            </label>
+            <p id="colourHelp" class="form-hint">Six-digit hex only. Clear the field and save to restore the default palette.</p>
+            <p id="colourPreview" class="brand-colour-preview" hidden>
+              <span class="brand-swatch" id="colourSwatch" aria-hidden="true"></span>
+              <span id="colourPreviewText"></span>
+            </p>
+            <div class="opportunity-actions">
+              <button type="submit" id="colourSave" data-admin-only>Save colour</button>
+              <button type="button" id="colourClear" class="secondary" data-admin-only>Use default</button>
+            </div>
+          </form>
+          <p id="colourStatus" role="status" aria-live="polite"></p>
+        </section>
+
+        <section class="staff-panel" aria-labelledby="logo-title">
+          <h2 id="logo-title">Logo</h2>
+          <p>PNG or JPEG, under 512 KB. Shown in the header mark on public and volunteer pages.</p>
+          <div id="logoPreviewWrap" class="brand-logo-preview" hidden>
+            <img id="logoPreview" alt="Current shelter logo" width="96" height="96" />
+          </div>
+          <form id="logoForm" novalidate>
+            <label for="logo">
+              Logo file
+              <input type="file" id="logo" name="logo" accept="image/png,image/jpeg,.png,.jpg,.jpeg" />
+            </label>
+            <button type="submit" id="logoSave" data-admin-only>Upload logo</button>
+          </form>
+          <p id="logoStatus" role="status" aria-live="polite"></p>
+        </section>
+      </div>
+    </main>
+
+    <footer class="container" data-site-footer></footer>
+    <script type="module" src="/js/utils/errorHandler.js"></script>
+    <script type="module" src="/js/utils/sessionManager.js"></script>
+    <script type="module" src="/js/admin/branding.js"></script>
+    <script type="module" src="/js/utils/footerYear.js"></script>
+    <script type="module" src="/js/components/adminNav.js"></script>
+  </body>
+</html>

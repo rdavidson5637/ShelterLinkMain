@@ -130,6 +130,9 @@ test('buildObjectKey never embeds the original file name', () => {
 
   const photo = buildObjectKey('animal-photos', 7, '.png');
   assert.match(photo, /^animal-photos\/7\/[a-f0-9]{32}\.png$/);
+
+  const logo = buildObjectKey('shelter-logos', 3, '.jpg');
+  assert.match(logo, /^shelter-logos\/3\/[a-f0-9]{32}\.jpg$/);
 });
 
 test('SigV4 authorize produces a stable credential scope and signature shape', () => {
