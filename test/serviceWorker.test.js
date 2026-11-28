@@ -58,7 +58,7 @@ test('frontend/sw.js contains version token, never-cache prefixes, and not /publ
 });
 
 test('frontend/sw.js never caches invite page navigations', () => {
-  assert.match(source, /NEVER_CACHE_PAGES = \['\/invite\/'\]/);
+  assert.match(source, /NEVER_CACHE_PAGES = \['\/invite'\]/);
   const navigate = source.indexOf("request.mode === 'navigate'");
   const skip = source.indexOf('isNeverCachePage(url.pathname)', navigate);
   const cachePage = source.indexOf('networkFirstPage(request)', navigate);

@@ -98,16 +98,29 @@ function registerCell(app) {
   return el('td', {}, lines);
 }
 
+export const EXISTING_ACCOUNT_WARNING = 'This email already has a ShelterLink account, so the invite cannot be accepted with it.';
+
 function applicantCell(app) {
   const mail = el('a', { href: `mailto:${app.contact_email}`, textContent: app.contact_email });
-  return el('td', {}, [el('div', { textContent: app.contact_name || '' }), el('div', {}, mail)]);
+  const bits = [el('div', { textContent: app.contact_name || '' }), el('div', {}, mail)];
+  if (app.status === 'pending' && app.contact_has_account) {
+    bits.push(el('div', { className: 'error', textContent: EXISTING_ACCOUNT_WARNING }));
+  }
+  return el('td', {}, bits);
+}
+
+/** Body text for the Approve confirmation. */
+export function approveConfirmBody(app) {
+  const base = `This creates the shelter at /s/${app.desired_slug} and an admin invite for ${app.contact_email}.`;
+  if (!app.contact_has_account) return base;
+  return `${base} Warning: ${EXISTING_ACCOUNT_WARNING} Ask the applicant for a different address first, or approve and sort it out with them.`;
 }
 
 async function approve(app, button) {
   showConfirm({
     heading: `Approve ${app.shelter_name}?`,
-    body: `This creates the shelter at /s/${app.desired_slug} and an admin invite for ${app.contact_email}.`,
-    confirmText: 'Approve',
+    body: approveConfirmBody(app),
+    confirmText: app.contact_has_account ? 'Approve anyway' : 'Approve',
     cancelText: 'Not yet',
     onConfirm: async () => {
       button.disabled = true;
@@ -213,7 +226,9 @@ function decisionCell(app) {
     const bits = [];
     if (app.decided_at) bits.push(el('div', { textContent: `Decided ${formatDateOnly(app.decided_at)}` }));
     if (app.reason) bits.push(el('div', { textContent: `Reason: ${app.reason}` }));
-    if (app.status === 'approved') {
+    if (app.status === 'approved' && app.invite_accepted) {
+      bits.push(el('div', { textContent: 'Invite accepted' }));
+    } else if (app.status === 'approved') {
       const resendButton = el('button', { type: 'button', className: 'secondary', textContent: 'Resend invite' });
       resendButton.addEventListener('click', () => resend(app, resendButton));
       bits.push(resendButton);

@@ -91,6 +91,8 @@ function scenario({
   charityTaken = false,
   shelter = { id: 5, slug: 'north-paws', status: 'active' },
   usedInvite = false,
+  accountEmails = [],
+  acceptedInvites = [],
   failOn = null,
   email = false,
   emailError = null,
@@ -108,6 +110,10 @@ function scenario({
     if (/FROM shelter_applications/i.test(sql)) return [application ? [application] : []];
     if (/UPDATE shelter_applications/i.test(sql)) return [{ affectedRows: 1 }];
     if (/FROM shelters WHERE slug = \?/i.test(sql)) return [slugTaken ? [slugRow] : []];
+    if (sql === ACCOUNT_LOOKUP_SQL) {
+      return [accountEmails.filter((e) => params[0].includes(e)).map((email) => ({ email }))];
+    }
+    if (/used_at IS NOT NULL AND s\.slug = ANY/.test(sql)) return [acceptedInvites];
     if (/FROM admin_invites/i.test(sql)) return [usedInvite ? [{ id: 9 }] : []];
     if (/UPDATE admin_invites/i.test(sql)) return [{ affectedRows: 1 }];
     if (/FROM shelters WHERE charity_regulator/i.test(sql)) return [charityTaken ? [{ id: 3 }] : []];
@@ -169,9 +175,14 @@ function sqlCalls() {
   return mock.calls.map((c) => c.sql);
 }
 
+// The one users query the queue may make (services/accountLookup.js): yes
+// or no per applicant email, nothing else.
+const ACCOUNT_LOOKUP_SQL = 'SELECT DISTINCT lower(email) AS email FROM users WHERE lower(email) = ANY(?::text[])';
+
 function tablesTouched() {
   const tables = new Set();
   for (const sql of sqlCalls()) {
+    if (sql === ACCOUNT_LOOKUP_SQL) continue;
     for (const m of sql.matchAll(/\b(?:FROM|JOIN|INTO|UPDATE)\s+([a-z_]+)/gi)) {
       tables.add(m[1].toLowerCase());
     }
@@ -258,6 +269,34 @@ test('GET /applications?status=all lists decided ones too; bad status is 400', a
   assert.equal((await call('GET', '/applications?status=deleted', { session: OWNER })).status, 400);
 });
 
+test('pending applications say whether the applicant email already has an account', async () => {
+  scenario();
+  let res = await call('GET', '/applications', { session: OWNER });
+  assert.equal(res.body[0].contact_has_account, false);
+  const lookup = mock.calls.find((c) => c.sql === ACCOUNT_LOOKUP_SQL);
+  assert.ok(lookup, 'one account lookup for the list');
+  assert.deepEqual(lookup.params, [['ada@north.example']], 'lower-cased, de-duplicated');
+
+  scenario({ accountEmails: ['ada@north.example'] });
+  res = await call('GET', '/applications', { session: OWNER });
+  assert.equal(res.body[0].contact_has_account, true);
+  assert.doesNotMatch(JSON.stringify(res.body), /user_id|role|shelter_id/, 'nothing else about the account');
+});
+
+test('approved applications say whether the invite was accepted, so Resend can be hidden', async () => {
+  scenario({ application: pendingApplication({ status: 'approved' }), acceptedInvites: [{ slug: 'north-paws', email: 'ada@north.example' }] });
+  let res = await call('GET', '/applications?status=all', { session: OWNER });
+  assert.equal(res.body[0].invite_accepted, true);
+
+  scenario({ application: pendingApplication({ status: 'approved' }) });
+  res = await call('GET', '/applications?status=all', { session: OWNER });
+  assert.equal(res.body[0].invite_accepted, false);
+  assert.equal(res.body[0].contact_has_account, undefined, 'only pending rows are checked for an account');
+  assert.ok(!mock.calls.some((c) => c.sql === ACCOUNT_LOOKUP_SQL), 'no users lookup without pending rows');
+  const used = mock.calls.find((c) => /used_at IS NOT NULL AND s\.slug = ANY/.test(c.sql));
+  assert.deepEqual(used.params, [['north-paws']]);
+});
+
 // ---------------------------------------------------------------------------
 // POST /applications/:id/approve
 // ---------------------------------------------------------------------------
@@ -317,7 +356,7 @@ test('approve emails the invite after the commit, with a link that matches the s
   assert.equal(mail.role, 'admin');
   assert.equal(mail.expiresInDays, 7);
 
-  const match = /^http:\/\/localhost:3000\/invite\/([A-Za-z0-9_-]{43})$/.exec(mail.link);
+  const match = /^http:\/\/localhost:3000\/invite#([A-Za-z0-9_-]{43})$/.exec(mail.link);
   assert.ok(match, `link shape: ${mail.link}`);
   const invite = mock.calls.find((c) => /INSERT INTO admin_invites/.test(c.sql));
   assert.equal(hashInviteToken(match[1]), invite.params[2], 'the emailed token is the one whose hash was stored');
@@ -483,7 +522,7 @@ test('resend expires the unused invite, issues a new one, audits it, and emails 
   assert.equal(audit.params[3], 42);
   assert.equal(JSON.parse(audit.params[4]).source, 'resend');
 
-  const token = /\/invite\/([A-Za-z0-9_-]{43})$/.exec(sentEmails[0].link)[1];
+  const token = /\/invite#([A-Za-z0-9_-]{43})$/.exec(sentEmails[0].link)[1];
   assert.equal(hashInviteToken(token), invite.params[2]);
   assert.ok(sql.indexOf('EMAIL') > commit, 'email goes only after the commit');
 });
@@ -637,6 +676,7 @@ test('owner routes touch only platform tables and never users or volunteer_profi
       assert.ok(ALLOWED_TABLES.has(table), `owner route touched ${table}`);
     }
     for (const sql of sqlCalls()) {
+      if (sql === ACCOUNT_LOOKUP_SQL) continue;
       assert.doesNotMatch(sql, /\busers\b|\bvolunteer_profiles\b/i);
     }
     // Responses carry no volunteer profile fields.

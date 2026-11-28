@@ -12,7 +12,9 @@ const mock = require('./helpers/mockDb');
 const { isBypass } = require('../utils/shelterContext');
 const { errorHandler } = require('../middleware/errorHandler');
 const publicRoutes = require('../routes/public');
-const { registerSnapshot, RECEIVED } = require('../controllers/shelterApplicationController');
+const { registerSnapshot, RECEIVED, fillTimeError, RESERVED_SLUGS } = require('../controllers/shelterApplicationController');
+const fs = require('fs');
+const path = require('path');
 
 function scenario({
   slugShelter = false,
@@ -20,9 +22,12 @@ function scenario({
   charityShelter = false,
   charityPending = false,
   insertError = null,
+  pendingTotal = 0,
+  pendingMine = 0,
 } = {}) {
   mock.resetCalls();
   mock.setHandler(async (sql) => {
+    if (/count\(\*\)::int AS total/.test(sql)) return [[{ total: pendingTotal, mine: pendingMine }]];
     if (/INSERT INTO shelter_applications/.test(sql)) {
       assert.ok(isBypass(), 'the global applications table is written outside shelter context');
       if (insertError) throw insertError;
@@ -71,6 +76,7 @@ function good(overrides = {}) {
     contact_name: 'Ada North',
     contact_email: 'Ada@North.Example',
     website: '',
+    started_at: Date.now() - 10000,
     ...overrides,
   };
 }
@@ -215,4 +221,109 @@ test('registerSnapshot never throws or hangs', async () => {
 
   const ok = await registerSnapshot('ccni', 'NIC100123', async () => ({ found: true, status: 'registered', name: 'NORTH PAWS' }));
   assert.equal(ok.name, 'NORTH PAWS');
+});
+
+// ---------------------------------------------------------------------------
+// Review follow-ups: minimum fill time, pending caps, reserved slugs, and the
+// 040 partial unique indexes.
+// ---------------------------------------------------------------------------
+
+test('a form sent too fast, with no start time, or left open for days is refused before any query', async () => {
+  for (const [startedAt, pattern] of [
+    [Date.now(), /take a moment/],
+    [undefined, /Reload the page/],
+    ['abc', null],
+    [Date.now() - 13 * 60 * 60 * 1000, /expired/],
+  ]) {
+    scenario();
+    const body = good();
+    if (startedAt === undefined) delete body.started_at;
+    else body.started_at = startedAt;
+    const res = await apply(body);
+    assert.equal(res.status, 400, String(startedAt));
+    if (pattern) assert.match(res.body.error, pattern);
+    assert.equal(mock.calls.length, 0, 'nothing read or stored');
+  }
+});
+
+test('fillTimeError allows a normal fill', () => {
+  const now = 1_800_000_000_000;
+  assert.equal(fillTimeError({ started_at: now - 5000 }, now), null);
+  assert.equal(fillTimeError({ started_at: String(now - 5000) }, now), null);
+  assert.match(fillTimeError({ started_at: now - 1000 }, now), /moment/);
+});
+
+test('a full queue turns new applications away, and so does a busy email address', async () => {
+  scenario({ pendingTotal: 100 });
+  let res = await apply(good());
+  assert.equal(res.status, 503);
+  assert.match(res.body.error, /not taking new applications/);
+  assert.equal(inserts().length, 0);
+
+  scenario({ pendingTotal: 5, pendingMine: 3 });
+  res = await apply(good());
+  assert.equal(res.status, 429);
+  assert.match(res.body.error, /already have applications waiting/);
+  assert.equal(inserts().length, 0);
+
+  const count = mock.calls.find((c) => /count\(\*\)::int AS total/.test(c.sql));
+  assert.deepEqual(count.params, ['ada@north.example'], 'per-email cap uses the normalised address');
+
+  scenario({ pendingTotal: 99, pendingMine: 2 });
+  res = await apply(good());
+  assert.equal(res.status, 201);
+});
+
+test('the caps can be set from the environment', async () => {
+  process.env.SHELTER_APPLY_MAX_PENDING = '2';
+  try {
+    scenario({ pendingTotal: 2 });
+    const res = await apply(good());
+    assert.equal(res.status, 503);
+  } finally {
+    delete process.env.SHELTER_APPLY_MAX_PENDING;
+  }
+});
+
+test('demo, test, pages and healthz are reserved', async () => {
+  for (const slug of ['demo', 'test', 'pages', 'healthz']) {
+    assert.ok(RESERVED_SLUGS.has(slug), slug);
+    scenario();
+    const res = await apply(good({ desired_slug: slug }));
+    assert.equal(res.status, 400, slug);
+    assert.equal(res.body.field, 'desired_slug');
+    assert.equal(inserts().length, 0);
+  }
+});
+
+test('a race that reaches the 040 unique indexes gets the same field errors as the read check', async () => {
+  for (const [constraint, field] of [
+    ['shelter_applications_pending_slug_key', 'desired_slug'],
+    ['shelter_applications_pending_charity_key', 'charity_number'],
+  ]) {
+    scenario({ insertError: Object.assign(new Error('duplicate key'), { code: '23505', constraint }) });
+    const res = await apply(good());
+    assert.equal(res.status, 409, constraint);
+    assert.equal(res.body.field, field);
+  }
+  scenario({ insertError: Object.assign(new Error('duplicate key'), { code: '23505', constraint: 'something_else' }) });
+  assert.equal((await apply(good())).status, 500, 'other unique violations stay generic');
+});
+
+test('migration 040 adds pending-only unique indexes and refuses existing duplicates', () => {
+  const sql = fs.readFileSync(path.join(__dirname, '..', 'database', '040_shelter_applications_pending_unique.pg.sql'), 'utf8');
+  assert.match(sql, /CREATE UNIQUE INDEX IF NOT EXISTS shelter_applications_pending_slug_key\s+ON shelter_applications \(desired_slug\)\s+WHERE status = 'pending';/);
+  assert.match(sql, /CREATE UNIQUE INDEX IF NOT EXISTS shelter_applications_pending_charity_key\s+ON shelter_applications \(regulator, charity_number\)\s+WHERE status = 'pending';/);
+  assert.match(sql, /RAISE EXCEPTION 'Pending shelter_applications has duplicates/);
+  assert.match(sql, /^BEGIN;$/m);
+  assert.match(sql, /^COMMIT;$/m);
+  assert.match(sql, /Rollback:/);
+});
+
+test('the apply page sends started_at and leaves the privacy wording as a TODO', () => {
+  const js = fs.readFileSync(path.join(__dirname, '..', 'frontend', 'js', 'apply.js'), 'utf8');
+  assert.match(js, /const startedAt = Date\.now\(\);/);
+  assert.match(js, /started_at: startedAt/);
+  const html = fs.readFileSync(path.join(__dirname, '..', 'frontend', 'apply.html'), 'utf8');
+  assert.match(html, /TODO\(Ryan\): final privacy wording/);
 });
